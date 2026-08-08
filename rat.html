@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rat — The Leech Lake Game</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<style>
+  :root{ --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
+    --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(circle at 50% 12%, var(--felt) 0%, var(--felt2) 70%, #063324 100%);
+    color:var(--cream); min-height:100vh; overflow-x:hidden; display:flex; flex-direction:column; align-items:center;}
+  .wrap{width:100%; max-width:820px; padding:8px 12px 44px; position:relative;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;}
+  h1{font-size:19px; margin:0; letter-spacing:1px; color:var(--gold); text-shadow:0 1px 2px rgba(0,0,0,.5);}
+  h1 small{display:block; font-size:10px; letter-spacing:2px; opacity:.7; font-weight:600;}
+  .top-btns{display:flex; gap:6px;}
+  button{font-family:inherit; cursor:pointer; border:none; border-radius:10px; font-weight:600; transition:transform .06s, filter .15s;}
+  button:active{transform:translateY(1px) scale(.98);}
+  .btn{background:var(--gold); color:var(--ink); padding:9px 14px; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,.35);}
+  .btn.sec{background:rgba(255,255,255,.14); color:var(--cream);} .btn.sm{padding:6px 10px; font-size:12px;}
+  .btn:disabled{opacity:.4; cursor:default;}
+  input.txtinp{font-family:inherit; font-size:16px; width:100%; padding:10px; border-radius:10px;
+    border:2px solid var(--gold); background:rgba(0,0,0,.25); color:var(--cream);}
+
+  .banner{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+    background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:12px; padding:8px 12px; margin:4px 0 8px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.4); color:#2b1a08; font-weight:800; font-size:15px;}
+  .banner .call{color:#111; background:var(--gold); border-radius:20px; padding:3px 12px;}
+  .banner .hs{font-size:12px; font-weight:700; opacity:.8;}
+
+  .opps{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:6px;}
+  .pill{background:rgba(0,0,0,.28); border-radius:12px; padding:6px 8px; min-width:78px; text-align:center;
+    border:2px solid transparent; position:relative;}
+  .pill.turn{border-color:var(--gold);}
+  .pill.caller{box-shadow:0 0 0 2px rgba(240,198,116,.5);}
+  .pill.out{opacity:.4; filter:grayscale(.8);}
+  .pill .nm{font-size:12px; font-weight:700; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92px;}
+  .pill .tr{font-size:11px; color:var(--gold); margin-top:2px;}
+  .pill .played{margin-top:4px; min-height:44px; display:flex; justify-content:center;}
+  .pill .badge{position:absolute; top:-8px; right:-6px; background:var(--gold); color:var(--ink);
+    font-size:9px; font-weight:800; border-radius:8px; padding:1px 5px;}
+  .pill .outlbl{position:absolute; top:-8px; left:-6px; background:var(--red); color:#fff; font-size:9px; font-weight:800; border-radius:8px; padding:1px 5px;}
+
+  .center{text-align:center; margin:6px 0;}
+  .zone-label{text-align:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65; margin:8px 0 2px;}
+  .trick{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; min-height:78px; align-items:flex-end;}
+  .trickcard{display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .trickcard .who{font-size:10px; opacity:.75;}
+  .lead-tag{font-size:10px; color:var(--gold);}
+
+  .card{width:50px; height:70px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    user-select:none; border:1px solid #d8d2c0; transition:transform .12s, box-shadow .12s;}
+  .card.sm{width:34px; height:48px;}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:13px; font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:13px; font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{font-size:22px;} .card.sm .pip{font-size:15px;} .card.sm .rank,.card.sm .rankb{font-size:9px;}
+  .card.red{color:var(--red);} .card.black{color:#1c2a24;}
+  .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
+  .card.playable{cursor:pointer;} .card.playable:hover{transform:translateY(-8px); box-shadow:0 8px 14px rgba(0,0,0,.45);}
+  .card.illegal{opacity:.32;}
+  .yourhand{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; min-height:72px; align-items:center;}
+  .status{min-height:38px; text-align:center; font-size:14px; margin:6px 0; color:var(--gold); font-weight:600;
+    display:flex; align-items:center; justify-content:center; padding:0 6px;}
+  .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;}
+  .callbtns{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
+  .suitpick{display:flex; gap:8px; justify-content:center; margin-top:8px;}
+  .suitpick button{font-size:22px; width:48px; height:48px; border-radius:10px; background:var(--cream);}
+  .suitpick button.red{color:var(--red);} .suitpick button.black{color:#111;}
+
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.62); display:none; align-items:center; justify-content:center; z-index:50; padding:16px;}
+  .overlay.show{display:flex;}
+  .panel{background:linear-gradient(180deg,#12503a,#0c3d2c); border:2px solid var(--gold); border-radius:16px;
+    max-width:520px; width:100%; max-height:88vh; overflow-y:auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  .panel h2{margin:0 0 6px; color:var(--gold); font-size:20px;} .panel h3{color:var(--gold); font-size:15px; margin:14px 0 6px;}
+  .panel p,.panel li{font-size:14px; line-height:1.5;} .panel ul{margin:4px 0 4px 2px; padding-left:20px;}
+  .panel .close{position:sticky; top:0; float:right;}
+  .seg{display:inline-flex; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
+  .seg button{background:transparent; color:var(--cream); padding:6px 14px; font-size:13px; border-radius:16px;}
+  .seg button.on{background:var(--gold); color:var(--ink);}
+  .switch{display:inline-flex; align-items:center; gap:8px; font-size:13px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px 0; font-size:14px; line-height:1.5;}
+  .tip-block b{color:var(--gold);}
+  .setup-opt{display:block; width:100%; text-align:left; background:rgba(255,255,255,.1); color:var(--cream); padding:13px 14px; border-radius:10px; margin:7px 0; font-size:15px;}
+  .stepper{display:flex; align-items:center; justify-content:center; gap:16px; margin:8px 0;}
+  .stepper button{width:44px; height:44px; border-radius:50%; background:var(--gold); color:var(--ink); font-size:22px; font-weight:800;}
+  .stepper .val{font-size:26px; font-weight:800; min-width:40px; text-align:center;}
+  .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
+  .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  .muted{opacity:.75; font-size:12px;}
+  @media(max-width:430px){ .card{width:44px;height:62px;} h1{font-size:17px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🐀 RAT <small>THE LEECH LAKE GAME</small></h1>
+    <div class="top-btns">
+      <button class="btn sec sm" id="rulesBtn">Rules</button>
+      <button class="btn sec sm" id="menuBtn">Menu</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+  <div class="opps" id="opps"></div>
+
+  <div class="center">
+    <div class="zone-label">Table</div>
+    <div class="trick" id="trick"></div>
+  </div>
+
+  <div class="status" id="status">Loading…</div>
+
+  <div class="zone-label" id="youLabel">Your hand</div>
+  <div class="yourhand" id="yourhand"></div>
+  <div class="controls" id="controls"></div>
+</div>
+
+<div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
+<div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ============================================================
+   RAT (aka The Leech Lake Game) — trick-taking elimination
+   ============================================================ */
+const SUITS=["♠","♥","♦","♣"], SUIT_RED=[false,true,true,false];
+const RSTR={11:"J",12:"Q",13:"K",14:"A"};
+const rankStr=r=>RSTR[r]||String(r);
+const cardStr=c=>rankStr(c.r)+SUITS[c.s];
+const CPU_NAMES=["Rocky","Duke","Gus","Marge","Hazel","Bo"];
+
+function makeDeck(){const d=[];for(let s=0;s<4;s++)for(let r=2;r<=14;r++)d.push({r,s});return d;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function dist8(r){return Math.abs(r-8);}
+
+/* ---- trick winner: returns index into trick[] of the winning play ---- */
+function trickWinnerIndex(trick, gameType, trump){
+  const led = trick[0].card.s;
+  if(gameType==="suits"){
+    let best=-1, bestVal=-1, bestTrump=false;
+    trick.forEach((e,i)=>{
+      const isT = e.card.s===trump;
+      const onLed = e.card.s===led;
+      if(!isT && !onLed) return;              // off-suit non-trump can't win
+      const val = e.card.r + (isT?100:0);     // trumps outrank led
+      if(val>bestVal){ bestVal=val; best=i; bestTrump=isT; }
+    });
+    return best;
+  }
+  if(gameType==="high"){
+    let best=0; for(let i=1;i<trick.length;i++){ if(trick[i].card.r>trick[best].card.r) best=i; } return best; // ties: earliest kept
+  }
+  if(gameType==="low"){
+    let best=0; for(let i=1;i<trick.length;i++){ if(trick[i].card.r<trick[best].card.r) best=i; } return best;
+  }
+  // closest8: min distance, then lower rank, then earliest
+  let best=0;
+  for(let i=1;i<trick.length;i++){
+    const a=trick[i].card, b=trick[best].card;
+    const da=dist8(a.r), db=dist8(b.r);
+    if(da<db || (da===db && a.r<b.r)) best=i;
+  }
+  return best;
+}
+
+/* ---- legality (only Suits enforces follow) ---- */
+function legalCards(hand, gameType, trick){
+  if(gameType!=="suits" || trick.length===0) return hand.map((_,i)=>i);
+  const led=trick[0].card.s;
+  const hasLed=hand.some(c=>c.s===led);
+  return hand.map((c,i)=>({c,i})).filter(o=>!hasLed || o.c.s===led).map(o=>o.i);
+}
+
+/* ============================================================ STATE */
+let R=null;
+let settings={tipsOn:true, tipLevel:"beginner", playerName:"You", numPlayers:4};
+let curOverlay={kind:null};
+
+function newGame(){
+  const roster=[{name:settings.playerName||"You", human:true}];
+  for(let i=0;i<settings.numPlayers-1;i++) roster.push({name:CPU_NAMES[i], human:false});
+  R={ roster, players:[], handSize:7, seriesFirstHand:true, dealerBase:Math.floor(Math.random()*roster.length),
+      trump:null, gameType:null, caller:null, leader:0, turn:0, trick:[], phase:"init",
+      prevWinner:null, champion:null, msg:"", lastResult:"" };
+  startSeries();
+}
+function startSeries(reset){
+  R.players = R.roster.map((p,i)=>({name:p.name, human:p.human, seat:i, hand:[], tricks:0, alive:true}));
+  R.handSize=7; R.seriesFirstHand=true; R.prevWinner=null; R.champion=null;
+  R.dealerBase=(R.dealerBase+1)%R.players.length;
+  if(reset) R.lastResult="Everyone re-antes — everyone's back in for a fresh series from 7.";
+  startHand();
+}
+function aliveList(){ return R.players.filter(p=>p.alive); }
+function nextAliveSeat(seat){ let s=seat; do{ s=(s+1)%R.players.length; }while(!R.players[s].alive); return s; }
+
+function startHand(){
+  const alive=aliveList();
+  if(alive.length===1){ R.champion=alive[0].seat; R.phase="gameover"; render(); openWinPanel(); return; }
+  // deal
+  const deck=shuffle(makeDeck());
+  R.players.forEach(p=>{ p.hand=[]; p.tricks=0; });
+  for(let k=0;k<R.handSize;k++) alive.forEach(p=>p.hand.push(deck.pop()));
+  alive.forEach(p=>p.hand.sort((a,b)=> a.s-b.s || a.r-b.r));
+  R.trick=[]; R.trump=null; R.gameType=null; R.caller=null;
+  if(R.seriesFirstHand){
+    const flip=deck.pop();
+    R.trump=flip.s; R.gameType="suits";
+    R.flipCard=flip;
+    R.leader = nextAliveSeat(R.dealerBase);   // player left of dealer
+    R.caller=null;
+    R.phase="play";
+    R.lastResult = R.lastResult || "";
+    setStatus(`Trump flipped: ${cardStr(flip)} — ${SUITS[R.trump]} is trump. ${pname(R.leader)} leads.`);
+    render(); beginTrick();
+  } else {
+    R.caller = R.prevWinner;
+    R.leader = R.prevWinner;
+    R.flipCard=null;
+    if(R.players[R.caller].human){
+      R.phase="call";
+      setStatus(`You won the most last hand — look at your cards and call the game.`);
+      render();
+    } else {
+      const call=cpuCall(R.players[R.caller]);
+      R.gameType=call.type; R.trump=call.trump;
+      R.phase="play";
+      setStatus(`${pname(R.caller)} calls ${callLabel()}. ${pname(R.leader)} leads.`);
+      render(); beginTrick();
+    }
+  }
+}
+function humanCall(type,suit){
+  if(R.phase!=="call")return;
+  R.gameType=type; R.trump=(type==="suits")?suit:null;
+  R.phase="play";
+  setStatus(`You call ${callLabel()}. You lead.`);
+  render(); beginTrick();
+}
+function callLabel(){
+  if(R.gameType==="suits") return `Suits (${SUITS[R.trump]} trump)`;
+  if(R.gameType==="high") return "High card";
+  if(R.gameType==="low") return "Low card";
+  return "Closest to 8";
+}
+function beginTrick(){ R.trick=[]; R.turn=R.leader; R.phase="play"; render(); advance(); }
+function advance(){
+  if(R.phase!=="play")return;
+  const p=R.players[R.turn];
+  if(p.human){ setStatus(`Your turn — ${turnHint()}`); render(); }
+  else { setStatus(`${p.name} is thinking…`); render(); setTimeout(()=>cpuPlay(R.turn),650); }
+}
+function turnHint(){
+  if(R.gameType==="suits"&&R.trick.length){ const led=R.trick[0].card.s; const has=R.players[0].hand.some(c=>c.s===led); return has?`follow ${SUITS[led]} if you can.`:`no ${SUITS[led]} — play anything.`; }
+  return R.gameType==="suits"?"lead any card.":`play any card — ${callLabel()}.`;
+}
+function humanPlay(i){
+  if(R.phase!=="play"||R.turn!==0)return;
+  const legal=legalCards(R.players[0].hand, R.gameType, R.trick);
+  if(!legal.includes(i))return;
+  doPlay(0,i);
+}
+function doPlay(seat,i){
+  if(R.phase!=="play"||R.turn!==seat)return;   // guard against stale/duplicate plays
+  const p=R.players[seat];
+  if(!p.hand[i])return;
+  const card=p.hand.splice(i,1)[0];
+  R.trick.push({p:seat, card});
+  const aliveCount=aliveList().length;
+  if(R.trick.length>=aliveCount){ R.phase="resolve"; render(); setTimeout(resolveTrick,900); }
+  else { R.turn=nextAliveSeat(seat); R.phase="play"; render(); setTimeout(advance,300); }
+}
+function resolveTrick(){
+  const wi=trickWinnerIndex(R.trick, R.gameType, R.trump);
+  const winnerSeat=R.trick[wi].p;
+  R.players[winnerSeat].tricks++;
+  R.leader=winnerSeat;
+  setStatus(`${pname(winnerSeat)} takes the trick (${cardStr(R.trick[wi].card)}).`);
+  render();
+  const done = aliveList().every(p=>p.hand.length===0);
+  if(done){ R.phase="handEnd"; setTimeout(endHand,900); }
+  else { setTimeout(beginTrick,900); }   // stays "resolve" until beginTrick sets "play"
+}
+function endHand(){
+  const aliveBefore=aliveList();
+  // eliminate zero-trick players
+  const eliminated=aliveBefore.filter(p=>p.tricks===0);
+  eliminated.forEach(p=>p.alive=false);
+  const remaining=aliveList();
+  let summary = eliminated.length? `Out: ${eliminated.map(p=>p.name).join(", ")}. ` : "Nobody knocked out. ";
+  if(remaining.length===1){ R.champion=remaining[0].seat; R.phase="gameover"; R.lastResult=summary; render(); openWinPanel(); return; }
+  // who calls next = most tricks; ties broken by a "first Jack" flip
+  const max=Math.max(...remaining.map(p=>p.tricks));
+  const tied=remaining.filter(p=>p.tricks===max);
+  if(tied.length===1){ proceedAfterCaller(tied[0].seat, summary); }
+  else { startTiebreak(tied.map(p=>p.seat), summary); }
+}
+function callsPhrase(seat){ return seat===0 ? "you call" : pname(seat)+" calls"; }
+function proceedAfterCaller(winSeat, summary){
+  R.prevWinner=winSeat;
+  if(R.handSize-1 < 2){
+    // ran the whole ladder (7→2) with 2+ still standing → everyone re-antes and starts over from 7
+    R.phase="handEnd"; R.lastResult=summary;
+    setStatus(summary+`Ran the ladder out with ${aliveList().length} still standing — everyone re-antes and starts over from 7.`);
+    render();
+    showControls([{label:"Re-ante & start over ▶", fn:()=>startSeries(true), cls:"btn"}]);
+    return;
+  }
+  R.seriesFirstHand=false;
+  R.handSize = R.handSize-1;
+  R.lastResult = summary + `Next: ${R.handSize} cards — ${callsPhrase(winSeat)}.`;
+  R.phase="handEnd";
+  setStatus(summary+`Next: ${R.handSize} cards — ${callsPhrase(winSeat)}.`);
+  render();
+  showControls([{label:"Deal next hand ▶", fn:startHand, cls:"btn"}]);
+}
+function startTiebreak(seats, summary){
+  R.phase="tiebreak";
+  R.tie={seats, deck:shuffle(makeDeck()), flips:[], idx:0, winner:null, summary};
+  setStatus(`Tie for most tricks — first Jack calls: ${seats.map(s=>pname(s)).join(" vs ")}`);
+  render();
+  setTimeout(tiebreakStep, 900);
+}
+function tiebreakStep(){
+  const t=R.tie; if(!t)return;
+  const seat=t.seats[t.idx % t.seats.length];
+  const card=t.deck.pop();
+  t.flips.push({seat,card});
+  if(card.r===11){                       // Jack — this player calls
+    t.winner=seat; render();
+    setStatus(`${pname(seat)} flipped the ${cardStr(card)} — ${callsPhrase(seat)}!`);
+    setTimeout(()=>proceedAfterCaller(seat, t.summary), 1500);
+    return;
+  }
+  render();
+  t.idx++;
+  setTimeout(tiebreakStep, 750);
+}
+
+/* ============================================================ CPU */
+function cpuCall(p){
+  const h=p.hand;
+  const score={};
+  score.high = h.reduce((a,c)=>a+(c.r>=11?2:c.r>=9?1:0),0);
+  score.low  = h.reduce((a,c)=>a+(c.r<=5?2:c.r<=7?1:0),0);
+  score.c8   = h.reduce((a,c)=>a+(dist8(c.r)<=1?2:dist8(c.r)<=2?1:0),0);
+  // best suit for trump
+  let bestSuit=0,bestSuitScore=-1;
+  for(let s=0;s<4;s++){ const cs=h.filter(c=>c.s===s); const sc=cs.length*2 + cs.reduce((a,c)=>a+(c.r>=12?1:0),0); if(sc>bestSuitScore){bestSuitScore=sc;bestSuit=s;} }
+  const suitsScore=bestSuitScore;
+  const opts=[{type:"high",v:score.high},{type:"low",v:score.low},{type:"closest8",v:score.c8},{type:"suits",v:suitsScore,trump:bestSuit}];
+  opts.sort((a,b)=>b.v-a.v);
+  return opts[0].type==="suits"?{type:"suits",trump:opts[0].trump}:{type:opts[0].type,trump:null};
+}
+function cardBeatsCurrent(card, gameType, trump, trick){
+  if(trick.length===0) return true;
+  const tmp=trick.concat([{p:-1,card}]);
+  return trickWinnerIndex(tmp,gameType,trump)===tmp.length-1;
+}
+function cpuPlay(seat){
+  if(R.phase!=="play"||R.turn!==seat)return;   // ignore stale timers
+  const p=R.players[seat];
+  if(!p||p.hand.length===0){ return; }
+  const legalIdx=legalCards(p.hand,R.gameType,R.trick);
+  // value of a card for "strength" by gameType (higher = stronger/more likely to win)
+  const strength=c=> R.gameType==="low" ? (16-c.r) : R.gameType==="closest8" ? (8-dist8(c.r)) : c.r + (R.gameType==="suits"&&c.s===R.trump?100:0);
+  const needTrick = p.tricks===0;               // must win at least one to survive
+  const cardsLeft = p.hand.length;
+  const winners=legalIdx.filter(i=>cardBeatsCurrent(p.hand[i],R.gameType,R.trump,R.trick));
+  let choice;
+  if(R.trick.length===0){
+    // leading: lead the strongest card if we still need a trick or few cards left, else a middling card
+    const sorted=[...legalIdx].sort((a,b)=>strength(p.hand[b])-strength(p.hand[a]));
+    choice = (needTrick||cardsLeft<=2)? sorted[0] : sorted[Math.min(sorted.length-1,1)];
+  } else if(winners.length){
+    // win with the cheapest winning card if we need it or it's cheap; else maybe duck
+    const cheapWin=winners.sort((a,b)=>strength(p.hand[a])-strength(p.hand[b]))[0];
+    if(needTrick || cardsLeft<=2) choice=cheapWin;
+    else { // already safe: duck low unless winning is nearly free
+      const losers=legalIdx.filter(i=>!winners.includes(i));
+      choice = losers.length? losers.sort((a,b)=>strength(p.hand[a])-strength(p.hand[b]))[0] : cheapWin;
+    }
+  } else {
+    // can't win: throw weakest
+    choice = legalIdx.sort((a,b)=>strength(p.hand[a])-strength(p.hand[b]))[0];
+  }
+  doPlay(seat,choice);
+}
+
+/* ============================================================ RENDER */
+function pname(seat){ return seat===0 ? "You" : R.players[seat].name; }
+function poss(seat){ return seat===0 ? "Your" : R.players[seat].name+"'s"; }
+function setStatus(m){ if(R)R.msg=m; const s=document.getElementById("status"); if(s)s.textContent=m; }
+function cardEl(c,opts={}){
+  const d=document.createElement("div");
+  if(opts.back||!c){ d.className="card "+(opts.sm?"sm ":"")+"back"; return d; }
+  d.className="card "+(opts.sm?"sm ":"")+(SUIT_RED[c.s]?"red":"black")+(opts.cls?(" "+opts.cls):"");
+  d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span>`;
+  return d;
+}
+function render(){
+  if(!R)return;
+  // banner
+  const b=document.getElementById("banner");
+  let call = R.phase==="tiebreak" ? "Tie-break: first Jack" : (R.gameType? callLabel() : (R.phase==="call"?"Waiting for call…":"—"));
+  b.innerHTML = `<span class="hs">Hand: ${R.handSize} card${R.handSize>1?"s":""}</span> <span class="call">${call}</span> <span class="hs">${aliveList().length} left</span>`;
+  // opponents (seats 1..n), and also show seat 0 status via your hand area
+  const opps=document.getElementById("opps"); opps.innerHTML="";
+  R.players.forEach(pl=>{
+    if(pl.seat===0) return;
+    const d=document.createElement("div");
+    d.className="pill"+(R.turn===pl.seat&&R.phase==="play"?" turn":"")+(R.caller===pl.seat?" caller":"")+(pl.alive?"":" out");
+    let inner=`<div class="nm">${pl.name}</div><div class="tr">🂠 ${pl.alive?pl.hand.length:0} · ★ ${pl.tricks}</div>`;
+    const played=R.trick.find(t=>t.p===pl.seat);
+    inner+=`<div class="played">`+(played?"":"" )+`</div>`;
+    d.innerHTML=inner;
+    if(R.caller===pl.seat) d.insertAdjacentHTML("beforeend",`<span class="badge">CALLER</span>`);
+    if(!pl.alive) d.insertAdjacentHTML("beforeend",`<span class="outlbl">OUT</span>`);
+    const slot=d.querySelector(".played"); if(played) slot.appendChild(cardEl(played.card,{sm:true}));
+    opps.appendChild(d);
+  });
+  // trick area (in play order, labeled) — or the tie-break flips
+  const t=document.getElementById("trick"); t.innerHTML="";
+  if(R.phase==="tiebreak" && R.tie){
+    R.tie.flips.forEach((f,idx)=>{
+      const w=document.createElement("div"); w.className="trickcard";
+      const isJack=f.card.r===11;
+      w.innerHTML=`<div class="who">${pname(f.seat)}</div>`;
+      w.appendChild(cardEl(f.card,{cls:isJack?"":(idx<R.tie.flips.length-1?"dim":"")}));
+      t.appendChild(w);
+    });
+  } else
+  R.trick.forEach((e,idx)=>{
+    const w=document.createElement("div"); w.className="trickcard";
+    w.innerHTML=`<div class="who">${idx===0?'<span class="lead-tag">▶ </span>':''}${pname(e.p)}</div>`;
+    w.appendChild(cardEl(e.card)); t.appendChild(w);
+  });
+  if(R.trick.length===0 && R.phase!=="tiebreak"){ t.innerHTML=`<div class="muted">${R.phase==="call"?"Make your call to start.":"Waiting…"}</div>`; }
+  // your hand
+  document.getElementById("youLabel").textContent = R.players[0].alive? `Your hand — ★ ${R.players[0].tricks} trick${R.players[0].tricks===1?"":"s"} this hand` : "You're out — watching";
+  const yh=document.getElementById("yourhand"); yh.innerHTML="";
+  const me=R.players[0];
+  const legal = (R.phase==="play"&&R.turn===0)? legalCards(me.hand,R.gameType,R.trick) : [];
+  me.hand.forEach((c,i)=>{
+    const canPlay = legal.includes(i);
+    const el=cardEl(c,{cls: (R.phase==="play"&&R.turn===0&&!canPlay)?"illegal":""});
+    if(canPlay){ el.classList.add("playable"); el.onclick=()=>humanPlay(i); }
+    yh.appendChild(el);
+  });
+  if(me.hand.length===0 && me.alive) yh.innerHTML=`<div class="muted">— no cards —</div>`;
+  buildControls();
+  updateTipVisibility();
+}
+let extraControls=[];
+function showControls(arr){ extraControls=arr; render(); }
+function buildControls(){
+  const c=document.getElementById("controls"); c.innerHTML="";
+  if(R.phase==="call" && R.caller===0){
+    const wrap=document.createElement("div");
+    wrap.innerHTML=`<div class="callbtns">
+      <button class="btn" onclick="humanCall('high')">High card</button>
+      <button class="btn" onclick="humanCall('low')">Low card</button>
+      <button class="btn" onclick="humanCall('closest8')">Closest to 8</button>
+      <button class="btn sec" onclick="showSuitPick()">Suits ▾</button></div>
+      <div id="suitpickwrap"></div>`;
+    c.appendChild(wrap);
+    return;
+  }
+  if(R.phase==="handEnd"||R.phase==="reset"){
+    extraControls.forEach(a=>{ const b=document.createElement("button"); b.className=a.cls||"btn"; b.textContent=a.label; b.onclick=()=>{extraControls=[];a.fn();}; c.appendChild(b); });
+  }
+}
+function showSuitPick(){
+  const w=document.getElementById("suitpickwrap"); if(!w)return;
+  w.innerHTML=`<div class="suitpick">`+SUITS.map((s,i)=>`<button class="${SUIT_RED[i]?'red':'black'}" onclick="humanCall('suits',${i})">${s}</button>`).join("")+`</div>`;
+}
+
+/* ============================================================ TIPS */
+const TIPS={
+  general:{beginner:[
+    "Goal: win at least ONE trick each hand. Win zero and you're out. Last player standing wins.",
+    "A 'trick' is one card from each player; the best card (by the current game) takes it, and that winner leads next.",
+    "Hands shrink each round — 7 cards, then 6, 5, 4, 3, 2 — so every trick matters more as you go."],
+   advanced:[
+    "You only need ONE trick to survive — don't waste your best cards early if you're safe; save a winner for when you must have it.",
+    "Leading sets the terms: in Suits you can force out others' trumps; in High/Low/Closest-8 lead your strongest card since nobody has to follow.",
+    "Count what's gone. Late in a small hand, know whether your card is guaranteed to win before you commit it."]},
+  suits:{beginner:[
+    "Suits plays like a normal trump game: follow the led suit if you can, otherwise play anything.",
+    "The highest card of the led suit wins — unless someone plays a trump, and the highest trump beats everything. Aces are high.",
+    "If you're void in the led suit, a trump wins the trick; otherwise you're just throwing a card away."],
+   advanced:[
+    "Lead a suit you're long in to draw out trumps, or lead trump to strip everyone's trumps if you hold the top ones.",
+    "Hold a low trump to steal a trick when you're void in a side suit."]},
+  high:{beginner:["High card wins and there's NO following suit — just play your highest when you need the trick. Aces high.","Same rank ties go to whoever played first, so leading a King can beat a later King."],
+    advanced:["Since nobody follows suit, an Ace is a near-lock to win a trick — save it for a hand you must survive."]},
+  low:{beginner:["Low card wins, no following suit. The 2 is the best card here; the Ace is the worst.","Play your lowest when you need the trick."],
+    advanced:["A 2 or 3 is a guaranteed survivor — don't burn it unless you need the trick that round."]},
+  closest8:{beginner:["The card closest to 8 wins (8 is best, then 7, 9, 6, 10…). No following suit.","Equal distance goes to the lower card: a 7 beats a 9, a 6 beats a 10."],
+    advanced:["An 8 is unbeatable — a great card to hold for a must-win hand. 7s and 9s are strong too."]}
+};
+function tipTopic(){ if(!R)return"general"; if(R.gameType==="suits")return"suits"; if(R.gameType==="high")return"high"; if(R.gameType==="low")return"low"; if(R.gameType==="closest8")return"closest8"; return"general"; }
+function openTips(){
+  const lvl=settings.tipLevel;
+  const topic=tipTopic();
+  let html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>💡 Tips</h2>
+    <div class="seg" style="margin:8px 0;"><button class="${lvl==='beginner'?'on':''}" onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" onclick="setTipLevel('advanced')">Advanced</button></div>
+    <h3>Basics</h3>`;
+  TIPS.general[lvl].forEach(t=>html+=`<div class="tip-block">${t}</div>`);
+  if(topic!=="general"){ html+=`<h3>This hand — ${callLabel()}</h3>`; TIPS[topic][lvl].forEach(t=>html+=`<div class="tip-block">${t}</div>`); }
+  if(R&&R.phase==="call"&&R.caller===0){ const s=callSuggestion(); if(s) html+=`<h3>Your call</h3><div class="tip-block"><b>Hint:</b> ${s}</div>`; }
+  html+=`<div style="margin-top:14px;" class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>`;
+  openPanel(html,"tips");
+}
+function callSuggestion(){
+  const p=R.players[0]; const c=cpuCall(p);
+  const lab = c.type==="suits"?`Suits with ${SUITS[c.trump]} as trump`:c.type==="high"?"High card":c.type==="low"?"Low card":"Closest to 8";
+  return `Your hand looks strongest for <b>${lab}</b> — but call whatever gives you a sure trick.`;
+}
+function setTipLevel(l){settings.tipLevel=l;openTips();}
+function toggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openTips();}
+function updateTipVisibility(){document.getElementById("floatTip").style.display=settings.tipsOn?"block":"none";}
+
+/* ============================================================ OVERLAYS */
+function openPanel(html,kind){document.getElementById("panel").innerHTML=html;document.getElementById("overlay").classList.add("show");curOverlay={kind};}
+function closeOverlay(){document.getElementById("overlay").classList.remove("show");curOverlay={kind:null};}
+function openWinPanel(){
+  const champ=R.champion;
+  const title = champ===0? "🏆 You win!" : `🏆 ${R.players[champ].name} wins!`;
+  const html=`<h2>${title}</h2><p>${R.lastResult||""}</p><p class="muted">Last player standing takes the bragging rights.</p>
+    <div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeOverlay();newGame();">Play again ▶</button>
+    <button class="btn sec" onclick="closeOverlay();chooseSetup();">Menu</button></div>`;
+  openPanel(html,"win");
+}
+function openMenu(){
+  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>
+    <h3>Your name</h3>
+    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" oninput="onNameInput(this.value)" placeholder="You">
+    <h3>Learning tips</h3>
+    <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
+    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
+    <h3>Game</h3>
+    <button class="setup-opt" onclick="closeOverlay();chooseSetup();">↩ New game / change players</button>
+    <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>`;
+  openPanel(html,"menu");
+}
+function onNameInput(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; if(R&&R.players[0]){R.players[0].name=settings.playerName; R.roster[0].name=settings.playerName; render();} }
+function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
+function openRules(){
+  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button>
+    <h2>How to Play Rat</h2>
+    <p><b>Goal:</b> be the last player standing. Each hand you must win at least one trick — win none and you're out.</p>
+    <h3>The hands shrink</h3>
+    <p>A series runs 7 cards, then 6, 5, 4, 3, 2 — then loops back to 7. Everyone is dealt that many cards each hand.</p>
+    <h3>First hand</h3>
+    <p>The top card of the deck is flipped and its suit is trump. Play left of the dealer leads.</p>
+    <h3>Playing a trick</h3>
+    <p>Everyone plays one card; the best card takes the trick and that winner leads the next. In <b>Suits</b> you must follow the led suit if you can, and trump beats everything (aces high). In the other calls there's no following suit.</p>
+    <h3>The caller</h3>
+    <p>Whoever wins the most tricks becomes the caller. After the next (smaller) hand is dealt, they look at their cards and call one of:</p>
+    <ul>
+      <li><b>Suits</b> — name a trump suit; plays like the first hand.</li>
+      <li><b>High</b> — highest card wins (aces high).</li>
+      <li><b>Low</b> — lowest card wins (2 is lowest).</li>
+      <li><b>Closest to 8</b> — the card nearest 8 wins (8, 7, 9, 6, 10…); a tie in distance goes to the lower card.</li>
+    </ul>
+    <p>Same-rank ties always go to whoever played the card first.</p>
+    <h3>Down to two</h3>
+    <p>If only two players are left and both take a trick in the same hand, nobody's out — everyone comes back and a fresh series starts from 7.</p>`;
+  openPanel(html,"rules");
+}
+
+/* ============================================================ SETUP */
+function chooseSetup(){
+  const n=settings.numPlayers;
+  const html=`<h2>🐀 Rat — The Leech Lake Game</h2>
+    <p>Win at least one trick each hand or you're out. Last one standing wins.</p>
+    <h3>Your name</h3>
+    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" oninput="onNameInput2(this.value)" placeholder="You">
+    <h3>How many players? (you + computers)</h3>
+    <div class="stepper"><button onclick="stepPlayers(-1)">–</button><div class="val" id="pval">${n}</div><button onclick="stepPlayers(1)">+</button></div>
+    <p class="muted" id="pdesc">You + ${n-1} computer${n-1>1?'s':''}</p>
+    <h3>Tips</h3>
+    <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
+    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div>
+    <div style="text-align:center;margin-top:14px;"><button class="btn" onclick="closeOverlay();newGame();">Deal! ▶</button></div>`;
+  openPanel(html,"setup");
+}
+function onNameInput2(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; }
+function stepPlayers(d){ settings.numPlayers=Math.max(2,Math.min(7,settings.numPlayers+d)); document.getElementById("pval").textContent=settings.numPlayers; document.getElementById("pdesc").textContent=`You + ${settings.numPlayers-1} computer${settings.numPlayers-1>1?'s':''}`; }
+function toggleTipsSetup(el){ settings.tipsOn=!settings.tipsOn; el.classList.toggle("on",settings.tipsOn); document.getElementById("tipTxt").textContent=settings.tipsOn?'Tips ON':'Tips OFF'; updateTipVisibility(); }
+function refreshLvl(){ document.getElementById("s-b").classList.toggle("on",settings.tipLevel==='beginner'); document.getElementById("s-a").classList.toggle("on",settings.tipLevel==='advanced'); }
+
+/* wire up */
+document.getElementById("tipBtn").onclick=openTips;
+document.getElementById("menuBtn").onclick=openMenu;
+document.getElementById("rulesBtn").onclick=openRules;
+document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay" && (curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules")) closeOverlay(); };
+updateTipVisibility();
+chooseSetup();
+</script>
+<script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+</body>
+</html>

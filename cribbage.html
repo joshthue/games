@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cribbage</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<style>
+  :root{
+    --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
+    --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --blue:#1b6fb3;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(circle at 50% 15%, var(--felt) 0%, var(--felt2) 70%, #063324 100%);
+    color:var(--cream); min-height:100vh; overflow-x:hidden;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .wrap{width:100%; max-width:760px; padding:8px 12px 40px; position:relative;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;}
+  h1{font-size:20px; margin:0; letter-spacing:1px; color:var(--gold); text-shadow:0 1px 2px rgba(0,0,0,.5);}
+  .top-btns{display:flex; gap:6px; align-items:center;}
+  button{font-family:inherit; cursor:pointer; border:none; border-radius:10px; font-weight:600;
+    transition:transform .06s ease, filter .15s ease;}
+  button:active{transform:translateY(1px) scale(.98);}
+  .btn{background:var(--gold); color:var(--ink); padding:9px 14px; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,.35);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.sec{background:rgba(255,255,255,.14); color:var(--cream);}
+  .btn.sm{padding:6px 10px; font-size:12px;}
+  .btn:disabled{opacity:.4; cursor:default;}
+  input.code{font-family:inherit; font-size:24px; letter-spacing:6px; text-align:center; text-transform:uppercase;
+    width:100%; padding:12px; border-radius:10px; border:2px solid var(--gold); background:rgba(0,0,0,.25); color:var(--cream);}
+  input.txtinp{font-family:inherit; font-size:16px; width:100%; padding:10px; border-radius:10px;
+    border:2px solid var(--gold); background:rgba(0,0,0,.25); color:var(--cream);}
+
+  .netbar{font-size:12px; text-align:center; padding:4px 8px; margin-bottom:4px; border-radius:8px;
+    background:rgba(0,0,0,.25); display:none;}
+  .netbar.show{display:block;}
+  .netbar b{color:var(--gold); letter-spacing:2px;}
+
+  .board{background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:14px; padding:8px 12px; margin:4px 0 8px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.35), 0 3px 8px rgba(0,0,0,.4); border:2px solid rgba(0,0,0,.25);}
+  .lane{display:flex; align-items:center; gap:8px; margin:5px 0;}
+  .lane .who{width:92px; font-size:12px; font-weight:700; color:#2b1a08; text-shadow:0 1px 0 rgba(255,255,255,.15);}
+  .lane .who small{display:block; font-weight:600; opacity:.75; font-size:10px;}
+  .track{flex:1; height:24px; position:relative; background:rgba(0,0,0,.28); border-radius:13px; overflow:hidden;}
+  .track .fill{position:absolute; top:0; left:0; height:100%; border-radius:13px; transition:width .5s cubic-bezier(.2,.7,.2,1);}
+  .track.p0 .fill{background:linear-gradient(90deg,#3fa0e0,#1b6fb3);}
+  .track.p1 .fill{background:linear-gradient(90deg,#e88,#c22);}
+  .ticks{position:absolute; inset:0; display:flex; pointer-events:none;}
+  .ticks i{flex:1; border-right:1px solid rgba(255,255,255,.10);}
+  .ticks i:nth-child(5n){border-right:1px solid rgba(255,255,255,.28);}
+  .peg{position:absolute; top:50%; width:12px; height:12px; margin-left:-6px; transform:translateY(-50%);
+    border-radius:50%; background:var(--cream); box-shadow:0 0 0 2px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.5);
+    transition:left .5s cubic-bezier(.2,.7,.2,1);}
+  .score-num{width:62px; text-align:right; font-weight:800; font-size:20px; color:#2b1a08;}
+  .score-num small{font-size:11px; font-weight:600; opacity:.7;}
+
+  .status{min-height:40px; text-align:center; font-size:14px; margin:4px 0 6px; color:var(--gold);
+    font-weight:600; display:flex; align-items:center; justify-content:center; padding:0 6px;}
+  .zone-label{text-align:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65; margin:6px 0 2px;}
+  .row{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; min-height:64px; align-items:center;}
+
+  .card{width:52px; height:74px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+    user-select:none; border:1px solid #d8d2c0; transition:transform .12s ease, box-shadow .12s ease;}
+  .card.sm{width:42px; height:60px;}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:13px; font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:13px; font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{font-size:24px;} .card.sm .pip{font-size:19px;}
+  .card.red{color:var(--red);} .card.black{color:#1c2a24;}
+  .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
+  .card.playable{cursor:pointer;}
+  .card.playable:hover{transform:translateY(-8px); box-shadow:0 8px 14px rgba(0,0,0,.45);}
+  .card.selected{transform:translateY(-14px); box-shadow:0 10px 16px rgba(0,0,0,.5),0 0 0 3px var(--gold);}
+  .card.dim{opacity:.35;}
+  .starter-lbl{font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:.7; margin-bottom:2px;}
+  .pile-count{font-size:15px; font-weight:800; color:var(--cream); background:rgba(0,0,0,.3); border-radius:20px; padding:4px 12px; display:inline-block;}
+  .center-info{text-align:center; margin:4px 0;}
+  .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;}
+
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50; padding:16px;}
+  .overlay.show{display:flex;}
+  .panel{background:linear-gradient(180deg,#12503a,#0c3d2c); border:2px solid var(--gold); border-radius:16px;
+    max-width:520px; width:100%; max-height:88vh; overflow-y:auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  .panel h2{margin:0 0 6px; color:var(--gold); font-size:20px;}
+  .panel h3{color:var(--gold); font-size:15px; margin:14px 0 6px;}
+  .panel p, .panel li{font-size:14px; line-height:1.5; color:var(--cream);}
+  .panel ul{margin:4px 0 4px 2px; padding-left:20px;}
+  .panel .close{position:sticky; top:0; float:right;}
+  .seg{display:inline-flex; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
+  .seg button{background:transparent; color:var(--cream); padding:6px 14px; font-size:13px; border-radius:16px;}
+  .seg button.on{background:var(--gold); color:var(--ink);}
+  .switch{display:inline-flex; align-items:center; gap:8px; font-size:13px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s ease;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px 0; font-size:14px; line-height:1.5;}
+  .tip-block b{color:var(--gold);}
+  .breakdown{background:rgba(0,0,0,.22); border-radius:10px; padding:10px 14px; margin:8px 0;}
+  .breakdown .line{display:flex; justify-content:space-between; font-size:14px; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,.12);}
+  .breakdown .line:last-child{border-bottom:none;}
+  .breakdown .tot{font-weight:800; color:var(--gold); font-size:16px; margin-top:6px;}
+  .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
+  .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  .setup-opt{display:block; width:100%; text-align:left; background:rgba(255,255,255,.1); color:var(--cream); padding:14px; border-radius:10px; margin:7px 0; font-size:15px;}
+  .setup-opt.on{background:var(--gold); color:var(--ink);}
+  .codebox{font-size:40px; letter-spacing:10px; font-weight:800; color:var(--gold); text-align:center; background:rgba(0,0,0,.3); border-radius:12px; padding:14px; margin:10px 0;}
+  .muted{opacity:.75; font-size:12px;}
+  @media(max-width:420px){ .card{width:46px;height:66px;} .card.sm{width:38px;height:54px;} h1{font-size:18px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>♠ CRIBBAGE ♥</h1>
+    <div class="top-btns">
+      <button class="btn sec sm" id="rulesBtn">Rules</button>
+      <button class="btn sec sm" id="menuBtn">Menu</button>
+    </div>
+  </header>
+
+  <div class="netbar" id="netbar"></div>
+
+  <div class="board" id="board">
+    <div class="lane">
+      <div class="who" id="name0">You<small>South</small></div>
+      <div class="track p0"><div class="fill" id="fill0"></div><div class="ticks" id="ticks0"></div><div class="peg" id="peg0"></div></div>
+      <div class="score-num" id="score0">0<small>/121</small></div>
+    </div>
+    <div class="lane">
+      <div class="who" id="name1">Computer<small>North</small></div>
+      <div class="track p1"><div class="fill" id="fill1"></div><div class="ticks" id="ticks1"></div><div class="peg" id="peg1"></div></div>
+      <div class="score-num" id="score1">0<small>/121</small></div>
+    </div>
+  </div>
+
+  <div class="zone-label" id="oppLabel">Opponent</div>
+  <div class="row" id="oppRow"></div>
+
+  <div class="center-info">
+    <div class="row" id="centerRow"></div>
+    <div id="pileCountWrap" style="margin-top:6px;"></div>
+  </div>
+
+  <div class="status" id="status">Loading…</div>
+
+  <div class="zone-label" id="youLabel">Your hand</div>
+  <div class="row" id="youRow"></div>
+
+  <div class="controls" id="controls"></div>
+</div>
+
+<div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
+
+<div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ============================================================
+   CRIBBAGE — engine + local (vs computer) + online (two phones)
+   ============================================================ */
+const SUITS=["♠","♥","♦","♣"], SUIT_RED=[false,true,true,false];
+const RANK_STR=["","A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+const pegVal=r=>Math.min(r,10);
+const cardKey=c=>c.r*4+c.s;
+
+function makeDeck(){const d=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)d.push({r,s});return d;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function combos(arr,k){const res=[];(function rec(s,cur){if(cur.length===k){res.push([...cur]);return;}for(let i=s;i<arr.length;i++){cur.push(arr[i]);rec(i+1,cur);cur.pop();}})(0,[]);return res;}
+
+function scoreHand(hand4,starter,isCrib){
+  const cards=[...hand4,starter]; let total=0; const bd=[];
+  let f=0,n=cards.length;
+  for(let m=1;m<(1<<n);m++){let sum=0,cnt=0;for(let i=0;i<n;i++)if(m&(1<<i)){sum+=pegVal(cards[i].r);cnt++;}if(cnt>=2&&sum===15)f++;}
+  if(f){total+=f*2;bd.push({label:`Fifteens (${f})`,pts:f*2});}
+  let pairs=0;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)if(cards[i].r===cards[j].r)pairs++;
+  if(pairs){total+=pairs*2;bd.push({label:`Pairs (${pairs})`,pts:pairs*2});}
+  const cnt={};cards.forEach(c=>cnt[c.r]=(cnt[c.r]||0)+1);
+  let runPts=0,r=1;
+  while(r<=13){if(cnt[r]){let len=0,prod=1,rr=r;while(cnt[rr]){len++;prod*=cnt[rr];rr++;}if(len>=3)runPts+=len*prod;r=rr;}else r++;}
+  if(runPts){total+=runPts;bd.push({label:"Runs",pts:runPts});}
+  const hs=hand4.map(c=>c.s), allHand=hs.every(s=>s===hs[0]);
+  if(isCrib){ if(allHand&&starter.s===hs[0]){total+=5;bd.push({label:"Flush (5)",pts:5});} }
+  else { if(allHand){ if(starter.s===hs[0]){total+=5;bd.push({label:"Flush (5)",pts:5});} else {total+=4;bd.push({label:"Flush (4)",pts:4});} } }
+  for(const c of hand4) if(c.r===11&&c.s===starter.s){total+=1;bd.push({label:"Nobs (his knob)",pts:1});break;}
+  return {total,bd};
+}
+function isRunSeq(cards){const rs=cards.map(c=>c.r),set=new Set(rs);if(set.size!==rs.length)return false;return Math.max(...rs)-Math.min(...rs)===rs.length-1;}
+function scorePlay(pile){
+  let pts=0;const reasons=[];const total=pile.reduce((a,c)=>a+pegVal(c.r),0);
+  if(total===15){pts+=2;reasons.push("15 for 2");}
+  if(total===31){pts+=2;reasons.push("31 for 2");}
+  const last=pile[pile.length-1];let same=0;
+  for(let i=pile.length-1;i>=0;i--){if(pile[i].r===last.r)same++;else break;}
+  if(same===2){pts+=2;reasons.push("pair for 2");}else if(same===3){pts+=6;reasons.push("pair royal for 6");}else if(same===4){pts+=12;reasons.push("double pair royal for 12");}
+  for(let k=pile.length;k>=3;k--){const seg=pile.slice(pile.length-k);if(isRunSeq(seg)){pts+=k;reasons.push(`run of ${k}`);break;}}
+  return {pts,reasons,total};
+}
+function expectedHand(keep){const used=new Set(keep.map(cardKey));let sum=0,cnt=0;for(let s=0;s<4;s++)for(let r=1;r<=13;r++){const c={r,s};if(used.has(cardKey(c)))continue;sum+=scoreHand(keep,c,false).total;cnt++;}return sum/cnt;}
+function cribValue(disc){let v=0;const[a,b]=disc;if(a.r===b.r)v+=2;if(pegVal(a.r)+pegVal(b.r)===15)v+=2;if(a.r===5||b.r===5)v+=1.5;if(Math.abs(a.r-b.r)<=2&&a.r!==b.r)v+=1;return v;}
+
+/* ---------- state ---------- */
+let G=null;
+let settings={mode:"cpu", tipsOn:true, tipLevel:"beginner", playerName:"You"};
+let localSel=[];
+let net={online:false, role:null, seat:0, code:null, client:null, joined:false, status:"", peerHere:false};
+let curOverlay={kind:null,key:null};
+
+function meSeat(){ return net.online? net.seat : 0; }
+function isHuman(p){ return net.online? true : p===0; }
+function playerName(p){
+  if(G&&G.names&&G.names[p]) return G.names[p];
+  if(net.online){ return p===net.seat? (settings.playerName||"You") : "Opponent"; }
+  return p===0? (settings.playerName||"You") : "Computer";
+}
+function poss(name){ return name==="You" ? "Your" : name+"'s"; }         // possessive: "Your hand" / "Josh's hand"
+function winVerb(name){ return name==="You" ? "You win!" : name+" wins!"; }
+function cardStr(c){return RANK_STR[c.r]+SUITS[c.s];}
+
+/* ---------- new game / deal ---------- */
+function newGame(){
+  const names = net.online
+    ? [ net.seat===0? (settings.playerName||"You") : (net.guestName||"Opponent"),
+        net.seat===1? (settings.playerName||"You") : (net.guestName||"Opponent") ]
+    : [ (settings.playerName||"You"), "Computer" ];
+  G={ scores:[0,0], prevScores:[0,0], dealer:Math.random()<0.5?0:1, phase:"init",
+      hands:[[],[]], orig:[[],[]], crib:[], starter:null, pile:[], pileHistory:[],
+      count:0, turn:0, lastPlayer:null, discarded:[false,false], names,
+      countOrder:null, countIndex:0, winner:null, msg:"" };
+  buildTicks(); startHand();
+}
+function startHand(){
+  G.crib=[];G.pile=[];G.pileHistory=[];G.count=0;G.starter=null;localSel=[];
+  G.discarded=[false,false];G.lastPlayer=null;G.countIndex=0;G.countOrder=null;G.winner=null;
+  const deck=shuffle(makeDeck());G.hands=[[],[]];
+  const nd=1-G.dealer;
+  for(let i=0;i<6;i++){G.hands[nd].push(deck.pop());G.hands[G.dealer].push(deck.pop());}
+  sortHand(G.hands[0]);sortHand(G.hands[1]);G.deck=deck;G.orig=[[],[]];
+  G.phase="discard";
+  if(settings.mode==="cpu"){ cpuDiscard(); G.discarded[1]=true; }
+  setStatus("");
+  syncRender();
+}
+function sortHand(h){h.sort((a,b)=>a.r-b.r||a.s-b.s);}
+
+/* ---------- CPU (local only) ---------- */
+function cpuDiscard(){
+  const hand=G.hands[1];const keeps=combos(hand,4);let best=null;const own=G.dealer===1;
+  for(const keep of keeps){const disc=hand.filter(c=>!keep.includes(c));let ev=expectedHand(keep);ev+=cribValue(disc)*(own?0.5:-0.5);if(!best||ev>best.ev)best={keep,disc,ev};}
+  G.crib.push(...best.disc);G.hands[1]=best.keep;sortHand(G.hands[1]);
+}
+function cpuPlay(){
+  const hand=G.hands[1];const legal=[];hand.forEach((c,i)=>{if(G.count+pegVal(c.r)<=31)legal.push(i);});
+  if(!legal.length){pegLoop();return;}
+  let best=legal[0],bs=-1e9;
+  for(const i of legal){const c=hand[i];const sc=scorePlay([...G.pile,c]);let v=sc.pts*10;const nt=sc.total;
+    if(nt===5||nt===21)v-=6;if(nt===10)v-=2;if(G.pile.length===0){if(c.r===5)v-=3;v-=pegVal(c.r)*0.2;}else v+=pegVal(c.r)*0.05;
+    if(v>bs){bs=v;best=i;}}
+  doPlay(1,best);
+}
+
+/* ---------- discard ---------- */
+function toggleSelect(i){
+  if(G.phase!=="discard"||G.discarded[meSeat()])return;
+  const p=localSel.indexOf(i);
+  if(p>=0)localSel.splice(p,1); else if(localSel.length<2)localSel.push(i);
+  render();
+}
+function uiConfirmDiscard(){
+  const seat=meSeat();
+  if(localSel.length!==2)return;
+  const keys=localSel.map(i=>cardKey(G.hands[seat][i]));
+  localSel=[];
+  if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"discard",cards:keys}); setStatus("Waiting for the other player…"); render(); return; }
+  applyDiscard(seat,keys);
+}
+function applyDiscard(seat,keys){
+  if(!G||G.phase!=="discard"||G.discarded[seat])return;
+  const hand=G.hands[seat];
+  const cards=keys.map(k=>hand.find(c=>cardKey(c)===k)).filter(Boolean);
+  if(cards.length!==2)return;
+  G.crib.push(...cards);
+  G.hands[seat]=hand.filter(c=>!cards.includes(c));
+  G.discarded[seat]=true;
+  if(G.discarded[0]&&G.discarded[1]) finishDiscards();
+  else setStatus("Waiting for the other player to discard…");
+  syncRender();
+}
+function finishDiscards(){
+  sortHand(G.crib);
+  G.orig=[[...G.hands[0]],[...G.hands[1]]];
+  G.starter=G.deck.pop();
+  let heels="";
+  if(G.starter.r===11){ addScore(G.dealer,2); heels=` — +2 to ${playerName(G.dealer)} for his heels (Jack cut)!`; }
+  if(G.winner){ syncRender(); return; }
+  G.phase="cut";
+  setStatus(`Starter cut: ${cardStr(G.starter)}${heels} — play starts in a moment…`);
+  syncRender();
+  if(!net.online || net.role==="host"){ setTimeout(()=>{ if(G&&G.phase==="cut") startPegging(); }, 2000); }
+}
+
+/* ---------- pegging ---------- */
+function startPegging(){
+  if(G.phase!=="cut")return;
+  G.phase="pegging";G.pile=[];G.count=0;G.pileHistory=[];G.lastPlayer=null;G.turn=1-G.dealer;
+  syncRender(); pegLoop();
+}
+function canPlay(p){return G.hands[p].some(c=>G.count+pegVal(c.r)<=31);}
+function handEmpty(){return G.hands[0].length===0&&G.hands[1].length===0;}
+function pegLoop(){
+  if(G.phase!=="pegging")return;
+  if(handEmpty()){
+    if(G.lastPlayer!==null&&G.count!==0){addScore(G.lastPlayer,1);setStatus(`+1 to ${playerName(G.lastPlayer)} for last card.`);}
+    syncRender(); if(!G.winner) setTimeout(endPegging,700); return;
+  }
+  const p=G.turn;
+  if(canPlay(p)){
+    if(isHuman(p)){ setStatus(`${poss(playerName(p))} turn — count is ${G.count}.`); syncRender(); }
+    else { setStatus("Computer is thinking…"); syncRender(); setTimeout(cpuPlay,700); }
+  } else {
+    const other=1-p;
+    if(canPlay(other)&&G.hands[other].length>0){ setStatus(`${playerName(p)} can't play — Go.`); G.turn=other; syncRender(); setTimeout(pegLoop,600); }
+    else {
+      if(G.lastPlayer!==null){addScore(G.lastPlayer,1);setStatus(`${playerName(p)} — Go. +1 to ${playerName(G.lastPlayer)}.`);}
+      G.count=0;G.pile=[];G.turn=(G.lastPlayer!==null)?1-G.lastPlayer:G.turn;
+      if(G.hands[G.turn].length===0)G.turn=1-G.turn;
+      syncRender(); if(!G.winner) setTimeout(pegLoop,700);
+    }
+  }
+}
+function uiPlay(i){
+  const seat=meSeat();
+  if(G.phase!=="pegging"||G.turn!==seat)return;
+  const c=G.hands[seat][i];
+  if(!c||G.count+pegVal(c.r)>31)return;
+  if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"play",card:cardKey(c)}); return; }
+  doPlay(seat,i);
+}
+function applyPlay(seat,key){
+  if(G.phase!=="pegging"||G.turn!==seat)return;
+  const i=G.hands[seat].findIndex(c=>cardKey(c)===key);
+  if(i<0)return; const c=G.hands[seat][i];
+  if(G.count+pegVal(c.r)>31)return;
+  doPlay(seat,i);
+}
+function doPlay(p,idx){
+  const c=G.hands[p].splice(idx,1)[0];
+  G.pile.push(c);G.pileHistory.push({c,p});
+  const sc=scorePlay(G.pile);G.count=sc.total;
+  if(sc.pts>0)addScore(p,sc.pts);
+  G.lastPlayer=p;
+  let m=`${playerName(p)} played ${cardStr(c)} — count ${G.count}.`;if(sc.pts>0)m+=` +${sc.pts} (${sc.reasons.join(", ")})`;
+  setStatus(m);
+  if(G.count===31){
+    G.count=0;G.pile=[];G.turn=1-p;
+    if(handEmpty()){syncRender();if(!G.winner)setTimeout(endPegging,800);return;}
+    if(G.hands[G.turn].length===0)G.turn=1-G.turn;
+    syncRender(); if(!G.winner) setTimeout(pegLoop,800); return;
+  }
+  if(G.winner){syncRender();return;}
+  G.turn=1-p; syncRender(); setTimeout(pegLoop,600);
+}
+function endPegging(){
+  if(G.winner)return;
+  G.phase="counting";
+  G.countOrder=[{type:"hand",player:1-G.dealer},{type:"hand",player:G.dealer},{type:"crib",player:G.dealer}];
+  G.countIndex=0; syncRender();
+}
+function countStepData(){
+  const step=G.countOrder[G.countIndex];
+  const cards= step.type==="crib"? G.crib : G.orig[step.player];
+  const res=scoreHand(cards,G.starter,step.type==="crib");
+  return {step,cards,res};
+}
+function uiApplyCount(){
+  if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"applyCount",idx:G.countIndex}); return; }
+  applyCount();
+}
+function applyCount(){
+  if(G.phase!=="counting")return;
+  const {step,res}=countStepData();
+  addScore(step.player,res.total);
+  G.countIndex++;
+  if(G.winner){syncRender();return;}
+  if(G.countIndex>=G.countOrder.length){ endHand(); } else { syncRender(); }
+}
+function endHand(){
+  if(G.winner)return;
+  G.dealer=1-G.dealer; G.phase="handover";
+  setStatus(`Hand complete. Deal passes to ${playerName(G.dealer)}.`);
+  syncRender();
+}
+function uiNextHand(){
+  if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"nextHand"}); return; }
+  if(G.phase==="handover") startHand();
+}
+function uiNewGame(){
+  if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"newGame"}); return; }
+  newGame();
+}
+
+/* ---------- scoring / win ---------- */
+function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&!G.winner){G.winner=p;G.phase="gameover";} }
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function cardEl(c,opts={}){
+  const d=document.createElement("div");
+  if(opts.back||!c){ d.className="card "+(opts.sm?"sm ":"")+"back"; return d; }
+  d.className="card "+(opts.sm?"sm ":"")+(SUIT_RED[c.s]?"red":"black");
+  if(opts.cls)d.className+=" "+opts.cls;
+  d.innerHTML=`<span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${RANK_STR[c.r]}</span>`;
+  return d;
+}
+function syncRender(){ render(); if(net.online&&net.role==="host") publishState(); }
+function render(){
+  if(!G)return;
+  const me=meSeat(), opp=1-me;
+  updateBoard();
+  document.getElementById("name0").innerHTML=playerName(0)+"<small>South</small>";
+  document.getElementById("name1").innerHTML=playerName(1)+"<small>North</small>";
+  const oppRow=document.getElementById("oppRow"), youRow=document.getElementById("youRow");
+  const centerRow=document.getElementById("centerRow"), pcw=document.getElementById("pileCountWrap");
+  oppRow.innerHTML="";youRow.innerHTML="";centerRow.innerHTML="";pcw.innerHTML="";
+  document.getElementById("oppLabel").textContent=playerName(opp)+(G.phase==="pegging"?` — ${G.hands[opp].length} cards`:"");
+  document.getElementById("youLabel").textContent="Your hand";
+
+  // opponent row (top) — face down during play
+  G.hands[opp].forEach(c=>oppRow.appendChild(cardEl(c,{back:true})));
+
+  // center: starter + pile
+  if(G.starter){
+    const wrap=document.createElement("div");wrap.style.display="flex";wrap.style.flexDirection="column";wrap.style.alignItems="center";
+    const lbl=document.createElement("div");lbl.className="starter-lbl";lbl.textContent="Starter";
+    wrap.appendChild(lbl);wrap.appendChild(cardEl(G.starter,{sm:true}));centerRow.appendChild(wrap);
+  }
+  if(G.phase==="pegging"){
+    const played=document.createElement("div");played.style.display="flex";played.style.gap="4px";played.style.flexWrap="wrap";played.style.justifyContent="center";
+    G.pileHistory.forEach(h=>{const inCur=G.pile.some(c=>cardKey(c)===cardKey(h.c));played.appendChild(cardEl(h.c,{sm:true,cls:inCur?"":"dim"}));});
+    centerRow.appendChild(played);
+    pcw.innerHTML=`<span class="pile-count">Count: ${G.count}</span>`;
+  }
+
+  // your row (bottom)
+  const myHand=G.hands[me];
+  if(G.phase==="discard"&&!G.discarded[me]){
+    myHand.forEach((c,i)=>{const el=cardEl(c);el.classList.add("playable");if(localSel.includes(i))el.classList.add("selected");el.onclick=()=>toggleSelect(i);youRow.appendChild(el);});
+  } else if(G.phase==="pegging"&&G.turn===me){
+    myHand.forEach((c,i)=>{const el=cardEl(c);if(G.count+pegVal(c.r)<=31){el.classList.add("playable");el.onclick=()=>uiPlay(i);}else el.classList.add("dim");youRow.appendChild(el);});
+  } else {
+    myHand.forEach(c=>youRow.appendChild(cardEl(c)));
+  }
+
+  buildControls();
+  updateNetbar();
+  driveOverlays();
+}
+function buildControls(){
+  const c=document.getElementById("controls");c.innerHTML="";
+  if(G.phase==="discard"){
+    if(!G.discarded[meSeat()]){ const b=mkBtn(`Discard to ${G.dealer===meSeat()?"YOUR":"THEIR"} crib (${localSel.length}/2)`,uiConfirmDiscard,"btn"); if(localSel.length!==2)b.disabled=true; c.appendChild(b); }
+  } else if(G.phase==="cut"){
+    c.appendChild(mkBtn("Start Play ▶",()=>{ if(net.online&&net.role==="guest")netSend({t:"act",kind:"startPegging"}); else startPegging(); },"btn"));
+  } else if(G.phase==="handover"){
+    c.appendChild(mkBtn("Deal Next Hand ▶",uiNextHand,"btn"));
+  }
+}
+function mkBtn(l,f,cls){const b=document.createElement("button");b.className=cls;b.textContent=l;b.onclick=f;return b;}
+function setStatus(m){ if(G)G.msg=m; const s=document.getElementById("status"); if(s)s.textContent=m; }
+function buildTicks(){for(const t of["ticks0","ticks1"]){const el=document.getElementById(t);el.innerHTML="";for(let i=0;i<24;i++)el.appendChild(document.createElement("i"));}}
+function updateBoard(){for(let p=0;p<2;p++){const pct=Math.min(100,G.scores[p]/121*100);document.getElementById("fill"+p).style.width=pct+"%";document.getElementById("peg"+p).style.left=pct+"%";document.getElementById("score"+p).innerHTML=G.scores[p]+"<small>/121</small>";}}
+function updateNetbar(){
+  const nb=document.getElementById("netbar");
+  if(!net.online){nb.classList.remove("show");return;}
+  nb.classList.add("show");
+  const dot = net.joined? "🟢" : "🟡";
+  nb.innerHTML=`${dot} Room <b>${net.code||"----"}</b> — ${net.joined?"connected":"waiting for other player…"} · you are ${net.seat===0?"South":"North"}`;
+}
+
+/* overlays that must appear on both devices, driven by phase */
+function driveOverlays(){
+  if(G.phase==="counting"){
+    if(!(curOverlay.kind==="count"&&curOverlay.key===G.countIndex)) openCountPanel();
+  } else if(G.phase==="gameover"){
+    if(curOverlay.kind!=="win") openWinPanel();
+  } else {
+    if(curOverlay.kind==="count"||curOverlay.kind==="win"){ curOverlay={kind:null,key:null}; document.getElementById("overlay").classList.remove("show"); }
+  }
+}
+
+/* ============================================================
+   TIPS
+   ============================================================ */
+const TIPS={
+  discard:{beginner:[
+    "Keep the 4 cards that score the most in fifteens, pairs, and runs — throw the other 2 to the crib.",
+    "Fives are gold: a 5 pairs with every 10-value card (10, J, Q, K) to make fifteen.",
+    "If it's YOUR crib, throwing helpful cards there is fine — you get those points. If it's the OTHER player's crib, throw junk that won't help them."],
+   advanced:[
+    "Think expected value: a hand's real worth is its average over all 46 possible starters. Connected cards (6-7) and duplicated ranks raise that average.",
+    "To an opponent's crib, avoid 5s, adjacent ranks (4-5), and any two cards summing to 15 — that's the crib's best raw material.",
+    "A safe throw to an opponent's crib is a wide gap plus a King (Kings can't extend upward in a run), e.g. K-8."]},
+  cut:{beginner:[
+    "The turned-up 'starter' counts for BOTH hands and the crib during the show.",
+    "If the starter is a Jack, the dealer immediately pegs 2 ('his heels')."],
+   advanced:["The starter makes every hand a 5-card hand — which is why flexible keeps (near a run, near 5s/10s) pay off; more starters improve them."]},
+  pegging:{beginner:[
+    "Take turns; the running total can't pass 31. Hit 15 or 31 exactly for 2.",
+    "Pairs peg: match the rank just played for 2 (three alike = 6).",
+    "Runs count in any order: 4-6-5 is a run of 3 for 3.",
+    "Can't play under 31? Say 'Go' — the last to play a card pegs 1."],
+   advanced:[
+    "Leading a 4 is classic; if it's paired to 8 you can answer with a 3 or 5 for a run or 15. Avoid leading a 5.",
+    "Don't leave the count at 5 or 21 — a 10-value card lets the opponent hit 15 or 31.",
+    "Hold a low card to answer a 'go' and grab the last-card point.",
+    "Playing to exactly 31 late is 2 points and denies the go."]},
+  counting:{beginner:[
+    "Count 15s (2 each), pairs (2 each), runs (1 per card), flush, then nobs (Jack matching the starter's suit = 1).",
+    "'Fifteen two, fifteen four…' — count every distinct combo that adds to 15.",
+    "Non-dealer counts first — in a close game that order can decide it."],
+   advanced:[
+    "A double run (a pair inside a run, e.g. 4-5-5-6) = two runs plus the pair.",
+    "Max hand is 29: J-5-5-5 with the fifth 5 as starter matching the Jack's suit.",
+    "The crib scores the same EXCEPT a flush needs all five cards in one suit."]}
+};
+function currentTipPhase(){ if(!G)return"discard"; if(G.phase==="discard")return"discard"; if(G.phase==="cut")return"cut"; if(G.phase==="pegging")return"pegging"; if(G.phase==="counting")return"counting"; return"discard"; }
+function openTips(){
+  const phase=currentTipPhase(),lvl=settings.tipLevel,list=TIPS[phase][lvl];
+  const name={discard:"Discarding to the Crib",cut:"The Cut",pegging:"The Play (Pegging)",counting:"The Show (Counting)"}[phase];
+  let html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>💡 Tips</h2>
+    <p class="muted">Phase: <b style="color:var(--gold)">${name}</b></p>
+    <div class="seg" style="margin:8px 0;"><button class="${lvl==='beginner'?'on':''}" onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" onclick="setTipLevel('advanced')">Advanced</button></div>`;
+  list.forEach(t=>html+=`<div class="tip-block">${t}</div>`);
+  const sug=liveSuggestion(); if(sug)html+=`<h3>For this hand</h3><div class="tip-block"><b>Hint:</b> ${sug}</div>`;
+  html+=`<div style="margin-top:14px;" class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>`;
+  openPanel(html,"tips");
+}
+function setTipLevel(l){settings.tipLevel=l;openTips();}
+function toggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openTips();}
+function liveSuggestion(){
+  if(!G)return"";
+  const me=meSeat();
+  if(G.phase==="discard"&&!G.discarded[me]&&G.hands[me].every(Boolean)){
+    const best=bestDiscardSuggestion(G.hands[me],G.dealer===me);
+    return `A strong keep is <b>${best.keep.map(cardStr).join(" ")}</b>, throwing <b>${best.disc.map(cardStr).join(" ")}</b> to ${G.dealer===me?"your":"the other"} crib (avg ≈ ${best.ev.toFixed(1)} pts).`;
+  }
+  if(G.phase==="pegging"&&G.turn===me){
+    const hand=G.hands[me];const legal=hand.filter(c=>G.count+pegVal(c.r)<=31);
+    if(!legal.length)return "No card fits under 31 — you'll say 'Go'.";
+    for(const c of hand){if(G.count+pegVal(c.r)>31)continue;const sc=scorePlay([...G.pile,c]);if(sc.pts>0)return `Playing <b>${cardStr(c)}</b> pegs ${sc.pts} now (${sc.reasons.join(", ")}).`;}
+    return "No points available — avoid leaving the count at 5 or 21.";
+  }
+  return"";
+}
+function bestDiscardSuggestion(hand,own){let best=null;for(const keep of combos(hand,4)){const disc=hand.filter(c=>!keep.includes(c));let ev=expectedHand(keep);ev+=cribValue(disc)*(own?0.5:-0.5);if(!best||ev>best.ev)best={keep,disc,ev};}return best;}
+function updateTipVisibility(){document.getElementById("floatTip").style.display=settings.tipsOn?"block":"none";}
+
+/* ============================================================
+   OVERLAYS
+   ============================================================ */
+function openPanel(html,kind){document.getElementById("panel").innerHTML=html;document.getElementById("overlay").classList.add("show");curOverlay={kind:kind||"other",key:null};}
+function closeOverlay(){document.getElementById("overlay").classList.remove("show");curOverlay={kind:null,key:null};if(G)render();}
+function openCountPanel(){
+  const {step,cards,res}=countStepData();
+  const whose= step.type==="crib"? `${poss(playerName(step.player))} crib` : `${poss(playerName(step.player))} hand`;
+  setStatus(`Counting ${whose}…`);
+  let html=`<h2>The Show — ${whose}</h2><div class="row" style="justify-content:flex-start;margin:6px 0;">`;
+  cards.forEach(c=>html+=cardMini(c));
+  html+=`<span style="align-self:center;margin:0 6px;opacity:.7;">+ starter</span>`+cardMini(G.starter)+`</div><div class="breakdown">`;
+  if(res.bd.length===0)html+=`<div class="line"><span>Nothing scored</span><span>0</span></div>`;
+  res.bd.forEach(b=>html+=`<div class="line"><span>${b.label}</span><span>${b.pts}</span></div>`);
+  html+=`<div class="line tot"><span>Total</span><span>${res.total}</span></div></div>`;
+  if(settings.tipsOn){const t=countTeach(res,whose);if(t)html+=`<div class="tip-block"><b>💡</b> ${t}</div>`;}
+  const canAdvance = !net.online || net.role==="host" || true; // either may advance
+  html+=`<div style="text-align:center;margin-top:10px;"><button class="btn" onclick="uiApplyCount()">Peg ${res.total} & Continue ▶</button></div>`;
+  openPanel(html,"count");curOverlay={kind:"count",key:G.countIndex};
+}
+function cardMini(c){return `<span class="card sm ${SUIT_RED[c.s]?'red':'black'}" style="display:inline-flex;margin:2px;"><span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span></span>`;}
+function countTeach(res,whose){
+  const has=l=>res.bd.some(b=>b.label.startsWith(l));
+  if(res.total===0)return "No points here — 15s, pairs, runs, or a Jack matching the starter's suit all score.";
+  const parts=[];if(has("Fifteen"))parts.push("each combo summing to 15 is 2");if(has("Run"))parts.push("runs score 1 per card and count doubled runs");if(has("Nobs"))parts.push("the Jack matching the starter's suit is 1");
+  if(whose.includes("crib")&&has("Flush"))return "Crib flushes need all five cards in one suit — this one qualified.";
+  return parts.length?("Here: "+parts.join("; ")+"."):"";
+}
+function openWinPanel(){
+  const p=G.winner, skunk=G.scores[1-p]<91, dbl=G.scores[1-p]<61;
+  let extra=dbl?"Double skunk — opponent under 61! 🦨🦨":skunk?"Skunk — opponent under 91! 🦨":"";
+  const html=`<h2>🏆 ${winVerb(playerName(p))}</h2>
+    <p>Final — ${playerName(0)}: <b>${G.scores[0]}</b> &nbsp; ${playerName(1)}: <b>${G.scores[1]}</b></p>
+    ${extra?`<div class="tip-block">${extra}</div>`:""}
+    <div style="text-align:center;margin-top:12px;"><button class="btn" onclick="uiNewGame()">Play Again ▶</button></div>`;
+  openPanel(html,"win");curOverlay={kind:"win",key:null};
+}
+function openMenu(){
+  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>
+    <h3>Learning tips</h3>
+    <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
+    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
+    <h3>Your name</h3>
+    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
+    <h3>Game</h3>
+    <button class="setup-opt" onclick="closeOverlay();chooseMode();">↩ New game / change opponent</button>
+    <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>`;
+  openPanel(html,"menu");
+}
+function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
+function openRules(){
+  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button>
+   <h2>How to Play Cribbage</h2>
+   <p><b>Goal:</b> be first to 121 points.</p>
+   <h3>1. Deal</h3><p>Each player gets 6 cards and discards 2 into the <b>crib</b> (a bonus hand for the dealer). The deal alternates each hand.</p>
+   <h3>2. Cut</h3><p>A <b>starter</b> card is turned up, shared by both hands and the crib. A Jack starter gives the dealer 2 ('his heels').</p>
+   <h3>3. The Play (Pegging)</h3><p>Alternate laying cards, adding to a total that can't pass 31:</p>
+   <ul><li>Total exactly 15 or 31 → 2</li><li>Pair the last card → 2 (3 alike → 6, 4 → 12)</li><li>Run of 3+ in any order → 1 per card</li><li>Can't play under 31? 'Go' — last to play pegs 1; last card of the round pegs 1</li></ul>
+   <h3>4. The Show (Counting)</h3><p>Score each hand + starter — non-dealer, dealer, then crib:</p>
+   <ul><li><b>15s:</b> 2 each</li><li><b>Pairs:</b> 2 each</li><li><b>Runs:</b> 1 per card</li><li><b>Flush:</b> 4 (all hand one suit), 5 with starter; crib needs all 5</li><li><b>Nobs:</b> Jack matching starter's suit → 1</li></ul>`;
+  openPanel(html,"rules");
+}
+
+/* ============================================================
+   NETWORK — public pub/sub via ntfy.sh (no libraries), same as
+   the bingo game: room code -> shared topic, poll for messages.
+   Host is authoritative; guest sends actions, host broadcasts state.
+   ============================================================ */
+const NTFY="https://ntfy.sh/";
+function ntfyTopic(){ return "jtcrib-v1-"+String(net.code).toLowerCase(); }
+function randCode(){const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
+function newId(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
+
+function redactFor(seat){
+  const g=JSON.parse(JSON.stringify(G));
+  const reveal = (G.phase==="counting"||G.phase==="gameover");
+  const other=1-seat;
+  if(!reveal){
+    g.hands[other]=g.hands[other].map(()=>null);   // hide opponent's live cards
+    g.crib=g.crib.map(()=>null);
+    g.orig=[[],[]];
+    g.deck=null;
+  } else { g.deck=null; }
+  return g;
+}
+function netPublish(obj){ obj.from=net.id; try{ fetch(NTFY+ntfyTopic(),{method:"POST",body:JSON.stringify(obj)}); }catch(e){} }
+function netSend(obj){ netPublish(obj); }   // guest actions / joins
+
+let pubTimer=null,pubPending=false;
+function publishState(){
+  pubPending=true; if(pubTimer)return;
+  pubTimer=setTimeout(()=>{ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:"state",G:redactFor(1)}); } },250);
+}
+async function pollLoop(){
+  if(!net.online)return;
+  try{
+    const since = net.lastId? ("&since="+encodeURIComponent(net.lastId)) : "&since=all";
+    const res=await fetch(NTFY+ntfyTopic()+"/json?poll=1"+since);
+    const txt=await res.text();
+    txt.split("\n").forEach(line=>{
+      line=line.trim(); if(!line)return;
+      let ev; try{ev=JSON.parse(line);}catch(e){return;}
+      if(ev.id) net.lastId=ev.id;
+      if(ev.event!=="message"||!ev.message)return;
+      let obj; try{obj=JSON.parse(ev.message);}catch(e){return;}
+      if(obj.from===net.id)return;   // ignore our own messages
+      handleNet(obj);
+    });
+    net.connOk=true;
+  }catch(e){ net.connOk=false; }
+  if(net.online) net.pollTimer=setTimeout(pollLoop,1500);
+}
+function handleNet(obj){
+  if(net.role==="host"){
+    if(obj.t==="join"){ net.joined=true; if(obj.name)net.guestName=obj.name; if(!G||G.phase==="init"){ newGame(); } else { if(G.names)G.names[1]=net.guestName||"Opponent"; publishState(); } closeWaiting(); updateNetbar(); }
+    else if(obj.t==="name"){ net.guestName=obj.name||"Opponent"; if(G&&G.names){G.names[1]=net.guestName; publishState(); render();} }
+    else if(obj.t==="act"){ handleGuestAction(obj); }
+  } else if(net.role==="guest"){
+    if(obj.t==="state"){ const first=!net.joined; net.joined=true; G=obj.G; if(first)closeWaiting(); render(); if(G&&G.msg)setStatus(G.msg); updateNetbar(); }
+  }
+}
+function closeWaiting(){ if(curOverlay.kind==="hostwait"||curOverlay.kind==="guestwait") closeOverlay(); }
+function netStop(){ net.online=false; if(net.pollTimer)clearTimeout(net.pollTimer); if(pubTimer){clearTimeout(pubTimer);pubTimer=null;} }
+function startNet(){ net.id=newId(); net.lastId=null; pollLoop(); }
+
+function hostCreate(){
+  net={online:true,role:"host",seat:0,code:randCode(),id:null,lastId:null,joined:false,connOk:false,pollTimer:null};
+  settings.mode="online"; showHostWaiting(); startNet();
+}
+function guestJoin(code){
+  net={online:true,role:"guest",seat:1,code:String(code).toUpperCase(),id:null,lastId:null,joined:false,connOk:false,pollTimer:null};
+  settings.mode="online"; showGuestConnecting(); startNet();
+  const ping=()=>{ if(net.online&&!net.joined){ netSend({t:"join",name:settings.playerName||"You"}); setTimeout(ping,2000);} };
+  ping();
+}
+function onNameInput(v){
+  settings.playerName=(v||"").trim().slice(0,16)||"You";
+  if(!G)return;
+  if(net.online){
+    if(net.role==="host"){ if(G.names)G.names[0]=settings.playerName; publishState(); render(); }
+    else { netSend({t:"name",name:settings.playerName}); }
+  } else { if(G.names)G.names[0]=settings.playerName; render(); }
+}
+function handleGuestAction(obj){
+  if(!G)return;
+  switch(obj.kind){
+    case "discard": applyDiscard(1,obj.cards); break;
+    case "play": applyPlay(1,obj.card); break;
+    case "startPegging": if(G.phase==="cut")startPegging(); break;
+    case "applyCount": if(G.phase==="counting"&&obj.idx===G.countIndex)applyCount(); break;
+    case "nextHand": if(G.phase==="handover")startHand(); break;
+    case "newGame": newGame(); break;
+  }
+}
+
+/* ============================================================
+   BOOT / MODE SELECTION
+   ============================================================ */
+function chooseMode(){
+  netStop();
+  const html=`<h2>♠ Cribbage ♥</h2><p>Pick how you want to play.</p>
+    <h3>Your name</h3>
+    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
+    <h3>Opponent</h3>
+    <button class="setup-opt" onclick="startCpu()">🤖 Play vs the Computer</button>
+    <button class="setup-opt" onclick="showOnlineChoice()">📱 Play on two phones (online)</button>
+    <h3>Tips</h3>
+    <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="bootToggle(this)"></button><span id="bootTogTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
+    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>`;
+  openPanel(html,"boot");
+}
+function bootToggle(el){settings.tipsOn=!settings.tipsOn;el.classList.toggle("on",settings.tipsOn);document.getElementById("bootTogTxt").textContent=settings.tipsOn?'Tips ON':'Tips OFF';updateTipVisibility();}
+function refreshBootLevel(){document.getElementById("bl-b").classList.toggle("on",settings.tipLevel==='beginner');document.getElementById("bl-a").classList.toggle("on",settings.tipLevel==='advanced');}
+function startCpu(){ settings.mode="cpu"; net.online=false; updateTipVisibility(); closeOverlay(); newGame(); }
+function showOnlineChoice(){
+  const html=`<button class="btn sec sm close" onclick="chooseMode()">‹ Back</button><h2>📱 Two Phones</h2>
+    <p>One of you creates a game and reads out the code; the other joins with it. Then you each play on your own phone.</p>
+    <button class="setup-opt" onclick="hostCreate()">➕ Create a game (host)</button>
+    <button class="setup-opt" onclick="showJoin()">🔑 Join with a code</button>
+    <p class="muted">No accounts. Works on WiFi or cellular. Uses a free public relay — great for casual play; if it ever won't connect, just create a new game and share a fresh code.</p>`;
+  openPanel(html,"online");
+}
+function showJoin(){
+  const html=`<button class="btn sec sm close" onclick="showOnlineChoice()">‹ Back</button><h2>Join a game</h2>
+    <p>Type the 4-character code your partner read to you.</p>
+    <input class="code" id="codeInput" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="ABCD">
+    <div style="text-align:center;margin-top:12px;"><button class="btn" onclick="doJoin()">Join ▶</button></div>`;
+  openPanel(html,"join");
+  setTimeout(()=>{const i=document.getElementById("codeInput");i&&i.focus();},100);
+}
+function doJoin(){const v=(document.getElementById("codeInput").value||"").trim().toUpperCase();if(v.length!==4){alert("Enter the 4-character code.");return;}guestJoin(v);}
+function showHostWaiting(){
+  const html=`<h2>Your game is ready</h2><p>Read this code to the other player:</p>
+    <div class="codebox">${net.code}</div>
+    <p class="muted" id="waitMsg">Connecting…</p>
+    <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="chooseMode()">Cancel</button></div>`;
+  openPanel(html,"hostwait");
+  const iv=setInterval(()=>{const w=document.getElementById("waitMsg");if(!w||net.joined){clearInterval(iv);return;}w.textContent=net.connOk?"Waiting for the other player to join…":"Connecting…";},600);
+}
+function showGuestConnecting(){
+  const html=`<h2>Joining ${net.code}…</h2><p class="muted" id="joinMsg">Connecting…</p>
+    <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="chooseMode()">Cancel</button></div>`;
+  openPanel(html,"guestwait");
+  const iv=setInterval(()=>{const m=document.getElementById("joinMsg");if(!m||net.joined){clearInterval(iv);return;}m.textContent=net.connOk?"Connected — waiting for host to start…":"Connecting…";},600);
+}
+
+/* ---------- wire up ---------- */
+document.getElementById("tipBtn").onclick=openTips;
+document.getElementById("menuBtn").onclick=openMenu;
+document.getElementById("rulesBtn").onclick=openRules;
+document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay"){ if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay(); } };
+
+updateTipVisibility();
+chooseMode();
+</script>
+<script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+</body>
+</html>
