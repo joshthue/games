@@ -84,10 +84,10 @@
   .panel h2{margin:0 0 6px; color:var(--gold); font-size:20px;} .panel h3{color:var(--gold); font-size:15px; margin:14px 0 6px;}
   .panel p,.panel li{font-size:14px; line-height:1.5;} .panel ul{margin:4px 0 4px 2px; padding-left:20px;}
   .panel .close{position:sticky; top:0; float:right;}
-  .seg{display:inline-flex; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
+  .seg{display:inline-flex; vertical-align:middle; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
   .seg button{background:transparent; color:var(--cream); padding:6px 14px; font-size:13px; border-radius:16px;}
   .seg button.on{background:var(--gold); color:var(--ink);}
-  .switch{display:inline-flex; align-items:center; gap:8px; font-size:13px;}
+  .switch{display:inline-flex; vertical-align:middle; align-items:center; gap:8px; font-size:13px;}
   .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0;}
   .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s;}
   .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
@@ -185,7 +185,7 @@ function legalCards(hand, gameType, trick){
 
 /* ============================================================ STATE */
 let R=null;
-let settings={tipsOn:true, tipLevel:"beginner", playerName:"You", numPlayers:4, fourColor:false, speed:false};
+let settings={tipsOn:false, tipLevel:"beginner", playerName:"You", numPlayers:4, fourColor:true, speed:true};
 const FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];   // ♠ black, ♥ red, ♦ blue, ♣ green
 function suitColor(s){ return settings.fourColor ? FOURCOL[s] : (SUIT_RED[s]?"#c22":"#1c2a24"); }
 function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }   // speed play shortens delays
@@ -525,7 +525,7 @@ function openTips(){
   const lvl=settings.tipLevel;
   const topic=tipTopic();
   let html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>💡 Tips</h2>
-    <div class="seg" style="margin:8px 0;"><button class="${lvl==='beginner'?'on':''}" onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" onclick="setTipLevel('advanced')">Advanced</button></div>
+    <div class="seg" style="margin:8px 0;opacity:${settings.tipsOn?1:.4};"><button class="${lvl==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="setTipLevel('advanced')">Advanced</button></div>
     <h3>Basics</h3>`;
   TIPS.general[lvl].forEach(t=>html+=`<div class="tip-block">${t}</div>`);
   if(topic!=="general"){ html+=`<h3>This hand — ${callLabel()}</h3>`; TIPS[topic][lvl].forEach(t=>html+=`<div class="tip-block">${t}</div>`); }
@@ -559,7 +559,7 @@ function openMenu(){
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" oninput="onNameInput(this.value)" placeholder="You">
     <h3>Learning tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
-    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
+    <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
     <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
     <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
@@ -608,7 +608,7 @@ function chooseSetup(){
     <p class="muted" id="pdesc">You + ${n-1} computer${n-1>1?'s':''}</p>
     <h3>Tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
-    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div>
+    <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
     <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
     <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
@@ -617,7 +617,7 @@ function chooseSetup(){
 }
 function onNameInput2(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; }
 function stepPlayers(d){ settings.numPlayers=Math.max(2,Math.min(7,settings.numPlayers+d)); document.getElementById("pval").textContent=settings.numPlayers; document.getElementById("pdesc").textContent=`You + ${settings.numPlayers-1} computer${settings.numPlayers-1>1?'s':''}`; }
-function toggleTipsSetup(el){ settings.tipsOn=!settings.tipsOn; el.classList.toggle("on",settings.tipsOn); document.getElementById("tipTxt").textContent=settings.tipsOn?'Tips ON':'Tips OFF'; updateTipVisibility(); }
+function toggleTipsSetup(el){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); chooseSetup(); }
 function refreshLvl(){ document.getElementById("s-b").classList.toggle("on",settings.tipLevel==='beginner'); document.getElementById("s-a").classList.toggle("on",settings.tipLevel==='advanced'); }
 
 /* wire up */

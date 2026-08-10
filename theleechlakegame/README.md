@@ -15,6 +15,14 @@ a trick-taking elimination card game. Play against computer opponents.
   calls the next hand; ties are settled by a "first Jack" flip.
 - **Last player standing wins.**
 
+## Options
+
+- **Four-color deck** — ♠ black · ♥ red · ♦ blue · ♣ green (on by default).
+- **Speed play** — shorter delays for faster hands (on by default).
+- **Learning tips** — optional in-game hints, in **Beginner** (plain rules) or
+  **Advanced** (strategy) detail. Off by default; the Beginner/Advanced choice is
+  only active while tips are on.
+
 ## Running it
 
 Just open `index.html` in a browser — no build step, no dependencies. It also works
