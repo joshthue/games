@@ -206,17 +206,18 @@ function newSession(){
 }
 function toBet(msg){
   G.phase="bet"; G.player=[]; G.dealer=[]; G.dealerShown=false; G.playBet=0; G.result=null;
-  if(G.ante>G.bankroll) G.ante=Math.max(0, Math.floor(G.bankroll/MINBET)*MINBET);
-  if(G.ante+G.pairplus>G.bankroll) G.pairplus=Math.max(0, G.bankroll-G.ante);
+  const capAnte=Math.max(0, Math.floor((G.bankroll/2)/MINBET)*MINBET);   // reserve an equal Play bet
+  if(G.ante>capAnte) G.ante=capAnte;
+  if(2*G.ante+G.pairplus>G.bankroll) G.pairplus=Math.max(0, G.bankroll-2*G.ante);
   setStatus(msg||"Place your bets, then Deal.");
   render();
 }
-function stepAnte(d){ G.ante=Math.max(MINBET, Math.min(MAXBET, G.ante+d*MINBET)); if(G.ante+G.pairplus>G.bankroll) G.pairplus=Math.max(0,G.bankroll-G.ante); render(); }
-function stepPP(d){ const max=Math.min(MAXBET, G.bankroll-G.ante); G.pairplus=Math.max(0, Math.min(max, G.pairplus+d*MINBET)); render(); }
+function stepAnte(d){ const cap=Math.min(MAXBET, Math.max(MINBET, Math.floor((G.bankroll/2)/MINBET)*MINBET)); G.ante=Math.max(MINBET, Math.min(cap, G.ante+d*MINBET)); if(2*G.ante+G.pairplus>G.bankroll) G.pairplus=Math.max(0,G.bankroll-2*G.ante); render(); }
+function stepPP(d){ const max=Math.min(MAXBET, G.bankroll-2*G.ante); G.pairplus=Math.max(0, Math.min(max, G.pairplus+d*MINBET)); render(); }
 
 function deal(){
   if(G.phase!=="bet") return;
-  if(G.ante<MINBET || G.ante+G.pairplus>G.bankroll) return;
+  if(G.ante<MINBET || 2*G.ante+G.pairplus>G.bankroll) return;
   G.bankroll -= (G.ante+G.pairplus);
   G.deck=shuffle(makeDeck());
   G.player=[G.deck.pop(),G.deck.pop(),G.deck.pop()].sort((a,b)=>b.r-a.r);
@@ -282,7 +283,7 @@ function finishResolve(){
   setStatus(R.outcome==="win"?"You win this hand! 🎉":R.outcome==="lose"?"Dealer takes it.":R.outcome==="push"?"Push — bets returned.":"Hand over.");
   render();
 }
-function nextHand(){ if(G.bankroll<MINBET){ toBust(); return; } toBet("Place your bets for the next hand."); }
+function nextHand(){ if(G.bankroll<2*MINBET){ toBust(); return; } toBet("Place your bets for the next hand."); }
 function rebuy(){ G.bankroll+=START_BANK; G.bought+=START_BANK; toBet(`Re-bought ${START_BANK} chips. Good luck!`); }
 function toBust(){ G.phase="bust"; setStatus("You're out of chips."); render(); }
 
@@ -317,15 +318,15 @@ function render(){
   const bets=document.getElementById("bets"), ctr=document.getElementById("controls");
   bets.innerHTML=""; ctr.innerHTML="";
   if(G.phase==="bet"){
-    const maxPP=Math.min(MAXBET, G.bankroll-G.ante);
+    const maxPP=Math.min(MAXBET, G.bankroll-2*G.ante);
     bets.innerHTML=`<div class="betbox">
       <div class="betlabel">Ante <b>${G.ante}</b></div>
-      <div class="stepper"><button onclick="stepAnte(-1)" ${G.ante<=MINBET?'disabled':''}>–</button><div class="val">${G.ante}</div><button onclick="stepAnte(1)" ${G.ante>=MAXBET||G.ante+MINBET+G.pairplus>G.bankroll?'disabled':''}>+</button></div>
+      <div class="stepper"><button onclick="stepAnte(-1)" ${G.ante<=MINBET?'disabled':''}>–</button><div class="val">${G.ante}</div><button onclick="stepAnte(1)" ${G.ante>=MAXBET||2*(G.ante+MINBET)+G.pairplus>G.bankroll?'disabled':''}>+</button></div>
       <div class="betlabel">Pair Plus <b>${G.pairplus||'—'}</b> <span class="muted">(optional side bet)</span></div>
       <div class="stepper"><button onclick="stepPP(-1)" ${G.pairplus<=0?'disabled':''}>–</button><div class="val">${G.pairplus}</div><button onclick="stepPP(1)" ${G.pairplus>=maxPP?'disabled':''}>+</button></div>
     </div>`;
     const b=document.createElement("button"); b.className="btn"; b.textContent=`Deal ▶  (bet ${G.ante+G.pairplus})`;
-    b.disabled = G.ante<MINBET || G.ante+G.pairplus>G.bankroll; b.onclick=deal;
+    b.disabled = G.ante<MINBET || 2*G.ante+G.pairplus>G.bankroll; b.onclick=deal;
     ctr.appendChild(b);
   } else if(G.phase==="decide"){
     const play=document.createElement("button"); play.className="btn play"; play.textContent=`Play (bet ${G.ante})`;

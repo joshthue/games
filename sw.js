@@ -1,14 +1,14 @@
 /* Game Night service worker — offline app shell + games */
-const CACHE = "gamenight-v7";
+const CACHE = "gamenight-v8";
 const ASSETS = [
   "./", "index.html",
   "theleechlakegame/", "theleechlakegame/index.html",
   "cribbage/", "cribbage/index.html",
   "onpatrolbingo/", "onpatrolbingo/index.html",
   "threecardpoker/", "threecardpoker/index.html",
+  "ultimatetexasholdem/", "ultimatetexasholdem/index.html",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"
 ];
-
 self.addEventListener("install", e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
@@ -19,7 +19,7 @@ self.addEventListener("fetch", e=>{
   const req=e.request;
   if(req.method!=="GET") return;
   const url=new URL(req.url);
-  if(url.origin!==location.origin) return;            // let cross-origin go to network
+  if(url.origin!==location.origin) return;
   e.respondWith(
     caches.match(req).then(hit=> hit || fetch(req).then(res=>{
       const copy=res.clone();
