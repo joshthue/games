@@ -95,10 +95,10 @@
   .panel p, .panel li{font-size:14px; line-height:1.5; color:var(--cream);}
   .panel ul{margin:4px 0 4px 2px; padding-left:20px;}
   .panel .close{position:sticky; top:0; float:right;}
-  .seg{display:inline-flex; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
+  .seg{display:inline-flex; vertical-align:middle; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
   .seg button{background:transparent; color:var(--cream); padding:6px 14px; font-size:13px; border-radius:16px;}
   .seg button.on{background:var(--gold); color:var(--ink);}
-  .switch{display:inline-flex; align-items:center; gap:8px; font-size:13px;}
+  .switch{display:inline-flex; vertical-align:middle; align-items:center; gap:8px; font-size:13px;}
   .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0;}
   .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s ease;}
   .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
@@ -122,6 +122,7 @@
   <header>
     <h1>♠ CRIBBAGE ♥</h1>
     <div class="top-btns">
+      <a class="btn sec sm" href="../" title="All games" style="text-decoration:none;">🏠</a>
       <button class="btn sec sm" id="rulesBtn">Rules</button>
       <button class="btn sec sm" id="menuBtn">Menu</button>
     </div>
@@ -208,7 +209,7 @@ function cribValue(disc){let v=0;const[a,b]=disc;if(a.r===b.r)v+=2;if(pegVal(a.r
 
 /* ---------- state ---------- */
 let G=null;
-let settings={mode:"cpu", tipsOn:true, tipLevel:"beginner", playerName:"You", fourColor:false, speed:false};
+let settings={mode:"cpu", tipsOn:false, tipLevel:"beginner", playerName:"You", fourColor:true, speed:true};
 const FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];   // spades black, hearts red, diamonds blue, clubs green
 function suitColor(s){ return settings.fourColor ? FOURCOL[s] : (SUIT_RED[s]?"#c22":"#1c2a24"); }
 function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }
@@ -542,7 +543,7 @@ function openTips(){
   const name={discard:"Discarding to the Crib",cut:"The Cut",pegging:"The Play (Pegging)",counting:"The Show (Counting)"}[phase];
   let html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>💡 Tips</h2>
     <p class="muted">Phase: <b style="color:var(--gold)">${name}</b></p>
-    <div class="seg" style="margin:8px 0;"><button class="${lvl==='beginner'?'on':''}" onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" onclick="setTipLevel('advanced')">Advanced</button></div>`;
+    <div class="seg" style="margin:8px 0;opacity:${settings.tipsOn?1:.4};"><button class="${lvl==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="setTipLevel('advanced')">Advanced</button></div>`;
   list.forEach(t=>html+=`<div class="tip-block">${t}</div>`);
   const sug=liveSuggestion(); if(sug)html+=`<h3>For this hand</h3><div class="tip-block"><b>Hint:</b> ${sug}</div>`;
   html+=`<div style="margin-top:14px;" class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>`;
@@ -610,13 +611,14 @@ function openMenu(){
   const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>
     <h3>Learning tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
-    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
+    <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
-    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
+    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
     <h3>Game</h3>
+    <a class="setup-opt" href="../" style="display:block;text-decoration:none;">🏠 Back to all games</a>
     <button class="setup-opt" onclick="closeOverlay();chooseMode();">↩ New game / change opponent</button>
     <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>`;
   openPanel(html,"menu");
@@ -742,13 +744,13 @@ function chooseMode(){
     <button class="setup-opt" onclick="showOnlineChoice()">📱 Play on two phones (online)</button>
     <h3>Tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="bootToggle(this)"></button><span id="bootTogTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
-    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>
+    <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
-    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>`;
+    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>`;
   openPanel(html,"boot");
 }
-function bootToggle(el){settings.tipsOn=!settings.tipsOn;el.classList.toggle("on",settings.tipsOn);document.getElementById("bootTogTxt").textContent=settings.tipsOn?'Tips ON':'Tips OFF';updateTipVisibility();}
+function bootToggle(el){settings.tipsOn=!settings.tipsOn;updateTipVisibility();chooseMode();}
 function refreshBootLevel(){document.getElementById("bl-b").classList.toggle("on",settings.tipLevel==='beginner');document.getElementById("bl-a").classList.toggle("on",settings.tipLevel==='advanced');}
 function startCpu(){ settings.mode="cpu"; net.online=false; updateTipVisibility(); closeOverlay(); newGame(); }
 function showOnlineChoice(){

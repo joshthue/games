@@ -108,6 +108,7 @@
   <header>
     <h1>🐀 RAT <small>THE LEECH LAKE GAME</small></h1>
     <div class="top-btns">
+      <a class="btn sec sm" href="../" title="All games" style="text-decoration:none;">🏠</a>
       <button class="btn sec sm" id="rulesBtn">Rules</button>
       <button class="btn sec sm" id="menuBtn">Menu</button>
     </div>
@@ -222,7 +223,7 @@ function startHand(){
     const flip=deck.pop();
     R.trump=flip.s; R.gameType="suits";
     R.flipCard=flip;
-    R.leader = nextAliveSeat(R.dealerBase);   // player left of dealer
+    R.leader = R.dealerBase;   // dealer (turned trump) leads the opening hand
     R.caller=null;
     R.phase="play";
     R.lastResult = R.lastResult || "";
@@ -561,9 +562,10 @@ function openMenu(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
-    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
+    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Game</h3>
+    <a class="setup-opt" href="../" style="display:block;text-decoration:none;">🏠 Back to all games</a>
     <button class="setup-opt" onclick="closeOverlay();chooseSetup();">↩ New game / change players</button>
     <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>`;
   openPanel(html,"menu");
@@ -610,8 +612,8 @@ function chooseSetup(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
-    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
+    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
     <div style="text-align:center;margin-top:14px;"><button class="btn" onclick="closeOverlay();newGame();">Deal! ▶</button></div>`;
   openPanel(html,"setup");
 }
