@@ -1,10 +1,11 @@
 /* Game Night service worker — offline app shell + games */
-const CACHE = "gamenight-v6";
+const CACHE = "gamenight-v7";
 const ASSETS = [
   "./", "index.html",
   "theleechlakegame/", "theleechlakegame/index.html",
   "cribbage/", "cribbage/index.html",
   "onpatrolbingo/", "onpatrolbingo/index.html",
+  "threecardpoker/", "threecardpoker/index.html",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"
 ];
 

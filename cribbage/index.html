@@ -626,8 +626,9 @@ function openMenu(){
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
 function menuToggleFour(){settings.fourColor=!settings.fourColor;if(G)render();openMenu();}
 function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
-function openRules(){
-  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button>
+function openRules(back){
+  const closeBtn = back ? `<button class="btn sec sm close" onclick="${back}()">‹ Back</button>` : `<button class="btn sec sm close" onclick="closeOverlay()">✕</button>`;
+  const html=`${closeBtn}
    <h2>How to Play Cribbage</h2>
    <p><b>Goal:</b> be first to 121 points.</p>
    <h3>1. Deal</h3><p>Each player gets 6 cards and discards 2 into the <b>crib</b> (a bonus hand for the dealer). The deal alternates each hand.</p>
@@ -737,6 +738,7 @@ function handleGuestAction(obj){
 function chooseMode(){
   netStop();
   const html=`<h2>♠ Cribbage ♥</h2><p>Pick how you want to play.</p>
+    <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseMode')">📖 How to play</button></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
     <h3>Opponent</h3>

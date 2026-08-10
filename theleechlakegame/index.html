@@ -581,8 +581,9 @@ function onNameInput(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; 
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
 function menuToggleFour(){settings.fourColor=!settings.fourColor;if(R)render();openMenu();}
 function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
-function openRules(){
-  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button>
+function openRules(back){
+  const closeBtn = back ? `<button class="btn sec sm close" onclick="${back}()">‹ Back</button>` : `<button class="btn sec sm close" onclick="closeOverlay()">✕</button>`;
+  const html=`${closeBtn}
     <h2>How to Play Rat</h2>
     <p><b>Goal:</b> be the last player standing. Each hand you must win at least one trick — win none and you're out.</p>
     <h3>The hands shrink</h3>
@@ -610,6 +611,7 @@ function chooseSetup(){
   const n=settings.numPlayers;
   const html=`<h2>🐀 Rat — The Leech Lake Game</h2>
     <p>Win at least one trick each hand or you're out. Last one standing wins.</p>
+    <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseSetup')">📖 How to play</button></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" oninput="onNameInput2(this.value)" placeholder="You">
     <h3>How many players? (you + computers)</h3>

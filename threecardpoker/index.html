@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Three-Card Poker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
+    --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --green:#178a3a; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(circle at 50% 12%, var(--felt) 0%, var(--felt2) 70%, #063324 100%);
+    color:var(--cream); min-height:100vh; overflow-x:hidden; display:flex; flex-direction:column; align-items:center;}
+  .wrap{width:100%; max-width:820px; padding:8px 12px 44px; position:relative;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;}
+  h1{font-size:19px; margin:0; letter-spacing:1px; color:var(--gold); text-shadow:0 1px 2px rgba(0,0,0,.5);}
+  h1 small{display:block; font-size:10px; letter-spacing:2px; opacity:.7; font-weight:600;}
+  .top-btns{display:flex; gap:6px;}
+  button{font-family:inherit; cursor:pointer; border:none; border-radius:10px; font-weight:600; transition:transform .06s, filter .15s;}
+  button:active{transform:translateY(1px) scale(.98);}
+  .btn{background:var(--gold); color:var(--ink); padding:9px 14px; font-size:14px; box-shadow:0 2px 5px rgba(0,0,0,.35);}
+  .btn.sec{background:rgba(255,255,255,.14); color:var(--cream);} .btn.sm{padding:6px 10px; font-size:12px;}
+  .btn.play{background:var(--green); color:#fff;} .btn.fold{background:rgba(255,255,255,.14); color:var(--cream);}
+  .btn:disabled{opacity:.4; cursor:default;}
+  a.btn{text-decoration:none; display:inline-block;}
+  input.txtinp{font-family:inherit; font-size:16px; width:100%; padding:10px; border-radius:10px;
+    border:2px solid var(--gold); background:rgba(0,0,0,.25); color:var(--cream);}
+
+  .chipbar{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
+    background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:12px; padding:9px 12px; margin:4px 0 8px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.4); color:#2b1a08; font-weight:800; font-size:15px;}
+  .chipbar .chips{background:var(--gold); color:#111; border-radius:20px; padding:3px 14px;}
+  .chipbar .net{font-size:13px; font-weight:800;}
+  .chipbar .net.up{color:#0b6b2a;} .chipbar .net.down{color:#7a1414;}
+
+  .zone-label{text-align:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65; margin:10px 0 4px;}
+  .handrow{display:flex; gap:8px; justify-content:center; min-height:66px; align-items:center;}
+  .handname{text-align:center; font-size:13px; color:var(--gold); font-weight:700; min-height:18px; margin-top:3px;}
+  .status{min-height:40px; text-align:center; font-size:14px; margin:8px 0; color:var(--gold); font-weight:600;
+    display:flex; align-items:center; justify-content:center; padding:0 6px;}
+
+  .card{width:52px; height:74px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0;}
+  .card .rank{position:absolute; top:4px; left:6px; font-size:15px; font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:4px; right:6px; font-size:15px; font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:26px;}
+  .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 7px,#155a94 7px,#155a94 14px); border:2px solid #0e3f6b;}
+  .card.win{box-shadow:0 0 0 2px var(--gold), 0 0 12px rgba(240,198,116,.6), 0 3px 8px rgba(0,0,0,.4);}
+  .card.dim{opacity:.5;}
+
+  .betbox{max-width:360px; margin:6px auto 0;}
+  .betlabel{text-align:center; font-size:13px; opacity:.85; margin-top:8px; letter-spacing:.3px;}
+  .betlabel b{color:var(--gold);}
+  .stepper{display:flex; align-items:center; justify-content:center; gap:16px; margin:4px 0;}
+  .stepper button{width:42px; height:42px; border-radius:50%; background:var(--gold); color:var(--ink); font-size:22px; font-weight:800;}
+  .stepper button:disabled{opacity:.35;}
+  .stepper .val{font-size:24px; font-weight:800; min-width:60px; text-align:center;}
+  .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .notes{max-width:460px; margin:2px auto 0;}
+  .note{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:7px 11px; margin:6px 0; font-size:13px; line-height:1.45;}
+  .note.win{border-left-color:var(--green);} .note.lose{border-left-color:var(--red);}
+  .bigresult{font-size:17px; font-weight:800; text-align:center; margin:4px 0;}
+  .bigresult.win{color:#8ff0a8;} .bigresult.lose{color:#ff9a9a;} .bigresult.push{color:var(--cream);}
+
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.62); display:none; align-items:center; justify-content:center; z-index:50; padding:16px;}
+  .overlay.show{display:flex;}
+  .panel{background:linear-gradient(180deg,#12503a,#0c3d2c); border:2px solid var(--gold); border-radius:16px;
+    max-width:520px; width:100%; max-height:88vh; overflow-y:auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  .panel h2{margin:0 0 6px; color:var(--gold); font-size:20px;} .panel h3{color:var(--gold); font-size:15px; margin:14px 0 6px;}
+  .panel p,.panel li{font-size:14px; line-height:1.5;} .panel ul{margin:4px 0 4px 2px; padding-left:20px;}
+  .panel table{width:100%; border-collapse:collapse; font-size:13px; margin:4px 0;}
+  .panel td{padding:3px 6px; border-bottom:1px solid rgba(255,255,255,.12);} .panel td:last-child{text-align:right; color:var(--gold); font-weight:700;}
+  .panel .close{position:sticky; top:0; float:right;}
+  .switch{display:flex; align-items:center; gap:8px; font-size:13px;}
+  .seg{display:inline-flex; vertical-align:middle; background:rgba(0,0,0,.3); border-radius:20px; padding:3px; gap:3px;}
+  .seg button{background:transparent; color:var(--cream); padding:6px 14px; font-size:13px; border-radius:16px;}
+  .seg button.on{background:var(--gold); color:var(--ink);} .seg button:disabled{cursor:default;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .tiprow{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:8px 0;}
+  .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px 0; font-size:14px; line-height:1.5;}
+  .tip-block b{color:var(--gold);}
+  .setup-opt{display:block; width:100%; text-align:left; background:rgba(255,255,255,.1); color:var(--cream); padding:13px 14px; border-radius:10px; margin:7px 0; font-size:15px; text-decoration:none;}
+  .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
+  .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
+  .muted{opacity:.75; font-size:12px;}
+  @media(max-width:430px){ .card{width:46px;height:66px;} .card .pip{font-size:22px;} h1{font-size:17px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>♠ THREE-CARD POKER <small>ANTE · PLAY · PAIR PLUS</small></h1>
+    <div class="top-btns">
+      <a class="btn sec sm" href="../" title="All games">🏠</a>
+      <button class="btn sec sm" id="rulesBtn">Rules</button>
+      <button class="btn sec sm" id="menuBtn">Menu</button>
+    </div>
+  </header>
+
+  <div class="chipbar" id="chipbar"></div>
+
+  <div class="zone-label">Dealer</div>
+  <div class="handrow" id="dealerRow"></div>
+  <div class="handname" id="dealerName"></div>
+
+  <div class="status" id="status">Loading…</div>
+
+  <div class="zone-label">Your hand</div>
+  <div class="handrow" id="playerRow"></div>
+  <div class="handname" id="playerName"></div>
+
+  <div id="bets"></div>
+  <div class="controls" id="controls"></div>
+</div>
+
+<div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
+<div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ============================================================
+   THREE-CARD POKER — casino style vs the dealer.
+   Ante + Play, Pair Plus side bet, ante bonus, chip bankroll.
+   ============================================================ */
+const SUITS=["♠","♥","♦","♣"], SUIT_RED=[false,true,true,false];
+const RSTR={11:"J",12:"Q",13:"K",14:"A"};
+const FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];
+const CATNAME={5:"Straight flush",4:"Three of a kind",3:"Straight",2:"Flush",1:"Pair",0:"High card"};
+const PAIRPLUS={5:40,4:30,3:6,2:3,1:1};   // Pair Plus paytable (to 1)
+const ANTEBONUS={5:5,4:4,3:1};            // Ante bonus paytable (to 1)
+const START_BANK=100, MINBET=5, MAXBET=25;
+
+let settings={tipsOn:false, tipLevel:"beginner", playerName:"You", fourColor:true, speed:true};
+let G=null;
+let curOverlay={kind:null};
+
+function rankStr(r){return RSTR[r]||String(r);}
+function suitColor(s){ return settings.fourColor ? FOURCOL[s] : (SUIT_RED[s]?"#c22":"#1c2a24"); }
+function makeDeck(){const d=[];for(let s=0;s<4;s++)for(let r=2;r<=14;r++)d.push({r,s});return d;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }
+
+function cardEl(c,opts={}){
+  const d=document.createElement("div");
+  if(opts.back||!c){ d.className="card back"; return d; }
+  d.className="card"+(opts.cls?(" "+opts.cls):"");
+  d.style.color=suitColor(c.s);
+  d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span>`;
+  return d;
+}
+
+/* ---- hand evaluation (3 cards) ---- */
+function rank3(cards){
+  const rs=cards.map(c=>c.r).sort((a,b)=>b-a);           // desc
+  const suits=cards.map(c=>c.s);
+  const flush = suits[0]===suits[1] && suits[1]===suits[2];
+  const trips = rs[0]===rs[1] && rs[1]===rs[2];
+  let straight=false, sHigh=0;
+  const distinct = rs[0]!==rs[1] && rs[1]!==rs[2];
+  if(distinct){
+    if(rs[0]-rs[2]===2){ straight=true; sHigh=rs[0]; }
+    else if(rs[0]===14 && rs[1]===3 && rs[2]===2){ straight=true; sHigh=3; }   // A-2-3 wheel (low)
+  }
+  if(straight&&flush) return {cat:5, tie:[sHigh], name:CATNAME[5]};
+  if(trips)           return {cat:4, tie:[rs[0]], name:CATNAME[4]};
+  if(straight)        return {cat:3, tie:[sHigh], name:CATNAME[3]};
+  if(flush)           return {cat:2, tie:rs.slice(), name:CATNAME[2]};
+  if(rs[0]===rs[1])   return {cat:1, tie:[rs[0],rs[2]], name:CATNAME[1]};
+  if(rs[1]===rs[2])   return {cat:1, tie:[rs[1],rs[0]], name:CATNAME[1]};
+  return {cat:0, tie:rs.slice(), name:CATNAME[0]};
+}
+function cmp(a,b){
+  if(a.cat!==b.cat) return a.cat-b.cat;
+  const n=Math.max(a.tie.length,b.tie.length);
+  for(let i=0;i<n;i++){ const x=a.tie[i]||0, y=b.tie[i]||0; if(x!==y) return x-y; }
+  return 0;
+}
+function qualifies(h){ return h.cat>=1 || (h.cat===0 && h.tie[0]>=12); }  // Queen-high or better
+function handLabel(h){
+  if(h.cat===0) return `${h.name} (${rankStr(h.tie[0])} high)`;
+  if(h.cat===1) return `Pair of ${rankStr(h.tie[0])}s`;
+  return h.name;
+}
+// Q-6-4 optimal play/fold rule
+function shouldPlay(cards){
+  const h=rank3(cards);
+  if(h.cat>=1) return true;
+  const rs=cards.map(c=>c.r).sort((a,b)=>b-a);
+  const ref=[12,6,4];
+  for(let i=0;i<3;i++){ if(rs[i]!==ref[i]) return rs[i]>ref[i]; }
+  return true;
+}
+
+/* ============================================================ FLOW */
+function newSession(){
+  G={ phase:"bet", deck:[], player:[], dealer:[], dealerShown:false,
+      ante:10, pairplus:0, playBet:0, bankroll:START_BANK, bought:START_BANK, result:null };
+  toBet("Place your Ante — and a Pair Plus side bet if you like — then Deal.");
+}
+function toBet(msg){
+  G.phase="bet"; G.player=[]; G.dealer=[]; G.dealerShown=false; G.playBet=0; G.result=null;
+  if(G.ante>G.bankroll) G.ante=Math.max(0, Math.floor(G.bankroll/MINBET)*MINBET);
+  if(G.ante+G.pairplus>G.bankroll) G.pairplus=Math.max(0, G.bankroll-G.ante);
+  setStatus(msg||"Place your bets, then Deal.");
+  render();
+}
+function stepAnte(d){ G.ante=Math.max(MINBET, Math.min(MAXBET, G.ante+d*MINBET)); if(G.ante+G.pairplus>G.bankroll) G.pairplus=Math.max(0,G.bankroll-G.ante); render(); }
+function stepPP(d){ const max=Math.min(MAXBET, G.bankroll-G.ante); G.pairplus=Math.max(0, Math.min(max, G.pairplus+d*MINBET)); render(); }
+
+function deal(){
+  if(G.phase!=="bet") return;
+  if(G.ante<MINBET || G.ante+G.pairplus>G.bankroll) return;
+  G.bankroll -= (G.ante+G.pairplus);
+  G.deck=shuffle(makeDeck());
+  G.player=[G.deck.pop(),G.deck.pop(),G.deck.pop()].sort((a,b)=>b.r-a.r);
+  G.dealer=[G.deck.pop(),G.deck.pop(),G.deck.pop()].sort((a,b)=>b.r-a.r);
+  G.dealerShown=false; G.phase="decide";
+  const rec = shouldPlay(G.player) ? "Strategy says Play." : "Strategy says Fold.";
+  setStatus(`You have ${handLabel(rank3(G.player))}. Play or fold?`);
+  render();
+}
+function fold(){ if(G.phase!=="decide")return; resolve(false); }
+function play(){
+  if(G.phase!=="decide")return;
+  if(G.bankroll < G.ante) return;
+  G.bankroll -= G.ante; G.playBet=G.ante;
+  resolve(true);
+}
+
+function resolve(played){
+  G.dealerShown=true; G.phase="result";
+  const ph=rank3(G.player), dh=rank3(G.dealer);
+  G.result={ played, ph, dh, notes:[], anteRet:0, playRet:0, ppRet:0, bonus:0, outcome:"", playerWinCards:false, dealerWinCards:false };
+  const R=G.result;
+
+  if(!played){
+    R.outcome="fold";
+    R.notes.push({t:"lose", s:`You folded — Ante${G.pairplus?" and Pair Plus":""} lost (−${G.ante+G.pairplus}).`});
+    setStatus(`Folded. Dealer had ${handLabel(dh)}.`);
+    finishResolve(); return;
+  }
+
+  // Pair Plus (side bet, resolved on your hand)
+  if(G.pairplus>0){
+    if(ph.cat>=1){ const m=PAIRPLUS[ph.cat]; R.ppRet=G.pairplus*(1+m); R.notes.push({t:"win", s:`Pair Plus: ${ph.name} pays ${m}:1 (+${G.pairplus*m}).`}); }
+    else { R.notes.push({t:"lose", s:`Pair Plus loses — ${handLabel(ph)} is below a pair (−${G.pairplus}).`}); }
+  }
+  // Ante bonus (paid regardless of the dealer)
+  const bm=ANTEBONUS[ph.cat]||0;
+  if(bm){ R.bonus=G.ante*bm; R.notes.push({t:"win", s:`Ante bonus: ${ph.name} pays ${bm}:1 (+${R.bonus}).`}); }
+
+  // Ante / Play
+  const q=qualifies(dh);
+  if(!q){
+    R.anteRet=G.ante*2; R.playRet=G.playBet;   // Ante pays 1:1, Play pushes
+    R.outcome="win";
+    R.notes.push({t:"win", s:`Dealer doesn't qualify (${handLabel(dh)}) — Ante pays 1:1, Play is returned.`});
+  } else {
+    const c=cmp(ph,dh);
+    if(c>0){ R.anteRet=G.ante*2; R.playRet=G.playBet*2; R.outcome="win"; R.playerWinCards=true;
+      R.notes.push({t:"win", s:`You win: ${handLabel(ph)} beats ${handLabel(dh)} — Ante & Play pay 1:1.`}); }
+    else if(c<0){ R.outcome="lose"; R.dealerWinCards=true;
+      R.notes.push({t:"lose", s:`Dealer wins: ${handLabel(dh)} beats ${handLabel(ph)} — Ante & Play lost (−${G.ante+G.playBet}).`}); }
+    else { R.anteRet=G.ante; R.playRet=G.playBet; R.outcome="push";
+      R.notes.push({t:"", s:`Tie — ${handLabel(ph)} vs ${handLabel(dh)}. Ante & Play push.`}); }
+  }
+  finishResolve();
+}
+function finishResolve(){
+  const R=G.result;
+  const ret=(R.anteRet||0)+(R.playRet||0)+(R.ppRet||0)+(R.bonus||0);
+  G.bankroll += ret;
+  const staked = R.played ? (G.ante+G.playBet+G.pairplus) : (G.ante+G.pairplus);
+  R.delta = ret - staked;     // net change this hand
+  setStatus(R.outcome==="win"?"You win this hand! 🎉":R.outcome==="lose"?"Dealer takes it.":R.outcome==="push"?"Push — bets returned.":"Hand over.");
+  render();
+}
+function nextHand(){ if(G.bankroll<MINBET){ toBust(); return; } toBet("Place your bets for the next hand."); }
+function rebuy(){ G.bankroll+=START_BANK; G.bought+=START_BANK; toBet(`Re-bought ${START_BANK} chips. Good luck!`); }
+function toBust(){ G.phase="bust"; setStatus("You're out of chips."); render(); }
+
+/* ============================================================ RENDER */
+function setStatus(m){ const s=document.getElementById("status"); if(s)s.textContent=m; }
+function render(){
+  if(!G) return;
+  // chip bar
+  const net=G.bankroll-G.bought;
+  document.getElementById("chipbar").innerHTML =
+    `<span class="chips">💰 ${G.bankroll} chips</span>`+
+    `<span class="net ${net>0?'up':net<0?'down':''}">Session: ${net>=0?'+':''}${net}</span>`;
+
+  // dealer row
+  const dr=document.getElementById("dealerRow"); dr.innerHTML="";
+  const dn=document.getElementById("dealerName");
+  if(!G.dealer.length){ dr.appendChild(cardEl(null,{back:true})); dr.appendChild(cardEl(null,{back:true})); dr.appendChild(cardEl(null,{back:true})); dn.textContent=""; }
+  else if(!G.dealerShown){ G.dealer.forEach(()=>dr.appendChild(cardEl(null,{back:true}))); dn.textContent="…"; }
+  else {
+    const dh=rank3(G.dealer), q=qualifies(dh);
+    G.dealer.forEach(c=>dr.appendChild(cardEl(c,{cls: G.result&&G.result.dealerWinCards?"win":""})));
+    dn.innerHTML=`${handLabel(dh)} · ${q?'<span style="color:#8ff0a8">qualifies</span>':'<span style="color:#ff9a9a">no qualify</span>'}`;
+  }
+
+  // player row
+  const pr=document.getElementById("playerRow"); pr.innerHTML="";
+  const pn=document.getElementById("playerName");
+  if(!G.player.length){ pr.appendChild(cardEl(null,{back:true})); pr.appendChild(cardEl(null,{back:true})); pr.appendChild(cardEl(null,{back:true})); pn.textContent=""; }
+  else { G.player.forEach(c=>pr.appendChild(cardEl(c,{cls: G.result&&G.result.playerWinCards?"win":""}))); pn.textContent=handLabel(rank3(G.player)); }
+
+  // bets + controls
+  const bets=document.getElementById("bets"), ctr=document.getElementById("controls");
+  bets.innerHTML=""; ctr.innerHTML="";
+  if(G.phase==="bet"){
+    const maxPP=Math.min(MAXBET, G.bankroll-G.ante);
+    bets.innerHTML=`<div class="betbox">
+      <div class="betlabel">Ante <b>${G.ante}</b></div>
+      <div class="stepper"><button onclick="stepAnte(-1)" ${G.ante<=MINBET?'disabled':''}>–</button><div class="val">${G.ante}</div><button onclick="stepAnte(1)" ${G.ante>=MAXBET||G.ante+MINBET+G.pairplus>G.bankroll?'disabled':''}>+</button></div>
+      <div class="betlabel">Pair Plus <b>${G.pairplus||'—'}</b> <span class="muted">(optional side bet)</span></div>
+      <div class="stepper"><button onclick="stepPP(-1)" ${G.pairplus<=0?'disabled':''}>–</button><div class="val">${G.pairplus}</div><button onclick="stepPP(1)" ${G.pairplus>=maxPP?'disabled':''}>+</button></div>
+    </div>`;
+    const b=document.createElement("button"); b.className="btn"; b.textContent=`Deal ▶  (bet ${G.ante+G.pairplus})`;
+    b.disabled = G.ante<MINBET || G.ante+G.pairplus>G.bankroll; b.onclick=deal;
+    ctr.appendChild(b);
+  } else if(G.phase==="decide"){
+    const play=document.createElement("button"); play.className="btn play"; play.textContent=`Play (bet ${G.ante})`;
+    play.disabled=G.bankroll<G.ante; play.onclick=window.play;
+    const fold=document.createElement("button"); fold.className="btn fold"; fold.textContent="Fold";
+    fold.onclick=window.fold;
+    ctr.appendChild(fold); ctr.appendChild(play);
+    if(G.bankroll<G.ante){ const n=document.createElement("div"); n.className="muted"; n.style.width="100%"; n.style.textAlign="center"; n.textContent="Not enough chips to Play — you can only Fold."; ctr.appendChild(n); }
+  } else if(G.phase==="result"){
+    const R=G.result;
+    const big=document.createElement("div");
+    big.className="bigresult "+(R.delta>0?"win":R.delta<0?"lose":"push");
+    big.textContent = R.delta>0?`+${R.delta} chips`: R.delta<0?`${R.delta} chips`:"Even (push)";
+    bets.appendChild(big);
+    const nd=document.createElement("div"); nd.className="notes";
+    R.notes.forEach(n=>{ const el=document.createElement("div"); el.className="note "+(n.t||""); el.textContent=n.s; nd.appendChild(el); });
+    bets.appendChild(nd);
+    const nb=document.createElement("button"); nb.className="btn"; nb.textContent="Next hand ▶"; nb.onclick=nextHand;
+    ctr.appendChild(nb);
+  } else if(G.phase==="bust"){
+    bets.innerHTML=`<div class="note lose" style="text-align:center">Out of chips. Re-buy to keep playing.</div>`;
+    const rb=document.createElement("button"); rb.className="btn"; rb.textContent=`Re-buy (+${START_BANK})`; rb.onclick=rebuy;
+    ctr.appendChild(rb);
+  }
+  updateTipVisibility();
+}
+
+/* ============================================================ TIPS */
+const TIPS={
+  beginner:[
+    "Each hand: put up an <b>Ante</b>, look at your 3 cards, then <b>Play</b> (match your ante) or <b>Fold</b>.",
+    "The dealer only <b>qualifies</b> with Queen-high or better. If the dealer doesn't qualify, your Ante wins and your Play bet is returned.",
+    "Card order is special here: <b>a straight beats a flush</b> (straights are rarer with only 3 cards).",
+    "<b>Pair Plus</b> is a side bet that pays whenever you're dealt a pair or better — it doesn't care what the dealer has."
+  ],
+  advanced:[
+    "Optimal rule: <b>Play any hand of Queen-6-4 or better, otherwise fold.</b> That's the single break-even line.",
+    "Folding forfeits your Ante and Pair Plus, so a marginal Play (just above Q-6-4) still beats folding on average.",
+    "The <b>Ante bonus</b> pays on a straight (1:1), trips (4:1) or straight flush (5:1) even if the dealer beats you — you never fold those.",
+    "Pair Plus has a higher house edge than Ante/Play; keep it small if you're playing to last."
+  ]
+};
+function liveHint(){
+  if(!G||G.phase!=="decide") return "";
+  const rec=shouldPlay(G.player);
+  return `You hold <b>${handLabel(rank3(G.player))}</b>. By the Q-6-4 rule: <b>${rec?'Play':'Fold'}</b>.`;
+}
+function openTips(){
+  const lvl=settings.tipLevel;
+  let html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>💡 Tips</h2>
+    <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
+    <div class="seg" style="opacity:${settings.tipsOn?1:.4};"><button class="${lvl==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="setTipLevel('beginner')">Beginner</button><button class="${lvl==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="setTipLevel('advanced')">Advanced</button></div></div>`;
+  const hint=liveHint(); if(hint) html+=`<h3>This hand</h3><div class="tip-block">${hint}</div>`;
+  html+=`<h3>${lvl==='advanced'?'Strategy':'Basics'}</h3>`;
+  TIPS[lvl].forEach(t=>html+=`<div class="tip-block">${t}</div>`);
+  openPanel(html,"tips");
+}
+function setTipLevel(l){ settings.tipLevel=l; openTips(); }
+function toggleTips(){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); openTips(); }
+function updateTipVisibility(){ const f=document.getElementById("floatTip"); if(f) f.style.display=settings.tipsOn?"block":"none"; }
+
+/* ============================================================ OVERLAYS */
+function openPanel(html,kind){ document.getElementById("panel").innerHTML=html; document.getElementById("overlay").classList.add("show"); curOverlay={kind}; }
+function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; }
+
+function openRules(back){
+  const closeBtn = back
+    ? `<button class="btn sec sm close" onclick="${back}()">‹ Back</button>`
+    : `<button class="btn sec sm close" onclick="closeOverlay()">✕</button>`;
+  const html=`${closeBtn}
+    <h2>How to Play Three-Card Poker</h2>
+    <p>You play against the <b>dealer</b>, not other players. Everyone gets three cards.</p>
+    <h3>The bets</h3>
+    <p>Put up an <b>Ante</b> to be dealt in. You may also make an optional <b>Pair Plus</b> side bet. Look at your three cards, then choose:</p>
+    <ul>
+      <li><b>Play</b> — add a Play bet equal to your Ante to take on the dealer.</li>
+      <li><b>Fold</b> — give up your Ante (and Pair Plus).</li>
+    </ul>
+    <h3>The dealer must qualify</h3>
+    <p>The dealer needs <b>Queen-high or better</b>. If the dealer doesn't qualify, your <b>Ante pays 1:1</b> and your <b>Play bet is returned</b>. If the dealer qualifies, the higher hand wins both the Ante and Play (a tie pushes).</p>
+    <h3>Hand ranking (high to low)</h3>
+    <p>Straight flush · Three of a kind · <b>Straight</b> · Flush · Pair · High card.<br><span class="muted">Note: a straight beats a flush in three-card poker.</span></p>
+    <h3>Ante bonus</h3>
+    <table><tr><td>Straight</td><td>1 : 1</td></tr><tr><td>Three of a kind</td><td>4 : 1</td></tr><tr><td>Straight flush</td><td>5 : 1</td></tr></table>
+    <p class="muted">Paid on your Ante for a strong hand — even if the dealer beats you.</p>
+    <h3>Pair Plus payouts</h3>
+    <table><tr><td>Pair</td><td>1 : 1</td></tr><tr><td>Flush</td><td>3 : 1</td></tr><tr><td>Straight</td><td>6 : 1</td></tr><tr><td>Three of a kind</td><td>30 : 1</td></tr><tr><td>Straight flush</td><td>40 : 1</td></tr></table>
+    <h3>Best strategy</h3>
+    <p>Play every hand of <b>Queen-6-4 or better</b>; fold anything worse.</p>`;
+  openPanel(html,"rules");
+}
+
+function openMenu(){
+  const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>
+    <h3>Your name</h3>
+    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
+    <h3>Learning tips</h3>
+    <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
+    <div class="seg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div></div>
+    <h3>Deck</h3>
+    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
+    <h3>Table</h3>
+    <a class="setup-opt" href="../">🏠 Back to all games</a>
+    <button class="setup-opt" onclick="closeOverlay();chooseSetup();">↩ New session / reset chips</button>
+    <button class="setup-opt" onclick="openRules()">📖 How to play</button>
+    <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>`;
+  openPanel(html,"menu");
+}
+function onNameInput(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; }
+function menuToggleTips(){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); openMenu(); }
+function menuToggleFour(){ settings.fourColor=!settings.fourColor; if(G)render(); openMenu(); }
+function menuToggleSpeed(){ settings.speed=!settings.speed; openMenu(); }
+
+/* ============================================================ SETUP */
+function chooseSetup(){
+  const html=`<h2>♠ Three-Card Poker ♥</h2>
+    <p>Ante up, play or fold, and beat the dealer. Play the Pair Plus side bet for the big payouts.</p>
+    <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseSetup')">📖 How to play</button></div>
+    <h3>Your name</h3>
+    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
+    <h3>Tips</h3>
+    <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
+    <div class="seg" id="setupSeg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div></div>
+    <h3>Deck</h3>
+    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
+    <p class="muted" style="margin-top:12px;">You'll start with ${START_BANK} chips.</p>
+    <div style="text-align:center;margin-top:10px;"><button class="btn" onclick="closeOverlay();newSession();">Sit down ▶</button></div>`;
+  openPanel(html,"setup");
+}
+function toggleTipsSetup(el){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); chooseSetup(); }
+function refreshLvl(){ document.getElementById("s-b").classList.toggle("on",settings.tipLevel==='beginner'); document.getElementById("s-a").classList.toggle("on",settings.tipLevel==='advanced'); }
+
+/* wire up */
+document.getElementById("tipBtn").onclick=openTips;
+document.getElementById("menuBtn").onclick=openMenu;
+document.getElementById("rulesBtn").onclick=()=>openRules();
+document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay" && (curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules")) closeOverlay(); };
+updateTipVisibility();
+chooseSetup();
+</script>
+<script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){});});}</script>
+</body>
+</html>
