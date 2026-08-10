@@ -1,7 +1,10 @@
 /* Game Night service worker — offline app shell + games */
-const CACHE = "gamenight-v1";
+const CACHE = "gamenight-v2";
 const ASSETS = [
-  "./", "index.html", "rat.html", "cribbage.html",
+  "./", "index.html",
+  "theleechlakegame/", "theleechlakegame/index.html",
+  "cribbage/", "cribbage/index.html",
+  "onpatrolbingo/", "onpatrolbingo/index.html",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"
 ];
 
@@ -15,7 +18,7 @@ self.addEventListener("fetch", e=>{
   const req=e.request;
   if(req.method!=="GET") return;
   const url=new URL(req.url);
-  if(url.origin!==location.origin) return;            // let cross-origin (e.g. ntfy, external bingo) go to network
+  if(url.origin!==location.origin) return;            // let cross-origin go to network
   e.respondWith(
     caches.match(req).then(hit=> hit || fetch(req).then(res=>{
       const copy=res.clone();
