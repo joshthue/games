@@ -33,6 +33,7 @@
   .meta{flex:1; min-width:0;}
   .meta .t{font-size:19px; font-weight:800; color:var(--gold);}
   .meta .s{font-size:12.5px; opacity:.8; margin-top:2px; line-height:1.35;}
+  .meta .u{font-size:11px; opacity:.5; margin-top:3px; letter-spacing:.3px;}
   .arrow{opacity:.5; font-size:22px;}
   .ext{font-size:10px; letter-spacing:1px; opacity:.6; margin-left:6px; border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:1px 5px; vertical-align:middle;}
   .install{margin:18px 0 4px; text-align:center;}
@@ -68,19 +69,20 @@
    line to the GAMES array below. That's it.
    ============================================================ */
 const GAMES = [
-  { title:"Rat",             emoji:"🐀", sub:"The Leech Lake Game · trick-taking, last one standing", href:"theleechlakegame/" },
-  { title:"Cribbage",        emoji:"🃏", sub:"Classic to 121 · vs computer or two phones",            href:"cribbage/" },
-  { title:"On Patrol Bingo", emoji:"📺", sub:"Play along with the show",                                href:"onpatrolbingo/" },
+  { title:"Rat",             emoji:"🐀", sub:"The Leech Lake Game · trick-taking, last one standing", href:"theleechlakegame/", updated:"2026-08-10" },
+  { title:"Cribbage",        emoji:"🃏", sub:"Classic to 121 · vs computer or two phones",            href:"cribbage/", updated:"2026-08-10" },
+  { title:"On Patrol Bingo", emoji:"📺", sub:"Play along with the show",                                href:"onpatrolbingo/", updated:"2026-08-10" },
   // { title:"New Game", emoji:"🎲", sub:"make a folder with an index.html, then add one line here", href:"newgame/" },
 ];
 
+function fmtDate(iso){ if(!iso) return ""; const p=iso.split("-").map(Number); const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][p[1]-1]; return mo+" "+p[2]+", "+p[0]; }
 const grid=document.getElementById("grid");
 GAMES.forEach(g=>{
   const a=document.createElement("a");
   a.className="tile"; a.href=g.href;
   if(g.external){ a.target="_blank"; a.rel="noopener"; }
   a.innerHTML=`<div class="emoji">${g.emoji}</div>
-    <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div></div>
+    <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div>${g.updated?`<div class="u">Updated ${fmtDate(g.updated)}</div>`:''}</div>
     <div class="arrow">›</div>`;
   grid.appendChild(a);
 });
