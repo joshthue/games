@@ -57,10 +57,10 @@
   .trickcard .who{font-size:10px; opacity:.75;}
   .lead-tag{font-size:10px; color:var(--gold);}
 
-  .card{width:50px; height:70px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:44px; height:62px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     user-select:none; border:1px solid #d8d2c0; transition:transform .12s, box-shadow .12s;}
-  .card.sm{width:34px; height:48px;}
+  .card.sm{width:30px; height:44px;}
   .card .rank{position:absolute; top:3px; left:5px; font-size:13px; font-weight:800; line-height:1;}
   .card .rankb{position:absolute; bottom:3px; right:5px; font-size:13px; font-weight:800; line-height:1; transform:rotate(180deg);}
   .card .pip{font-size:22px;} .card.sm .pip{font-size:15px;} .card.sm .rank,.card.sm .rankb{font-size:9px;}
@@ -68,7 +68,7 @@
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.playable{cursor:pointer;} .card.playable:hover{transform:translateY(-8px); box-shadow:0 8px 14px rgba(0,0,0,.45);}
   .card.illegal{opacity:.32;}
-  .yourhand{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; min-height:72px; align-items:center;}
+  .yourhand{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; min-height:64px; align-items:center;}
   .status{min-height:38px; text-align:center; font-size:14px; margin:6px 0; color:var(--gold); font-weight:600;
     display:flex; align-items:center; justify-content:center; padding:0 6px;}
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;}
@@ -100,7 +100,7 @@
   .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
   .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:430px){ .card{width:44px;height:62px;} h1{font-size:17px;} }
+  @media(max-width:430px){ .card{width:38px;height:54px;} .card .pip{font-size:19px;} h1{font-size:17px;} }
 </style>
 </head>
 <body>
@@ -185,7 +185,10 @@ function legalCards(hand, gameType, trick){
 
 /* ============================================================ STATE */
 let R=null;
-let settings={tipsOn:true, tipLevel:"beginner", playerName:"You", numPlayers:4};
+let settings={tipsOn:true, tipLevel:"beginner", playerName:"You", numPlayers:4, fourColor:false, speed:false};
+const FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];   // ♠ black, ♥ red, ♦ blue, ♣ green
+function suitColor(s){ return settings.fourColor ? FOURCOL[s] : (SUIT_RED[s]?"#c22":"#1c2a24"); }
+function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }   // speed play shortens delays
 let curOverlay={kind:null};
 
 function newGame(){
@@ -260,7 +263,7 @@ function advance(){
   if(R.phase!=="play")return;
   const p=R.players[R.turn];
   if(p.human){ setStatus(`Your turn — ${turnHint()}`); render(); }
-  else { setStatus(`${p.name} is thinking…`); render(); setTimeout(()=>cpuPlay(R.turn),650); }
+  else { setStatus(`${p.name} is thinking…`); render(); setTimeout(()=>cpuPlay(R.turn),D(650)); }
 }
 function turnHint(){
   if(R.gameType==="suits"&&R.trick.length){ const led=R.trick[0].card.s; const has=R.players[0].hand.some(c=>c.s===led); return has?`follow ${SUITS[led]} if you can.`:`no ${SUITS[led]} — play anything.`; }
@@ -279,8 +282,8 @@ function doPlay(seat,i){
   const card=p.hand.splice(i,1)[0];
   R.trick.push({p:seat, card});
   const aliveCount=aliveList().length;
-  if(R.trick.length>=aliveCount){ R.phase="resolve"; render(); setTimeout(resolveTrick,900); }
-  else { R.turn=nextAliveSeat(seat); R.phase="play"; render(); setTimeout(advance,300); }
+  if(R.trick.length>=aliveCount){ R.phase="resolve"; render(); setTimeout(resolveTrick,D(900)); }
+  else { R.turn=nextAliveSeat(seat); R.phase="play"; render(); setTimeout(advance,D(300)); }
 }
 function resolveTrick(){
   const wi=trickWinnerIndex(R.trick, R.gameType, R.trump);
@@ -290,8 +293,8 @@ function resolveTrick(){
   setStatus(`${pname(winnerSeat)} takes the trick (${cardStr(R.trick[wi].card)}).`);
   render();
   const done = aliveList().every(p=>p.hand.length===0);
-  if(done){ R.phase="handEnd"; setTimeout(endHand,900); }
-  else { setTimeout(beginTrick,900); }   // stays "resolve" until beginTrick sets "play"
+  if(done){ R.phase="handEnd"; setTimeout(endHand,D(900)); }
+  else { setTimeout(beginTrick,D(900)); }   // stays "resolve" until beginTrick sets "play"
 }
 function endHand(){
   const aliveBefore=aliveList();
@@ -315,7 +318,7 @@ function proceedAfterCaller(winSeat, summary){
     R.phase="handEnd"; R.lastResult=summary;
     setStatus(summary+`Ran the ladder out with ${aliveList().length} still standing — everyone re-antes and starts over from 7.`);
     render();
-    showControls([{label:"Re-ante & start over ▶", fn:()=>startSeries(true), cls:"btn"}]);
+    showAdvance("Re-ante & start over ▶", ()=>startSeries(true));
     return;
   }
   R.seriesFirstHand=false;
@@ -324,14 +327,19 @@ function proceedAfterCaller(winSeat, summary){
   R.phase="handEnd";
   setStatus(summary+`Next: ${R.handSize} cards — ${callsPhrase(winSeat)}.`);
   render();
-  showControls([{label:"Deal next hand ▶", fn:startHand, cls:"btn"}]);
+  showAdvance("Deal next hand ▶", startHand);
+}
+function showAdvance(label, fn){
+  R.advSeq=(R.advSeq||0)+1; const tok=R.advSeq;
+  showControls([{label, fn, cls:"btn"}]);
+  if(settings.speed) setTimeout(()=>{ if(R.advSeq===tok && (R.phase==="handEnd"||R.phase==="reset")) fn(); }, D(1300));
 }
 function startTiebreak(seats, summary){
   R.phase="tiebreak";
   R.tie={seats, deck:shuffle(makeDeck()), flips:[], idx:0, winner:null, summary};
   setStatus(`Tie for most tricks — first Jack calls: ${seats.map(s=>pname(s)).join(" vs ")}`);
   render();
-  setTimeout(tiebreakStep, 900);
+  setTimeout(tiebreakStep, D(900));
 }
 function tiebreakStep(){
   const t=R.tie; if(!t)return;
@@ -341,12 +349,12 @@ function tiebreakStep(){
   if(card.r===11){                       // Jack — this player calls
     t.winner=seat; render();
     setStatus(`${pname(seat)} flipped the ${cardStr(card)} — ${callsPhrase(seat)}!`);
-    setTimeout(()=>proceedAfterCaller(seat, t.summary), 1500);
+    setTimeout(()=>proceedAfterCaller(seat, t.summary), D(1500));
     return;
   }
   render();
   t.idx++;
-  setTimeout(tiebreakStep, 750);
+  setTimeout(tiebreakStep, D(750));
 }
 
 /* ============================================================ CPU */
@@ -406,7 +414,8 @@ function setStatus(m){ if(R)R.msg=m; const s=document.getElementById("status"); 
 function cardEl(c,opts={}){
   const d=document.createElement("div");
   if(opts.back||!c){ d.className="card "+(opts.sm?"sm ":"")+"back"; return d; }
-  d.className="card "+(opts.sm?"sm ":"")+(SUIT_RED[c.s]?"red":"black")+(opts.cls?(" "+opts.cls):"");
+  d.className="card "+(opts.sm?"sm ":"")+(opts.cls?(" "+opts.cls):"");
+  d.style.color=suitColor(c.s);
   d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span>`;
   return d;
 }
@@ -484,7 +493,7 @@ function buildControls(){
 }
 function showSuitPick(){
   const w=document.getElementById("suitpickwrap"); if(!w)return;
-  w.innerHTML=`<div class="suitpick">`+SUITS.map((s,i)=>`<button class="${SUIT_RED[i]?'red':'black'}" onclick="humanCall('suits',${i})">${s}</button>`).join("")+`</div>`;
+  w.innerHTML=`<div class="suitpick">`+SUITS.map((s,i)=>`<button style="color:${suitColor(i)}" onclick="humanCall('suits',${i})">${s}</button>`).join("")+`</div>`;
 }
 
 /* ============================================================ TIPS */
@@ -551,6 +560,9 @@ function openMenu(){
     <h3>Learning tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
+    <h3>Deck &amp; speed</h3>
+    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Game</h3>
     <button class="setup-opt" onclick="closeOverlay();chooseSetup();">↩ New game / change players</button>
     <div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>`;
@@ -558,6 +570,8 @@ function openMenu(){
 }
 function onNameInput(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; if(R&&R.players[0]){R.players[0].name=settings.playerName; R.roster[0].name=settings.playerName; render();} }
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
+function menuToggleFour(){settings.fourColor=!settings.fourColor;if(R)render();openMenu();}
+function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
 function openRules(){
   const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button>
     <h2>How to Play Rat</h2>
@@ -595,6 +609,9 @@ function chooseSetup(){
     <h3>Tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
     <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div>
+    <h3>Deck &amp; speed</h3>
+    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
     <div style="text-align:center;margin-top:14px;"><button class="btn" onclick="closeOverlay();newGame();">Deal! ▶</button></div>`;
   openPanel(html,"setup");
 }

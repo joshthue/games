@@ -68,10 +68,10 @@
   .zone-label{text-align:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65; margin:6px 0 2px;}
   .row{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; min-height:64px; align-items:center;}
 
-  .card{width:52px; height:74px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:44px; height:62px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     user-select:none; border:1px solid #d8d2c0; transition:transform .12s ease, box-shadow .12s ease;}
-  .card.sm{width:42px; height:60px;}
+  .card.sm{width:34px; height:48px;}
   .card .rank{position:absolute; top:3px; left:5px; font-size:13px; font-weight:800; line-height:1;}
   .card .rankb{position:absolute; bottom:3px; right:5px; font-size:13px; font-weight:800; line-height:1; transform:rotate(180deg);}
   .card .pip{font-size:24px;} .card.sm .pip{font-size:19px;}
@@ -114,7 +114,7 @@
   .setup-opt.on{background:var(--gold); color:var(--ink);}
   .codebox{font-size:40px; letter-spacing:10px; font-weight:800; color:var(--gold); text-align:center; background:rgba(0,0,0,.3); border-radius:12px; padding:14px; margin:10px 0;}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:420px){ .card{width:46px;height:66px;} .card.sm{width:38px;height:54px;} h1{font-size:18px;} }
+  @media(max-width:420px){ .card{width:40px;height:56px;} .card.sm{width:32px;height:46px;} .card .pip{font-size:19px;} h1{font-size:18px;} }
 </style>
 </head>
 <body>
@@ -208,7 +208,10 @@ function cribValue(disc){let v=0;const[a,b]=disc;if(a.r===b.r)v+=2;if(pegVal(a.r
 
 /* ---------- state ---------- */
 let G=null;
-let settings={mode:"cpu", tipsOn:true, tipLevel:"beginner", playerName:"You"};
+let settings={mode:"cpu", tipsOn:true, tipLevel:"beginner", playerName:"You", fourColor:false, speed:false};
+const FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];   // spades black, hearts red, diamonds blue, clubs green
+function suitColor(s){ return settings.fourColor ? FOURCOL[s] : (SUIT_RED[s]?"#c22":"#1c2a24"); }
+function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }
 let localSel=[];
 let net={online:false, role:null, seat:0, code:null, client:null, joined:false, status:"", peerHere:false};
 let curOverlay={kind:null,key:null};
@@ -303,7 +306,7 @@ function finishDiscards(){
   G.phase="cut";
   setStatus(`Starter cut: ${cardStr(G.starter)}${heels} — play starts in a moment…`);
   syncRender();
-  if(!net.online || net.role==="host"){ setTimeout(()=>{ if(G&&G.phase==="cut") startPegging(); }, 2000); }
+  if(!net.online || net.role==="host"){ setTimeout(()=>{ if(G&&G.phase==="cut") startPegging(); }, D(2000)); }
 }
 
 /* ---------- pegging ---------- */
@@ -318,20 +321,20 @@ function pegLoop(){
   if(G.phase!=="pegging")return;
   if(handEmpty()){
     if(G.lastPlayer!==null&&G.count!==0){addScore(G.lastPlayer,1);setStatus(`+1 to ${playerName(G.lastPlayer)} for last card.`);}
-    syncRender(); if(!G.winner) setTimeout(endPegging,700); return;
+    syncRender(); if(!G.winner) setTimeout(endPegging,D(700)); return;
   }
   const p=G.turn;
   if(canPlay(p)){
     if(isHuman(p)){ setStatus(`${poss(playerName(p))} turn — count is ${G.count}.`); syncRender(); }
-    else { setStatus("Computer is thinking…"); syncRender(); setTimeout(cpuPlay,700); }
+    else { setStatus("Computer is thinking…"); syncRender(); setTimeout(cpuPlay,D(700)); }
   } else {
     const other=1-p;
-    if(canPlay(other)&&G.hands[other].length>0){ setStatus(`${playerName(p)} can't play — Go.`); G.turn=other; syncRender(); setTimeout(pegLoop,600); }
+    if(canPlay(other)&&G.hands[other].length>0){ setStatus(`${playerName(p)} can't play — Go.`); G.turn=other; syncRender(); setTimeout(pegLoop,D(600)); }
     else {
       if(G.lastPlayer!==null){addScore(G.lastPlayer,1);setStatus(`${playerName(p)} — Go. +1 to ${playerName(G.lastPlayer)}.`);}
       G.count=0;G.pile=[];G.turn=(G.lastPlayer!==null)?1-G.lastPlayer:G.turn;
       if(G.hands[G.turn].length===0)G.turn=1-G.turn;
-      syncRender(); if(!G.winner) setTimeout(pegLoop,700);
+      syncRender(); if(!G.winner) setTimeout(pegLoop,D(700));
     }
   }
 }
@@ -360,12 +363,12 @@ function doPlay(p,idx){
   setStatus(m);
   if(G.count===31){
     G.count=0;G.pile=[];G.turn=1-p;
-    if(handEmpty()){syncRender();if(!G.winner)setTimeout(endPegging,800);return;}
+    if(handEmpty()){syncRender();if(!G.winner)setTimeout(endPegging,D(800));return;}
     if(G.hands[G.turn].length===0)G.turn=1-G.turn;
-    syncRender(); if(!G.winner) setTimeout(pegLoop,800); return;
+    syncRender(); if(!G.winner) setTimeout(pegLoop,D(800)); return;
   }
   if(G.winner){syncRender();return;}
-  G.turn=1-p; syncRender(); setTimeout(pegLoop,600);
+  G.turn=1-p; syncRender(); setTimeout(pegLoop,D(600));
 }
 function endPegging(){
   if(G.winner)return;
@@ -396,6 +399,7 @@ function endHand(){
   G.dealer=1-G.dealer; G.phase="handover";
   setStatus(`Hand complete. Deal passes to ${playerName(G.dealer)}.`);
   syncRender();
+  if(settings.speed && !(net.online&&net.role==="guest")) setTimeout(()=>{ if(G&&G.phase==="handover") uiNextHand(); }, 1400);
 }
 function uiNextHand(){
   if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"nextHand"}); return; }
@@ -415,8 +419,9 @@ function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.score
 function cardEl(c,opts={}){
   const d=document.createElement("div");
   if(opts.back||!c){ d.className="card "+(opts.sm?"sm ":"")+"back"; return d; }
-  d.className="card "+(opts.sm?"sm ":"")+(SUIT_RED[c.s]?"red":"black");
+  d.className="card "+(opts.sm?"sm ":"");
   if(opts.cls)d.className+=" "+opts.cls;
+  d.style.color=suitColor(c.s);
   d.innerHTML=`<span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${RANK_STR[c.r]}</span>`;
   return d;
 }
@@ -582,8 +587,9 @@ function openCountPanel(){
   const canAdvance = !net.online || net.role==="host" || true; // either may advance
   html+=`<div style="text-align:center;margin-top:10px;"><button class="btn" onclick="uiApplyCount()">Peg ${res.total} & Continue ▶</button></div>`;
   openPanel(html,"count");curOverlay={kind:"count",key:G.countIndex};
+  if(settings.speed && !(net.online&&net.role==="guest")){ const k=G.countIndex; setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key===k) uiApplyCount(); }, 1500); }
 }
-function cardMini(c){return `<span class="card sm ${SUIT_RED[c.s]?'red':'black'}" style="display:inline-flex;margin:2px;"><span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span></span>`;}
+function cardMini(c){return `<span class="card sm" style="display:inline-flex;margin:2px;color:${suitColor(c.s)};"><span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span></span>`;}
 function countTeach(res,whose){
   const has=l=>res.bd.some(b=>b.label.startsWith(l));
   if(res.total===0)return "No points here — 15s, pairs, runs, or a Jack matching the starter's suit all score.";
@@ -605,6 +611,9 @@ function openMenu(){
     <h3>Learning tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
+    <h3>Deck &amp; speed</h3>
+    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
     <h3>Game</h3>
@@ -613,6 +622,8 @@ function openMenu(){
   openPanel(html,"menu");
 }
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
+function menuToggleFour(){settings.fourColor=!settings.fourColor;if(G)render();openMenu();}
+function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
 function openRules(){
   const html=`<button class="btn sec sm close" onclick="closeOverlay()">✕</button>
    <h2>How to Play Cribbage</h2>
@@ -731,7 +742,10 @@ function chooseMode(){
     <button class="setup-opt" onclick="showOnlineChoice()">📱 Play on two phones (online)</button>
     <h3>Tips</h3>
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="bootToggle(this)"></button><span id="bootTogTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
-    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>`;
+    <div class="seg" style="margin:10px 0;"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>
+    <h3>Deck &amp; speed</h3>
+    <div class="switch"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="switch" style="margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>`;
   openPanel(html,"boot");
 }
 function bootToggle(el){settings.tipsOn=!settings.tipsOn;el.classList.toggle("on",settings.tipsOn);document.getElementById("bootTogTxt").textContent=settings.tipsOn?'Tips ON':'Tips OFF';updateTipVisibility();}
