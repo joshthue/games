@@ -69,7 +69,7 @@
    line to the GAMES array below. That's it.
    ============================================================ */
 const GAMES = [
-  { title:"Rat",             emoji:"🐀", sub:"The Leech Lake Game · trick-taking, last one standing", href:"theleechlakegame/", updated:"2026-08-10" },
+  { title:"Rat",             emoji:"🐀", sub:"The Leech Lake Game · trick-taking, last one standing", href:"theleechlakegame/", updated:"2026-08-11" },
   { title:"Cribbage",        emoji:"🃏", sub:"Classic to 121 · vs computer or two phones",            href:"cribbage/", updated:"2026-08-10" },
   { title:"On Patrol Bingo", emoji:"📺", sub:"Play along with the show",                                href:"onpatrolbingo/", updated:"2026-08-10" },
   { title:"Three-Card Poker", emoji:"🎰", sub:"Ante, Play & Pair Plus vs the dealer",              href:"threecardpoker/", updated:"2026-08-10" },
@@ -78,6 +78,8 @@ const GAMES = [
 ];
 
 function fmtDate(iso){ if(!iso) return ""; const p=iso.split("-").map(Number); const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][p[1]-1]; return mo+" "+p[2]+", "+p[0]; }
+function fmtLocal(iso){ try{ return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }catch(e){ return ""; } }
+const REPO="joshthue/games";
 const grid=document.getElementById("grid");
 GAMES.forEach(g=>{
   const a=document.createElement("a");
@@ -87,6 +89,15 @@ GAMES.forEach(g=>{
     <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div>${g.updated?`<div class="u">Updated ${fmtDate(g.updated)}</div>`:''}</div>
     <div class="arrow">›</div>`;
   grid.appendChild(a);
+  // Keep the tile date honest: fetch the real last-commit date from GitHub (best-effort; the baked date shows offline).
+  const uEl=a.querySelector(".u");
+  if(uEl && g.href && !g.external){
+    const path=g.href.replace(/\/$/,"")+"/index.html";
+    fetch(`https://api.github.com/repos/${REPO}/commits?path=${encodeURIComponent(path)}&per_page=1`)
+      .then(r=>r.ok?r.json():null)
+      .then(j=>{ if(j&&j[0]&&j[0].commit&&j[0].commit.committer){ const d=fmtLocal(j[0].commit.committer.date); if(d) uEl.textContent="Updated "+d; } })
+      .catch(()=>{});
+  }
 });
 
 // Install support: Android/Chrome shows a real button; iOS gets a hint.
