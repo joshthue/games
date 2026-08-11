@@ -737,7 +737,8 @@ function handleGuestAction(obj){
    ============================================================ */
 function chooseMode(){
   netStop();
-  const html=`<h2>♠ Cribbage ♥</h2><p>Pick how you want to play.</p>
+  const html=`<button class="btn sec sm close" onclick="exitSetup()">✕</button>
+    <h2>♠ Cribbage ♥</h2><p>Pick how you want to play.</p>
     <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseMode')">📖 How to play</button></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
@@ -791,8 +792,10 @@ function showGuestConnecting(){
 document.getElementById("tipBtn").onclick=openTips;
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("rulesBtn").onclick=openRules;
-document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay"){ if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay(); } };
+document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay(); else if(curOverlay.kind==="boot" && G) closeOverlay(); };
 
+function exitSetup(){ if(G) closeOverlay(); else location.href="../"; }
+document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ if(curOverlay.kind==="setup"||curOverlay.kind==="boot") exitSetup(); else closeOverlay(); } });
 updateTipVisibility();
 chooseMode();
 </script>

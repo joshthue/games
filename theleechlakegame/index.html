@@ -616,7 +616,8 @@ function openRules(back){
 /* ============================================================ SETUP */
 function chooseSetup(){
   const n=settings.numPlayers;
-  const html=`<h2>🐀 Rat — The Leech Lake Game</h2>
+  const html=`<button class="btn sec sm close" onclick="exitSetup()">✕</button>
+    <h2>🐀 Rat — The Leech Lake Game</h2>
     <p>Win at least one trick each hand or you're out. Last one standing wins.</p>
     <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseSetup')">📖 How to play</button></div>
     <h3>Your name</h3>
@@ -642,7 +643,9 @@ function refreshLvl(){ document.getElementById("s-b").classList.toggle("on",sett
 document.getElementById("tipBtn").onclick=openTips;
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("rulesBtn").onclick=openRules;
-document.getElementById("overlay").onclick=e=>{ if(e.target.id==="overlay" && (curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules")) closeOverlay(); };
+document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay(); else if(curOverlay.kind==="setup" && R) closeOverlay(); };
+function exitSetup(){ if(R) closeOverlay(); else location.href="../"; }
+document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ if(curOverlay.kind==="setup"||curOverlay.kind==="boot") exitSetup(); else closeOverlay(); } });
 updateTipVisibility();
 chooseSetup();
 </script>
