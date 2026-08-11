@@ -215,10 +215,14 @@ function cribValue(disc){let v=0;const[a,b]=disc;if(a.r===b.r)v+=2;if(pegVal(a.r
 
 /* ---------- state ---------- */
 let G=null;
-let settings={mode:"cpu", tipsOn:false, tipLevel:"beginner", playerName:"You", fourColor:true, speed:true};
+let settings={mode:"cpu", tipsOn:false, tipLevel:"beginner", playerName:"You", fourColor:true, speed:"fast"};
 const FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];   // spades black, hearts red, diamonds blue, clubs green
 function suitColor(s){ return settings.fourColor ? FOURCOL[s] : (SUIT_RED[s]?"#c22":"#1c2a24"); }
-function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }
+function D(ms){ const m={normal:1,fast:0.45,superfast:0.2}[settings.speed]||1; return Math.round(ms*m); }
+function isAuto(){ return settings.speed!=="normal"; }
+function handoverMs(){ return settings.speed==="superfast"?700:1400; }
+function recapMs(){ return settings.speed==="superfast"?2000:4000; }
+function setSpeed(v){ settings.speed=v; if(curOverlay.kind==="menu") openMenu(); else if(curOverlay.kind==="boot") chooseMode(); }
 let localSel=[];
 let net={online:false, role:null, seat:0, code:null, client:null, joined:false, status:"", peerHere:false};
 let curOverlay={kind:null,key:null};
@@ -318,7 +322,7 @@ function finishDiscards(){
   let heels="";
   if(G.starter.r===11){ addScore(G.dealer,2); heels=` — +2 to ${playerName(G.dealer)} for his heels (Jack cut)!`; }
   glog("play","Cut: "+cardHTMLc(G.starter)+(G.starter.r===11?" — +2 nibs to "+pnLog(G.dealer):""));
-  if(G.winner){ syncRender(); return; }
+  if(G.winner!==null){ syncRender(); return; }
   G.phase="cut";
   setStatus(`Starter cut: ${cardStr(G.starter)}${heels} — play starts in a moment…`);
   syncRender();
@@ -337,13 +341,13 @@ function pegLoop(){
   if(G.phase!=="pegging")return;
   if(handEmpty()){
     if(G.lastPlayer!==null&&G.count!==0){addScore(G.lastPlayer,1);setStatus(`+1 to ${playerName(G.lastPlayer)} for last card.`);}
-    syncRender(); if(!G.winner) setTimeout(endPegging,D(700)); return;
+    syncRender(); if(G.winner===null) setTimeout(endPegging,D(700)); return;
   }
   const p=G.turn;
   if(canPlay(p)){
     if(isHuman(p)){
       const _lg=G.hands[p].map((c,i)=>i).filter(i=>G.count+pegVal(G.hands[p][i].r)<=31);
-      if(settings.speed && !net.online && _lg.length===1){ const _i=_lg[0]; setStatus(`Only one legal play — ${cardStr(G.hands[p][_i])}.`); syncRender(); setTimeout(()=>{ if(G&&G.phase==="pegging"&&G.turn===p&&G.hands[p][_i]) doPlay(p,_i); }, D(500)); }
+      if(isAuto() && !net.online && _lg.length===1){ const _i=_lg[0]; setStatus(`Only one legal play — ${cardStr(G.hands[p][_i])}.`); syncRender(); setTimeout(()=>{ if(G&&G.phase==="pegging"&&G.turn===p&&G.hands[p][_i]) doPlay(p,_i); }, D(500)); }
       else { setStatus(`${poss(playerName(p))} turn — count is ${G.count}.`); syncRender(); }
     }
     else { setStatus("Computer is thinking…"); syncRender(); setTimeout(cpuPlay,D(700)); }
@@ -354,7 +358,7 @@ function pegLoop(){
       if(G.lastPlayer!==null){addScore(G.lastPlayer,1);setStatus(`${playerName(p)} — Go. +1 to ${playerName(G.lastPlayer)}.`);}
       G.count=0;G.pile=[];G.turn=(G.lastPlayer!==null)?1-G.lastPlayer:G.turn;
       if(G.hands[G.turn].length===0)G.turn=1-G.turn;
-      syncRender(); if(!G.winner) setTimeout(pegLoop,D(700));
+      syncRender(); if(G.winner===null) setTimeout(pegLoop,D(700));
     }
   }
 }
@@ -387,15 +391,15 @@ function doPlay(p,idx){
   setStatus(m);
   if(G.count===31){
     G.count=0;G.pile=[];G.turn=1-p;
-    if(handEmpty()){syncRender();if(!G.winner)setTimeout(endPegging,D(800));return;}
+    if(handEmpty()){syncRender();if(G.winner===null)setTimeout(endPegging,D(800));return;}
     if(G.hands[G.turn].length===0)G.turn=1-G.turn;
-    syncRender(); if(!G.winner) setTimeout(pegLoop,D(800)); return;
+    syncRender(); if(G.winner===null) setTimeout(pegLoop,D(800)); return;
   }
-  if(G.winner){syncRender();return;}
+  if(G.winner!==null){syncRender();return;}
   G.turn=1-p; syncRender(); setTimeout(pegLoop,D(600));
 }
 function endPegging(){
-  if(G.winner)return;
+  if(G.winner!==null)return;
   G.phase="counting";
   G.countOrder=[{type:"hand",player:1-G.dealer},{type:"hand",player:G.dealer},{type:"crib",player:G.dealer}];
   G.countIndex=0; syncRender();
@@ -416,16 +420,16 @@ function applyCount(){
   glog("count", possLog(step.player)+(step.type==="crib"?" crib":" hand")+" scored "+res.total+(res.bd.length?" ("+res.bd.map(b=>b.label+" "+b.pts).join(", ")+")":" — nothing"));
   addScore(step.player,res.total);
   G.countIndex++;
-  if(G.winner){syncRender();return;}
+  if(G.winner!==null){syncRender();return;}
   if(G.countIndex>=G.countOrder.length){ endHand(); } else { syncRender(); }
 }
 function endHand(){
-  if(G.winner)return;
+  if(G.winner!==null)return;
   G.dealer=1-G.dealer; G.phase="handover";
   glog("sum","Scores — You "+G.scores[meSeat()]+", "+pnLog(1-meSeat())+" "+G.scores[1-meSeat()]+".");
   setStatus(`Hand complete. Deal passes to ${playerName(G.dealer)}.`);
   syncRender();
-  if(settings.speed && !(net.online&&net.role==="guest")) setTimeout(()=>{ if(G&&G.phase==="handover") uiNextHand(); }, 1400);
+  if(isAuto() && !(net.online&&net.role==="guest")) setTimeout(()=>{ if(G&&G.phase==="handover") uiNextHand(); }, handoverMs());
 }
 function uiNextHand(){
   if(net.online&&net.role==="guest"){ netSend({t:"act",kind:"nextHand"}); return; }
@@ -437,7 +441,7 @@ function uiNewGame(){
 }
 
 /* ---------- scoring / win ---------- */
-function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&!G.winner){G.winner=p;G.phase="gameover"; glog("sum","🏆 "+((!net.online&&p===0)?"You win the game":escC(playerName(p))+" wins")+" — "+G.scores[p]+" to "+G.scores[1-p]+".");} }
+function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&G.winner===null){G.winner=p;G.phase="gameover"; glog("sum","🏆 "+((!net.online&&p===0)?"You win the game":escC(playerName(p))+" wins")+" — "+G.scores[p]+" to "+G.scores[1-p]+".");} }
 
 /* ============================================================
    RENDER
@@ -519,7 +523,7 @@ function updateNetbar(){
 /* overlays that must appear on both devices, driven by phase */
 function driveOverlays(){
   if(G.phase==="counting"){
-    if(settings.speed && !net.online){ if(!(curOverlay.kind==="count"&&curOverlay.key==="recap")) openCountRecap(); }
+    if(isAuto() && !net.online){ if(!(curOverlay.kind==="count"&&curOverlay.key==="recap")) openCountRecap(); }
     else if(!(curOverlay.kind==="count"&&curOverlay.key===G.countIndex)) openCountPanel();
   } else if(G.phase==="gameover"){
     if(curOverlay.kind!=="win") openWinPanel();
@@ -614,7 +618,7 @@ function openCountPanel(){
   const canAdvance = !net.online || net.role==="host" || true; // either may advance
   html+=`<div style="text-align:center;margin-top:10px;"><button class="btn" onclick="uiApplyCount()">Peg ${res.total} & Continue ▶</button></div>`;
   openPanel(html,"count");curOverlay={kind:"count",key:G.countIndex};
-  if(settings.speed && !(net.online&&net.role==="guest")){ const k=G.countIndex; setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key===k) uiApplyCount(); }, 1500); }
+  if(isAuto() && !(net.online&&net.role==="guest")){ const k=G.countIndex; setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key===k) uiApplyCount(); }, 1500); }
 }
 function openCountRecap(){
   if(!G||!G.starter||!G.countOrder)return;
@@ -630,7 +634,7 @@ function openCountRecap(){
   });
   html+=`<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="applyAllCounts()">Continue \u25B6</button></div>`;
   openPanel(html,"count"); curOverlay={kind:"count",key:"recap"};
-  setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key==="recap") applyAllCounts(); }, 4000);
+  setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key==="recap") applyAllCounts(); }, recapMs());
 }
 function applyAllCounts(){
   if(!G||G.phase!=="counting"||!G.starter||!G.countOrder)return;
@@ -640,9 +644,9 @@ function applyAllCounts(){
     const res=scoreHand(cards,G.starter,step.type==="crib");
     glog("count", possLog(step.player)+(step.type==="crib"?" crib":" hand")+" scored "+res.total+(res.bd.length?" ("+res.bd.map(b=>b.label+" "+b.pts).join(", ")+")":" — nothing"));
     addScore(step.player,res.total); G.countIndex=i+1;
-    if(G.winner) break;
+    if(G.winner!==null) break;
   }
-  if(G.winner){ syncRender(); return; }
+  if(G.winner!==null){ syncRender(); return; }
   endHand();
 }
 function cardMini(c){return `<span class="card sm" style="display:inline-flex;margin:2px;color:${suitColor(c.s)};"><span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span></span>`;}
@@ -669,7 +673,7 @@ function openMenu(){
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
     <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
-    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;"><span>Speed</span><div class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></div></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
     <h3>Game</h3>
@@ -810,7 +814,7 @@ function chooseMode(){
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
     <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
-    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>`;
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;"><span>Speed</span><div class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></div></div>`;
   openPanel(html,"boot");
 }
 function bootToggle(el){settings.tipsOn=!settings.tipsOn;updateTipVisibility();chooseMode();}
