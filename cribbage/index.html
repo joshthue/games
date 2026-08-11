@@ -103,6 +103,11 @@
   .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s ease;}
   .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
   .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px 0; font-size:14px; line-height:1.5;}
+  .logrow{font-size:13px; line-height:1.4; padding:5px 9px; border-radius:6px; margin:3px 0; background:rgba(0,0,0,.18);}
+  .logrow.hand{color:var(--gold); font-weight:800; background:transparent; margin-top:12px; border-bottom:1px solid rgba(240,198,116,.3); border-radius:0; padding:6px 2px 4px;}
+  .logrow.play{opacity:.94;} .logrow.count{opacity:.94; border-left:3px solid rgba(240,198,116,.5);}
+  .logrow.good{border-left:3px solid #57b85a;} .logrow.warn{border-left:3px solid var(--red);}
+  .logrow.info{opacity:.9; border-left:3px solid rgba(255,255,255,.25);} .logrow.sum{font-weight:700; background:rgba(240,198,116,.12);}
   .tip-block b{color:var(--gold);}
   .breakdown{background:rgba(0,0,0,.22); border-radius:10px; padding:10px 14px; margin:8px 0;}
   .breakdown .line{display:flex; justify-content:space-between; font-size:14px; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,.12);}
@@ -123,6 +128,7 @@
     <h1>♠ CRIBBAGE ♥</h1>
     <div class="top-btns">
       <a class="btn sec sm" href="../" title="All games" style="text-decoration:none;">🏠</a>
+      <button class="btn sec sm" id="logBtn">Log</button>
       <button class="btn sec sm" id="rulesBtn">Rules</button>
       <button class="btn sec sm" id="menuBtn">Menu</button>
     </div>
@@ -227,6 +233,12 @@ function playerName(p){
 function poss(name){ return name==="You" ? "Your" : name+"'s"; }         // possessive: "Your hand" / "Josh's hand"
 function winVerb(name){ return name==="You" ? "You win!" : name+" wins!"; }
 function cardStr(c){return RANK_STR[c.r]+SUITS[c.s];}
+function escC(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function suitHTMLc(sx){ return `<span style="color:${suitColor(sx)}">${SUITS[sx]}</span>`; }
+function cardHTMLc(c){ return RANK_STR[c.r]+suitHTMLc(c.s); }
+function pnLog(pl){ return (!net.online && pl===0) ? "You" : escC(playerName(pl)); }
+function possLog(pl){ return (!net.online && pl===0) ? "Your" : escC(poss(playerName(pl))); }
+function glog(t,ss){ if(G&&G.log) G.log.push({t:t,s:ss}); }
 
 /* ---------- new game / deal ---------- */
 function newGame(){
@@ -237,7 +249,7 @@ function newGame(){
   G={ scores:[0,0], prevScores:[0,0], dealer:Math.random()<0.5?0:1, phase:"init",
       hands:[[],[]], orig:[[],[]], crib:[], starter:null, pile:[], pileHistory:[],
       count:0, turn:0, lastPlayer:null, discarded:[false,false], names,
-      countOrder:null, countIndex:0, winner:null, msg:"" };
+      countOrder:null, countIndex:0, winner:null, msg:"", log:[] };
   buildTicks(); startHand();
 }
 function startHand(){
@@ -247,6 +259,7 @@ function startHand(){
   const nd=1-G.dealer;
   for(let i=0;i<6;i++){G.hands[nd].push(deck.pop());G.hands[G.dealer].push(deck.pop());}
   sortHand(G.hands[0]);sortHand(G.hands[1]);G.deck=deck;G.orig=[[],[]];
+  glog("hand","— New hand — "+pnLog(G.dealer)+" deals");
   G.phase="discard";
   if(settings.mode==="cpu"){ cpuDiscard(); G.discarded[1]=true; }
   setStatus("");
@@ -293,6 +306,7 @@ function applyDiscard(seat,keys){
   G.crib.push(...cards);
   G.hands[seat]=hand.filter(c=>!cards.includes(c));
   G.discarded[seat]=true;
+  if(seat===meSeat()){ const own=G.dealer===seat; glog("play","You threw "+cards.map(cardHTMLc).join(" ")+" to "+(own?"your":"the other player's")+" crib, keeping "+G.hands[seat].map(cardHTMLc).join(" ")+"."); const best=bestDiscardSuggestion(hand,own), yourEv=expectedHand(G.hands[seat]); const same=best.keep.length===G.hands[seat].length && best.keep.every(bc=>G.hands[seat].some(kc=>cardKey(kc)===cardKey(bc))); if(same) glog("good","✓ Best keep — highest-average hand."); else if(best.ev-yourEv>=1) glog("warn","⚠ Keeping "+best.keep.map(cardHTMLc).join(" ")+" averages ~"+best.ev.toFixed(1)+" vs your ~"+yourEv.toFixed(1)+"."); else glog("info","Solid keep (~"+yourEv.toFixed(1)+" avg; best ~"+best.ev.toFixed(1)+")."); }
   if(G.discarded[0]&&G.discarded[1]) finishDiscards();
   else setStatus("Waiting for the other player to discard…");
   syncRender();
@@ -303,6 +317,7 @@ function finishDiscards(){
   G.starter=G.deck.pop();
   let heels="";
   if(G.starter.r===11){ addScore(G.dealer,2); heels=` — +2 to ${playerName(G.dealer)} for his heels (Jack cut)!`; }
+  glog("play","Cut: "+cardHTMLc(G.starter)+(G.starter.r===11?" — +2 nibs to "+pnLog(G.dealer):""));
   if(G.winner){ syncRender(); return; }
   G.phase="cut";
   setStatus(`Starter cut: ${cardStr(G.starter)}${heels} — play starts in a moment…`);
@@ -326,7 +341,11 @@ function pegLoop(){
   }
   const p=G.turn;
   if(canPlay(p)){
-    if(isHuman(p)){ setStatus(`${poss(playerName(p))} turn — count is ${G.count}.`); syncRender(); }
+    if(isHuman(p)){
+      const _lg=G.hands[p].map((c,i)=>i).filter(i=>G.count+pegVal(G.hands[p][i].r)<=31);
+      if(settings.speed && !net.online && _lg.length===1){ const _i=_lg[0]; setStatus(`Only one legal play — ${cardStr(G.hands[p][_i])}.`); syncRender(); setTimeout(()=>{ if(G&&G.phase==="pegging"&&G.turn===p&&G.hands[p][_i]) doPlay(p,_i); }, D(500)); }
+      else { setStatus(`${poss(playerName(p))} turn — count is ${G.count}.`); syncRender(); }
+    }
     else { setStatus("Computer is thinking…"); syncRender(); setTimeout(cpuPlay,D(700)); }
   } else {
     const other=1-p;
@@ -355,11 +374,15 @@ function applyPlay(seat,key){
   doPlay(seat,i);
 }
 function doPlay(p,idx){
+  let _pc=null;
+  if(p===meSeat() && isHuman(p) && !net.online){ const h=G.hands[p]; let bp=0,bc=null; h.forEach(x=>{ if(G.count+pegVal(x.r)<=31){ const sp=scorePlay([...G.pile,x]); if(sp.pts>bp){bp=sp.pts;bc=x;} } }); _pc={bp:bp,bc:bc}; }
   const c=G.hands[p].splice(idx,1)[0];
   G.pile.push(c);G.pileHistory.push({c,p});
   const sc=scorePlay(G.pile);G.count=sc.total;
   if(sc.pts>0)addScore(p,sc.pts);
   G.lastPlayer=p;
+  glog("play", pnLog(p)+" played "+cardHTMLc(c)+" — count "+G.count+(sc.pts>0?" (+"+sc.pts+": "+sc.reasons.join(", ")+")":""));
+  if(_pc){ if(sc.pts>0 && sc.pts>=_pc.bp) glog("good","✓ Pegged "+sc.pts+" — best available."); else if(_pc.bp>sc.pts) glog("warn","⚠ "+cardHTMLc(_pc.bc)+" would have pegged "+_pc.bp+" here (you got "+sc.pts+")."); }
   let m=`${playerName(p)} played ${cardStr(c)} — count ${G.count}.`;if(sc.pts>0)m+=` +${sc.pts} (${sc.reasons.join(", ")})`;
   setStatus(m);
   if(G.count===31){
@@ -390,6 +413,7 @@ function uiApplyCount(){
 function applyCount(){
   if(G.phase!=="counting")return;
   const {step,res}=countStepData();
+  glog("count", possLog(step.player)+(step.type==="crib"?" crib":" hand")+" scored "+res.total+(res.bd.length?" ("+res.bd.map(b=>b.label+" "+b.pts).join(", ")+")":" — nothing"));
   addScore(step.player,res.total);
   G.countIndex++;
   if(G.winner){syncRender();return;}
@@ -398,6 +422,7 @@ function applyCount(){
 function endHand(){
   if(G.winner)return;
   G.dealer=1-G.dealer; G.phase="handover";
+  glog("sum","Scores — You "+G.scores[meSeat()]+", "+pnLog(1-meSeat())+" "+G.scores[1-meSeat()]+".");
   setStatus(`Hand complete. Deal passes to ${playerName(G.dealer)}.`);
   syncRender();
   if(settings.speed && !(net.online&&net.role==="guest")) setTimeout(()=>{ if(G&&G.phase==="handover") uiNextHand(); }, 1400);
@@ -412,7 +437,7 @@ function uiNewGame(){
 }
 
 /* ---------- scoring / win ---------- */
-function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&!G.winner){G.winner=p;G.phase="gameover";} }
+function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&!G.winner){G.winner=p;G.phase="gameover"; glog("sum","🏆 "+((!net.online&&p===0)?"You win the game":escC(playerName(p))+" wins")+" — "+G.scores[p]+" to "+G.scores[1-p]+".");} }
 
 /* ============================================================
    RENDER
@@ -494,7 +519,8 @@ function updateNetbar(){
 /* overlays that must appear on both devices, driven by phase */
 function driveOverlays(){
   if(G.phase==="counting"){
-    if(!(curOverlay.kind==="count"&&curOverlay.key===G.countIndex)) openCountPanel();
+    if(settings.speed && !net.online){ if(!(curOverlay.kind==="count"&&curOverlay.key==="recap")) openCountRecap(); }
+    else if(!(curOverlay.kind==="count"&&curOverlay.key===G.countIndex)) openCountPanel();
   } else if(G.phase==="gameover"){
     if(curOverlay.kind!=="win") openWinPanel();
   } else {
@@ -590,6 +616,35 @@ function openCountPanel(){
   openPanel(html,"count");curOverlay={kind:"count",key:G.countIndex};
   if(settings.speed && !(net.online&&net.role==="guest")){ const k=G.countIndex; setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key===k) uiApplyCount(); }, 1500); }
 }
+function openCountRecap(){
+  if(!G||!G.starter||!G.countOrder)return;
+  setStatus("The Show — all hands…");
+  let html=`<h2>The Show</h2>`;
+  G.countOrder.forEach(step=>{
+    const cards= step.type==="crib"? G.crib : G.orig[step.player];
+    const res=scoreHand(cards,G.starter,step.type==="crib");
+    const whose= (step.type==="crib"? possLog(step.player)+" crib" : possLog(step.player)+" hand");
+    html+=`<h3 style="margin:10px 0 3px">${whose} — <span style="color:var(--gold)">${res.total}</span></h3><div class="row" style="justify-content:flex-start;flex-wrap:wrap;">`;
+    cards.forEach(c=>html+=cardMini(c)); html+=`<span style="align-self:center;opacity:.6;margin:0 4px;">+</span>`+cardMini(G.starter);
+    html+=`</div><div class="muted" style="margin:2px 0 0">${res.bd.length?res.bd.map(b=>b.label+" "+b.pts).join(" · "):"nothing"}</div>`;
+  });
+  html+=`<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="applyAllCounts()">Continue \u25B6</button></div>`;
+  openPanel(html,"count"); curOverlay={kind:"count",key:"recap"};
+  setTimeout(()=>{ if(G&&G.phase==="counting"&&curOverlay.kind==="count"&&curOverlay.key==="recap") applyAllCounts(); }, 4000);
+}
+function applyAllCounts(){
+  if(!G||G.phase!=="counting"||!G.starter||!G.countOrder)return;
+  for(let i=G.countIndex;i<G.countOrder.length;i++){
+    const step=G.countOrder[i];
+    const cards= step.type==="crib"? G.crib : G.orig[step.player];
+    const res=scoreHand(cards,G.starter,step.type==="crib");
+    glog("count", possLog(step.player)+(step.type==="crib"?" crib":" hand")+" scored "+res.total+(res.bd.length?" ("+res.bd.map(b=>b.label+" "+b.pts).join(", ")+")":" — nothing"));
+    addScore(step.player,res.total); G.countIndex=i+1;
+    if(G.winner) break;
+  }
+  if(G.winner){ syncRender(); return; }
+  endHand();
+}
 function cardMini(c){return `<span class="card sm" style="display:inline-flex;margin:2px;color:${suitColor(c.s)};"><span class="rank">${RANK_STR[c.r]}</span><span class="pip">${SUITS[c.s]}</span></span>`;}
 function countTeach(res,whose){
   const has=l=>res.bd.some(b=>b.label.startsWith(l));
@@ -626,6 +681,11 @@ function openMenu(){
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
 function menuToggleFour(){settings.fourColor=!settings.fourColor;if(G)render();openMenu();}
 function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
+function openLog(){
+  const rows=(G&&G.log&&G.log.length)? G.log.map(e=>`<div class="logrow ${e.t}">${e.s}</div>`).join("") : `<p class="muted">No plays yet — deal a hand to start the log.</p>`;
+  openPanel(`<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>📜 Game Log</h2>`+rows,"log");
+  const pnl=document.getElementById("panel"); if(pnl) pnl.scrollTop=pnl.scrollHeight;
+}
 function openRules(back){
   const closeBtn = back ? `<button class="btn sec sm close" onclick="${back}()">‹ Back</button>` : `<button class="btn sec sm close" onclick="closeOverlay()">✕</button>`;
   const html=`${closeBtn}
@@ -792,7 +852,8 @@ function showGuestConnecting(){
 document.getElementById("tipBtn").onclick=openTips;
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("rulesBtn").onclick=openRules;
-document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay(); else if(curOverlay.kind==="boot" && G) closeOverlay(); };
+document.getElementById("logBtn").onclick=openLog;
+document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules"||curOverlay.kind==="log") closeOverlay(); else if(curOverlay.kind==="boot" && G) closeOverlay(); };
 
 function exitSetup(){ if(G) closeOverlay(); else location.href="../"; }
 document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ if(curOverlay.kind==="setup"||curOverlay.kind==="boot") exitSetup(); else closeOverlay(); } });
