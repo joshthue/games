@@ -732,26 +732,46 @@ function netSend(obj){ netPublish(obj); }   // guest actions / joins
 let pubTimer=null,pubPending=false;
 function publishState(){
   pubPending=true; if(pubTimer)return;
-  pubTimer=setTimeout(()=>{ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:"state",G:redactFor(1)}); } },250);
+  pubTimer=setTimeout(()=>{ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:"state",G:redactFor(1)}); } },100);
 }
-async function pollLoop(){
-  if(!net.online)return;
-  try{
-    const since = net.lastId? ("&since="+encodeURIComponent(net.lastId)) : "&since=all";
-    const res=await fetch(NTFY+ntfyTopic()+"/json?poll=1"+since);
-    const txt=await res.text();
-    txt.split("\n").forEach(line=>{
-      line=line.trim(); if(!line)return;
-      let ev; try{ev=JSON.parse(line);}catch(e){return;}
-      if(ev.id) net.lastId=ev.id;
-      if(ev.event!=="message"||!ev.message)return;
-      let obj; try{obj=JSON.parse(ev.message);}catch(e){return;}
-      if(obj.from===net.id)return;   // ignore our own messages
-      handleNet(obj);
-    });
-    net.connOk=true;
-  }catch(e){ net.connOk=false; }
-  if(net.online) net.pollTimer=setTimeout(pollLoop,1500);
+/* Live streaming subscription (ntfy /json without poll=1 keeps the connection
+   open and pushes messages instantly). This replaces the old 1.5s polling,
+   which left the other player's screen frozen for seconds during pegging.
+   Messages are de-duped by id so a reconnect (which replays via since=<id>)
+   never re-applies an action twice. */
+async function streamLoop(){
+  while(net.online){
+    net.abort = (typeof AbortController!=="undefined") ? new AbortController() : null;
+    try{
+      const since = net.lastId ? ("?since="+encodeURIComponent(net.lastId)) : "?since=all";
+      const res = await fetch(NTFY+ntfyTopic()+"/json"+since, net.abort?{signal:net.abort.signal}:{});
+      if(!res.ok || !res.body) throw new Error("stream "+res.status);
+      const reader = res.body.getReader(); net.reader=reader;
+      const dec = new TextDecoder(); let buf="";
+      net.connOk=true; updateNetbar();
+      while(net.online){
+        const {value,done} = await reader.read();
+        if(done) break;
+        buf += dec.decode(value,{stream:true});
+        let nl;
+        while((nl=buf.indexOf("\n"))>=0){
+          const line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1);
+          if(!line) continue;
+          let ev; try{ev=JSON.parse(line);}catch(e){ continue; }
+          if(ev.id){
+            if(net.seen && net.seen.has(ev.id)) continue;   // already handled (reconnect replay)
+            net.lastId=ev.id; (net.seen||(net.seen=new Set())).add(ev.id);
+          }
+          if(ev.event!=="message" || !ev.message) continue;
+          let obj; try{obj=JSON.parse(ev.message);}catch(e){ continue; }
+          if(obj.from===net.id) continue;   // ignore our own messages
+          handleNet(obj);
+        }
+      }
+    }catch(e){ net.connOk=false; updateNetbar(); }
+    if(!net.online) break;
+    await new Promise(r=>setTimeout(r,1000));   // brief pause, then reconnect
+  }
 }
 function handleNet(obj){
   if(net.role==="host"){
@@ -763,8 +783,8 @@ function handleNet(obj){
   }
 }
 function closeWaiting(){ if(curOverlay.kind==="hostwait"||curOverlay.kind==="guestwait") closeOverlay(); }
-function netStop(){ net.online=false; if(net.pollTimer)clearTimeout(net.pollTimer); if(pubTimer){clearTimeout(pubTimer);pubTimer=null;} }
-function startNet(){ net.id=newId(); net.lastId=null; pollLoop(); }
+function netStop(){ net.online=false; if(net.abort){try{net.abort.abort();}catch(e){}} if(net.reader){try{net.reader.cancel();}catch(e){}} if(pubTimer){clearTimeout(pubTimer);pubTimer=null;} }
+function startNet(){ net.id=newId(); net.lastId=null; net.seen=new Set(); streamLoop(); }
 
 function hostCreate(){
   net={online:true,role:"host",seat:0,code:randCode(),id:null,lastId:null,joined:false,connOk:false,pollTimer:null};
