@@ -177,6 +177,11 @@ accepted from someone's suggestion) can come in; anything removed from your pool
 drops out. Marked squares, and any line you've built, are untouched — so it's
 safe to hit mid-game. **🔀 My card** is still the full wipe.
 
+**A card can't outlive its game.** On open, the saved card is checked against the
+theme in play — if half its calls aren't in the current pool (an On Patrol card in
+a Football room, a matchup that changed while the app was closed) it's re-dealt
+with a toast saying why. A card that still fits keeps its marks untouched.
+
 **Changes to what's in the pool apply themselves.** Switching a pack on or off,
 changing theme, or setting a matchup re-draws your unmarked squares immediately —
 on every phone in the room — so you never have to know to hit ♻️ afterwards.
