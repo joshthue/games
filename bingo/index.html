@@ -196,6 +196,8 @@
   .rrow .ps{font-size:10px; font-weight:800; letter-spacing:.4px; padding:2px 7px; border-radius:20px;
     background:var(--panel); border:1px solid var(--line); color:var(--muted);}
   .rrow.off .nm{opacity:.4; text-decoration:line-through;}
+  .rrow .ps.inj{background:rgba(255,207,74,.18); border-color:var(--gold); color:var(--gold);}
+  .rrow .ps.inj.out{background:rgba(255,77,94,.18); border-color:var(--red); color:#ff9a9a;}
   .addrow{display:flex; gap:8px; margin-top:8px;}
   .addrow input{flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--ink); font-family:inherit;
     font-size:15px; padding:10px; border-radius:12px; outline:none; font-weight:600;}
@@ -438,6 +440,10 @@
   <div class="modalbox">
     <h3>🏟️ Matchup</h3>
     <div class="hint">Each team gets a dozen of its own calls on the card.</div>
+    <div class="footbar" style="margin-top:4px;">
+      <button class="btn ghost small" id="loadGames">📅 This week's games</button>
+    </div>
+    <div id="gameList"></div>
     <div id="matchPresets" class="presets"></div>
     <label style="display:block;margin-top:10px;">Away</label>
     <select id="awaySel" class="teamsel"></select>
@@ -1006,8 +1012,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v45";
-const BUILD_ISO="2026-09-06T16:36:00Z";
+const BUILD_V="v46";
+const BUILD_ISO="2026-09-06T16:45:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1960,7 +1966,7 @@ function payload(kind){
     v:1, kind, id:ME, room:ROOM, name:NAME,
     card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, round:ROUND, roundAt:ROUND_AT,
     packs:PACKS_ON, packsAt:PACKS_AT, team:TEAM, cardAt:CARD_AT, markT:MARK_T,
-    theme:THEME, themeAt:THEME_AT, matchup:MATCHUP, roster:ROSTER, matchupAt:MATCHUP_AT, t:Date.now()
+    theme:THEME, themeAt:THEME_AT, matchup:MATCHUP, matchupAt:MATCHUP_AT, t:Date.now()
   });
 }
 function post(body){
@@ -1994,7 +2000,13 @@ function schedulePublish(){
 }
 function handleIncoming(b){
   if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
-  if(b.kind==="hello"){ publish("state"); publishSuggestionDigest(); return; }   // someone joined -> resend
+  if(b.kind==="hello"){                                   // someone joined -> resend everything
+    publish("state"); publishSuggestionDigest();
+    if(MATCHUP.away || MATCHUP.home)
+      post(JSON.stringify({ v:1, kind:"matchup", id:ME, room:ROOM, name:NAME, matchup:MATCHUP,
+                            roster:ROSTER, matchupAt:MATCHUP_AT }));
+    return;
+  }
   if(b.kind==="pattern"){ adoptPattern(b.pat, b.patAt, b.name); return; }
   if(b.kind==="round"){ adoptRound(b.round, b.at, b.name); return; }
   if(b.kind==="suggest"){
@@ -2378,6 +2390,104 @@ function closeTeamModal(){ document.getElementById("teamModal").classList.add("h
   }
 })();
 function openThemeModal(){ paintTheme(); document.getElementById("themeModal").classList.remove("hidden"); }
+/* ---------- live schedule & rosters (ESPN public endpoints, CORS-open) ---------- */
+const NFL_API="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
+const POS_MAP={QB:"QB", RB:"RB", FB:"RB", WR:"WR", TE:"TE", PK:"K"};
+const DEF_POS={DE:1,DT:1,NT:1,LB:1,ILB:1,OLB:1,MLB:1,CB:1,S:1,FS:1,SS:1,DB:1,EDGE:1};
+const BENCHED=/injured reserve|^out$|doubtful|suspension|physically unable|non-football/i;
+let SCHEDULE=[];
+function cacheGet(k){ try{ const v=JSON.parse(store.get(k)||"null"); if(v && v.t && Date.now()-v.t < 6*3600*1000) return v.d; }catch(e){} return null; }
+function cacheSet(k,d){ store.set(k, JSON.stringify({t:Date.now(), d})); }
+
+async function fetchSchedule(){
+  const cached=cacheGet("opl_sched");
+  if(cached){ SCHEDULE=cached; return SCHEDULE; }
+  const res=await fetch(NFL_API+"/scoreboard");
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const d=await res.json();
+  SCHEDULE=(d.events||[]).map(e=>{
+    const c=(e.competitions&&e.competitions[0]&&e.competitions[0].competitors)||[];
+    const away=c.find(x=>x.homeAway==="away"), home=c.find(x=>x.homeAway==="home");
+    if(!away||!home) return null;
+    return { id:e.id, date:e.date,
+      away:{abbr:away.team.abbreviation, name:away.team.name},
+      home:{abbr:home.team.abbreviation, name:home.team.name},
+      week:(d.week&&d.week.number)||"" };
+  }).filter(Boolean);
+  cacheSet("opl_sched", SCHEDULE);
+  return SCHEDULE;
+}
+async function fetchRoster(abbr){
+  const key="opl_roster_"+abbr;
+  const cached=cacheGet(key);
+  if(cached) return cached;
+  const res=await fetch(NFL_API+"/teams/"+encodeURIComponent(abbr.toLowerCase())+"/roster");
+  if(!res.ok) throw new Error("HTTP "+res.status);
+  const d=await res.json();
+  const out=[];
+  for(const g of (d.athletes||[])){
+    if(g.position==="practiceSquad") continue;                 // not playing Sunday
+    const sidelined = g.position==="injuredReserveOrOut";
+    for(const a of (g.items||[])){
+      const raw=(a.position&&a.position.abbreviation)||"";
+      const p = POS_MAP[raw] || (DEF_POS[raw] ? "DEF" : null);
+      if(!p) continue;                                          // skip OL, punters, long snappers
+      const inj=(a.injuries&&a.injuries[0]&&a.injuries[0].status)||"";
+      out.push({ n:a.displayName, s:shortName(a.displayName), p,
+                 inj: sidelined && !inj ? "Out" : inj,
+                 on: !sidelined && !BENCHED.test(inj) && p!=="DEF" });   // skill players pre-checked
+    }
+  }
+  const order={QB:0,RB:1,WR:2,TE:3,K:4,DEF:5};
+  out.sort((a,b)=>(order[a.p]-order[b.p]) || a.n.localeCompare(b.n));
+  cacheSet(key, out);
+  return out;
+}
+function gameLabel(g){
+  let when="";
+  try{ when=new Date(g.date).toLocaleString([], {weekday:"short", hour:"numeric", minute:"2-digit"}); }catch(e){}
+  return g.away.name+" @ "+g.home.name+(when?" · "+when:"");
+}
+async function loadSchedule(){
+  const box=document.getElementById("gameList");
+  box.innerHTML="<div class='meta'>Loading this week's games…</div>";
+  try{
+    const games=await fetchSchedule();
+    box.innerHTML="";
+    if(!games.length){ box.innerHTML="<div class='meta'>No games listed right now.</div>"; return; }
+    const head=document.createElement("div");
+    head.className="cathead";
+    head.textContent="Week "+(games[0].week||"")+" — tap a game";
+    box.appendChild(head);
+    for(const g of games){
+      const b=document.createElement("button");
+      b.className="patopt";
+      b.innerHTML="<b>"+escapeHtml(g.away.name+" @ "+g.home.name)+"</b><span>"+escapeHtml(gameLabel(g).split("· ")[1]||"")+"</span>";
+      b.addEventListener("click",()=>pickGame(g));
+      box.appendChild(b);
+    }
+  }catch(e){
+    box.innerHTML="<div class='meta'>Couldn't reach the schedule — pick the teams by hand below.</div>";
+  }
+}
+async function pickGame(g){
+  const box=document.getElementById("gameList");
+  box.innerHTML="<div class='meta'>Loading rosters for "+escapeHtml(g.away.name)+" and "+escapeHtml(g.home.name)+"…</div>";
+  try{
+    const [aw,hm]=await Promise.all([fetchRoster(g.away.abbr), fetchRoster(g.home.abbr)]);
+    MATCHUP={away:g.away.name, home:g.home.name};
+    modalRoster.away=aw.map(x=>({...x}));
+    modalRoster.home=hm.map(x=>({...x}));
+    document.getElementById("awaySel").value = NFL_TEAMS.indexOf(g.away.name)>=0 ? g.away.name : "";
+    document.getElementById("homeSel").value = NFL_TEAMS.indexOf(g.home.name)>=0 ? g.home.name : "";
+    renderRoster("away"); renderRoster("home");
+    const hurt=[...aw,...hm].filter(x=>x.inj).length;
+    box.innerHTML="<div class='meta'>"+escapeHtml(gameLabel(g))+" — rosters loaded"+(hurt?", "+hurt+" flagged injured":"")+". Untick anyone, then Set matchup.</div>";
+  }catch(e){
+    box.innerHTML="<div class='meta'>Couldn't load those rosters — pick the teams by hand below.</div>";
+  }
+}
+
 let modalRoster = { away:[], home:[] };   // [{n,s,p,on}] while the picker is open
 function candidates(side){
   const team = side==="away" ? MATCHUP.away : MATCHUP.home;
@@ -2399,8 +2509,15 @@ function renderRoster(side){
     cb.type="checkbox"; cb.checked=!!pl.on;
     cb.addEventListener("change",()=>{ pl.on=cb.checked; row.classList.toggle("off",!pl.on); paintRosterCount(side); });
     const nm=document.createElement("span"); nm.className="nm"; nm.textContent=pl.n;
+    row.appendChild(cb); row.appendChild(nm);
+    if(pl.inj){
+      const ij=document.createElement("span");
+      ij.className="ps inj"+(BENCHED.test(pl.inj)?" out":"");
+      ij.textContent=pl.inj.replace("Injured Reserve","IR").replace("Questionable","Q").replace("Doubtful","D").replace("Suspension","SUSP");
+      row.appendChild(ij);
+    }
     const ps=document.createElement("span"); ps.className="ps"; ps.textContent=pl.p;
-    row.appendChild(cb); row.appendChild(nm); row.appendChild(ps);
+    row.appendChild(ps);
     box.appendChild(row);
   }
   paintRosterCount(side);
@@ -2446,6 +2563,7 @@ document.getElementById("themeChip").addEventListener("click",openThemeModal);
 document.getElementById("themePickBtn").addEventListener("click",openThemeModal);
 document.getElementById("themeClose").addEventListener("click",()=>document.getElementById("themeModal").classList.add("hidden"));
 document.getElementById("themeModal").addEventListener("click",e=>{ if(e.target.id==="themeModal") document.getElementById("themeModal").classList.add("hidden"); });
+document.getElementById("loadGames").addEventListener("click",loadSchedule);
 document.getElementById("matchChip").addEventListener("click",openMatchModal);
 document.getElementById("matchPickBtn").addEventListener("click",openMatchModal);
 document.getElementById("matchClear").addEventListener("click",()=>{ setMatchup("","",true,[],[]); document.getElementById("matchModal").classList.add("hidden"); });

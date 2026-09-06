@@ -26,7 +26,23 @@ rooms, teams, patterns, sizing and sync are all theme-agnostic.
 
 ### Football matchups
 
-With the football theme on, the **🏟️ chip** picks two NFL teams. Each side gets a
+With the football theme on, **📅 This week's games** pulls the live schedule and
+lists every game with its kickoff time. Tap one and both rosters load from the
+same source, with **injury designations** — IR / Out / Doubtful / Suspension are
+flagged red and unticked automatically, Questionable is flagged gold and left in.
+Skill players (QB/RB/WR/TE/K) come pre-checked; defenders are listed unticked so
+you can add the ones your room actually watches.
+
+Schedule and rosters come from ESPN's public site API (`site.api.espn.com`), which
+sends `access-control-allow-origin: *`, so the page fetches them directly — no
+backend and no key. Both are cached for 6 hours per phone, and if the request
+fails the manual team pickers below still work exactly as before.
+
+Rosters travel on the matchup message rather than in every state heartbeat (a
+53-man roster would blow past ntfy's ~4KB message cap); a `hello` from a late
+joiner re-sends the matchup so they get the same players.
+
+The **🏟️ chip** also still picks two teams by hand. Each side gets a
 dozen of its own calls generated from `MATCHUP_TEMPLATES` — *Vikings touchdown*,
 *Packers punt*, *Vikings coach on camera* — which land in a "matchup" pack you can
 switch on and off like any other. The matchup syncs to the room the same way the
