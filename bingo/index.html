@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e1a">
+<title>Game Night BINGO</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚓</text></svg>">
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#121826; --panel2:#1a2234; --line:#26304a;
+    --ink:#eef2fb; --muted:#8b97b3; --blue:#2e6bff; --blue2:#173a8f;
+    --gold:#ffcf4a; --red:#ff4d5e; --green:#33d6a6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #16203a 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh; min-height:100dvh;
+    -webkit-user-select:none; user-select:none;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:14px 14px calc(env(safe-area-inset-bottom) + 18px); padding-top:calc(env(safe-area-inset-top) + 10px);}
+
+  /* Header */
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;}
+  .brand{display:flex; align-items:center; gap:9px; min-width:0;}
+  .brand .lights{font-size:22px; line-height:1;}
+  .brand h1{font-size:16px; margin:0; letter-spacing:.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .brand h1 b{color:var(--gold);}
+  .status{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); flex-shrink:0;}
+  .dot{width:9px; height:9px; border-radius:50%; background:var(--muted); box-shadow:0 0 0 0 rgba(51,214,166,.6);}
+  .dot.on{background:var(--green); animation:pulse 2s infinite;}
+  .dot.bad{background:var(--red);}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(51,214,166,.5);}70%{box-shadow:0 0 0 7px rgba(51,214,166,0);}100%{box-shadow:0 0 0 0 rgba(51,214,166,0);}}
+
+  /* Cards / panels */
+  .panel{background:linear-gradient(180deg,var(--panel) 0%, #0e1420 100%); border:1px solid var(--line); border-radius:16px; padding:16px;}
+  .hidden{display:none !important;}
+
+  /* Setup */
+  .setup h2{margin:2px 0 4px; font-size:20px;}
+  .setup p{margin:0 0 16px; color:var(--muted); font-size:13.5px; line-height:1.5;}
+  label{display:block; font-size:12px; color:var(--muted); margin:14px 0 6px; font-weight:600; letter-spacing:.3px;}
+  input[type=text]{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink);
+    font-size:17px; padding:13px 14px; border-radius:12px; outline:none; font-weight:600;}
+  input[type=text]:focus{border-color:var(--blue);}
+  .row{display:flex; gap:10px;}
+  .row > *{flex:1;}
+  .hint{font-size:11.5px; color:var(--muted); margin-top:7px; line-height:1.45;}
+  .btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; border:none; cursor:pointer;
+    font-size:16px; font-weight:800; padding:15px; border-radius:13px; color:#fff;
+    background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); box-shadow:0 6px 18px -6px var(--blue); letter-spacing:.4px;}
+  .btn:active{transform:translateY(1px);}
+  .btn.ghost{background:var(--panel2); color:var(--ink); border:1px solid var(--line); box-shadow:none; font-weight:700;}
+  .btn.small{font-size:13px; padding:11px;}
+  .btn.gold{background:linear-gradient(180deg,#ffd76a,#e5a600); color:#2a1e00; box-shadow:0 6px 18px -6px var(--gold);}
+  .roomgen{display:flex; align-items:center; gap:8px; margin-top:10px;}
+  .roomgen .code{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:18px; letter-spacing:2px; background:var(--panel2);
+    border:1px dashed var(--line); border-radius:10px; padding:11px; text-align:center; color:var(--gold); font-weight:700;}
+
+  /* Room chip in the header */
+  .plineright{display:flex; align-items:center; gap:6px; min-width:0; flex-wrap:wrap; justify-content:flex-end;}
+  .roomchip{font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:1px; color:var(--gold);
+    background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:2px 8px; font-weight:700;
+    max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stack{margin-top:12px;}
+
+  /* Player line */
+  .pline{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
+  .pname{font-weight:800; font-size:15px; display:flex; align-items:center; gap:7px; min-width:0; flex:0 1 auto;}
+  .pname .who{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pill{font-size:10.5px; padding:3px 9px; border-radius:20px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); font-weight:700; flex-shrink:0;}
+  .pill.win{background:var(--gold); color:#2a1e00; border-color:transparent;}
+
+  /* Bingo grid */
+  /* card text size — set by the 🔠 chip, remembered per phone */
+  :root{--cellfs:10.5px; --cellmin:0px; --cellpad:5px; --readfs:12.5px; --notefs:13.5px; --cellar:1/1;}
+  .grid{display:grid; grid-template-columns:repeat(5,1fr); gap:7px;}
+  .cell{position:relative; aspect-ratio:var(--cellar); min-height:var(--cellmin); background:var(--panel2); border:1px solid var(--line); border-radius:11px;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:var(--cellpad);
+    font-size:var(--cellfs); line-height:1.15; font-weight:600; color:var(--ink); cursor:pointer; overflow:hidden; overflow-wrap:normal; word-break:normal; -webkit-hyphens:auto; hyphens:auto; transition:transform .08s, background .15s;}
+  .cell span{display:block; max-width:100%; min-width:0; overflow:hidden;}
+  .cell.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); border-color:transparent; color:#fff;}
+  .cell.marked::after{content:""; position:absolute; inset:0; background:
+    radial-gradient(circle at 70% 25%, rgba(255,255,255,.25), transparent 45%);}
+  .cell.free{background:linear-gradient(180deg,#2a3350,#1a2136); color:var(--gold); font-weight:800;}
+  .cell.free.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); color:#fff;}
+  .cell:active{transform:scale(.95);}
+  .cell.win{animation:winflash 1s ease infinite alternate;}
+  @keyframes winflash{from{box-shadow:0 0 0 0 rgba(255,207,74,0);}to{box-shadow:0 0 0 3px rgba(255,207,74,.85);}}
+  .cell .chk{position:absolute; top:3px; right:4px; font-size:11px; opacity:.9;}
+  .cell .others{position:absolute; bottom:2px; left:4px; font-size:9px; font-weight:800; opacity:.85; letter-spacing:-.2px;}
+
+  /* Mini (other players') progress grids — compact, mark-only */
+  .mini{max-width:220px; gap:5px; margin-top:2px;}
+  .mini .cell{font-size:0; padding:0; border-radius:6px; cursor:default; min-height:0; aspect-ratio:1/1;}
+  .mini .cell span{display:none;}
+  .mini .cell.marked{background:linear-gradient(180deg,var(--green) 0%, #1c8f6f 100%);}
+  .playerblock{padding-top:12px; margin-top:12px; border-top:1px solid var(--line);}
+  .playerblock:first-child{padding-top:2px; margin-top:0; border-top:none;}
+  .playerblock .meta{text-align:left; margin-top:7px;}
+
+  .waiting{text-align:center; color:var(--muted); padding:18px 12px; font-size:13px; line-height:1.6;}
+  .waiting .big{font-size:32px; margin-bottom:8px;}
+  .waiting code{background:var(--panel2); padding:2px 8px; border-radius:7px; color:var(--gold); font-weight:700;}
+
+  /* Tapped-square readout under another player's board */
+  .readout{margin-top:8px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    padding:9px 11px; font-size:var(--readfs); line-height:1.4; color:var(--ink); min-height:18px;}
+  .readout .q{color:var(--gold); font-weight:700;}
+  .readout .state{display:block; margin-top:3px; font-size:11px; color:var(--muted); font-weight:700;}
+  .readout .state.yes{color:var(--green);}
+  .readout.empty{color:var(--muted); font-weight:600;}
+  .mini .cell{cursor:pointer;}
+  .mini .cell.peek{box-shadow:0 0 0 2px var(--gold);}
+
+  /* Suggestions */
+  .sug{background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:10px 12px; margin-top:8px;}
+  .sug .top{display:flex; align-items:center; gap:7px; margin-bottom:4px;}
+  .sug .from{font-weight:800; font-size:12.5px;}
+  .sug .tag{font-size:9.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase;
+    padding:2px 7px; border-radius:20px; background:var(--blue); color:#fff;}
+  .sug .tag.idea{background:var(--gold); color:#2a1e00;}
+  .sug .tag.pack{background:var(--panel); color:var(--gold); border:1px solid var(--line);}
+  .sug .txt{font-size:var(--notefs); line-height:1.45; overflow-wrap:break-word;}
+  .sug .when{font-size:10.5px; color:var(--muted); margin-top:4px;}
+  .sug .act{margin-top:8px;}
+  .sug .act button{font-family:inherit; font-size:11.5px; font-weight:800; padding:7px 11px; border-radius:9px; cursor:pointer;
+    background:var(--panel); color:var(--ink); border:1px solid var(--line);}
+  .sug .act button.in{background:var(--green); color:#04241b; border-color:transparent;}
+  .pill.close{background:var(--gold); color:#2a1e00; border-color:transparent; animation:tick 1s ease infinite alternate;}
+  @keyframes tick{from{transform:scale(1);}to{transform:scale(1.07);}}
+  .pill.bingo{background:linear-gradient(90deg,#ff4d5e,#2e6bff); color:#fff; border-color:transparent;}
+
+  /* Siren flash across the whole screen */
+  .siren{position:fixed; inset:0; z-index:64; pointer-events:none; opacity:0;}
+  .siren.go{animation:siren 1.4s linear 1;}
+  @keyframes siren{
+    0%{opacity:0; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,.55), transparent 55%);}
+    15%{opacity:1; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,.55), transparent 55%);}
+    35%{opacity:1; background:radial-gradient(circle at 100% 50%, rgba(46,107,255,.55), transparent 55%);}
+    55%{opacity:1; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,.55), transparent 55%);}
+    75%{opacity:1; background:radial-gradient(circle at 100% 50%, rgba(46,107,255,.55), transparent 55%);}
+    100%{opacity:0; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,0), transparent 55%);}
+  }
+  .lights.on{animation:wig 0.45s steps(2,end) infinite;}
+  @keyframes wig{from{transform:rotate(-14deg) scale(1.15); filter:drop-shadow(0 0 6px #ff4d5e);}
+                 to{transform:rotate(14deg) scale(1.15); filter:drop-shadow(0 0 6px #2e6bff);}}
+  .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
+  @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
+  .crown{font-size:13px;}
+  .teamsel{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink); font-family:inherit;
+    font-size:16px; padding:12px; border-radius:12px; outline:none; font-weight:700; margin-top:4px;}
+  .teamtag{font-size:9.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; padding:2px 7px;
+    border-radius:20px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap;}
+  .teamtag.mine{background:var(--blue); color:#fff; border-color:transparent;}
+  .bar{height:6px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; margin-top:8px;}
+  .bar > i{display:block; height:100%; width:0%; border-radius:6px; background:linear-gradient(90deg,var(--blue),var(--green));
+    transition:width .35s ease;}
+  .bar.close > i{background:linear-gradient(90deg,var(--gold),#ff8a3d);}
+  .bar.done > i{background:linear-gradient(90deg,#ff4d5e,#2e6bff);}
+  .scores{font-size:12px; color:var(--muted); margin:-2px 0 10px; font-weight:700;}
+  .scores b{color:var(--gold);}
+  .patchip{font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; cursor:pointer;
+    background:var(--panel2); border:1px solid var(--line); color:var(--gold); flex-shrink:0;}
+  .patopt{display:block; width:100%; text-align:left; font-family:inherit; margin-top:8px; cursor:pointer;
+    background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:12px; padding:11px 13px;}
+  .patopt b{display:block; font-size:14.5px;}
+  .patopt span{font-size:11.5px; color:var(--muted);}
+  .patopt.on{border-color:var(--blue); background:linear-gradient(180deg,rgba(46,107,255,.22),rgba(46,107,255,.08));}
+  .patopt.on span{color:var(--ink);}
+
+  /* Build stamp */
+  .build{margin-top:14px; text-align:center; font-size:10.5px; color:var(--muted); opacity:.75;
+    font-family:ui-monospace,Menlo,monospace; letter-spacing:.3px;}
+
+  /* Modal */
+  .modal{position:fixed; inset:0; z-index:75; display:flex; align-items:center; justify-content:center; padding:18px;
+    background:rgba(4,7,14,.72);}
+  .modal.hidden{display:none;}
+  .modalbox{background:linear-gradient(180deg,#1a2340 0,#101828 100%); border:1px solid var(--line); border-radius:18px;
+    padding:20px; width:100%; max-width:380px; box-shadow:0 30px 80px -20px #000;}
+  .modalbox h3{margin:0 0 4px; font-size:18px;}
+  .modalbox textarea{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink); font-family:inherit;
+    font-size:16px; padding:12px; border-radius:12px; outline:none; font-weight:600; resize:vertical; min-height:92px;}
+  .modalbox textarea:focus{border-color:var(--blue);}
+  .choice{display:flex; gap:8px; margin:12px 0 10px;}
+  .choice button{flex:1; border:1px solid var(--line); background:var(--panel2); color:var(--muted); font-weight:800;
+    font-size:12.5px; padding:10px 6px; border-radius:11px; cursor:pointer; font-family:inherit;}
+  .choice button.on{background:var(--blue); color:#fff; border-color:transparent;}
+
+  .btn.cooling{opacity:.55; cursor:default; position:relative; overflow:hidden;}
+  .btn.cooling::after{content:""; position:absolute; left:0; bottom:0; height:3px; background:var(--gold);
+    width:var(--cool,0%); transition:width 1s linear;}
+  .footbar{display:flex; gap:8px; margin-top:12px;}
+  .footbar .btn{margin-top:0;}
+
+  .meta{margin-top:10px; text-align:center; font-size:11px; color:var(--muted);}
+  .meta a{color:var(--muted);}
+
+  /* Confetti + banner */
+  #confetti{position:fixed; inset:0; pointer-events:none; z-index:60;}
+  .banner{position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; pointer-events:none;}
+  .banner.hidden{display:none;}
+  .bwin{pointer-events:auto; text-align:center; background:linear-gradient(180deg,#1a2340 0,#101828 100%);
+    padding:30px 26px; border-radius:20px; border:1px solid var(--line); box-shadow:0 30px 80px -20px #000; max-width:320px; margin:0 20px;}
+  .bwin .em{font-size:56px; margin-bottom:6px;}
+  .bwin h2{margin:0 0 6px; font-size:30px; letter-spacing:1px; color:var(--gold);}
+  .bwin p{margin:0 0 18px; color:var(--muted); font-size:14px;}
+  .toast{position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 18px); transform:translateX(-50%);
+    background:var(--gold); color:#2a1e00; font-weight:800; padding:12px 18px; border-radius:30px; z-index:65;
+    box-shadow:0 12px 30px -8px rgba(0,0,0,.6); font-size:14px; opacity:0; transition:opacity .3s, transform .3s; pointer-events:none;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div id="siren" class="siren"></div>
+<div class="wrap">
+
+  <header>
+    <div class="brand"><a href="../" title="All games" style="text-decoration:none;margin-right:8px;font-size:20px;">🏠</a><span class="lights">🚨</span><h1 id="gameTitle">On Patrol <b>BINGO</b></h1></div>
+    <div class="status" id="statusBox" style="cursor:pointer;"><span id="dot" class="dot"></span><span id="statusText">offline</span></div>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setup" class="panel setup">
+    <h2>Let's play 🎲</h2>
+    <p>Pick tonight's game, type your name and a shared <b>room code</b>. Whoever you play with types the <b>same room code</b> on their phone — then you'll each get a card and see everyone else's live.</p>
+
+    <label>Your name</label>
+    <input id="nameInput" type="text" placeholder="e.g. Junior" autocomplete="off" maxlength="16">
+
+    <label>Tonight's game</label>
+    <div class="roomgen">
+      <div id="themeChipSetup" class="code">🚨 On Patrol</div>
+      <button class="btn ghost small" id="themePickBtn" style="width:auto; padding:11px 14px;">Change</button>
+    </div>
+    <div id="matchupRow" style="display:none;">
+      <label style="margin-top:12px;">Matchup</label>
+      <div class="roomgen">
+        <div id="matchChipSetup" class="code">Pick a matchup</div>
+        <button class="btn ghost small" id="matchPickBtn" style="width:auto; padding:11px 14px;">Pick</button>
+      </div>
+      <div class="hint">Both teams get their own calls — touchdowns, punts, turnovers, coach shots.</div>
+    </div>
+
+    <label style="margin-top:14px;">Team (optional)</label>
+    <div class="roomgen">
+      <div id="teamChipSetup" class="code">Solo</div>
+      <button class="btn ghost small" id="teamPickBtn" style="width:auto; padding:11px 14px;">Change</button>
+    </div>
+    <div class="hint">Everyone on the same team plays <b>one shared card</b> — either of you can tap it, and it stays in sync. Leave it on Solo for your own card.</div>
+
+    <label style="margin-top:14px;">Win pattern</label>
+    <div class="roomgen">
+      <div id="patChipSetup" class="code">Cover all</div>
+      <button class="btn ghost small" id="patPickBtn" style="width:auto; padding:11px 14px;">Change</button>
+    </div>
+    <div class="hint">Cover all is the house rule. Whoever changes it sets it for everyone in the room.</div>
+
+    <label style="margin-top:14px;">Room code (both players type the same one)</label>
+    <input id="roomInput" type="text" placeholder="e.g. couch-night" autocomplete="off" maxlength="24">
+    <div class="roomgen">
+      <div id="roomSuggest" class="code">—</div>
+      <button class="btn ghost small" id="useSuggest" style="flex:0 0 auto; width:auto; padding:11px 14px;">Use this</button>
+    </div>
+    <div class="hint">The room code is a shared password, not private — anyone who types the exact same code lands in your game. A goofy phrase you both know works great.</div>
+
+    <button class="btn gold" id="startBtn" style="margin-top:18px;">Start playing 🎉</button>
+    <div class="meta">Add to Home Screen for an app-like experience. Works over the internet — you don't have to be on the same Wi-Fi.</div>
+    <div class="build" id="buildStampSetup">—</div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="hidden">
+    <!-- MY CARD -->
+    <div id="viewMine" class="panel">
+      <div class="pline">
+        <div class="pname"><span>🚓</span><span class="who" id="myName">You</span></div>
+        <div class="plineright">
+          <span class="patchip" id="patChip">🎯 Cover all</span>
+          <span class="patchip" id="themeChip" title="Tonight's game">🚨 On Patrol</span>
+          <span class="patchip" id="matchChip" title="Matchup" style="display:none;">🏟️</span>
+          <span class="patchip" id="teamChip" title="Team">👥 Solo</span>
+          <span class="patchip" id="packChip" title="Call packs">🎴</span>
+          <span class="patchip" id="sizeChip" title="Text size">🔠 M</span>
+          <span class="patchip" id="soundChip" title="Sound">🔊</span>
+          <div class="pill" id="myPill">playing…</div>
+        </div>
+      </div>
+      <div id="myGrid" class="grid"></div>
+      <div class="bar" id="myBar"><i></i></div>
+      <div class="footbar">
+        <button class="btn ghost small" id="undoBtn">↩︎ Undo</button>
+        <button class="btn ghost small" id="freshBtn">♻️ Fresh squares</button>
+      </div>
+      <div class="footbar">
+        <button class="btn ghost small" id="roundBtn">🆕 New round (everyone)</button>
+        <button class="btn ghost small" id="newCardBtn">🔀 My card</button>
+        <button class="btn ghost small" id="leaveBtn">Leave</button>
+      </div>
+      <div class="meta">🔠 sets the card text size — tap it until it reads right. <span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
+        <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked (the centre stays put), pulling in whatever's in the pool now — then sits out 90 seconds before you can do it again. A new round clears the wait.</div>
+    </div>
+
+    <!-- OTHER PLAYERS -->
+    <div id="viewTheirs" class="panel stack">
+      <div class="pline">
+        <div class="pname"><span>📺</span><span class="who">In the room</span></div>
+        <div class="plineright">
+          <span id="roomChip" class="roomchip hidden">—</span>
+          <div class="pill" id="othersCount">nobody yet</div>
+        </div>
+      </div>
+      <div class="scores" id="scoreLine">🏆 Round 1 · no wins yet</div>
+      <div id="othersList"></div>
+      <div id="theirWaiting" class="waiting">
+        <div class="big">📡</div>
+        Waiting for others to join room <code id="roomEcho">—</code>.<br>
+        They just need to open the <b>same link</b> and type the same room code
+        (capitals and spaces don't matter).
+      </div>
+    </div>
+
+    <!-- SUGGESTIONS -->
+    <div id="viewSug" class="panel stack">
+      <div class="pline">
+        <div class="pname"><span>💡</span><span class="who">Suggestions</span></div>
+        <div class="pill" id="sugCount">none yet</div>
+      </div>
+      <div id="sugList"></div>
+      <div class="footbar">
+        <button class="btn ghost small" id="addSugBtn">💡 Add a suggestion</button>
+        <button class="btn ghost small" id="copySugBtn">📋 Copy all</button>
+      </div>
+      <div class="footbar">
+        <button class="btn ghost small" id="textSugBtn">💬 Text the list</button>
+        <button class="btn ghost small" id="mailSugBtn">✉️ Email the list</button>
+      </div>
+      <div class="build" id="buildStamp">—</div>
+      <div class="meta" id="sugMeta">Square ideas and app ideas go to everyone in the room, and stay on this phone.</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- THEME MODAL -->
+<div id="themeModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🎬 Tonight's game</h3>
+    <div class="hint">Same bingo — different calls. Switching deals everyone in the room a fresh card.</div>
+    <div id="themeOpts"></div>
+    <div class="footbar"><button class="btn ghost small" id="themeClose">Done</button></div>
+  </div>
+</div>
+
+<!-- MATCHUP MODAL -->
+<div id="matchModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🏟️ Matchup</h3>
+    <div class="hint">Each team gets a dozen of its own calls on the card.</div>
+    <label style="display:block;margin-top:10px;">Away</label>
+    <select id="awaySel" class="teamsel"></select>
+    <label style="display:block;margin-top:10px;">Home</label>
+    <select id="homeSel" class="teamsel"></select>
+    <div class="footbar">
+      <button class="btn ghost small" id="matchClear">Clear</button>
+      <button class="btn gold small" id="matchSave">Set matchup</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM MODAL -->
+<div id="teamModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>👥 Team</h3>
+    <div class="hint">Teammates share one card — same 25 squares on every phone, either of you can tap, and marks merge live. First team to finish the pattern takes the round.</div>
+    <div id="teamOpts"></div>
+    <input id="teamInput" type="text" maxlength="16" placeholder="Or type a team name" style="margin-top:10px;" autocomplete="off">
+    <div class="meta" id="teamNote"></div>
+    <div class="footbar">
+      <button class="btn ghost small" id="teamSolo">Play solo</button>
+      <button class="btn gold small" id="teamSave">Join team</button>
+    </div>
+  </div>
+</div>
+
+<!-- PACKS MODAL -->
+<div id="packModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🎴 Call packs</h3>
+    <div class="hint">Cards are dealt from the packs switched on. Tagged suggestions become their own pack. Changing this sets it for everyone in the room.</div>
+    <div id="packOpts"></div>
+    <div class="meta" id="packCount">—</div>
+    <div class="footbar"><button class="btn ghost small" id="packClose">Done</button></div>
+  </div>
+</div>
+
+<!-- PATTERN MODAL -->
+<div id="patModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🎯 Win pattern</h3>
+    <div class="hint">Changing this sets it for everyone in the room.</div>
+    <div id="patOpts"></div>
+    <div class="footbar"><button class="btn ghost small" id="patClose">Done</button></div>
+  </div>
+</div>
+
+<!-- SUGGESTION MODAL -->
+<div id="sugModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>💡 Suggestion</h3>
+    <div class="choice">
+      <button id="sugKindSquare" class="on">🟦 Square idea</button>
+      <button id="sugKindApp">🛠️ App idea</button>
+    </div>
+    <textarea id="sugText" maxlength="240" placeholder="e.g. &quot;Suspect trips over own feet&quot;"></textarea>
+    <input id="sugTag" type="text" maxlength="24" placeholder="Tag (optional) — e.g. IHOP, catchphrase, Oklahoma"
+      style="margin-top:8px;" autocomplete="off">
+    <div class="hint" id="sugHint">A call for a bingo square — something you'd expect to see on the show.</div>
+    <div class="hint">A tag groups accepted ideas into their own pack you can switch on and off.</div>
+    <div class="footbar">
+      <button class="btn ghost small" id="sugCancel">Cancel</button>
+      <button class="btn gold small" id="sugSend">Send 📨</button>
+    </div>
+  </div>
+</div>
+
+<!-- WIN BANNER -->
+<div id="banner" class="banner hidden">
+  <div class="bwin">
+    <div class="em" id="bwinEm">🎉</div>
+    <h2 id="bwinTitle">BINGO!</h2>
+    <p id="bwinSub">You got a full line!</p>
+    <button class="btn gold" id="bwinClose" style="width:100%;">Nice 🙌</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+"use strict";
+
+/* ---------- On Patrol Live prompt pool ---------- */
+/* ---------- call packs. A card is dealt from whichever packs are switched on. ---------- */
+const PACKS = {
+  stops: { theme:"onpatrol", name:"Traffic stops", emoji:"🚗", calls:[
+    "Traffic stop",
+    "\"I only had two beers\"",
+    "No driver's license",
+    "Suspect gives a fake name",
+    "Field sobriety test",
+    "\"Am I being detained?\"",
+    "\"Step out of the vehicle\"",
+    "Smell of marijuana",
+    "Open container found",
+    "Vehicle search",
+    "Contraband found",
+    "DUI investigation",
+    "Running the plates",
+    "Speeding way over the limit",
+    "\"Whose car is this?\"",
+    "Expired tags",
+    "Cracked windshield stop",
+    "No insurance",
+    "Rental car nobody rented",
+    "Air freshener tree hanging",
+    "Window tint too dark",
+    "Rolls through a stop sign",
+    "Suspended license",
+    "\"Do you know why I stopped you?\"",
+    "Registration in someone else’s name",
+    "Bicycle stop",
+    "Inventory search",
+  ]},
+  words: { theme:"onpatrol", name:"Things people say", emoji:"🗣️", calls:[
+    "\"I didn't do anything!\"",
+    "\"It's not mine\"",
+    "De-escalation / talk-down",
+    "Someone lies then tells truth",
+    "\"I swear on my kids\"",
+    "\"I’m on my way home\"",
+    "\"That’s my cousin’s\"",
+    "\"I just bought the car\"",
+    "\"I have to be at work\"",
+    "\"I only smoked earlier\"",
+    "Asks if they can just go home",
+    "Explains they are a good person",
+    "Somebody says \"respectfully\"",
+    "Officer explains the law patiently",
+    "Verbal warning only",
+    "Cut loose — no charges",
+  ]},
+  chase: { theme:"onpatrol", name:"Pursuits & action", emoji:"🏃", calls:[
+    "Foot pursuit!",
+    "K-9 deployed",
+    "\"Release the dog!\"",
+    "Warrant comes back active",
+    "Someone runs from police",
+    "Taser deployed",
+    "Aviation / helicopter up",
+    "Drone in the air",
+    "Handcuffs go on",
+    "Suspect found hiding",
+    "Pat-down for weapons",
+    "Foot chase over a fence",
+    "Passenger has a warrant",
+    "Throws something out the window",
+    "Foot pursuit ends in a tackle",
+    "Spike strips deployed",
+    "Pursuit called off",
+    "Report of shots fired",
+    "Suspect on the ground",
+    "Vehicle pursuit begins",
+    "PIT maneuver",
+    "Suspect bails from moving car",
+    "Fence jump fails",
+    "Hides in a backyard",
+    "Found under a porch",
+    "Runs out of his shoes",
+    "Chase ends in a cornfield",
+    "Perimeter set up",
+  ]},
+  scene: { theme:"onpatrol", name:"On scene", emoji:"🏡", calls:[
+    "Domestic disturbance call",
+    "Wellness check",
+    "Backup swarms the scene",
+    "Someone barefoot / no shoes",
+    "Officer knows them by name",
+    "Loose dog on scene",
+    "Someone crying",
+    "Trainee / FTO ride-along",
+    "Meth or paraphernalia",
+    "Kid in the back seat",
+    "Repeat customer",
+    "Prayer or blessing moment",
+    "Neighbor films on a phone",
+    "Crowd gathers to watch",
+    "Someone films the whole stop",
+    "Porch light interview",
+    "Dog barking nonstop",
+    "Kid narrates the whole thing",
+    "Nobody knows whose house it is",
+    "Argument over a phone",
+    "Family reunion on the front lawn",
+    "Narcan / medical assist",
+    "Ambulance called",
+    "Tow truck arrives",
+    "Radio traffic stepped on",
+    "Shift change mentioned",
+  ]},
+  show: { theme:"onpatrol", name:"The broadcast", emoji:"📺", calls:[
+    "Dan Abrams reads a comment",
+    "Sticks breaks down a tattoo",
+    "Curtis Wilson analysis",
+    "Audio blocked / censored",
+    "Live delay glitch",
+    "Cuts to commercial mid-action",
+    "Bodycam vs dashcam angle",
+    "Officer says \"signal in the area\"",
+    "Hype: \"this is a good one\"",
+    "Body cam adjusted",
+    "Split screen with two agencies",
+    "Host says \"let’s go back to\"",
+    "Replay of the same clip",
+    "Ride-along mentions the show",
+    "Someone waves at the camera",
+    "Deputy jokes with the suspect",
+    "Ends without resolution",
+    "\"We’ll check back in\"",
+  ]},
+  cabin: { theme:"onpatrol", name:"Cabin night", emoji:"🛖", calls:[
+    "Who’s this guy?",
+    "“Where you stay at?”",
+    "Cop rides someone else’s bike or foot races for fun",
+    "Another person gets a THC lecture in South Carolina",
+    "Car chase in Oklahoma",
+    "Devil horn face tattoos",
+    "“Honestly goes a long way”",
+    "Someone is wearing a mask",
+    "Suspect avoids car chase. For now",
+    "“Walk/take three steps to your right!”",
+    "“Can I call my mom?”",
+  ]},
+  fbcalls: { theme:"football", name:"Broadcast clichés", emoji:"🎙️", calls:[
+    "\"He's a football player\"",
+    "Sideline reporter hit",
+    "Coach's cold stare",
+    "\"They needed that one\"",
+    "Booth argues with itself",
+    "\"Complementary football\"",
+    "Blimp / stadium beauty shot",
+    "Time of possession graphic",
+    "\"Next man up\"",
+    "Somebody says \"physicality\"",
+    "Rules analyst appears",
+    "\"That's a veteran move\"",
+    "Announcer misidentifies a player",
+    "\"Momentum has shifted\"",
+    "Halftime highlight package",
+    "Long mention of the weather",
+    "Shot of a kid in the stands",
+    "\"Wins and losses\" quarterback take",
+  ]},
+  fbrefs: { theme:"football", name:"Refs & replay", emoji:"🦓", calls:[
+    "Flag picked up",
+    "Booth review",
+    "Challenge flag thrown",
+    "\"The ruling on the field stands\"",
+    "\"Confirmed\" after review",
+    "Holding declined",
+    "The spot gets argued",
+    "Offsetting penalties",
+    "Ref explains it to the camera",
+    "Chains come out to measure",
+    "Pass interference debated",
+    "Replay shown four times",
+    "Delay of game",
+    "Illegal formation",
+    "Roughing call changes a drive",
+    "Ref announces the wrong number",
+  ]},
+};
+const PACK_ORDER = ["stops","words","chase","scene","show","cabin","fbcalls","fbrefs"];
+
+/* ---------- themes: one bingo engine, different nights ---------- */
+const THEMES = {
+  onpatrol: { name:"On Patrol", emoji:"🚨", title:"On Patrol <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
+              packs:["stops","words","chase","scene","show","cabin"], matchup:false },
+  football: { name:"Football",  emoji:"🏈", title:"Football <b>BINGO</b>", sub:"PICK A MATCHUP · PLAY ALONG",
+              packs:["fbcalls","fbrefs","matchup"], matchup:true }
+};
+const THEME_ORDER = ["onpatrol","football"];
+let THEME = "onpatrol", THEME_AT = 0;
+let MATCHUP = { away:"", home:"" }, MATCHUP_AT = 0;
+
+const NFL_TEAMS = ["49ers","Bears","Bengals","Bills","Broncos","Browns","Buccaneers","Cardinals","Chargers","Chiefs",
+  "Colts","Commanders","Cowboys","Dolphins","Eagles","Falcons","Giants","Jaguars","Jets","Lions","Packers","Panthers",
+  "Patriots","Raiders","Rams","Ravens","Saints","Seahawks","Steelers","Texans","Titans","Vikings"];
+const MATCHUP_TEMPLATES = ["{T} touchdown","{T} punt","{T} turnover","{T} sack","{T} third-down conversion",
+  "{T} penalty","{T} deep shot downfield","{T} field goal","{T} QB scrambles","{T} coach on camera",
+  "{T} fans on camera","{T} injury timeout"];
+function matchupCalls(){
+  const out=[];
+  for(const team of [MATCHUP.away, MATCHUP.home]){
+    if(!team) continue;
+    for(const t of MATCHUP_TEMPLATES) out.push(t.replace("{T}", team));
+  }
+  return out;
+}
+function matchupLabel(){
+  return (MATCHUP.away && MATCHUP.home) ? MATCHUP.away+" vs "+MATCHUP.home : "Pick a matchup";
+}
+function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
+
+/* ---------- build stamp (bump with the sw.js cache version) ---------- */
+const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
+const BUILD_V="v32";
+const BUILD_ISO="2026-09-06T04:28:00Z";
+function buildLabel(){
+  const d=new Date(BUILD_ISO);
+  const when=isNaN(d) ? BUILD_ISO
+    : d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  return "build "+BUILD_V+" · "+when;
+}
+
+/* ---------- tiny storage helper (safe if disabled) ---------- */
+const store = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+
+/* ---------- persistent device id ---------- */
+function deviceId(){
+  let id = store.get("opl_device");
+  if(!id){ id = "d" + Math.random().toString(36).slice(2,10); store.set("opl_device", id); }
+  return id;
+}
+const ME = deviceId();
+
+/* ---------- room code suggestion ---------- */
+const WORDS_A = ["couch","patrol","siren","night","donut","radar","badge","copper","dispatch","stakeout"];
+const WORDS_B = ["squad","bingo","watch","beat","cruiser","pursuit","backup","shift","code3","rollcall"];
+function suggestRoom(){
+  const a = WORDS_A[Math.floor(Math.random()*WORDS_A.length)];
+  const b = WORDS_B[Math.floor(Math.random()*WORDS_B.length)];
+  const n = Math.floor(Math.random()*90)+10;
+  return a+"-"+b+"-"+n;
+}
+
+/* ---------- state ---------- */
+let ROOM="", NAME="", CARD=[], MARKS=[], myBingo=false;
+let TEAM="";                    // "" = playing solo, otherwise the team name you share a card with
+let CARD_AT=0;                  // when this card was dealt — newest deal wins for a team
+let MARK_T=new Array(25).fill(0);   // per-square last-changed stamp, so merges never fight
+let players={};                 // id -> {name, card, marks, bingo, t}
+let suggestions=[];             // [{sid, from, kind, text, t}] newest first
+let peek={};                    // player id -> square index they last tapped
+let sugKind="square";
+let seenBingo={};               // id -> bool (already toasted this bingo)
+let seenClose={};               // id -> bool (already shouted "one away")
+let pollActive=false, pubTimer=null, heartbeat=null, reconnectT=null;
+
+/* ---------- packs the room has switched on, plus packs grown from suggestion tags ---------- */
+let extraPacks={};              // tag -> [calls]  (ideas accepted from the room)
+let PACKS_ON=[], PACKS_AT=0;    // which packs cards are dealt from (a room rule, like the pattern)
+const DEFAULT_ROOM_TAG="Room ideas";
+
+function loadPool(){
+  try{
+    const raw=JSON.parse(store.get("opl_extra_pool")||"null");
+    if(Array.isArray(raw)) extraPacks={[DEFAULT_ROOM_TAG]: raw.filter(x=>typeof x==="string")};   // migrate the old flat list
+    else if(raw && typeof raw==="object") extraPacks=raw;
+  }catch(e){ extraPacks={}; }
+  try{
+    const on=JSON.parse(store.get("opl_packs_on")||"null");
+    PACKS_ON = Array.isArray(on) && on.length ? on : allPackKeys();
+  }catch(e){ PACKS_ON=allPackKeys(); }
+}
+function savePool(){ store.set("opl_extra_pool", JSON.stringify(extraPacks)); }
+function savePacksOn(){ store.set("opl_packs_on", JSON.stringify(PACKS_ON)); }
+function tagKey(tag){ return "tag:"+String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24); }
+function themePacks(){ return theme().packs.filter(k => k!=="matchup" || matchupCalls().length); }
+function allPackKeys(){ return themePacks().concat(Object.keys(extraPacks).map(tagKey)); }
+function packCalls(key){
+  if(key==="matchup") return matchupCalls();
+  if(PACKS[key]) return PACKS[key].calls;
+  const tag=key.slice(4);
+  return extraPacks[tag]||[];
+}
+function packLabel(key){
+  if(key==="matchup") return "\u{1F3DF}\uFE0F "+matchupLabel();
+  if(PACKS[key]) return PACKS[key].emoji+" "+PACKS[key].name;
+  return "\u{1F3F7}\uFE0F "+key.slice(4);
+}
+function packOn(key){ return PACKS_ON.indexOf(key)>=0; }
+function extraCalls(){
+  const out=[];
+  for(const tag in extraPacks){ if(packOn(tagKey(tag))) out.push(...extraPacks[tag]); }
+  return out;
+}
+function everyCall(){                       // every call this theme knows, packs on or off
+  const out=[];
+  for(const k of themePacks()) out.push(...packCalls(k));
+  for(const tag in extraPacks) out.push(...extraPacks[tag]);
+  return out;
+}
+function inPool(t){ return everyCall().indexOf(t)>=0; }
+function inBuiltIn(t){ return PACK_ORDER.some(k=>PACKS[k].calls.indexOf(t)>=0) || matchupCalls().indexOf(t)>=0; }
+function togglePool(t, tag){
+  if(inBuiltIn(t)){ showToast("Already a standard call"); return; }
+  const key=String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24) || DEFAULT_ROOM_TAG;
+  for(const g in extraPacks){
+    const i=extraPacks[g].indexOf(t);
+    if(i>=0){                                   // already accepted -> drop it back out
+      extraPacks[g].splice(i,1);
+      if(!extraPacks[g].length) delete extraPacks[g];
+      savePool(); renderSuggestions(); paintPacks();
+      showToast("Removed from your packs");
+      return;
+    }
+  }
+  (extraPacks[key] = extraPacks[key]||[]).push(t);
+  if(!packOn(tagKey(key))){ PACKS_ON.push(tagKey(key)); savePacksOn(); }
+  savePool(); renderSuggestions(); paintPacks();
+  showToast("Added to \u201C"+key+"\u201D — hit \u267B\uFE0F to pull it in");
+}
+function fullPool(){
+  const out=[];
+  for(const k of themePacks()){ if(packOn(k)) out.push(...packCalls(k)); }
+  out.push(...extraCalls());
+  const seen={}, uniq=[];
+  for(const t of out){ if(!seen[t]){ seen[t]=1; uniq.push(t); } }
+  return uniq.length>=24 ? uniq : everyCall();     // never deal from a pool too small for a card
+}
+
+/* ---------- themes ---------- */
+function paintTheme(){
+  const t=theme();
+  const h=document.getElementById("gameTitle");
+  if(h) h.innerHTML=t.title;
+  const sub=document.getElementById("gameSub");
+  if(sub) sub.textContent=t.sub;
+  const lights=document.querySelector(".lights");
+  if(lights) lights.textContent=t.emoji;
+  const chip=document.getElementById("themeChip");
+  if(chip) chip.textContent=t.emoji+" "+t.name;
+  const setupChip=document.getElementById("themeChipSetup");
+  if(setupChip) setupChip.textContent=t.emoji+" "+t.name;
+  const mrow=document.getElementById("matchupRow");
+  if(mrow) mrow.style.display = t.matchup ? "" : "none";
+  const mchip=document.getElementById("matchChip");
+  if(mchip){ mchip.style.display = t.matchup ? "" : "none"; mchip.textContent="🏟️ "+matchupLabel(); }
+  const msetup=document.getElementById("matchChipSetup");
+  if(msetup) msetup.textContent=matchupLabel();
+  document.title = "Game Night — "+t.name+" BINGO";
+  [...document.querySelectorAll("#themeOpts .patopt")].forEach(b=>b.classList.toggle("on", b.dataset.key===THEME));
+}
+function setTheme(key, announce){
+  if(!THEMES[key] || key===THEME) { paintTheme(); return; }
+  THEME=key; THEME_AT=Date.now(); store.set("opl_theme", THEME);
+  PACKS_ON = themePacks().slice(); savePacksOn();          // a theme brings its own packs
+  paintTheme(); paintPacks();
+  if(ROOM){
+    CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+    saveProgress(); renderMine();
+    if(announce){
+      post(JSON.stringify({ v:1, kind:"theme", id:ME, room:ROOM, name:NAME, theme:THEME, themeAt:THEME_AT,
+                            matchup:MATCHUP, matchupAt:MATCHUP_AT }));
+      showToast(theme().emoji+" "+theme().name+" night — fresh cards");
+    }
+    publish("state");
+  }
+}
+function adoptTheme(key, at, who){
+  if(!THEMES[key] || !at || at<=THEME_AT || key===THEME) return;
+  THEME=key; THEME_AT=at; store.set("opl_theme", THEME);
+  PACKS_ON = themePacks().slice(); savePacksOn();
+  CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+  saveProgress(); paintTheme(); paintPacks(); renderMine();
+  showToast((who||"Someone")+" switched to "+theme().name+" BINGO");
+}
+function setMatchup(away, home, announce){
+  MATCHUP={ away:String(away||"").trim().slice(0,20), home:String(home||"").trim().slice(0,20) };
+  MATCHUP_AT=Date.now();
+  store.set("opl_matchup", JSON.stringify(MATCHUP));
+  if(matchupCalls().length && !packOn("matchup")){ PACKS_ON.push("matchup"); savePacksOn(); }
+  paintTheme(); paintPacks();
+  if(ROOM && announce){
+    post(JSON.stringify({ v:1, kind:"matchup", id:ME, room:ROOM, name:NAME, matchup:MATCHUP, matchupAt:MATCHUP_AT }));
+    showToast("🏟️ "+matchupLabel()+" — hit ♻️ or 🆕 to deal it in");
+  }
+}
+function adoptMatchup(m, at, who){
+  if(!m || !at || at<=MATCHUP_AT) return;
+  if(m.away===MATCHUP.away && m.home===MATCHUP.home) return;
+  MATCHUP={ away:m.away||"", home:m.home||"" }; MATCHUP_AT=at;
+  store.set("opl_matchup", JSON.stringify(MATCHUP));
+  if(matchupCalls().length && !packOn("matchup")){ PACKS_ON.push("matchup"); savePacksOn(); }
+  paintTheme(); paintPacks();
+  showToast("🏟️ "+(who||"Someone")+" set "+matchupLabel());
+}
+
+/* ---------- the pack picker ---------- */
+function paintPacks(){
+  const box=document.getElementById("packOpts");
+  const chip=document.getElementById("packChip");
+  if(chip) chip.textContent="\u{1F3B4} "+PACKS_ON.length+"/"+allPackKeys().length;
+  if(!box) return;
+  box.innerHTML="";
+  for(const key of allPackKeys()){
+    const b=document.createElement("button");
+    b.className="patopt"+(packOn(key)?" on":"");
+    b.innerHTML="<b>"+escapeHtml(packLabel(key))+"</b><span>"+packCalls(key).length+" call"+(packCalls(key).length===1?"":"s")+"</span>";
+    b.addEventListener("click",()=>togglePack(key));
+    box.appendChild(b);
+  }
+  const n=fullPool().length;
+  const foot=document.getElementById("packCount");
+  if(foot) foot.textContent = n+" calls in play · a card uses 24";
+}
+function togglePack(key){
+  const i=PACKS_ON.indexOf(key);
+  if(i>=0){
+    if(PACKS_ON.length===1){ showToast("Keep at least one pack on"); return; }
+    PACKS_ON.splice(i,1);
+  } else PACKS_ON.push(key);
+  PACKS_AT=Date.now(); savePacksOn(); paintPacks();
+  if(ROOM) post(JSON.stringify({ v:1, kind:"packs", id:ME, room:ROOM, name:NAME, packs:PACKS_ON, packsAt:PACKS_AT }));
+}
+function adoptPacks(list, at, who){
+  if(!Array.isArray(list) || !list.length || !at || at<=PACKS_AT) return;
+  PACKS_ON=list.slice(); PACKS_AT=at; savePacksOn(); paintPacks();
+  showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs in play");
+}
+
+/* ---------- card building ---------- */
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function buildCard(){
+  const picks = shuffle(fullPool().filter(t=>t!==CENTER_SQUARE)).slice(0,24);
+  const cells = [];
+  for(let i=0;i<25;i++){
+    if(i===12){ cells.push(CENTER_SQUARE); }
+    else { cells.push(picks[i>12? i-1 : i]); }
+  }
+  return cells;
+}
+function freshMarks(){ MARK_T=new Array(25).fill(0); return new Array(25).fill(false); }
+function teamKey(t){ return String(t==null?"":t).trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+function onMyTeam(t){ return !!TEAM && teamKey(t)===teamKey(TEAM); }
+
+/* ---------- win detection ---------- */
+const LINES=(function(){
+  const L=[];
+  for(let r=0;r<5;r++) L.push([0,1,2,3,4].map(c=>r*5+c));
+  for(let c=0;c<5;c++) L.push([0,1,2,3,4].map(r=>r*5+c));
+  L.push([0,6,12,18,24]); L.push([4,8,12,16,20]);
+  return L;
+})();
+// ---- win patterns. Cover all is the house default; anyone can change it and
+// the whole room follows (last change wins, with a toast so it's never a surprise).
+const PATTERNS = {
+  all:     { name:"Cover all",     short:"Cover all",  blurb:"every square on the card",              groups:[[...Array(25).keys()]], need:1 },
+  line:    { name:"Any line",      short:"Any line",   blurb:"a line — across, down or diagonal",   groups:LINES,                   need:1 },
+  two:     { name:"Two lines",     short:"2 lines",    blurb:"any two complete lines",                groups:LINES,                   need:2 },
+  corners: { name:"Four corners",  short:"Corners",    blurb:"the four corner squares",               groups:[[0,4,20,24]],           need:1 },
+  x:       { name:"X",             short:"X",          blurb:"both diagonals",                        groups:[[0,6,12,18,24,4,8,16,20]], need:1 }
+};
+const PAT_ORDER=["all","line","two","corners","x"];
+let PAT="all", PAT_AT=0;
+function pattern(){ return PATTERNS[PAT] || PATTERNS.all; }
+function evalMarks(marks){
+  const pat=pattern();
+  const done=[], left=[];
+  for(const g of pat.groups){
+    const short=g.reduce((a,i)=>a+(marks[i]?0:1),0);
+    if(short===0) done.push(g);
+    left.push(short);
+  }
+  left.sort((a,b)=>a-b);
+  const won = done.length>=pat.need;
+  const toGo = won ? 0 : left.slice(0,pat.need).reduce((a,b)=>a+b,0);
+  const cells=new Set();
+  if(won) done.forEach(g=>g.forEach(i=>cells.add(i)));
+  // how far along the easiest route to the win is (0-1), for the progress bar
+  const target = pat.groups.slice(0,1).reduce((a,g)=>a+g.length,0) * pat.need;
+  const pct = target ? Math.max(0, Math.min(1, (target-toGo)/target)) : 0;
+  return {won, toGo, cells, done:done.length, pct};
+}
+function progressLabel(marks){
+  const e=evalMarks(marks);
+  if(e.won){
+    const extra = pattern().need===1 && e.done>1 ? " ×"+e.done : "";
+    return {txt:(PAT==="all"?"🚨 COVER ALL!":"🚨 BINGO!")+extra, cls:" bingo", rank:0};
+  }
+  if(e.toGo===1) return {txt:"👀 1 away", cls:" close", rank:1};
+  if(e.toGo===2) return {txt:"🔥 2 away", cls:"", rank:2};
+  return {txt:e.toGo+" to go", cls:"", rank:e.toGo};
+}
+
+/* ---------- choosing the pattern ---------- */
+function patternLine(){ return pattern().name+" — "+pattern().blurb; }
+function paintPattern(){
+  const chip=document.getElementById("patChip");
+  if(chip) chip.textContent="🎯 "+pattern().short;
+  const setupChip=document.getElementById("patChipSetup");
+  if(setupChip) setupChip.textContent=pattern().short;
+  const m=document.getElementById("winRule");
+  if(m) m.textContent="First to "+pattern().blurb+" wins.";
+  [...document.querySelectorAll("#patModal .patopt")].forEach(b=>b.classList.toggle("on", b.dataset.key===PAT));
+}
+function setPattern(key, announce){
+  if(!PATTERNS[key]) return;
+  PAT=key; PAT_AT=Date.now();
+  store.set("opl_pattern", PAT);
+  paintPattern();
+  if(ROOM){ renderMine(); renderOthers(); }
+  if(announce){
+    post(JSON.stringify({ v:1, kind:"pattern", id:ME, room:ROOM, name:NAME, pat:PAT, patAt:PAT_AT }));
+    showToast("🎯 Pattern: "+pattern().name);
+  }
+}
+function adoptPattern(key, at, who){
+  if(!PATTERNS[key] || !at || at<=PAT_AT || key===PAT) return;
+  PAT=key; PAT_AT=at; store.set("opl_pattern", PAT);
+  paintPattern();
+  if(ROOM){ renderMine(); renderOthers(); }
+  showToast("🎯 "+(who||"Someone")+" set the pattern: "+pattern().name);
+}
+function openPatModal(){ paintPattern(); document.getElementById("patModal").classList.remove("hidden"); }
+function closePatModal(){ document.getElementById("patModal").classList.add("hidden"); }
+
+/* ---------- how many other people have this same call marked ---------- */
+function othersMarking(text){
+  let n=0;
+  for(const id in players){
+    const p=players[id];
+    if(!Array.isArray(p.card)||!Array.isArray(p.marks)) continue;
+    if(onMyTeam(p.team)) continue;              // a teammate is on MY card — not someone else who saw it
+    const j=p.card.indexOf(text);
+    if(j>=0 && p.marks[j]) n++;
+  }
+  return n;
+}
+
+/* ---------- rendering ---------- */
+function renderMine(){
+  const grid=document.getElementById("myGrid");
+  const {won,cells}=evalMarks(MARKS);
+  grid.innerHTML="";
+  for(let i=0;i<25;i++){
+    const d=document.createElement("div");
+    const free=(i===12);
+    d.className="cell"+(MARKS[i]?" marked":"")+(free?" free":"")+(cells.has(i)?" win":"");
+    const alsoN=othersMarking(CARD[i]);
+    d.innerHTML="<span>"+CARD[i]+"</span>"+(MARKS[i]?"<span class='chk'>✓</span>":"")+
+      (alsoN?"<span class='others' title='others who marked this'>👥"+alsoN+"</span>":"");
+    d.addEventListener("click",()=>toggle(i));
+    grid.appendChild(d);
+  }
+  const mine=progressLabel(MARKS);
+  document.getElementById("myPill").textContent = mine.txt;
+  document.getElementById("myPill").className = "pill"+mine.cls;
+  fitCells();
+  const bar=document.getElementById("myBar");
+  bar.className = "bar"+(won?" done":mine.rank===1?" close":"");
+  bar.firstElementChild.style.width = Math.round(evalMarks(MARKS).pct*100)+"%";
+  if(won) recordWin(TEAM?"team:"+teamKey(TEAM):ME, TEAM||NAME||"You", ROUND);
+  const wasBingo=myBingo; myBingo=won;
+  if(myBingo && !wasBingo){ celebrate(true); }
+}
+function escapeHtml(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+function renderOthers(){
+  const list=document.getElementById("othersList");
+  const waiting=document.getElementById("theirWaiting");
+  const count=document.getElementById("othersCount");
+  const now=Date.now();
+  // drop players we haven't heard from in ~50s (they closed the game)
+  for(const id in players){ if(now-players[id].t>50000){ delete players[id]; delete seenBingo[id]; } }
+  // closest to a bingo first — it's a race, not a roster
+  const ids=Object.keys(players).sort((a,b)=>{
+    const ra=progressLabel(players[a].marks).rank, rb=progressLabel(players[b].marks).rank;
+    if(ra!==rb) return ra-rb;
+    return (players[a].name||"").localeCompare(players[b].name||"");
+  });
+  if(!ids.length){
+    list.innerHTML=""; waiting.classList.remove("hidden");
+    count.textContent="nobody yet"; count.className="pill";
+    return;
+  }
+  waiting.classList.add("hidden");
+  count.textContent = ids.length+(ids.length===1?" player":" players");
+  count.className="pill";
+  list.innerHTML="";
+  for(const id of ids){
+    const p=players[id];
+    if(!Array.isArray(p.card)||!Array.isArray(p.marks)) continue;
+    const {cells}=evalMarks(p.marks);
+    const block=document.createElement("div");
+    block.className="playerblock";
+    const secs=Math.max(0,Math.round((now-p.t)/1000));
+    const prog=progressLabel(p.marks);
+    if(prog.rank<=1) block.className="playerblock hot";
+    const crown = (id===ids[0] && ids.length>1 && prog.rank<3) ? "<span class='crown'>👑</span>" : "";
+    const teamTag = p.team
+      ? "<span class='teamtag"+(onMyTeam(p.team)?" mine":"")+"'>"+escapeHtml(p.team)+(onMyTeam(p.team)?" · same card":"")+"</span>"
+      : "";
+    const head=document.createElement("div");
+    head.className="pline";
+    head.innerHTML="<div class='pname'><span>🚓</span><span class='who'>"+escapeHtml(p.name||"Player")+"</span>"+crown+teamTag+"</div>"+
+      "<div class='pill"+prog.cls+"'>"+prog.txt+"</div>";
+    // shout once when somebody gets within one square
+    if(prog.rank===1 && !seenClose[id]){ seenClose[id]=true; onPlayerClose(p.name); }
+    if(prog.rank!==1) seenClose[id]=false;
+    block.appendChild(head);
+    const grid=document.createElement("div");
+    grid.className="grid mini";
+    for(let i=0;i<25;i++){
+      const d=document.createElement("div");
+      const free=(i===12);
+      d.className="cell"+(p.marks[i]?" marked":"")+(free?" free":"")+(cells.has(i)?" win":"")+(peek[id]===i?" peek":"");
+      d.innerHTML="<span>"+escapeHtml(p.card[i])+"</span>";
+      d.addEventListener("click",()=>{ peek[id] = (peek[id]===i? null : i); renderOthers(); });
+      grid.appendChild(d);
+    }
+    const pbar=document.createElement("div");
+    pbar.className="bar"+(prog.rank===0?" done":prog.rank===1?" close":"");
+    pbar.innerHTML="<i style='width:"+Math.round(evalMarks(p.marks).pct*100)+"%'></i>";
+    block.appendChild(pbar);
+    block.appendChild(grid);
+    // tapping one of their squares spells it out in the open, since the mini board has no room for text
+    const read=document.createElement("div");
+    const pi=peek[id];
+    if(pi==null || pi<0){ read.className="readout empty"; read.textContent="Tap one of their squares to read it."; }
+    else {
+      read.className="readout";
+      const mineIdx=CARD.indexOf(p.card[pi]);
+      const alsoMe = mineIdx>=0 ? (MARKS[mineIdx]?" · you've marked it too":" · it's on your card, unmarked") : "";
+      read.innerHTML="<span class='q'>"+escapeHtml(p.card[pi])+"</span>"+
+        "<span class='state"+(p.marks[pi]?" yes":"")+"'>"+(p.marks[pi]?"✓ they've marked this":"not marked yet")+alsoMe+"</span>";
+    }
+    block.appendChild(read);
+    const meta=document.createElement("div");
+    meta.className="meta";
+    meta.textContent="updated "+(secs<3?"just now":secs+"s ago");
+    block.appendChild(meta);
+    list.appendChild(block);
+    // toast once when a player completes the pattern
+    if(prog.rank===0){ recordWin(p.team?"team:"+teamKey(p.team):id, p.team||p.name, p.round||ROUND); }
+    if(prog.rank===0 && !seenBingo[id]){ seenBingo[id]=true; onPlayerBingo(p.name); }
+    if(prog.rank!==0) seenBingo[id]=false;
+  }
+}
+
+let markHistory=[];
+function toggle(i){
+  markHistory.push(i); if(markHistory.length>60) markHistory.shift();
+  MARKS[i]=!MARKS[i]; MARK_T[i]=Date.now();
+  saveProgress();
+  renderMine();
+  schedulePublish();
+}
+
+function undoMark(){
+  const i=markHistory.pop();
+  if(i==null){ showToast("Nothing to undo"); return; }
+  MARKS[i]=!MARKS[i]; MARK_T[i]=Date.now();
+  saveProgress(); renderMine(); schedulePublish();
+  showToast((MARKS[i]?"Re-marked: ":"Un-marked: ")+CARD[i]);
+}
+
+/* ---------- rounds & the night's scoreboard ---------- */
+let ROUND=1, ROUND_AT=0, wins={};
+function winsKey(){ return "opl_wins_"+roomKey(ROUND_NAME_ROOM()); }
+function ROUND_NAME_ROOM(){ return ROOM||"solo"; }
+function loadRound(){
+  try{ const w=JSON.parse(store.get(winsKey())||"null"); if(w&&typeof w==="object"){ wins=w.wins||{}; ROUND=w.round||1; ROUND_AT=w.at||0; } }
+  catch(e){ wins={}; }
+}
+function saveRound(){ store.set(winsKey(), JSON.stringify({wins, round:ROUND, at:ROUND_AT})); }
+function recordWin(id, name, round){
+  const r = round || ROUND;
+  const w = wins[id] || (wins[id]={name:name||"Player", rounds:[]});
+  w.name = name || w.name;
+  if(w.rounds.indexOf(r)<0){ w.rounds.push(r); saveRound(); renderScores(); }
+}
+function renderScores(){
+  const el=document.getElementById("scoreLine"); if(!el) return;
+  const rows=Object.keys(wins).map(id=>({name:wins[id].name, n:wins[id].rounds.length}))
+    .filter(r=>r.n>0).sort((a,b)=>b.n-a.n);
+  el.innerHTML = "🏆 Round "+ROUND+" · " + (rows.length
+    ? rows.map(r=>escapeHtml(r.name)+" <b>"+r.n+"</b>").join(" · ")
+    : "no wins yet");
+}
+function startRound(announce){
+  ROUND++; ROUND_AT=Date.now(); saveRound();
+  players={};
+  dealFreshRound();
+  if(announce){
+    post(JSON.stringify({ v:1, kind:"round", id:ME, room:ROOM, name:NAME, round:ROUND, at:ROUND_AT }));
+    showToast("🆕 Round "+ROUND+" — fresh cards for everyone");
+  }
+}
+function adoptRound(n, at, who){
+  if(!n || n<=ROUND) return;
+  ROUND=n; ROUND_AT=at||Date.now(); saveRound();
+  players={};                      // their old boards belong to the last round
+  dealFreshRound();
+  showToast("🆕 "+(who||"Someone")+" started round "+ROUND);
+  sirens(600);
+}
+function dealFreshRound(){
+  CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[]; peek={}; seenBingo={}; seenClose={};
+  freshAt=0; store.set(coolKey(), "0"); paintCooldown();
+  saveProgress(); renderMine(); renderOthers(); renderScores(); publish("state");
+}
+
+/* ---------- teams: one card, two (or more) phones ---------- */
+function paintTeam(){
+  const chip=document.getElementById("teamChip");
+  if(chip) chip.textContent = TEAM ? "\u{1F465} "+TEAM : "\u{1F465} Solo";
+  const setupChip=document.getElementById("teamChipSetup");
+  if(setupChip) setupChip.textContent = TEAM || "Solo";
+  const note=document.getElementById("teamNote");
+  if(note) note.textContent = TEAM
+    ? "Sharing one card with everyone else on "+TEAM+" — either of you can tap it."
+    : "";
+}
+function setTeam(name, redeal){
+  const was=TEAM;
+  TEAM = String(name||"").trim().slice(0,16);
+  store.set("opl_team", TEAM);
+  paintTeam();
+  if(!ROOM) return;
+  if(redeal && teamKey(was)!==teamKey(TEAM)){
+    // joining or leaving a team means a fresh card for you — teammates will pull you onto theirs
+    CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+    saveProgress(); renderMine();
+  }
+  publish("hello");   // ask the room to resend so a teammate's card finds you
+  publish("state");
+  showToast(TEAM ? "\u{1F465} You're on "+TEAM : "\u{1F465} Playing solo");
+}
+// Merge a teammate's board into mine: a newer deal replaces the card outright,
+// otherwise each square takes whichever tap happened last.
+function mergeTeammate(b){
+  if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
+  const theirCardAt = b.cardAt||0;
+  const theirT = Array.isArray(b.markT)&&b.markT.length===25 ? b.markT : new Array(25).fill(theirCardAt);
+  let changed=false;
+  if(theirCardAt > CARD_AT){                       // their deal is the newer one
+    CARD=b.card.slice(); MARKS=b.marks.slice(); MARK_T=theirT.slice(); CARD_AT=theirCardAt;
+    markHistory=[]; changed=true;
+  } else if(theirCardAt === CARD_AT){              // same card — reconcile square by square
+    for(let i=0;i<25;i++){
+      if(theirT[i] > (MARK_T[i]||0) && MARKS[i]!==!!b.marks[i]){
+        MARKS[i]=!!b.marks[i]; MARK_T[i]=theirT[i]; changed=true;
+      }
+    }
+  }
+  if(changed){ saveProgress(); renderMine(); schedulePublish(); }
+}
+
+/* ---------- suggestions ---------- */
+function loadSuggestions(){
+  try{ const a=JSON.parse(store.get("opl_suggestions")||"[]"); if(Array.isArray(a)) suggestions=a; }catch(e){}
+}
+function saveSuggestions(){
+  suggestions=suggestions.slice(0,200);
+  store.set("opl_suggestions", JSON.stringify(suggestions));
+}
+function addSuggestion(sug){
+  if(!sug || !sug.sid || !sug.text) return false;
+  if(suggestions.some(x=>x.sid===sug.sid)) return false;
+  suggestions.unshift({ sid:sug.sid, from:sug.from||"Player", kind:sug.kind==="app"?"app":"square",
+                        tag:(sug.tag?String(sug.tag).trim().slice(0,24):""),
+                        text:String(sug.text).slice(0,240), t:sug.t||Date.now() });
+  saveSuggestions(); renderSuggestions(); return true;
+}
+function renderSuggestions(){
+  const list=document.getElementById("sugList");
+  const count=document.getElementById("sugCount");
+  count.textContent = suggestions.length? suggestions.length+(suggestions.length===1?" idea":" ideas") : "none yet";
+  const meta=document.getElementById("sugMeta");
+  if(meta){
+    const added=Object.keys(extraPacks).reduce((a,k)=>a+extraPacks[k].length,0);
+    meta.textContent = added
+      ? added+" accepted idea"+(added===1?"":"s")+" across "+Object.keys(extraPacks).length+" tag pack"+(Object.keys(extraPacks).length===1?"":"s")+" — hit ♻️ Fresh squares to pull them in. 📌 Everyone shares an idea with the room; text or email the list to keep it."
+      : "Square ideas and app ideas go to everyone in the room. Tag one and it becomes its own pack.";
+  }
+  list.innerHTML="";
+  if(!suggestions.length){
+    const e=document.createElement("div");
+    e.className="readout empty";
+    e.textContent="Nothing yet — square ideas (\"K-9 refuses to get out of the car\") or anything you'd change about the app.";
+    list.appendChild(e);
+    return;
+  }
+  for(const s of suggestions){
+    const d=document.createElement("div"); d.className="sug";
+    const when=new Date(s.t);
+    d.innerHTML="<div class='top'><span class='tag"+(s.kind==="app"?"":" idea")+"'>"+(s.kind==="app"?"App":"Square")+"</span>"+
+      (s.tag?"<span class='tag pack'>\u{1F3F7}\uFE0F "+escapeHtml(s.tag)+"</span>":"")+
+      "<span class='from'>"+escapeHtml(s.from)+"</span></div>"+
+      "<div class='txt'>"+escapeHtml(s.text)+"</div>"+
+      "<div class='when'>"+when.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})+"</div>";
+    if(s.kind!=="app"){
+      const act=document.createElement("div"); act.className="act";
+      const on=inPool(s.text);
+      const btn=document.createElement("button");
+      btn.className=on?"in":""; btn.textContent=on?"✓ in a pack":"➕ Add to my packs";
+      btn.addEventListener("click",()=>togglePool(s.text, s.tag));
+      act.appendChild(btn);
+      const all=document.createElement("button");
+      all.style.marginLeft="6px"; all.textContent="📌 Everyone";
+      all.addEventListener("click",()=>pushToRoom(s.text, s.tag));
+      act.appendChild(all);
+      d.appendChild(act);
+    }
+    list.appendChild(d);
+  }
+}
+function suggestionsText(){
+  return suggestions.slice().reverse().map(s=>
+    "["+(s.kind==="app"?"APP":"SQUARE")+"] "+s.from+": "+s.text
+  ).join("\n");
+}
+function shareSuggestions(how){
+  if(!suggestions.length){ showToast("No suggestions yet"); return; }
+  const subject="On Patrol BINGO — square ideas";
+  const body=suggestionsText();
+  const href = how==="sms"
+    ? "sms:?&body="+encodeURIComponent(subject+"\n\n"+body)
+    : "mailto:?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  location.href=href;
+}
+function copySuggestions(){
+  if(!suggestions.length){ showToast("No suggestions yet"); return; }
+  const txt=suggestionsText();
+  const done=()=>showToast("Copied "+suggestions.length+" suggestion"+(suggestions.length>1?"s":""));
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, ()=>fallbackCopy(txt,done)); }
+  else fallbackCopy(txt,done);
+}
+function fallbackCopy(txt,done){
+  const ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){ showToast("Couldn't copy"); }
+  document.body.removeChild(ta);
+}
+function openSugModal(){
+  setSugKind("square");
+  document.getElementById("sugText").value="";
+  document.getElementById("sugTag").value="";
+  document.getElementById("sugModal").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("sugText").focus(),50);
+}
+function closeSugModal(){ document.getElementById("sugModal").classList.add("hidden"); }
+function setSugKind(k){
+  sugKind=k;
+  document.getElementById("sugKindSquare").classList.toggle("on",k==="square");
+  document.getElementById("sugKindApp").classList.toggle("on",k==="app");
+  document.getElementById("sugText").placeholder = k==="square"
+    ? "e.g. \"Suspect trips over own feet\"" : "e.g. \"Let the host pick the card size\"";
+  document.getElementById("sugHint").textContent = k==="square"
+    ? "A call for a bingo square — something you'd expect to see on the show."
+    : "Anything about the game itself — a feature, a fix, a nitpick.";
+}
+function sendSuggestion(){
+  const text=document.getElementById("sugText").value.trim();
+  if(!text){ document.getElementById("sugText").focus(); return; }
+  const tag=document.getElementById("sugTag").value.trim().slice(0,24);
+  const sug={ sid: ME+"-"+Date.now(), from: NAME||"You", kind: sugKind, tag, text, t: Date.now() };
+  addSuggestion(sug);
+  publishSuggestion(sug);
+  closeSugModal();
+  showToast("Suggestion sent 💡");
+}
+
+/* ---------- persistence per room ---------- */
+function keyBase(){ return "opl_"+ROOM+"_"+ME; }
+function saveProgress(){
+  store.set(keyBase()+"_card", JSON.stringify(CARD));
+  store.set(keyBase()+"_marks", JSON.stringify(MARKS));
+  store.set(keyBase()+"_markt", JSON.stringify(MARK_T));
+  store.set(keyBase()+"_cardat", String(CARD_AT));
+}
+function loadProgress(){
+  try{
+    const c=JSON.parse(store.get(keyBase()+"_card")||"null");
+    const m=JSON.parse(store.get(keyBase()+"_marks")||"null");
+    if(Array.isArray(c)&&c.length===25&&Array.isArray(m)&&m.length===25){
+      CARD=c; MARKS=m;
+      if(CARD[12]!==CENTER_SQUARE){ CARD[12]=CENTER_SQUARE; saveProgress(); }   // centre changed since the deal
+      const mt=JSON.parse(store.get(keyBase()+"_markt")||"null");
+      MARK_T = Array.isArray(mt)&&mt.length===25 ? mt : new Array(25).fill(0);
+      CARD_AT = parseInt(store.get(keyBase()+"_cardat")||"0",10) || 0;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+/* ---------- ntfy sync ---------- */
+// One room code, however it was typed: "Couch Night", "couch-night" and
+// " COUCH  night " all resolve to the same key (and so the same ntfy topic).
+function roomKey(s){
+  return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+function topic(){ return "oplbingo-v1-"+roomKey(ROOM); }
+// Two independent public relays. A phone only has to reach ONE of them, and we
+// publish to both, so a blocked or rate-limited relay can't kill the room.
+const RELAYS = ["https://ntfy.sh", "https://ntfy.envs.net"];
+const relay = {};   // host -> {live, es, pollT, lastId, err, tries}
+function relayState(h){ return relay[h] || (relay[h] = {live:false, es:null, pollT:null, lastId:null, err:"", tries:0}); }
+function liveRelays(){ return RELAYS.filter(h=>relayState(h).live).length; }
+function refreshStatus(){
+  const dot=document.getElementById("dot"), t=document.getElementById("statusText");
+  if(!ROOM){ dot.className="dot"; t.textContent="offline"; return; }
+  const n=liveRelays();
+  dot.className="dot"+(n?" on":" bad");
+  t.textContent = n===RELAYS.length ? "synced" : n ? "synced ("+n+"/"+RELAYS.length+")" : "no signal — tap";
+}
+function setStatus(){ refreshStatus(); }   // kept so callers read the same everywhere
+function syncDetails(){
+  const lines=RELAYS.map(h=>{
+    const st=relayState(h);
+    return h.replace("https://","")+": "+(st.live?"connected":(st.err||"not connected"));
+  });
+  alert("Room: "+ROOM+"\nTopic: "+topic()+"\n"+buildLabel()+"\n\n"+lines.join("\n")+
+        "\n\nIf both say blocked, this network is filtering them — try cell data / a hotspot.");
+  connect();   // tapping also retries
+}
+
+function connect(){
+  cleanupSocket();
+  pollActive=true;
+  RELAYS.forEach(h=>{ const st=relayState(h); st.lastId=null; st.tries=0; openRelay(h); });
+  refreshStatus();
+  publish("hello");            // ask the room to (re)send state
+  publish("state");            // announce myself
+  clearInterval(heartbeat);
+  heartbeat=setInterval(()=>{ if(pollActive) publish("state"); }, 20000);
+}
+
+// Preferred: one long-lived SSE stream per relay — instant updates and a single
+// request, so nobody trips a rate limit. Falls back to slow polling per relay.
+function openRelay(h){
+  const st=relayState(h);
+  closeRelay(h);
+  if(typeof EventSource==="undefined"){ st.err="no EventSource"; pollRelay(h); return; }
+  try{
+    const es=new EventSource(h+"/"+topic()+"/sse?since=30s");
+    st.es=es;
+    es.onopen=()=>{ st.live=true; st.err=""; st.tries=0; refreshStatus(); };
+    es.onmessage=ev=>{
+      st.live=true; st.err=""; refreshStatus();
+      let m; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+      if(m.event!=="message") return;
+      let body; try{ body=JSON.parse(m.message); }catch(e){ return; }
+      handleIncoming(body);
+    };
+    es.onerror=()=>{
+      st.live=false; st.err="stream blocked"; refreshStatus();
+      try{ es.close(); }catch(e){}
+      st.es=null;
+      pollRelay(h);                                   // keep trying the plain-GET route
+      const wait=Math.min(30000, 4000*Math.pow(2, st.tries++));
+      setTimeout(()=>{ if(pollActive && !st.es) openRelay(h); }, wait);
+    };
+  }catch(e){ st.err="stream unavailable"; pollRelay(h); }
+}
+// Fallback transport: ordinary HTTPS GETs, slow enough to stay under rate limits.
+async function pollRelay(h){
+  const st=relayState(h);
+  if(!pollActive) return;
+  clearTimeout(st.pollT);
+  try{
+    const since = st.lastId || "30s";
+    const res = await fetch(h+"/"+topic()+"/json?poll=1&since="+encodeURIComponent(since));
+    if(res.ok){
+      st.live=true; st.err="";
+      const text=await res.text();
+      for(const line of text.split("\n")){
+        if(!line.trim()) continue;
+        let msg; try{ msg=JSON.parse(line); }catch(e){ continue; }
+        if(msg.id) st.lastId=msg.id;
+        if(msg.event!=="message") continue;
+        let body; try{ body=JSON.parse(msg.message); }catch(e){ continue; }
+        handleIncoming(body);
+      }
+    } else {
+      st.live=false;
+      st.err = res.status===429 ? "rate-limited (429)" : "HTTP "+res.status;
+    }
+  }catch(e){ st.live=false; st.err="unreachable"; }
+  refreshStatus();
+  if(pollActive && !st.es) st.pollT=setTimeout(()=>pollRelay(h), st.live?5000:9000);
+}
+function closeRelay(h){
+  const st=relayState(h);
+  if(st.es){ try{ st.es.close(); }catch(e){} st.es=null; }
+  clearTimeout(st.pollT); st.pollT=null;
+}
+function cleanupSocket(){
+  pollActive=false;
+  RELAYS.forEach(h=>{ closeRelay(h); relayState(h).live=false; });
+  clearTimeout(reconnectT); clearInterval(heartbeat);
+}
+
+function payload(kind){
+  return JSON.stringify({
+    v:1, kind, id:ME, room:ROOM, name:NAME,
+    card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, round:ROUND, roundAt:ROUND_AT,
+    packs:PACKS_ON, packsAt:PACKS_AT, team:TEAM, cardAt:CARD_AT, markT:MARK_T,
+    theme:THEME, themeAt:THEME_AT, matchup:MATCHUP, matchupAt:MATCHUP_AT, t:Date.now()
+  });
+}
+function post(body){
+  RELAYS.forEach(h=>{ fetch(h+"/"+topic(), {method:"POST", body}).catch(()=>{}); });
+}
+function publish(kind){ post(payload(kind)); }
+// someone who joins late still gets tonight's ideas: answer "hello" with a digest
+function publishSuggestionDigest(){
+  if(!ROOM || !suggestions.length) return;
+  const recent=suggestions.slice(0,12);
+  for(let i=0;i<recent.length;i+=4){
+    const batch=recent.slice(i,i+4);
+    setTimeout(()=>{
+      post(JSON.stringify({ v:1, kind:"sugdigest", id:ME, room:ROOM, name:NAME, sugs:batch }));
+    }, i*160);
+  }
+}
+function pushToRoom(text, tag){
+  if(!inPool(text)) togglePool(text, tag);
+  if(!ROOM){ showToast("Added to your packs"); return; }
+  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text, tag:tag||"" }));
+  showToast("📌 Sent to everyone's packs");
+}
+function publishSuggestion(sug){
+  if(!ROOM) return;   // solo play: it still lands in the local list
+  post(JSON.stringify({ v:1, kind:"suggest", id:ME, room:ROOM, name:NAME, sug }));
+}
+function schedulePublish(){
+  clearTimeout(pubTimer);
+  pubTimer=setTimeout(()=>publish("state"), 500);
+}
+function handleIncoming(b){
+  if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
+  if(b.kind==="hello"){ publish("state"); publishSuggestionDigest(); return; }   // someone joined -> resend
+  if(b.kind==="pattern"){ adoptPattern(b.pat, b.patAt, b.name); return; }
+  if(b.kind==="round"){ adoptRound(b.round, b.at, b.name); return; }
+  if(b.kind==="suggest"){
+    if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
+    return;
+  }
+  if(b.kind==="pool"){
+    const t=String(b.text||"").slice(0,240);
+    if(t && !inPool(t)){
+      togglePool(t, b.tag);
+      showToast("📌 "+(b.name||"Someone")+" added \u201C"+t+"\u201D — hit ♻️ to pull it in");
+    }
+    return;
+  }
+  if(b.kind==="packs"){ adoptPacks(b.packs, b.packsAt, b.name); return; }
+  if(b.kind==="theme"){ adoptMatchup(b.matchup, b.matchupAt, b.name); adoptTheme(b.theme, b.themeAt, b.name); return; }
+  if(b.kind==="matchup"){ adoptMatchup(b.matchup, b.matchupAt, b.name); return; }
+  if(b.kind==="sugdigest"){
+    if(Array.isArray(b.sugs)) b.sugs.forEach(x=>addSuggestion(x));   // quiet catch-up, no toast
+    return;
+  }
+  if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
+  if(b.pat) adoptPattern(b.pat, b.patAt, b.name);        // late joiners pick up the house rule
+  if(b.round) adoptRound(b.round, b.roundAt, b.name);
+  if(b.matchup) adoptMatchup(b.matchup, b.matchupAt, b.name);
+  if(b.theme) adoptTheme(b.theme, b.themeAt, b.name);
+  if(b.packs) adoptPacks(b.packs, b.packsAt, b.name);
+  players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, round:b.round||ROUND,
+                  team:b.team||"", t:Date.now() };
+  if(onMyTeam(b.team) && (b.round||ROUND)===ROUND) mergeTeammate(b);
+  renderOthers(); renderMine();
+}
+
+/* ---------- card text size ---------- */
+const SIZES = [
+  { key:"s",  label:"S",  cell:"10.5px", min:"0px",  ar:"1/1",  pad:"5px", read:"12.5px", note:"13.5px" },
+  { key:"m",  label:"M",  cell:"12px",   min:"74px", ar:"auto", pad:"5px", read:"13.5px", note:"14px"   },
+  { key:"l",  label:"L",  cell:"13.5px", min:"88px", ar:"auto", pad:"5px", read:"15px",   note:"15px"   },
+  { key:"xl", label:"XL", cell:"15.5px", min:"104px",ar:"auto", pad:"5px", read:"16.5px", note:"16.5px" }
+];
+let SIZE = store.get("opl_textsize") || "l";     // large by default — these get read from across a room
+function applySize(){
+  const z = SIZES.find(x=>x.key===SIZE) || SIZES[2];
+  const r = document.documentElement.style;
+  r.setProperty("--cellfs", z.cell);
+  r.setProperty("--cellmin", z.min);
+  r.setProperty("--cellar", z.ar);
+  r.setProperty("--cellpad", z.pad);
+  r.setProperty("--readfs", z.read);
+  r.setProperty("--notefs", z.note);
+  const chip=document.getElementById("sizeChip");
+  if(chip) chip.textContent="🔠 "+z.label;
+}
+// A few calls are long enough to clip at the bigger sizes — shrink just those
+// cells until they fit, so the size chip never costs you a readable square.
+const _measure = (function(){ try{ return document.createElement("canvas").getContext("2d"); }catch(e){ return null; } })();
+function widestWord(text, weight, fs, family){
+  if(!_measure) return 0;
+  _measure.font = weight+" "+fs+"px "+family;
+  let w=0;
+  for(const word of String(text).split(/\s+/)){ const m=_measure.measureText(word).width; if(m>w) w=m; }
+  return w;
+}
+function fitCells(){
+  const grid=document.getElementById("myGrid"); if(!grid) return;
+  const base=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cellfs"))||12;
+  for(const c of grid.children){
+    const sp=c.querySelector("span"); if(!sp) continue;
+    const cs=getComputedStyle(c);
+    const family=cs.fontFamily, weight=cs.fontWeight;
+    const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
+    const avail=c.clientWidth-padX-1;
+    const text=sp.textContent;
+    let fs=base, guard=0;
+    c.style.overflowWrap="normal";
+    c.style.fontSize=fs+"px";
+    const tooWide = ()=> widestWord(text, weight, fs, family) > avail;
+    const tooTall = ()=> sp.scrollHeight > c.clientHeight-4;
+    // shrink until the longest word fits on a line and the whole call fits the cell
+    while((tooWide() || tooTall()) && fs > 9.5 && guard++ < 14){ fs -= 0.5; c.style.fontSize=fs+"px"; }
+    // a genuinely long word may break rather than shrink the whole square to nothing
+    if(tooWide() || tooTall()){
+      c.style.overflowWrap="break-word";
+      while(tooTall() && fs > 7.5 && guard++ < 26){ fs -= 0.5; c.style.fontSize=fs+"px"; }
+    }
+  }
+}
+function cycleSize(){
+  const i = SIZES.findIndex(x=>x.key===SIZE);
+  SIZE = SIZES[(i+1)%SIZES.length].key;
+  store.set("opl_textsize", SIZE);
+  applySize(); fitCells();
+  showToast("🔠 Card text: "+SIZES.find(x=>x.key===SIZE).label);
+}
+
+/* ---------- siren sound (generated, no assets) ---------- */
+let SOUND = store.get("opl_sound")!=="off";
+let actx=null;
+function audio(){
+  if(!SOUND) return null;
+  try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; }
+  if(actx.state==="suspended") actx.resume().catch(()=>{});
+  return actx;
+}
+function paintSound(){ const c=document.getElementById("soundChip"); if(c) c.textContent = SOUND?"🔊":"🔇"; }
+function toggleSound(){
+  SOUND=!SOUND; store.set("opl_sound", SOUND?"on":"off"); paintSound();
+  if(SOUND){ audio(); wail(1, 0.5); showToast("🔊 Sound on"); } else showToast("🔇 Muted");
+}
+// two-tone wail; sweeps is how many up-down passes
+function wail(sweeps, vol){
+  const ac=audio(); if(!ac) return;
+  const t0=ac.currentTime, gain=ac.createGain(), osc=ac.createOscillator();
+  osc.type="sawtooth";
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(vol||0.16, t0+0.05);
+  const each=0.42;
+  for(let i=0;i<sweeps;i++){
+    const a=t0+i*each*2;
+    osc.frequency.setValueAtTime(620, a);
+    osc.frequency.linearRampToValueAtTime(980, a+each);
+    osc.frequency.linearRampToValueAtTime(620, a+each*2);
+  }
+  const end=t0+sweeps*each*2;
+  gain.gain.setValueAtTime(vol||0.16, end-0.12);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(t0); osc.stop(end+0.05);
+}
+
+/* ---------- celebration ---------- */
+function sirens(ms, sweeps){
+  wail(sweeps||1);
+  const s=document.getElementById("siren"), l=document.querySelector(".lights");
+  s.classList.remove("go"); void s.offsetWidth; s.classList.add("go");
+  if(l){ l.classList.add("on"); setTimeout(()=>l.classList.remove("on"), ms||1400); }
+}
+function celebrate(){
+  sirens(2200, 3);
+  const b=document.getElementById("banner");
+  document.getElementById("bwinEm").textContent="🎉";
+  document.getElementById("bwinTitle").textContent="BINGO!";
+  document.getElementById("bwinSub").textContent="You completed "+pattern().blurb+"!";
+  b.classList.remove("hidden");
+  fireConfetti();
+  publish("state");
+  if(navigator.vibrate){ try{navigator.vibrate([40,60,40,60,120]);}catch(e){} }
+}
+function onPlayerBingo(name){
+  showToast((name||"A player")+" got BINGO! 🎉");
+  sirens(2200, 2); fireConfetti();
+  if(navigator.vibrate){ try{navigator.vibrate([30,50,30]);}catch(e){} }
+}
+function onPlayerClose(name){
+  showToast("👀 "+(name||"Someone")+" is ONE square away");
+  sirens(900);
+  if(navigator.vibrate){ try{navigator.vibrate([20,40,20]);}catch(e){} }
+}
+let toastT=null;
+function showToast(txt){
+  const el=document.getElementById("toast"); el.textContent=txt; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),3200);
+}
+
+/* ---------- confetti ---------- */
+const cv=document.getElementById("confetti"); const ctx=cv.getContext("2d");
+let parts=[], raf=null;
+function sizeCanvas(){ cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio; }
+addEventListener("resize",()=>{ sizeCanvas(); fitCells(); }); sizeCanvas();
+function fireConfetti(){
+  const colors=["#ffcf4a","#2e6bff","#33d6a6","#ff4d5e","#ffffff"];
+  for(let i=0;i<130;i++){
+    parts.push({
+      x:Math.random()*cv.width, y:-20*devicePixelRatio,
+      vx:(Math.random()-0.5)*6*devicePixelRatio, vy:(Math.random()*4+3)*devicePixelRatio,
+      s:(Math.random()*7+4)*devicePixelRatio, c:colors[i%colors.length],
+      rot:Math.random()*6, vr:(Math.random()-0.5)*0.3, life:0
+    });
+  }
+  if(!raf) raf=requestAnimationFrame(tick);
+}
+function tick(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  parts=parts.filter(p=>p.life<260);
+  for(const p of parts){
+    p.life++; p.x+=p.vx; p.y+=p.vy; p.vy+=0.12*devicePixelRatio; p.rot+=p.vr;
+    ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.c;
+    ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6); ctx.restore();
+  }
+  if(parts.length){ raf=requestAnimationFrame(tick); } else { raf=null; ctx.clearRect(0,0,cv.width,cv.height); }
+}
+
+/* ---------- flow ---------- */
+function startGame(){
+  const n=document.getElementById("nameInput").value.trim();
+  const r=document.getElementById("roomInput").value.trim();
+  if(!n){ document.getElementById("nameInput").focus(); return shake("nameInput"); }
+  if(!r){ document.getElementById("roomInput").focus(); return shake("roomInput"); }
+  NAME=n; ROOM=r;
+  store.set("opl_name", NAME); store.set("opl_lastroom", ROOM);
+  loadRound(); renderScores(); loadCooldown();
+  if(!loadProgress()){ CARD=buildCard(); MARKS=freshMarks(); saveProgress(); }
+  audio();   // unlock sound on this tap, so the first siren isn't silent
+  myBingo = evalMarks(MARKS).won;
+  document.getElementById("myName").textContent=NAME;
+  document.getElementById("roomEcho").textContent=ROOM;
+  const chip=document.getElementById("roomChip"); chip.textContent=ROOM; chip.classList.remove("hidden");
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  renderMine(); renderOthers();
+  connect();
+}
+function shake(id){
+  const el=document.getElementById(id);
+  el.animate([{transform:"translateX(0)"},{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],{duration:250});
+}
+/* ---------- ♻️ costs you a wait ---------- */
+const FRESH_COOLDOWN = 90000;   // 90s between refreshes
+let freshAt = 0, coolTimer = null;
+function coolLeft(){ return Math.max(0, FRESH_COOLDOWN - (Date.now()-freshAt)); }
+function paintCooldown(){
+  const b=document.getElementById("freshBtn"); if(!b) return;
+  const left=coolLeft();
+  if(left<=0){
+    b.classList.remove("cooling"); b.disabled=false; b.textContent="♻️ Fresh squares";
+    b.style.removeProperty("--cool");
+    clearInterval(coolTimer); coolTimer=null;
+    return;
+  }
+  b.classList.add("cooling"); b.disabled=true;
+  b.textContent="♻️ Fresh in "+Math.ceil(left/1000)+"s";
+  b.style.setProperty("--cool", Math.round((1-left/FRESH_COOLDOWN)*100)+"%");
+  if(!coolTimer) coolTimer=setInterval(paintCooldown, 500);
+}
+function startCooldown(){ freshAt=Date.now(); store.set(coolKey(), String(freshAt)); paintCooldown(); }
+function coolKey(){ return "opl_freshat_"+roomKey(ROOM||"solo"); }
+function loadCooldown(){
+  const v=parseInt(store.get(coolKey())||"0",10);
+  freshAt = isNaN(v)?0:v;
+  paintCooldown();
+}
+
+// Redraw every square you haven't marked yet, from the pool as it stands NOW —
+// so ideas added since the deal come in, and anything removed drops out. Your
+// marked squares (and your lines) are untouched.
+function freshSquares(){
+  const left=coolLeft();
+  if(left>0){ showToast("♻️ Cooling down — "+Math.ceil(left/1000)+"s to go"); paintCooldown(); return; }
+  const open=[];
+  for(let i=0;i<25;i++){ if(i!==12 && !MARKS[i]) open.push(i); }
+  if(!open.length){ showToast("Every square is marked — nothing to refresh"); return; }
+  const keep=new Set(CARD.filter((t,i)=>i===12||MARKS[i]));        // don't duplicate what's staying
+  const avail=shuffle(fullPool().filter(t=>!keep.has(t)));
+  if(!avail.length){ showToast("No other calls in the pool yet"); return; }
+  let n=0, changed=0;
+  for(const i of open){
+    if(n>=avail.length) break;                                     // tiny pool: leave the rest alone
+    if(CARD[i]!==avail[n]) changed++;
+    CARD[i]=avail[n++];
+  }
+  CARD_AT=Date.now();                 // a refreshed card is a new deal for the team
+  saveProgress(); renderMine(); publish("state");
+  startCooldown();
+  showToast("♻️ Refreshed "+changed+" open square"+(changed===1?"":"s")+" — next in 90s");
+}
+function newCard(){
+  if(!confirm("Start a fresh card? Your current marks will be cleared.")) return;
+  CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; saveProgress();
+  renderMine(); publish("state");
+}
+function leave(){
+  cleanupSocket(); clearInterval(heartbeat);
+  document.getElementById("game").classList.add("hidden");
+  document.getElementById("setup").classList.remove("hidden");
+  setStatus("");
+  players={}; seenBingo={}; seenClose={}; peek={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
+}
+
+/* ---------- wire up ---------- */
+document.getElementById("startBtn").addEventListener("click",startGame);
+document.getElementById("undoBtn").addEventListener("click",undoMark);
+document.getElementById("soundChip").addEventListener("click",toggleSound);
+document.getElementById("sizeChip").addEventListener("click",cycleSize);
+document.getElementById("roundBtn").addEventListener("click",()=>{
+  if(confirm("Deal everyone in the room a fresh card and start round "+(ROUND+1)+"?")) startRound(true);
+});
+document.getElementById("freshBtn").addEventListener("click",freshSquares);
+document.getElementById("newCardBtn").addEventListener("click",newCard);
+document.getElementById("leaveBtn").addEventListener("click",leave);
+document.getElementById("bwinClose").addEventListener("click",()=>document.getElementById("banner").classList.add("hidden"));
+document.getElementById("statusBox").addEventListener("click",()=>{ if(ROOM) syncDetails(); });
+document.getElementById("patChip").addEventListener("click",openPatModal);
+document.getElementById("packChip").addEventListener("click",()=>{ paintPacks(); document.getElementById("packModal").classList.remove("hidden"); });
+const TEAM_NAMES=["Porch","Couch","Cabin","Dogs","Deputies","Night Shift"];
+function openTeamModal(){
+  const box=document.getElementById("teamOpts"); box.innerHTML="";
+  for(const n of TEAM_NAMES){
+    const b=document.createElement("button");
+    b.className="patopt"+(teamKey(n)===teamKey(TEAM)?" on":"");
+    b.innerHTML="<b>"+n+"</b><span>share a card with anyone else on "+n+"</span>";
+    b.addEventListener("click",()=>{ setTeam(n,true); closeTeamModal(); });
+    box.appendChild(b);
+  }
+  document.getElementById("teamInput").value = TEAM_NAMES.some(n=>teamKey(n)===teamKey(TEAM)) ? "" : TEAM;
+  paintTeam();
+  document.getElementById("teamModal").classList.remove("hidden");
+}
+function closeTeamModal(){ document.getElementById("teamModal").classList.add("hidden"); }
+(function buildThemeOpts(){
+  const box=document.getElementById("themeOpts");
+  for(const key of THEME_ORDER){
+    const t=THEMES[key];
+    const b=document.createElement("button");
+    b.className="patopt"; b.dataset.key=key;
+    b.innerHTML="<b>"+t.emoji+" "+t.name+" BINGO</b><span>"+t.packs.length+" packs</span>";
+    b.addEventListener("click",()=>{ setTheme(key,true); document.getElementById("themeModal").classList.add("hidden"); });
+    box.appendChild(b);
+  }
+})();
+function openThemeModal(){ paintTheme(); document.getElementById("themeModal").classList.remove("hidden"); }
+function openMatchModal(){
+  for(const id of ["awaySel","homeSel"]){
+    const sel=document.getElementById(id);
+    if(!sel.options.length){
+      sel.appendChild(new Option("—",""));
+      for(const t of NFL_TEAMS) sel.appendChild(new Option(t,t));
+    }
+  }
+  document.getElementById("awaySel").value=MATCHUP.away||"";
+  document.getElementById("homeSel").value=MATCHUP.home||"";
+  document.getElementById("matchModal").classList.remove("hidden");
+}
+document.getElementById("themeChip").addEventListener("click",openThemeModal);
+document.getElementById("themePickBtn").addEventListener("click",openThemeModal);
+document.getElementById("themeClose").addEventListener("click",()=>document.getElementById("themeModal").classList.add("hidden"));
+document.getElementById("themeModal").addEventListener("click",e=>{ if(e.target.id==="themeModal") document.getElementById("themeModal").classList.add("hidden"); });
+document.getElementById("matchChip").addEventListener("click",openMatchModal);
+document.getElementById("matchPickBtn").addEventListener("click",openMatchModal);
+document.getElementById("matchClear").addEventListener("click",()=>{ setMatchup("","",true); document.getElementById("matchModal").classList.add("hidden"); });
+document.getElementById("matchSave").addEventListener("click",()=>{
+  setMatchup(document.getElementById("awaySel").value, document.getElementById("homeSel").value, true);
+  document.getElementById("matchModal").classList.add("hidden");
+});
+document.getElementById("matchModal").addEventListener("click",e=>{ if(e.target.id==="matchModal") document.getElementById("matchModal").classList.add("hidden"); });
+document.getElementById("teamChip").addEventListener("click",openTeamModal);
+document.getElementById("teamPickBtn").addEventListener("click",openTeamModal);
+document.getElementById("teamSolo").addEventListener("click",()=>{ setTeam("",true); closeTeamModal(); });
+document.getElementById("teamSave").addEventListener("click",()=>{ setTeam(document.getElementById("teamInput").value,true); closeTeamModal(); });
+document.getElementById("teamModal").addEventListener("click",e=>{ if(e.target.id==="teamModal") closeTeamModal(); });
+document.getElementById("packClose").addEventListener("click",()=>document.getElementById("packModal").classList.add("hidden"));
+document.getElementById("packModal").addEventListener("click",e=>{ if(e.target.id==="packModal") document.getElementById("packModal").classList.add("hidden"); });
+document.getElementById("patPickBtn").addEventListener("click",openPatModal);
+document.getElementById("patClose").addEventListener("click",closePatModal);
+document.getElementById("patModal").addEventListener("click",e=>{ if(e.target.id==="patModal") closePatModal(); });
+(function buildPatOpts(){
+  const box=document.getElementById("patOpts");
+  for(const key of PAT_ORDER){
+    const p=PATTERNS[key];
+    const b=document.createElement("button");
+    b.className="patopt"; b.dataset.key=key;
+    b.innerHTML="<b>"+p.name+"</b><span>"+p.blurb+"</span>";
+    b.addEventListener("click",()=>{ setPattern(key,true); closePatModal(); });
+    box.appendChild(b);
+  }
+})();
+document.getElementById("addSugBtn").addEventListener("click",openSugModal);
+document.getElementById("copySugBtn").addEventListener("click",copySuggestions);
+document.getElementById("textSugBtn").addEventListener("click",()=>shareSuggestions("sms"));
+document.getElementById("mailSugBtn").addEventListener("click",()=>shareSuggestions("mail"));
+document.getElementById("sugCancel").addEventListener("click",closeSugModal);
+document.getElementById("sugSend").addEventListener("click",sendSuggestion);
+document.getElementById("sugKindSquare").addEventListener("click",()=>setSugKind("square"));
+document.getElementById("sugKindApp").addEventListener("click",()=>setSugKind("app"));
+document.getElementById("sugModal").addEventListener("click",e=>{ if(e.target.id==="sugModal") closeSugModal(); });
+document.getElementById("useSuggest").addEventListener("click",()=>{ document.getElementById("roomInput").value=document.getElementById("roomSuggest").textContent; });
+
+// prefill
+(function init(){
+  document.getElementById("nameInput").value = store.get("opl_name")||"";
+  document.getElementById("roomInput").value = store.get("opl_lastroom")||"";
+  document.getElementById("roomSuggest").textContent = suggestRoom();
+  loadPool(); loadSuggestions(); renderSuggestions();
+  PAT = PATTERNS[store.get("opl_pattern")] ? store.get("opl_pattern") : "all";
+  TEAM = store.get("opl_team")||"";
+  THEME = THEMES[store.get("opl_theme")] ? store.get("opl_theme") : "onpatrol";
+  try{ const m=JSON.parse(store.get("opl_matchup")||"null"); if(m&&typeof m==="object") MATCHUP={away:m.away||"",home:m.home||""}; }catch(e){}
+  // packs saved under another theme shouldn't leave this one with nothing switched on
+  if(!themePacks().some(k=>packOn(k))){ PACKS_ON = themePacks().slice(); savePacksOn(); }
+  paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks();
+  const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
+  const bl=buildLabel();
+  document.getElementById("buildStamp").textContent=bl;
+  document.getElementById("buildStampSetup").textContent=bl;
+  setStatus("");
+})();
+
+// keep "updated Xs ago" fresh + prune players who left + refresh the tab badge
+setInterval(()=>{ if(ROOM) renderOthers(); }, 5000);
+// republish when app comes back to foreground
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden || !ROOM) return;
+  if(!pollActive || !liveRelays()) connect();
+  else { publish("hello"); publish("state"); }
+});
+</script>
+<script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){});});}</script>
+</body>
+</html>
