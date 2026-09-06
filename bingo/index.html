@@ -160,6 +160,12 @@
   .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
   @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
   .crown{font-size:13px;}
+  .applyrow{margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
+  .applylbl{display:block; font-size:11.5px; color:var(--muted); font-weight:800; margin-bottom:7px;}
+  .choice2{display:flex; gap:8px;}
+  .choice2 button{flex:1; font-family:inherit; font-size:12.5px; font-weight:800; padding:10px 6px; border-radius:11px;
+    cursor:pointer; background:var(--panel2); color:var(--muted); border:1px solid var(--line);}
+  .choice2 button.on{background:var(--blue); color:#fff; border-color:transparent;}
   .presets{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px;}
   .presets button{font-family:inherit; font-size:12.5px; font-weight:800; padding:9px 12px; border-radius:10px;
     cursor:pointer; background:var(--blue); color:#fff; border:none;}
@@ -438,8 +444,16 @@
   <div class="modalbox">
     <h3>🎴 Call packs</h3>
     <div class="hint">Cards are dealt from the packs switched on. Tagged suggestions become their own pack. Changing this sets it for everyone in the room.</div>
+    <div class="hint">A change deals you a clean card by default, so you never end up with half an old board — switch that below if you'd rather keep your marks.</div>
     <div id="packOpts"></div>
     <div class="meta" id="packCount">—</div>
+    <div class="applyrow">
+      <span class="applylbl">When a change is applied</span>
+      <span class="choice2">
+        <button type="button" id="applyFresh">🆕 Fresh card</button>
+        <button type="button" id="applyKeep">➕ Keep my marks</button>
+      </span>
+    </div>
     <div class="footbar"><button class="btn ghost small" id="packClose">Done</button></div>
   </div>
 </div>
@@ -781,8 +795,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v38";
-const BUILD_ISO="2026-09-06T15:40:00Z";
+const BUILD_V="v39";
+const BUILD_ISO="2026-09-06T15:51:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1028,9 +1042,15 @@ function togglePack(key){
 function adoptPacks(list, at, who){
   if(!Array.isArray(list) || !list.length || !at || at<=PACKS_AT) return;
   PACKS_ON=list.slice(); PACKS_AT=at; savePacksOn(); paintPacks();
-  const changed=refillOpenSquares();
-  if(changed) publish("state");
-  showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs"+(changed?" — "+changed+" squares refreshed":""));
+  if(APPLY_MODE==="fresh"){
+    CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+    saveProgress(); renderMine(); publish("state");
+    showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs — fresh card");
+  } else {
+    const changed=refillOpenSquares();
+    if(changed) publish("state");
+    showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs"+(changed?" — "+changed+" squares refreshed":""));
+  }
 }
 
 /* ---------- card building ---------- */
@@ -1931,13 +1951,32 @@ function refillOpenSquares(){
   return changed;
 }
 // A change to what's IN the pool applies to the board straight away — no hunting
-// for ♻️ afterwards, and it doesn't spend the cooldown.
+// for ♻️ afterwards, and it doesn't spend the cooldown. Two ways to land it:
+// a clean deal (default — no half-old boards), or keep what you've already marked.
+let APPLY_MODE = store.get("opl_applymode")==="keep" ? "keep" : "fresh";
+function paintApplyMode(){
+  const f=document.getElementById("applyFresh"), k=document.getElementById("applyKeep");
+  if(f) f.classList.toggle("on", APPLY_MODE==="fresh");
+  if(k) k.classList.toggle("on", APPLY_MODE==="keep");
+}
+function setApplyMode(m){
+  APPLY_MODE = m==="keep" ? "keep" : "fresh";
+  store.set("opl_applymode", APPLY_MODE);
+  paintApplyMode();
+  showToast(APPLY_MODE==="fresh" ? "🆕 Changes will deal a clean card" : "➕ Changes will keep your marks");
+}
 function applyPoolChange(note){
   if(!ROOM || !CARD.length) return;
+  if(APPLY_MODE==="fresh"){
+    CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+    saveProgress(); renderMine(); publish("state");
+    showToast(note+" — fresh card");
+    return;
+  }
   const changed=refillOpenSquares();
   if(!changed) return;
   publish("state");
-  showToast(note+" — "+changed+" square"+(changed===1?"":"s")+" refreshed");
+  showToast(note+" — "+changed+" square"+(changed===1?"":"s")+" kept your marks");
 }
 function freshSquares(){
   const left=coolLeft();
@@ -2117,6 +2156,8 @@ document.getElementById("teamSolo").addEventListener("click",()=>{ setTeam("",tr
 document.getElementById("teamSave").addEventListener("click",()=>{ setTeam(document.getElementById("teamInput").value,true); closeTeamModal(); });
 document.getElementById("teamModal").addEventListener("click",e=>{ if(e.target.id==="teamModal") closeTeamModal(); });
 document.getElementById("packClose").addEventListener("click",()=>document.getElementById("packModal").classList.add("hidden"));
+document.getElementById("applyFresh").addEventListener("click",()=>setApplyMode("fresh"));
+document.getElementById("applyKeep").addEventListener("click",()=>setApplyMode("keep"));
 document.getElementById("packModal").addEventListener("click",e=>{ if(e.target.id==="packModal") document.getElementById("packModal").classList.add("hidden"); });
 document.getElementById("patPickBtn").addEventListener("click",openPatModal);
 document.getElementById("patClose").addEventListener("click",closePatModal);
@@ -2158,7 +2199,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   if(!ROSTER.home.length && ROSTERS[MATCHUP.home]) ROSTER.home=ROSTERS[MATCHUP.home].slice();
   // packs saved under another theme shouldn't leave this one with nothing switched on
   if(!themePacks().some(k=>packOn(k))){ PACKS_ON = themePacks().slice(); savePacksOn(); }
-  paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks();
+  paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks(); paintApplyMode();
   const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;

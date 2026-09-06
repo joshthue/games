@@ -183,10 +183,17 @@ a Football room, a matchup that changed while the app was closed) it's re-dealt
 with a toast saying why. A card that still fits keeps its marks untouched.
 
 **Changes to what's in the pool apply themselves.** Switching a pack on or off,
-changing theme, or setting a matchup re-draws your unmarked squares immediately —
-on every phone in the room — so you never have to know to hit ♻️ afterwards.
-Marked squares and any line you've built survive, and these automatic refreshes
-don't spend the cooldown.
+changing theme, or setting a matchup lands on the board immediately — on every
+phone in the room — so you never have to know to hit ♻️ afterwards.
+
+How it lands is a per-phone setting at the bottom of the 🎴 picker:
+
+- **🆕 Fresh card** *(default)* — a clean deal, so you're never looking at half an
+  old board mixed with new calls.
+- **➕ Keep my marks** — only the unmarked squares are re-drawn, so a line you've
+  built survives the change.
+
+Either way an automatic refresh doesn't spend the ♻️ cooldown.
 
 It isn't free: after a manual refresh the button sits out a **90-second cooldown**,
 counting down on the button face with a gold progress line. The timer is stored
