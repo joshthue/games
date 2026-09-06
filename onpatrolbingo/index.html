@@ -156,6 +156,14 @@
   .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
   @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
   .crown{font-size:13px;}
+  .patchip{font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; cursor:pointer;
+    background:var(--panel2); border:1px solid var(--line); color:var(--gold); flex-shrink:0;}
+  .patopt{display:block; width:100%; text-align:left; font-family:inherit; margin-top:8px; cursor:pointer;
+    background:var(--panel2); border:1px solid var(--line); color:var(--ink); border-radius:12px; padding:11px 13px;}
+  .patopt b{display:block; font-size:14.5px;}
+  .patopt span{font-size:11.5px; color:var(--muted);}
+  .patopt.on{border-color:var(--blue); background:linear-gradient(180deg,rgba(46,107,255,.22),rgba(46,107,255,.08));}
+  .patopt.on span{color:var(--ink);}
 
   /* Build stamp */
   .build{margin-top:14px; text-align:center; font-size:10.5px; color:var(--muted); opacity:.75;
@@ -215,7 +223,14 @@
     <label>Your name</label>
     <input id="nameInput" type="text" placeholder="e.g. Junior" autocomplete="off" maxlength="16">
 
-    <label>Room code (both players type the same one)</label>
+    <label>Win pattern</label>
+    <div class="roomgen">
+      <div id="patChipSetup" class="code">Cover all</div>
+      <button class="btn ghost small" id="patPickBtn" style="width:auto; padding:11px 14px;">Change</button>
+    </div>
+    <div class="hint">Cover all is the house rule. Whoever changes it sets it for everyone in the room.</div>
+
+    <label style="margin-top:14px;">Room code (both players type the same one)</label>
     <input id="roomInput" type="text" placeholder="e.g. couch-night" autocomplete="off" maxlength="24">
     <div class="roomgen">
       <div id="roomSuggest" class="code">—</div>
@@ -234,7 +249,10 @@
     <div id="viewMine" class="panel">
       <div class="pline">
         <div class="pname"><span>🚓</span><span class="who" id="myName">You</span></div>
-        <div class="pill" id="myPill">0 lines</div>
+        <div class="plineright">
+          <span class="patchip" id="patChip">🎯 Cover all</span>
+          <div class="pill" id="myPill">playing…</div>
+        </div>
       </div>
       <div id="myGrid" class="grid"></div>
       <div class="footbar">
@@ -242,7 +260,7 @@
         <button class="btn ghost small" id="newCardBtn">🔀 New card</button>
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
-      <div class="meta">Tap a square when you see it happen — including the centre ★ FREE ★. First to a full line — across, down, or diagonal — wins.<br>
+      <div class="meta"><span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — including the centre ★ FREE ★. Tap 🎯 to change the pattern for everyone.<br>
         <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked, pulling in whatever's in the pool now.</div>
     </div>
 
@@ -280,6 +298,16 @@
     </div>
   </section>
 
+</div>
+
+<!-- PATTERN MODAL -->
+<div id="patModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🎯 Win pattern</h3>
+    <div class="hint">Changing this sets it for everyone in the room.</div>
+    <div id="patOpts"></div>
+    <div class="footbar"><button class="btn ghost small" id="patClose">Done</button></div>
+  </div>
 </div>
 
 <!-- SUGGESTION MODAL -->
@@ -339,8 +367,8 @@ const POOL = [
 ];
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
-const BUILD_V="v22";
-const BUILD_ISO="2026-09-06T02:29:00Z";
+const BUILD_V="v23";
+const BUILD_ISO="2026-09-06T02:32:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -424,37 +452,80 @@ const LINES=(function(){
   L.push([0,6,12,18,24]); L.push([4,8,12,16,20]);
   return L;
 })();
-// how many squares away from the nearest line (0 = bingo)
-function toGo(marks){
-  let best=5;
-  for(const line of LINES){
-    const need=line.reduce((a,i)=>a+(marks[i]?0:1),0);
-    if(need<best) best=need;
+// ---- win patterns. Cover all is the house default; anyone can change it and
+// the whole room follows (last change wins, with a toast so it's never a surprise).
+const PATTERNS = {
+  all:     { name:"Cover all",     short:"Cover all",  blurb:"every square on the card",              groups:[[...Array(25).keys()]], need:1 },
+  line:    { name:"Any line",      short:"Any line",   blurb:"a line — across, down or diagonal",   groups:LINES,                   need:1 },
+  two:     { name:"Two lines",     short:"2 lines",    blurb:"any two complete lines",                groups:LINES,                   need:2 },
+  corners: { name:"Four corners",  short:"Corners",    blurb:"the four corner squares",               groups:[[0,4,20,24]],           need:1 },
+  x:       { name:"X",             short:"X",          blurb:"both diagonals",                        groups:[[0,6,12,18,24,4,8,16,20]], need:1 }
+};
+const PAT_ORDER=["all","line","two","corners","x"];
+let PAT="all", PAT_AT=0;
+function pattern(){ return PATTERNS[PAT] || PATTERNS.all; }
+function evalMarks(marks){
+  const pat=pattern();
+  const done=[], left=[];
+  for(const g of pat.groups){
+    const short=g.reduce((a,i)=>a+(marks[i]?0:1),0);
+    if(short===0) done.push(g);
+    left.push(short);
   }
-  return best;
+  left.sort((a,b)=>a-b);
+  const won = done.length>=pat.need;
+  const toGo = won ? 0 : left.slice(0,pat.need).reduce((a,b)=>a+b,0);
+  const cells=new Set();
+  if(won) done.forEach(g=>g.forEach(i=>cells.add(i)));
+  return {won, toGo, cells, done:done.length};
 }
 function progressLabel(marks){
-  const {lines}=winningCells(marks);
-  if(lines) return {txt: lines>1? "🚨 "+lines+" LINES" : "🚨 BINGO!", cls:" bingo", rank:0};
-  const need=toGo(marks);
-  if(need===1) return {txt:"👀 1 away", cls:" close", rank:1};
-  if(need===2) return {txt:"🔥 2 away", cls:"", rank:2};
-  const marked=marks.reduce((a,v)=>a+(v?1:0),0);
-  return {txt: marked>0? marked+" marked" : "playing…", cls:"", rank:need};
-}
-function winningCells(marks){
-  const set=new Set();
-  let lines=0;
-  for(const line of LINES){
-    if(line.every(i=>marks[i])){ lines++; line.forEach(i=>set.add(i)); }
+  const e=evalMarks(marks);
+  if(e.won){
+    const extra = pattern().need===1 && e.done>1 ? " ×"+e.done : "";
+    return {txt:(PAT==="all"?"🚨 COVER ALL!":"🚨 BINGO!")+extra, cls:" bingo", rank:0};
   }
-  return {lines, cells:set};
+  if(e.toGo===1) return {txt:"👀 1 away", cls:" close", rank:1};
+  if(e.toGo===2) return {txt:"🔥 2 away", cls:"", rank:2};
+  return {txt:e.toGo+" to go", cls:"", rank:e.toGo};
 }
+
+/* ---------- choosing the pattern ---------- */
+function patternLine(){ return pattern().name+" — "+pattern().blurb; }
+function paintPattern(){
+  const chip=document.getElementById("patChip");
+  if(chip) chip.textContent="🎯 "+pattern().short;
+  const setupChip=document.getElementById("patChipSetup");
+  if(setupChip) setupChip.textContent=pattern().short;
+  const m=document.getElementById("winRule");
+  if(m) m.textContent="First to "+pattern().blurb+" wins.";
+  [...document.querySelectorAll("#patModal .patopt")].forEach(b=>b.classList.toggle("on", b.dataset.key===PAT));
+}
+function setPattern(key, announce){
+  if(!PATTERNS[key]) return;
+  PAT=key; PAT_AT=Date.now();
+  store.set("opl_pattern", PAT);
+  paintPattern();
+  if(ROOM){ renderMine(); renderOthers(); }
+  if(announce){
+    post(JSON.stringify({ v:1, kind:"pattern", id:ME, room:ROOM, name:NAME, pat:PAT, patAt:PAT_AT }));
+    showToast("🎯 Pattern: "+pattern().name);
+  }
+}
+function adoptPattern(key, at, who){
+  if(!PATTERNS[key] || !at || at<=PAT_AT || key===PAT) return;
+  PAT=key; PAT_AT=at; store.set("opl_pattern", PAT);
+  paintPattern();
+  if(ROOM){ renderMine(); renderOthers(); }
+  showToast("🎯 "+(who||"Someone")+" set the pattern: "+pattern().name);
+}
+function openPatModal(){ paintPattern(); document.getElementById("patModal").classList.remove("hidden"); }
+function closePatModal(){ document.getElementById("patModal").classList.add("hidden"); }
 
 /* ---------- rendering ---------- */
 function renderMine(){
   const grid=document.getElementById("myGrid");
-  const {lines,cells}=winningCells(MARKS);
+  const {won,cells}=evalMarks(MARKS);
   grid.innerHTML="";
   for(let i=0;i<25;i++){
     const d=document.createElement("div");
@@ -467,7 +538,7 @@ function renderMine(){
   const mine=progressLabel(MARKS);
   document.getElementById("myPill").textContent = mine.txt;
   document.getElementById("myPill").className = "pill"+mine.cls;
-  const wasBingo=myBingo; myBingo=lines>0;
+  const wasBingo=myBingo; myBingo=won;
   if(myBingo && !wasBingo){ celebrate(true); }
 }
 function escapeHtml(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
@@ -496,7 +567,7 @@ function renderOthers(){
   for(const id of ids){
     const p=players[id];
     if(!Array.isArray(p.card)||!Array.isArray(p.marks)) continue;
-    const {lines,cells}=winningCells(p.marks);
+    const {cells}=evalMarks(p.marks);
     const block=document.createElement("div");
     block.className="playerblock";
     const secs=Math.max(0,Math.round((now-p.t)/1000));
@@ -537,9 +608,9 @@ function renderOthers(){
     meta.textContent="updated "+(secs<3?"just now":secs+"s ago");
     block.appendChild(meta);
     list.appendChild(block);
-    // toast once when a player hits bingo
-    if(lines>0 && !seenBingo[id]){ seenBingo[id]=true; onPlayerBingo(p.name); }
-    if(lines===0) seenBingo[id]=false;
+    // toast once when a player completes the pattern
+    if(prog.rank===0 && !seenBingo[id]){ seenBingo[id]=true; onPlayerBingo(p.name); }
+    if(prog.rank!==0) seenBingo[id]=false;
   }
 }
 
@@ -771,7 +842,7 @@ function cleanupSocket(){
 function payload(kind){
   return JSON.stringify({
     v:1, kind, id:ME, room:ROOM, name:NAME,
-    card:CARD, marks:MARKS, bingo:myBingo, t:Date.now()
+    card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, t:Date.now()
   });
 }
 function post(body){
@@ -800,6 +871,7 @@ function schedulePublish(){
 function handleIncoming(b){
   if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
   if(b.kind==="hello"){ publish("state"); publishSuggestionDigest(); return; }   // someone joined -> resend
+  if(b.kind==="pattern"){ adoptPattern(b.pat, b.patAt, b.name); return; }
   if(b.kind==="suggest"){
     if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
     return;
@@ -809,6 +881,7 @@ function handleIncoming(b){
     return;
   }
   if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
+  if(b.pat) adoptPattern(b.pat, b.patAt, b.name);        // late joiners pick up the house rule
   players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, t:Date.now() };
   renderOthers();
 }
@@ -824,7 +897,7 @@ function celebrate(){
   const b=document.getElementById("banner");
   document.getElementById("bwinEm").textContent="🎉";
   document.getElementById("bwinTitle").textContent="BINGO!";
-  document.getElementById("bwinSub").textContent="You completed a full line!";
+  document.getElementById("bwinSub").textContent="You completed "+pattern().blurb+"!";
   b.classList.remove("hidden");
   fireConfetti();
   publish("state");
@@ -883,7 +956,7 @@ function startGame(){
   NAME=n; ROOM=r;
   store.set("opl_name", NAME); store.set("opl_lastroom", ROOM);
   if(!loadProgress()){ CARD=buildCard(); MARKS=freshMarks(); saveProgress(); }
-  myBingo = winningCells(MARKS).lines>0;
+  myBingo = evalMarks(MARKS).won;
   document.getElementById("myName").textContent=NAME;
   document.getElementById("roomEcho").textContent=ROOM;
   const chip=document.getElementById("roomChip"); chip.textContent=ROOM; chip.classList.remove("hidden");
@@ -935,6 +1008,21 @@ document.getElementById("newCardBtn").addEventListener("click",newCard);
 document.getElementById("leaveBtn").addEventListener("click",leave);
 document.getElementById("bwinClose").addEventListener("click",()=>document.getElementById("banner").classList.add("hidden"));
 document.getElementById("statusBox").addEventListener("click",()=>{ if(ROOM) syncDetails(); });
+document.getElementById("patChip").addEventListener("click",openPatModal);
+document.getElementById("patPickBtn").addEventListener("click",openPatModal);
+document.getElementById("patClose").addEventListener("click",closePatModal);
+document.getElementById("patModal").addEventListener("click",e=>{ if(e.target.id==="patModal") closePatModal(); });
+(function buildPatOpts(){
+  const box=document.getElementById("patOpts");
+  for(const key of PAT_ORDER){
+    const p=PATTERNS[key];
+    const b=document.createElement("button");
+    b.className="patopt"; b.dataset.key=key;
+    b.innerHTML="<b>"+p.name+"</b><span>"+p.blurb+"</span>";
+    b.addEventListener("click",()=>{ setPattern(key,true); closePatModal(); });
+    box.appendChild(b);
+  }
+})();
 document.getElementById("addSugBtn").addEventListener("click",openSugModal);
 document.getElementById("copySugBtn").addEventListener("click",copySuggestions);
 document.getElementById("sugCancel").addEventListener("click",closeSugModal);
@@ -950,6 +1038,8 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("roomInput").value = store.get("opl_lastroom")||"";
   document.getElementById("roomSuggest").textContent = suggestRoom();
   loadPool(); loadSuggestions(); renderSuggestions();
+  PAT = PATTERNS[store.get("opl_pattern")] ? store.get("opl_pattern") : "all";
+  paintPattern();
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;
   document.getElementById("buildStampSetup").textContent=bl;

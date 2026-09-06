@@ -22,13 +22,30 @@ couch/group chat crowd. Tap squares as they happen and chase a line (or a full c
   connected / blocked / rate-limited — plus the room topic. Tapping also retries.
   If both relays say blocked, that network is filtering them: try cell data or a hotspot.
 
+## Win pattern
+
+**Cover all is the default** — the whole card. Change it from the setup screen or
+the 🎯 chip next to your name during a game:
+
+| Pattern | Wins on |
+| --- | --- |
+| Cover all *(default)* | every square |
+| Any line | one line — across, down or diagonal |
+| Two lines | any two complete lines |
+| Four corners | the four corner squares |
+| X | both diagonals |
+
+The pattern is a **house rule, not a personal setting**: whoever changes it sets
+it for everyone in the room (last change wins) and the others get a toast saying
+who changed it to what. Someone joining mid-game picks it up from the room.
+
 ## The card
 
 - 5×5 card drawn from the show's greatest-hits pool, with **★ FREE ★** in the middle.
 - **The centre square is tapped like any other square** — it doesn't count toward
   a line until you claim it.
-- First to a full line — across, down, or diagonal — wins. 🎉 fires for you and
-  toasts the rest of the room.
+- First to complete the chosen pattern wins. 🎉 fires for you and toasts the rest
+  of the room.
 - Each player's pill shows how they're doing — marks, **2 away**, **1 away 👀**,
   then lines — so you can see who to worry about.
 
@@ -63,7 +80,8 @@ safe to hit mid-game. **🔀 New card** is still the full wipe.
 ## Show-off bits
 
 - Player list is sorted **closest to bingo first**, with 👑 on whoever's leading.
-- Pills escalate: `3 marked` → `🔥 2 away` → `👀 1 away` (pulsing) → `🚨 BINGO!`
+- Pills escalate: `9 to go` → `🔥 2 away` → `👀 1 away` (pulsing) → `🚨 BINGO!`
+  (`🚨 COVER ALL!` on the default pattern) — counted against whatever pattern is set.
 - Anyone reaching one square out sets off a short **red/blue siren sweep**, a
   wig-wag on the header 🚨, a toast and a buzz — everyone in the room sees it.
 - A bingo runs the sirens longer plus confetti.
