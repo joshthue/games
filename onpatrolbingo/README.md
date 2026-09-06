@@ -41,7 +41,8 @@ who changed it to what. Someone joining mid-game picks it up from the room.
 
 ## The card
 
-- 5×5 card drawn from the show's greatest-hits pool. The centre is the one square
+- 5×5 card drawn from a ~115-call pool (traffic stops, pursuits, scene color,
+  show meta), plus anything you've added from suggestions. The centre is the one square
   **every player shares** — set by `CENTER_SQUARE` at the top of the script
   (currently `Gran falls asleep`; `★ FREE ★` is the classic). Change that string
   and every card picks it up on the next load, in-progress cards included, without
@@ -52,6 +53,12 @@ who changed it to what. Someone joining mid-game picks it up from the room.
   of the room.
 - Each player's pill shows how they're doing — marks, **2 away**, **1 away 👀**,
   then lines — so you can see who to worry about.
+
+## Who else saw it
+
+Your own squares show a **👥 count** of how many people in the room have that
+same call marked — instant "we all saw that" without looking up. The opponent
+readout also says whether the call is on your card and whether you've marked it.
 
 ## Reading another player's board
 
@@ -64,8 +71,11 @@ whether they've marked it. Tap it again (or another square) to change it.
 - **💡 Add a suggestion** — either a **square idea** (a call to consider for the
   card pool) or an **app idea**. It's broadcast to everyone in the room and kept
   on your phone.
-- **📋 Copy all** puts the whole list on the clipboard as plain text, tagged
-  `[SQUARE]` / `[APP]`, ready to paste somewhere durable.
+- **📋 Copy all** / **💬 Text the list** / **✉️ Email the list** get the ideas off
+  the phone as plain text tagged `[SQUARE]` / `[APP]`. Worth doing before bed —
+  suggestions live in localStorage and on a relay that only keeps messages ~12h.
+- **📌 Everyone** on a square idea pushes it into *every* phone's pool at once,
+  instead of each person opting in with ➕.
 - A square idea has **➕ Add to my pool** — tap it and that call joins your
   personal pool, so it can land on your next 🔀 New card (it doesn't change the
   card you're holding). Tap again to remove it. The pool lives on your phone;

@@ -98,6 +98,7 @@
   .cell.win{animation:winflash 1s ease infinite alternate;}
   @keyframes winflash{from{box-shadow:0 0 0 0 rgba(255,207,74,0);}to{box-shadow:0 0 0 3px rgba(255,207,74,.85);}}
   .cell .chk{position:absolute; top:3px; right:4px; font-size:11px; opacity:.9;}
+  .cell .others{position:absolute; bottom:2px; left:4px; font-size:9px; font-weight:800; opacity:.85; letter-spacing:-.2px;}
 
   /* Mini (other players') progress grids — compact, mark-only */
   .mini{max-width:220px; gap:5px; margin-top:2px;}
@@ -307,6 +308,10 @@
         <button class="btn ghost small" id="addSugBtn">💡 Add a suggestion</button>
         <button class="btn ghost small" id="copySugBtn">📋 Copy all</button>
       </div>
+      <div class="footbar">
+        <button class="btn ghost small" id="textSugBtn">💬 Text the list</button>
+        <button class="btn ghost small" id="mailSugBtn">✉️ Email the list</button>
+      </div>
       <div class="build" id="buildStamp">—</div>
       <div class="meta" id="sugMeta">Square ideas and app ideas go to everyone in the room, and stay on this phone.</div>
     </div>
@@ -377,13 +382,68 @@ const POOL = [
   "Bodycam vs dashcam angle", "\"Whose car is this?\"", "Kid in the back seat",
   "Someone lies then tells truth", "Report of shots fired", "Suspect on the ground",
   "\"I swear on my kids\"", "Officer says \"signal in the area\"", "Repeat customer",
-  "Hype: \"this is a good one\"", "Prayer or blessing moment"
+  "Hype: \"this is a good one\"", "Prayer or blessing moment",
+  "Expired tags",
+  "Cracked windshield stop",
+  "No insurance",
+  "Rental car nobody rented",
+  "Air freshener tree hanging",
+  "Window tint too dark",
+  "Rolls through a stop sign",
+  "Suspended license",
+  "\"Do you know why I stopped you?\"",
+  "Registration in someone else\u2019s name",
+  "\"I\u2019m on my way home\"",
+  "\"That\u2019s my cousin\u2019s\"",
+  "\"I just bought the car\"",
+  "\"I have to be at work\"",
+  "\"I only smoked earlier\"",
+  "Asks if they can just go home",
+  "Explains they are a good person",
+  "Somebody says \"respectfully\"",
+  "Vehicle pursuit begins",
+  "PIT maneuver",
+  "Suspect bails from moving car",
+  "Fence jump fails",
+  "Hides in a backyard",
+  "Found under a porch",
+  "Runs out of his shoes",
+  "Bicycle stop",
+  "Chase ends in a cornfield",
+  "Perimeter set up",
+  "Neighbor films on a phone",
+  "Crowd gathers to watch",
+  "Someone films the whole stop",
+  "Porch light interview",
+  "Dog barking nonstop",
+  "Kid narrates the whole thing",
+  "Nobody knows whose house it is",
+  "Argument over a phone",
+  "Family reunion on the front lawn",
+  "Narcan / medical assist",
+  "Ambulance called",
+  "Tow truck arrives",
+  "Inventory search",
+  "Body cam adjusted",
+  "Radio traffic stepped on",
+  "Shift change mentioned",
+  "Officer explains the law patiently",
+  "Verbal warning only",
+  "Cut loose \u2014 no charges",
+  "Split screen with two agencies",
+  "Host says \"let\u2019s go back to\"",
+  "Replay of the same clip",
+  "Ride-along mentions the show",
+  "Someone waves at the camera",
+  "Deputy jokes with the suspect",
+  "Ends without resolution",
+  "\"We\u2019ll check back in\""
 ];
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v25";
-const BUILD_ISO="2026-09-06T02:48:00Z";
+const BUILD_V="v26";
+const BUILD_ISO="2026-09-06T02:51:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -540,6 +600,18 @@ function adoptPattern(key, at, who){
 function openPatModal(){ paintPattern(); document.getElementById("patModal").classList.remove("hidden"); }
 function closePatModal(){ document.getElementById("patModal").classList.add("hidden"); }
 
+/* ---------- how many other people have this same call marked ---------- */
+function othersMarking(text){
+  let n=0;
+  for(const id in players){
+    const p=players[id];
+    if(!Array.isArray(p.card)||!Array.isArray(p.marks)) continue;
+    const j=p.card.indexOf(text);
+    if(j>=0 && p.marks[j]) n++;
+  }
+  return n;
+}
+
 /* ---------- rendering ---------- */
 function renderMine(){
   const grid=document.getElementById("myGrid");
@@ -549,7 +621,9 @@ function renderMine(){
     const d=document.createElement("div");
     const free=(i===12);
     d.className="cell"+(MARKS[i]?" marked":"")+(free?" free":"")+(cells.has(i)?" win":"");
-    d.innerHTML="<span>"+CARD[i]+"</span>"+(MARKS[i]?"<span class='chk'>✓</span>":"");
+    const alsoN=othersMarking(CARD[i]);
+    d.innerHTML="<span>"+CARD[i]+"</span>"+(MARKS[i]?"<span class='chk'>✓</span>":"")+
+      (alsoN?"<span class='others' title='others who marked this'>👥"+alsoN+"</span>":"");
     d.addEventListener("click",()=>toggle(i));
     grid.appendChild(d);
   }
@@ -625,8 +699,10 @@ function renderOthers(){
     if(pi==null || pi<0){ read.className="readout empty"; read.textContent="Tap one of their squares to read it."; }
     else {
       read.className="readout";
+      const mineIdx=CARD.indexOf(p.card[pi]);
+      const alsoMe = mineIdx>=0 ? (MARKS[mineIdx]?" · you've marked it too":" · it's on your card, unmarked") : "";
       read.innerHTML="<span class='q'>"+escapeHtml(p.card[pi])+"</span>"+
-        "<span class='state"+(p.marks[pi]?" yes":"")+"'>"+(p.marks[pi]?"✓ they've marked this":"not marked yet")+"</span>";
+        "<span class='state"+(p.marks[pi]?" yes":"")+"'>"+(p.marks[pi]?"✓ they've marked this":"not marked yet")+alsoMe+"</span>";
     }
     block.appendChild(read);
     const meta=document.createElement("div");
@@ -725,7 +801,7 @@ function renderSuggestions(){
   const meta=document.getElementById("sugMeta");
   if(meta){
     meta.textContent = extraPool.length
-      ? "Ideas go to everyone in the room. "+extraPool.length+" added square"+(extraPool.length>1?"s":"")+" can appear on your next 🔀 New card."
+      ? "Ideas go to everyone in the room. "+extraPool.length+" added square"+(extraPool.length>1?"s":"")+" can appear when you hit ♻️ Fresh squares. 📌 Everyone puts an idea in the whole room's pool; text or email the list to keep it."
       : "Square ideas and app ideas go to everyone in the room, and stay on this phone.";
   }
   list.innerHTML="";
@@ -749,7 +825,12 @@ function renderSuggestions(){
       const btn=document.createElement("button");
       btn.className=on?"in":""; btn.textContent=on?"✓ in your pool":"➕ Add to my pool";
       btn.addEventListener("click",()=>togglePool(s.text));
-      act.appendChild(btn); d.appendChild(act);
+      act.appendChild(btn);
+      const all=document.createElement("button");
+      all.style.marginLeft="6px"; all.textContent="📌 Everyone";
+      all.addEventListener("click",()=>pushToRoom(s.text));
+      act.appendChild(all);
+      d.appendChild(act);
     }
     list.appendChild(d);
   }
@@ -758,6 +839,15 @@ function suggestionsText(){
   return suggestions.slice().reverse().map(s=>
     "["+(s.kind==="app"?"APP":"SQUARE")+"] "+s.from+": "+s.text
   ).join("\n");
+}
+function shareSuggestions(how){
+  if(!suggestions.length){ showToast("No suggestions yet"); return; }
+  const subject="On Patrol BINGO — square ideas";
+  const body=suggestionsText();
+  const href = how==="sms"
+    ? "sms:?&body="+encodeURIComponent(subject+"\n\n"+body)
+    : "mailto:?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+  location.href=href;
 }
 function copySuggestions(){
   if(!suggestions.length){ showToast("No suggestions yet"); return; }
@@ -946,6 +1036,12 @@ function publishSuggestionDigest(){
     }, i*160);
   }
 }
+function pushToRoom(text){
+  if(!inPool(text)){ extraPool.push(text); savePool(); renderSuggestions(); }
+  if(!ROOM){ showToast("Added to your pool"); return; }
+  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text }));
+  showToast("📌 Sent to everyone's pool");
+}
 function publishSuggestion(sug){
   if(!ROOM) return;   // solo play: it still lands in the local list
   post(JSON.stringify({ v:1, kind:"suggest", id:ME, room:ROOM, name:NAME, sug }));
@@ -963,6 +1059,14 @@ function handleIncoming(b){
     if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
     return;
   }
+  if(b.kind==="pool"){
+    const t=String(b.text||"").slice(0,240);
+    if(t && !inPool(t)){
+      extraPool.push(t); savePool(); renderSuggestions();
+      showToast("📌 "+(b.name||"Someone")+" added \u201C"+t+"\u201D — hit ♻️ to pull it in");
+    }
+    return;
+  }
   if(b.kind==="sugdigest"){
     if(Array.isArray(b.sugs)) b.sugs.forEach(x=>addSuggestion(x));   // quiet catch-up, no toast
     return;
@@ -971,7 +1075,7 @@ function handleIncoming(b){
   if(b.pat) adoptPattern(b.pat, b.patAt, b.name);        // late joiners pick up the house rule
   if(b.round) adoptRound(b.round, b.roundAt, b.name);
   players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, round:b.round||ROUND, t:Date.now() };
-  renderOthers();
+  renderOthers(); renderMine();
 }
 
 /* ---------- siren sound (generated, no assets) ---------- */
@@ -1156,6 +1260,8 @@ document.getElementById("patModal").addEventListener("click",e=>{ if(e.target.id
 })();
 document.getElementById("addSugBtn").addEventListener("click",openSugModal);
 document.getElementById("copySugBtn").addEventListener("click",copySuggestions);
+document.getElementById("textSugBtn").addEventListener("click",()=>shareSuggestions("sms"));
+document.getElementById("mailSugBtn").addEventListener("click",()=>shareSuggestions("mail"));
 document.getElementById("sugCancel").addEventListener("click",closeSugModal);
 document.getElementById("sugSend").addEventListener("click",sendSuggestion);
 document.getElementById("sugKindSquare").addEventListener("click",()=>setSugKind("square"));
