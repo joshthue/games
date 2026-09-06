@@ -41,8 +41,11 @@ who changed it to what. Someone joining mid-game picks it up from the room.
 
 ## The card
 
-- 5×5 card drawn from a ~115-call pool (traffic stops, pursuits, scene color,
-  show meta), plus anything you've added from suggestions. The centre is the one square
+- 5×5 card drawn from the **call packs** that are switched on (🎴 chip next to
+  your name): Traffic stops, Things people say, Pursuits & action, On scene,
+  The broadcast, and Cabin night — ~126 calls in all — plus any tag packs grown
+  from accepted suggestions. Packs are a room rule like the pattern: whoever
+  changes them changes them for everyone, and at least one has to stay on. The centre is the one square
   **every player shares** — set by `CENTER_SQUARE` at the top of the script
   (currently `Gran falls asleep`; `★ FREE ★` is the classic). Change that string
   and every card picks it up on the next load, in-progress cards included, without
@@ -74,8 +77,12 @@ whether they've marked it. Tap it again (or another square) to change it.
 - **📋 Copy all** / **💬 Text the list** / **✉️ Email the list** get the ideas off
   the phone as plain text tagged `[SQUARE]` / `[APP]`. Worth doing before bed —
   suggestions live in localStorage and on a relay that only keeps messages ~12h.
-- **📌 Everyone** on a square idea pushes it into *every* phone's pool at once,
+- **📌 Everyone** on a square idea pushes it into *every* phone's packs at once,
   instead of each person opting in with ➕.
+- **Tag a suggestion** (optional field — "IHOP", "catchphrase", "Oklahoma") and
+  accepting it creates a **pack of that name**, switchable on and off with the
+  built-ins. Untagged ideas land in "Room ideas". An older flat list of accepted
+  ideas migrates into that pack automatically.
 - A square idea has **➕ Add to my pool** — tap it and that call joins your
   personal pool, so it can land on your next 🔀 New card (it doesn't change the
   card you're holding). Tap again to remove it. The pool lives on your phone;

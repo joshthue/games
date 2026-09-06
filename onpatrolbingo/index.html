@@ -130,6 +130,7 @@
   .sug .tag{font-size:9.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase;
     padding:2px 7px; border-radius:20px; background:var(--blue); color:#fff;}
   .sug .tag.idea{background:var(--gold); color:#2a1e00;}
+  .sug .tag.pack{background:var(--panel); color:var(--gold); border:1px solid var(--line);}
   .sug .txt{font-size:13.5px; line-height:1.45; overflow-wrap:break-word;}
   .sug .when{font-size:10.5px; color:var(--muted); margin-top:4px;}
   .sug .act{margin-top:8px;}
@@ -262,6 +263,7 @@
         <div class="pname"><span>🚓</span><span class="who" id="myName">You</span></div>
         <div class="plineright">
           <span class="patchip" id="patChip">🎯 Cover all</span>
+          <span class="patchip" id="packChip" title="Call packs">🎴</span>
           <span class="patchip" id="soundChip" title="Sound">🔊</span>
           <div class="pill" id="myPill">playing…</div>
         </div>
@@ -322,6 +324,17 @@
 
 </div>
 
+<!-- PACKS MODAL -->
+<div id="packModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🎴 Call packs</h3>
+    <div class="hint">Cards are dealt from the packs switched on. Tagged suggestions become their own pack. Changing this sets it for everyone in the room.</div>
+    <div id="packOpts"></div>
+    <div class="meta" id="packCount">—</div>
+    <div class="footbar"><button class="btn ghost small" id="packClose">Done</button></div>
+  </div>
+</div>
+
 <!-- PATTERN MODAL -->
 <div id="patModal" class="modal hidden">
   <div class="modalbox">
@@ -341,7 +354,10 @@
       <button id="sugKindApp">🛠️ App idea</button>
     </div>
     <textarea id="sugText" maxlength="240" placeholder="e.g. &quot;Suspect trips over own feet&quot;"></textarea>
+    <input id="sugTag" type="text" maxlength="24" placeholder="Tag (optional) — e.g. IHOP, catchphrase, Oklahoma"
+      style="margin-top:8px;" autocomplete="off">
     <div class="hint" id="sugHint">A call for a bingo square — something you'd expect to see on the show.</div>
+    <div class="hint">A tag groups accepted ideas into their own pack you can switch on and off.</div>
     <div class="footbar">
       <button class="btn ghost small" id="sugCancel">Cancel</button>
       <button class="btn gold small" id="sugSend">Send 📨</button>
@@ -365,88 +381,153 @@
 "use strict";
 
 /* ---------- On Patrol Live prompt pool ---------- */
-const POOL = [
-  "Foot pursuit!", "K-9 deployed", "\"Release the dog!\"", "Traffic stop",
-  "\"I only had two beers\"", "No driver's license", "Suspect gives a fake name",
-  "Warrant comes back active", "Field sobriety test", "Someone runs from police",
-  "Taser deployed", "Aviation / helicopter up", "Drone in the air",
-  "Dan Abrams reads a comment", "Sticks breaks down a tattoo", "Curtis Wilson analysis",
-  "\"Am I being detained?\"", "Audio blocked / censored", "Live delay glitch",
-  "\"Step out of the vehicle\"", "Smell of marijuana", "Open container found",
-  "Handcuffs go on", "Vehicle search", "Contraband found",
-  "Domestic disturbance call", "Wellness check", "DUI investigation",
-  "Backup swarms the scene", "Running the plates", "Suspect found hiding",
-  "Pat-down for weapons", "\"I didn't do anything!\"", "Someone barefoot / no shoes",
-  "Foot chase over a fence", "Officer knows them by name", "Passenger has a warrant",
-  "Throws something out the window", "Cuts to commercial mid-action", "Loose dog on scene",
-  "Someone crying", "Trainee / FTO ride-along", "Speeding way over the limit",
-  "\"It's not mine\"", "De-escalation / talk-down", "Meth or paraphernalia",
-  "Foot pursuit ends in a tackle", "Spike strips deployed", "Pursuit called off",
-  "Bodycam vs dashcam angle", "\"Whose car is this?\"", "Kid in the back seat",
-  "Someone lies then tells truth", "Report of shots fired", "Suspect on the ground",
-  "\"I swear on my kids\"", "Officer says \"signal in the area\"", "Repeat customer",
-  "Hype: \"this is a good one\"", "Prayer or blessing moment",
-  "Expired tags",
-  "Cracked windshield stop",
-  "No insurance",
-  "Rental car nobody rented",
-  "Air freshener tree hanging",
-  "Window tint too dark",
-  "Rolls through a stop sign",
-  "Suspended license",
-  "\"Do you know why I stopped you?\"",
-  "Registration in someone else\u2019s name",
-  "\"I\u2019m on my way home\"",
-  "\"That\u2019s my cousin\u2019s\"",
-  "\"I just bought the car\"",
-  "\"I have to be at work\"",
-  "\"I only smoked earlier\"",
-  "Asks if they can just go home",
-  "Explains they are a good person",
-  "Somebody says \"respectfully\"",
-  "Vehicle pursuit begins",
-  "PIT maneuver",
-  "Suspect bails from moving car",
-  "Fence jump fails",
-  "Hides in a backyard",
-  "Found under a porch",
-  "Runs out of his shoes",
-  "Bicycle stop",
-  "Chase ends in a cornfield",
-  "Perimeter set up",
-  "Neighbor films on a phone",
-  "Crowd gathers to watch",
-  "Someone films the whole stop",
-  "Porch light interview",
-  "Dog barking nonstop",
-  "Kid narrates the whole thing",
-  "Nobody knows whose house it is",
-  "Argument over a phone",
-  "Family reunion on the front lawn",
-  "Narcan / medical assist",
-  "Ambulance called",
-  "Tow truck arrives",
-  "Inventory search",
-  "Body cam adjusted",
-  "Radio traffic stepped on",
-  "Shift change mentioned",
-  "Officer explains the law patiently",
-  "Verbal warning only",
-  "Cut loose \u2014 no charges",
-  "Split screen with two agencies",
-  "Host says \"let\u2019s go back to\"",
-  "Replay of the same clip",
-  "Ride-along mentions the show",
-  "Someone waves at the camera",
-  "Deputy jokes with the suspect",
-  "Ends without resolution",
-  "\"We\u2019ll check back in\""
-];
+/* ---------- call packs. A card is dealt from whichever packs are switched on. ---------- */
+const PACKS = {
+  stops: { name:"Traffic stops", emoji:"🚗", calls:[
+    "Traffic stop",
+    "\"I only had two beers\"",
+    "No driver's license",
+    "Suspect gives a fake name",
+    "Field sobriety test",
+    "\"Am I being detained?\"",
+    "\"Step out of the vehicle\"",
+    "Smell of marijuana",
+    "Open container found",
+    "Vehicle search",
+    "Contraband found",
+    "DUI investigation",
+    "Running the plates",
+    "Speeding way over the limit",
+    "\"Whose car is this?\"",
+    "Expired tags",
+    "Cracked windshield stop",
+    "No insurance",
+    "Rental car nobody rented",
+    "Air freshener tree hanging",
+    "Window tint too dark",
+    "Rolls through a stop sign",
+    "Suspended license",
+    "\"Do you know why I stopped you?\"",
+    "Registration in someone else’s name",
+    "Bicycle stop",
+    "Inventory search",
+  ]},
+  words: { name:"Things people say", emoji:"🗣️", calls:[
+    "\"I didn't do anything!\"",
+    "\"It's not mine\"",
+    "De-escalation / talk-down",
+    "Someone lies then tells truth",
+    "\"I swear on my kids\"",
+    "\"I’m on my way home\"",
+    "\"That’s my cousin’s\"",
+    "\"I just bought the car\"",
+    "\"I have to be at work\"",
+    "\"I only smoked earlier\"",
+    "Asks if they can just go home",
+    "Explains they are a good person",
+    "Somebody says \"respectfully\"",
+    "Officer explains the law patiently",
+    "Verbal warning only",
+    "Cut loose — no charges",
+  ]},
+  chase: { name:"Pursuits & action", emoji:"🏃", calls:[
+    "Foot pursuit!",
+    "K-9 deployed",
+    "\"Release the dog!\"",
+    "Warrant comes back active",
+    "Someone runs from police",
+    "Taser deployed",
+    "Aviation / helicopter up",
+    "Drone in the air",
+    "Handcuffs go on",
+    "Suspect found hiding",
+    "Pat-down for weapons",
+    "Foot chase over a fence",
+    "Passenger has a warrant",
+    "Throws something out the window",
+    "Foot pursuit ends in a tackle",
+    "Spike strips deployed",
+    "Pursuit called off",
+    "Report of shots fired",
+    "Suspect on the ground",
+    "Vehicle pursuit begins",
+    "PIT maneuver",
+    "Suspect bails from moving car",
+    "Fence jump fails",
+    "Hides in a backyard",
+    "Found under a porch",
+    "Runs out of his shoes",
+    "Chase ends in a cornfield",
+    "Perimeter set up",
+  ]},
+  scene: { name:"On scene", emoji:"🏡", calls:[
+    "Domestic disturbance call",
+    "Wellness check",
+    "Backup swarms the scene",
+    "Someone barefoot / no shoes",
+    "Officer knows them by name",
+    "Loose dog on scene",
+    "Someone crying",
+    "Trainee / FTO ride-along",
+    "Meth or paraphernalia",
+    "Kid in the back seat",
+    "Repeat customer",
+    "Prayer or blessing moment",
+    "Neighbor films on a phone",
+    "Crowd gathers to watch",
+    "Someone films the whole stop",
+    "Porch light interview",
+    "Dog barking nonstop",
+    "Kid narrates the whole thing",
+    "Nobody knows whose house it is",
+    "Argument over a phone",
+    "Family reunion on the front lawn",
+    "Narcan / medical assist",
+    "Ambulance called",
+    "Tow truck arrives",
+    "Radio traffic stepped on",
+    "Shift change mentioned",
+  ]},
+  show: { name:"The broadcast", emoji:"📺", calls:[
+    "Dan Abrams reads a comment",
+    "Sticks breaks down a tattoo",
+    "Curtis Wilson analysis",
+    "Audio blocked / censored",
+    "Live delay glitch",
+    "Cuts to commercial mid-action",
+    "Bodycam vs dashcam angle",
+    "Officer says \"signal in the area\"",
+    "Hype: \"this is a good one\"",
+    "Body cam adjusted",
+    "Split screen with two agencies",
+    "Host says \"let’s go back to\"",
+    "Replay of the same clip",
+    "Ride-along mentions the show",
+    "Someone waves at the camera",
+    "Deputy jokes with the suspect",
+    "Ends without resolution",
+    "\"We’ll check back in\"",
+  ]},
+  cabin: { name:"Cabin night", emoji:"🛖", calls:[
+    "Who’s this guy?",
+    "“Where you stay at?”",
+    "Cop rides someone else’s bike or foot races for fun",
+    "Another person gets a THC lecture in South Carolina",
+    "Car chase in Oklahoma",
+    "Devil horn face tattoos",
+    "“Honestly goes a long way”",
+    "Someone is wearing a mask",
+    "Suspect avoids car chase. For now",
+    "“Walk/take three steps to your right!”",
+    "“Can I call my mom?”",
+  ]},
+};
+const PACK_ORDER = ["stops","words","chase","scene","show","cabin"];
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v28";
-const BUILD_ISO="2026-09-06T03:13:00Z";
+const BUILD_V="v29";
+const BUILD_ISO="2026-09-06T03:41:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -489,21 +570,108 @@ let seenBingo={};               // id -> bool (already toasted this bingo)
 let seenClose={};               // id -> bool (already shouted "one away")
 let pollActive=false, pubTimer=null, heartbeat=null, reconnectT=null;
 
-/* ---------- extra squares added from suggestions ---------- */
-let extraPool=[];
+/* ---------- packs the room has switched on, plus packs grown from suggestion tags ---------- */
+let extraPacks={};              // tag -> [calls]  (ideas accepted from the room)
+let PACKS_ON=[], PACKS_AT=0;    // which packs cards are dealt from (a room rule, like the pattern)
+const DEFAULT_ROOM_TAG="Room ideas";
+
 function loadPool(){
-  try{ const a=JSON.parse(store.get("opl_extra_pool")||"[]"); if(Array.isArray(a)) extraPool=a.filter(x=>typeof x==="string"); }catch(e){}
+  try{
+    const raw=JSON.parse(store.get("opl_extra_pool")||"null");
+    if(Array.isArray(raw)) extraPacks={[DEFAULT_ROOM_TAG]: raw.filter(x=>typeof x==="string")};   // migrate the old flat list
+    else if(raw && typeof raw==="object") extraPacks=raw;
+  }catch(e){ extraPacks={}; }
+  try{
+    const on=JSON.parse(store.get("opl_packs_on")||"null");
+    PACKS_ON = Array.isArray(on) && on.length ? on : allPackKeys();
+  }catch(e){ PACKS_ON=allPackKeys(); }
 }
-function savePool(){ store.set("opl_extra_pool", JSON.stringify(extraPool)); }
-function inPool(t){ return extraPool.indexOf(t)>=0 || POOL.indexOf(t)>=0; }
-function togglePool(t){
-  const i=extraPool.indexOf(t);
-  if(i>=0){ extraPool.splice(i,1); showToast("Removed from your pool"); }
-  else if(POOL.indexOf(t)>=0){ showToast("Already in the standard pool"); return; }
-  else { extraPool.push(t); showToast("Added — it can land on your next card"); }
-  savePool(); renderSuggestions();
+function savePool(){ store.set("opl_extra_pool", JSON.stringify(extraPacks)); }
+function savePacksOn(){ store.set("opl_packs_on", JSON.stringify(PACKS_ON)); }
+function tagKey(tag){ return "tag:"+String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24); }
+function allPackKeys(){ return PACK_ORDER.concat(Object.keys(extraPacks).map(tagKey)); }
+function packCalls(key){
+  if(PACKS[key]) return PACKS[key].calls;
+  const tag=key.slice(4);
+  return extraPacks[tag]||[];
 }
-function fullPool(){ return POOL.concat(extraPool.filter(t=>POOL.indexOf(t)<0)); }
+function packLabel(key){
+  if(PACKS[key]) return PACKS[key].emoji+" "+PACKS[key].name;
+  return "\u{1F3F7}\uFE0F "+key.slice(4);
+}
+function packOn(key){ return PACKS_ON.indexOf(key)>=0; }
+function extraCalls(){
+  const out=[];
+  for(const tag in extraPacks){ if(packOn(tagKey(tag))) out.push(...extraPacks[tag]); }
+  return out;
+}
+function everyCall(){                       // every call the app knows, packs on or off
+  const out=[];
+  for(const k of PACK_ORDER) out.push(...PACKS[k].calls);
+  for(const tag in extraPacks) out.push(...extraPacks[tag]);
+  return out;
+}
+function inPool(t){ return everyCall().indexOf(t)>=0; }
+function inBuiltIn(t){ return PACK_ORDER.some(k=>PACKS[k].calls.indexOf(t)>=0); }
+function togglePool(t, tag){
+  if(inBuiltIn(t)){ showToast("Already a standard call"); return; }
+  const key=String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24) || DEFAULT_ROOM_TAG;
+  for(const g in extraPacks){
+    const i=extraPacks[g].indexOf(t);
+    if(i>=0){                                   // already accepted -> drop it back out
+      extraPacks[g].splice(i,1);
+      if(!extraPacks[g].length) delete extraPacks[g];
+      savePool(); renderSuggestions(); paintPacks();
+      showToast("Removed from your packs");
+      return;
+    }
+  }
+  (extraPacks[key] = extraPacks[key]||[]).push(t);
+  if(!packOn(tagKey(key))){ PACKS_ON.push(tagKey(key)); savePacksOn(); }
+  savePool(); renderSuggestions(); paintPacks();
+  showToast("Added to \u201C"+key+"\u201D — hit \u267B\uFE0F to pull it in");
+}
+function fullPool(){
+  const out=[];
+  for(const k of PACK_ORDER){ if(packOn(k)) out.push(...PACKS[k].calls); }
+  out.push(...extraCalls());
+  const seen={}, uniq=[];
+  for(const t of out){ if(!seen[t]){ seen[t]=1; uniq.push(t); } }
+  return uniq.length>=24 ? uniq : everyCall();     // never deal from a pool too small for a card
+}
+
+/* ---------- the pack picker ---------- */
+function paintPacks(){
+  const box=document.getElementById("packOpts");
+  const chip=document.getElementById("packChip");
+  if(chip) chip.textContent="\u{1F3B4} "+PACKS_ON.length+"/"+allPackKeys().length;
+  if(!box) return;
+  box.innerHTML="";
+  for(const key of allPackKeys()){
+    const b=document.createElement("button");
+    b.className="patopt"+(packOn(key)?" on":"");
+    b.innerHTML="<b>"+escapeHtml(packLabel(key))+"</b><span>"+packCalls(key).length+" call"+(packCalls(key).length===1?"":"s")+"</span>";
+    b.addEventListener("click",()=>togglePack(key));
+    box.appendChild(b);
+  }
+  const n=fullPool().length;
+  const foot=document.getElementById("packCount");
+  if(foot) foot.textContent = n+" calls in play · a card uses 24";
+}
+function togglePack(key){
+  const i=PACKS_ON.indexOf(key);
+  if(i>=0){
+    if(PACKS_ON.length===1){ showToast("Keep at least one pack on"); return; }
+    PACKS_ON.splice(i,1);
+  } else PACKS_ON.push(key);
+  PACKS_AT=Date.now(); savePacksOn(); paintPacks();
+  if(ROOM) post(JSON.stringify({ v:1, kind:"packs", id:ME, room:ROOM, name:NAME, packs:PACKS_ON, packsAt:PACKS_AT }));
+}
+function adoptPacks(list, at, who){
+  if(!Array.isArray(list) || !list.length || !at || at<=PACKS_AT) return;
+  PACKS_ON=list.slice(); PACKS_AT=at; savePacksOn(); paintPacks();
+  showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs in play");
+}
 
 /* ---------- card building ---------- */
 function shuffle(arr){
@@ -795,6 +963,7 @@ function addSuggestion(sug){
   if(!sug || !sug.sid || !sug.text) return false;
   if(suggestions.some(x=>x.sid===sug.sid)) return false;
   suggestions.unshift({ sid:sug.sid, from:sug.from||"Player", kind:sug.kind==="app"?"app":"square",
+                        tag:(sug.tag?String(sug.tag).trim().slice(0,24):""),
                         text:String(sug.text).slice(0,240), t:sug.t||Date.now() });
   saveSuggestions(); renderSuggestions(); return true;
 }
@@ -804,9 +973,10 @@ function renderSuggestions(){
   count.textContent = suggestions.length? suggestions.length+(suggestions.length===1?" idea":" ideas") : "none yet";
   const meta=document.getElementById("sugMeta");
   if(meta){
-    meta.textContent = extraPool.length
-      ? "Ideas go to everyone in the room. "+extraPool.length+" added square"+(extraPool.length>1?"s":"")+" can appear when you hit ♻️ Fresh squares. 📌 Everyone puts an idea in the whole room's pool; text or email the list to keep it."
-      : "Square ideas and app ideas go to everyone in the room, and stay on this phone.";
+    const added=Object.keys(extraPacks).reduce((a,k)=>a+extraPacks[k].length,0);
+    meta.textContent = added
+      ? added+" accepted idea"+(added===1?"":"s")+" across "+Object.keys(extraPacks).length+" tag pack"+(Object.keys(extraPacks).length===1?"":"s")+" — hit ♻️ Fresh squares to pull them in. 📌 Everyone shares an idea with the room; text or email the list to keep it."
+      : "Square ideas and app ideas go to everyone in the room. Tag one and it becomes its own pack.";
   }
   list.innerHTML="";
   if(!suggestions.length){
@@ -820,6 +990,7 @@ function renderSuggestions(){
     const d=document.createElement("div"); d.className="sug";
     const when=new Date(s.t);
     d.innerHTML="<div class='top'><span class='tag"+(s.kind==="app"?"":" idea")+"'>"+(s.kind==="app"?"App":"Square")+"</span>"+
+      (s.tag?"<span class='tag pack'>\u{1F3F7}\uFE0F "+escapeHtml(s.tag)+"</span>":"")+
       "<span class='from'>"+escapeHtml(s.from)+"</span></div>"+
       "<div class='txt'>"+escapeHtml(s.text)+"</div>"+
       "<div class='when'>"+when.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})+"</div>";
@@ -827,12 +998,12 @@ function renderSuggestions(){
       const act=document.createElement("div"); act.className="act";
       const on=inPool(s.text);
       const btn=document.createElement("button");
-      btn.className=on?"in":""; btn.textContent=on?"✓ in your pool":"➕ Add to my pool";
-      btn.addEventListener("click",()=>togglePool(s.text));
+      btn.className=on?"in":""; btn.textContent=on?"✓ in a pack":"➕ Add to my packs";
+      btn.addEventListener("click",()=>togglePool(s.text, s.tag));
       act.appendChild(btn);
       const all=document.createElement("button");
       all.style.marginLeft="6px"; all.textContent="📌 Everyone";
-      all.addEventListener("click",()=>pushToRoom(s.text));
+      all.addEventListener("click",()=>pushToRoom(s.text, s.tag));
       act.appendChild(all);
       d.appendChild(act);
     }
@@ -869,6 +1040,7 @@ function fallbackCopy(txt,done){
 function openSugModal(){
   setSugKind("square");
   document.getElementById("sugText").value="";
+  document.getElementById("sugTag").value="";
   document.getElementById("sugModal").classList.remove("hidden");
   setTimeout(()=>document.getElementById("sugText").focus(),50);
 }
@@ -886,7 +1058,8 @@ function setSugKind(k){
 function sendSuggestion(){
   const text=document.getElementById("sugText").value.trim();
   if(!text){ document.getElementById("sugText").focus(); return; }
-  const sug={ sid: ME+"-"+Date.now(), from: NAME||"You", kind: sugKind, text, t: Date.now() };
+  const tag=document.getElementById("sugTag").value.trim().slice(0,24);
+  const sug={ sid: ME+"-"+Date.now(), from: NAME||"You", kind: sugKind, tag, text, t: Date.now() };
   addSuggestion(sug);
   publishSuggestion(sug);
   closeSugModal();
@@ -1022,7 +1195,8 @@ function cleanupSocket(){
 function payload(kind){
   return JSON.stringify({
     v:1, kind, id:ME, room:ROOM, name:NAME,
-    card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, round:ROUND, roundAt:ROUND_AT, t:Date.now()
+    card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, round:ROUND, roundAt:ROUND_AT,
+    packs:PACKS_ON, packsAt:PACKS_AT, t:Date.now()
   });
 }
 function post(body){
@@ -1040,11 +1214,11 @@ function publishSuggestionDigest(){
     }, i*160);
   }
 }
-function pushToRoom(text){
-  if(!inPool(text)){ extraPool.push(text); savePool(); renderSuggestions(); }
-  if(!ROOM){ showToast("Added to your pool"); return; }
-  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text }));
-  showToast("📌 Sent to everyone's pool");
+function pushToRoom(text, tag){
+  if(!inPool(text)) togglePool(text, tag);
+  if(!ROOM){ showToast("Added to your packs"); return; }
+  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text, tag:tag||"" }));
+  showToast("📌 Sent to everyone's packs");
 }
 function publishSuggestion(sug){
   if(!ROOM) return;   // solo play: it still lands in the local list
@@ -1066,11 +1240,12 @@ function handleIncoming(b){
   if(b.kind==="pool"){
     const t=String(b.text||"").slice(0,240);
     if(t && !inPool(t)){
-      extraPool.push(t); savePool(); renderSuggestions();
+      togglePool(t, b.tag);
       showToast("📌 "+(b.name||"Someone")+" added \u201C"+t+"\u201D — hit ♻️ to pull it in");
     }
     return;
   }
+  if(b.kind==="packs"){ adoptPacks(b.packs, b.packsAt, b.name); return; }
   if(b.kind==="sugdigest"){
     if(Array.isArray(b.sugs)) b.sugs.forEach(x=>addSuggestion(x));   // quiet catch-up, no toast
     return;
@@ -1078,6 +1253,7 @@ function handleIncoming(b){
   if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
   if(b.pat) adoptPattern(b.pat, b.patAt, b.name);        // late joiners pick up the house rule
   if(b.round) adoptRound(b.round, b.roundAt, b.name);
+  if(b.packs) adoptPacks(b.packs, b.packsAt, b.name);
   players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, round:b.round||ROUND, t:Date.now() };
   renderOthers(); renderMine();
 }
@@ -1277,6 +1453,9 @@ document.getElementById("leaveBtn").addEventListener("click",leave);
 document.getElementById("bwinClose").addEventListener("click",()=>document.getElementById("banner").classList.add("hidden"));
 document.getElementById("statusBox").addEventListener("click",()=>{ if(ROOM) syncDetails(); });
 document.getElementById("patChip").addEventListener("click",openPatModal);
+document.getElementById("packChip").addEventListener("click",()=>{ paintPacks(); document.getElementById("packModal").classList.remove("hidden"); });
+document.getElementById("packClose").addEventListener("click",()=>document.getElementById("packModal").classList.add("hidden"));
+document.getElementById("packModal").addEventListener("click",e=>{ if(e.target.id==="packModal") document.getElementById("packModal").classList.add("hidden"); });
 document.getElementById("patPickBtn").addEventListener("click",openPatModal);
 document.getElementById("patClose").addEventListener("click",closePatModal);
 document.getElementById("patModal").addEventListener("click",e=>{ if(e.target.id==="patModal") closePatModal(); });
@@ -1307,7 +1486,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("nameInput").value = store.get("opl_name")||"";
   document.getElementById("roomInput").value = store.get("opl_lastroom")||"";
   document.getElementById("roomSuggest").textContent = suggestRoom();
-  loadPool(); loadSuggestions(); renderSuggestions();
+  loadPool(); loadSuggestions(); renderSuggestions(); paintPacks();
   PAT = PATTERNS[store.get("opl_pattern")] ? store.get("opl_pattern") : "all";
   paintPattern(); paintSound();
   const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
