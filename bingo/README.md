@@ -177,7 +177,13 @@ accepted from someone's suggestion) can come in; anything removed from your pool
 drops out. Marked squares, and any line you've built, are untouched — so it's
 safe to hit mid-game. **🔀 My card** is still the full wipe.
 
-It isn't free: after a refresh the button sits out a **90-second cooldown**,
+**Changes to what's in the pool apply themselves.** Switching a pack on or off,
+changing theme, or setting a matchup re-draws your unmarked squares immediately —
+on every phone in the room — so you never have to know to hit ♻️ afterwards.
+Marked squares and any line you've built survive, and these automatic refreshes
+don't spend the cooldown.
+
+It isn't free: after a manual refresh the button sits out a **90-second cooldown**,
 counting down on the button face with a gold progress line. The timer is stored
 per room, so reloading the page doesn't dodge it — but **starting a new round
 clears it**.

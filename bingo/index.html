@@ -781,8 +781,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v36";
-const BUILD_ISO="2026-09-06T15:32:00Z";
+const BUILD_V="v37";
+const BUILD_ISO="2026-09-06T15:37:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1017,12 +1017,15 @@ function togglePack(key){
     PACKS_ON.splice(i,1);
   } else PACKS_ON.push(key);
   PACKS_AT=Date.now(); savePacksOn(); paintPacks();
+  applyPoolChange("🎴 "+packLabel(key)+(i>=0?" off":" on"));
   if(ROOM) post(JSON.stringify({ v:1, kind:"packs", id:ME, room:ROOM, name:NAME, packs:PACKS_ON, packsAt:PACKS_AT }));
 }
 function adoptPacks(list, at, who){
   if(!Array.isArray(list) || !list.length || !at || at<=PACKS_AT) return;
   PACKS_ON=list.slice(); PACKS_AT=at; savePacksOn(); paintPacks();
-  showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs in play");
+  const changed=refillOpenSquares();
+  if(changed) publish("state");
+  showToast("\u{1F3B4} "+(who||"Someone")+" changed the packs"+(changed?" — "+changed+" squares refreshed":""));
 }
 
 /* ---------- card building ---------- */
@@ -1887,15 +1890,15 @@ function loadCooldown(){
 // Redraw every square you haven't marked yet, from the pool as it stands NOW —
 // so ideas added since the deal come in, and anything removed drops out. Your
 // marked squares (and your lines) are untouched.
-function freshSquares(){
-  const left=coolLeft();
-  if(left>0){ showToast("♻️ Cooling down — "+Math.ceil(left/1000)+"s to go"); paintCooldown(); return; }
+// Re-draw the squares you haven't marked from the pool as it stands right now.
+// Returns how many actually changed. Marked squares and the centre stay put.
+function refillOpenSquares(){
   const open=[];
   for(let i=0;i<25;i++){ if(i!==12 && !MARKS[i]) open.push(i); }
-  if(!open.length){ showToast("Every square is marked — nothing to refresh"); return; }
+  if(!open.length) return 0;
   const keep=new Set(CARD.filter((t,i)=>i===12||MARKS[i]));        // don't duplicate what's staying
   const avail=shuffle(fullPool().filter(t=>!keep.has(t)));
-  if(!avail.length){ showToast("No other calls in the pool yet"); return; }
+  if(!avail.length) return 0;
   let n=0, changed=0;
   for(const i of open){
     if(n>=avail.length) break;                                     // tiny pool: leave the rest alone
@@ -1903,7 +1906,26 @@ function freshSquares(){
     CARD[i]=avail[n++];
   }
   CARD_AT=Date.now();                 // a refreshed card is a new deal for the team
-  saveProgress(); renderMine(); publish("state");
+  saveProgress(); renderMine();
+  return changed;
+}
+// A change to what's IN the pool applies to the board straight away — no hunting
+// for ♻️ afterwards, and it doesn't spend the cooldown.
+function applyPoolChange(note){
+  if(!ROOM || !CARD.length) return;
+  const changed=refillOpenSquares();
+  if(!changed) return;
+  publish("state");
+  showToast(note+" — "+changed+" square"+(changed===1?"":"s")+" refreshed");
+}
+function freshSquares(){
+  const left=coolLeft();
+  if(left>0){ showToast("♻️ Cooling down — "+Math.ceil(left/1000)+"s to go"); paintCooldown(); return; }
+  const openCount=MARKS.filter((m,i)=>i!==12&&!m).length;
+  if(!openCount){ showToast("Every square is marked — nothing to refresh"); return; }
+  const changed=refillOpenSquares();
+  if(!changed){ showToast("No other calls in the pool yet"); return; }
+  publish("state");
   startCooldown();
   showToast("♻️ Refreshed "+changed+" open square"+(changed===1?"":"s")+" — next in 90s");
 }
