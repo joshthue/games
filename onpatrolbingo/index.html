@@ -69,12 +69,12 @@
   .roomgen .code{flex:1; font-family:ui-monospace,Menlo,monospace; font-size:18px; letter-spacing:2px; background:var(--panel2);
     border:1px dashed var(--line); border-radius:10px; padding:11px; text-align:center; color:var(--gold); font-weight:700;}
 
-  /* Toolbar */
-  .toolbar{display:flex; gap:8px; margin-bottom:12px;}
-  .seg{display:flex; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:4px; flex:1;}
-  .seg button{flex:1; border:none; background:transparent; color:var(--muted); font-weight:700; font-size:13px; padding:9px 6px; border-radius:9px; cursor:pointer; letter-spacing:.2px;}
-  .seg button.active{background:var(--blue); color:#fff;}
-  .seg button .badge{display:inline-block; min-width:16px; padding:0 4px; margin-left:4px; font-size:10px; background:var(--gold); color:#2a1e00; border-radius:8px; font-weight:800; vertical-align:middle;}
+  /* Room chip in the header */
+  .plineright{display:flex; align-items:center; gap:6px; min-width:0;}
+  .roomchip{font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:1px; color:var(--gold);
+    background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:2px 8px; font-weight:700;
+    max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stack{margin-top:12px;}
 
   /* Player line */
   .pline{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;}
@@ -93,7 +93,7 @@
   .cell.marked::after{content:""; position:absolute; inset:0; background:
     radial-gradient(circle at 70% 25%, rgba(255,255,255,.25), transparent 45%);}
   .cell.free{background:linear-gradient(180deg,#2a3350,#1a2136); color:var(--gold); font-weight:800; font-size:11px;}
-  .cell.free.marked{background:linear-gradient(180deg,#3a4460,#222c46);}
+  .cell.free.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); color:#fff;}
   .cell:active{transform:scale(.95);}
   .cell.win{animation:winflash 1s ease infinite alternate;}
   @keyframes winflash{from{box-shadow:0 0 0 0 rgba(255,207,74,0);}to{box-shadow:0 0 0 3px rgba(255,207,74,.85);}}
@@ -104,13 +104,12 @@
   .mini .cell{font-size:0; padding:0; border-radius:6px; cursor:default;}
   .mini .cell span{display:none;}
   .mini .cell.marked{background:linear-gradient(180deg,var(--green) 0%, #1c8f6f 100%);}
-  .mini .cell.free{background:linear-gradient(180deg,var(--green) 0%, #1c8f6f 100%);}
   .playerblock{padding-top:12px; margin-top:12px; border-top:1px solid var(--line);}
   .playerblock:first-child{padding-top:2px; margin-top:0; border-top:none;}
   .playerblock .meta{text-align:left; margin-top:7px;}
 
-  .waiting{text-align:center; color:var(--muted); padding:34px 16px; font-size:14px; line-height:1.6;}
-  .waiting .big{font-size:40px; margin-bottom:10px;}
+  .waiting{text-align:center; color:var(--muted); padding:18px 12px; font-size:13px; line-height:1.6;}
+  .waiting .big{font-size:32px; margin-bottom:8px;}
   .waiting code{background:var(--panel2); padding:2px 8px; border-radius:7px; color:var(--gold); font-weight:700;}
 
   .footbar{display:flex; gap:8px; margin-top:12px;}
@@ -165,13 +164,6 @@
 
   <!-- GAME -->
   <section id="game" class="hidden">
-    <div class="toolbar">
-      <div class="seg">
-        <button id="tabMine" class="active">My card</button>
-        <button id="tabTheirs">Players<span id="theirBadge" class="badge hidden">!</span></button>
-      </div>
-    </div>
-
     <!-- MY CARD -->
     <div id="viewMine" class="panel">
       <div class="pline">
@@ -183,20 +175,24 @@
         <button class="btn ghost small" id="newCardBtn">🔀 New card</button>
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
-      <div class="meta">Tap a square when you see it happen. First to a full line — across, down, or diagonal — wins.</div>
+      <div class="meta">Tap a square when you see it happen — including the centre ★ FREE ★. First to a full line — across, down, or diagonal — wins.</div>
     </div>
 
     <!-- OTHER PLAYERS -->
-    <div id="viewTheirs" class="panel hidden">
+    <div id="viewTheirs" class="panel stack">
       <div class="pline">
-        <div class="pname"><span>📺</span><span class="who">Other players</span></div>
-        <div class="pill" id="othersCount">nobody yet</div>
+        <div class="pname"><span>📺</span><span class="who">In the room</span></div>
+        <div class="plineright">
+          <span id="roomChip" class="roomchip hidden">—</span>
+          <div class="pill" id="othersCount">nobody yet</div>
+        </div>
       </div>
       <div id="othersList"></div>
       <div id="theirWaiting" class="waiting">
         <div class="big">📡</div>
         Waiting for others to join room <code id="roomEcho">—</code>.<br>
-        They just need to open the <b>same link</b> and type the <b>exact same</b> room code.
+        They just need to open the <b>same link</b> and type the same room code
+        (capitals and spaces don't matter).
       </div>
     </div>
   </section>
@@ -288,7 +284,7 @@ function buildCard(){
   }
   return cells;
 }
-function freshMarks(){ const m=new Array(25).fill(false); m[12]=true; return m; }
+function freshMarks(){ return new Array(25).fill(false); }
 
 /* ---------- win detection ---------- */
 const LINES=(function(){
@@ -316,8 +312,8 @@ function renderMine(){
     const d=document.createElement("div");
     const free=(i===12);
     d.className="cell"+(MARKS[i]?" marked":"")+(free?" free":"")+(cells.has(i)?" win":"");
-    d.innerHTML="<span>"+CARD[i]+"</span>"+(MARKS[i]&&!free?"<span class='chk'>✓</span>":"");
-    if(!free){ d.addEventListener("click",()=>toggle(i)); }
+    d.innerHTML="<span>"+CARD[i]+"</span>"+(MARKS[i]?"<span class='chk'>✓</span>":"");
+    d.addEventListener("click",()=>toggle(i));
     grid.appendChild(d);
   }
   document.getElementById("myPill").textContent = lines? (lines+" line"+(lines>1?"s":"")) : "0 lines";
@@ -330,14 +326,10 @@ function renderOthers(){
   const list=document.getElementById("othersList");
   const waiting=document.getElementById("theirWaiting");
   const count=document.getElementById("othersCount");
-  const badge=document.getElementById("theirBadge");
   const now=Date.now();
   // drop players we haven't heard from in ~50s (they closed the game)
   for(const id in players){ if(now-players[id].t>50000){ delete players[id]; delete seenBingo[id]; } }
   const ids=Object.keys(players).sort((a,b)=>(players[a].name||"").localeCompare(players[b].name||""));
-  // tab badge
-  if(ids.length){ badge.textContent=ids.length; if(document.getElementById("viewTheirs").classList.contains("hidden")) badge.classList.remove("hidden"); }
-  else { badge.classList.add("hidden"); }
   if(!ids.length){
     list.innerHTML=""; waiting.classList.remove("hidden");
     count.textContent="nobody yet"; count.className="pill";
@@ -354,7 +346,7 @@ function renderOthers(){
     const block=document.createElement("div");
     block.className="playerblock";
     const secs=Math.max(0,Math.round((now-p.t)/1000));
-    const marked=p.marks.reduce((a,v)=>a+(v?1:0),0)-1; // exclude the FREE square
+    const marked=p.marks.reduce((a,v)=>a+(v?1:0),0);
     const pillTxt=lines? (lines+" line"+(lines>1?"s":"")) : (marked>0? marked+" marked" : "playing…");
     const head=document.createElement("div");
     head.className="pline";
@@ -383,7 +375,6 @@ function renderOthers(){
 }
 
 function toggle(i){
-  if(i===12) return;
   MARKS[i]=!MARKS[i];
   saveProgress();
   renderMine();
@@ -406,11 +397,12 @@ function loadProgress(){
 }
 
 /* ---------- ntfy sync ---------- */
-function topic(){
-  // namespaced + sanitized so it's a valid ntfy topic
-  const safe=ROOM.toLowerCase().replace(/[^a-z0-9_-]/g,"-");
-  return "oplbingo-v1-"+safe;
+// One room code, however it was typed: "Couch Night", "couch-night" and
+// " COUCH  night " all resolve to the same key (and so the same ntfy topic).
+function roomKey(s){
+  return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 }
+function topic(){ return "oplbingo-v1-"+roomKey(ROOM); }
 function setStatus(state){
   const dot=document.getElementById("dot"), t=document.getElementById("statusText");
   dot.className="dot"+(state==="on"?" on":state==="bad"?" bad":"");
@@ -467,7 +459,7 @@ function schedulePublish(){
   pubTimer=setTimeout(()=>publish("state"), 500);
 }
 function handleIncoming(b){
-  if(!b || b.id===ME || b.room!==ROOM) return;         // ignore self / other rooms
+  if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
   if(b.kind==="hello"){ publish("state"); return; }     // someone joined -> resend
   if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
   players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, t:Date.now() };
@@ -536,6 +528,7 @@ function startGame(){
   myBingo = winningCells(MARKS).lines>0;
   document.getElementById("myName").textContent=NAME;
   document.getElementById("roomEcho").textContent=ROOM;
+  const chip=document.getElementById("roomChip"); chip.textContent=ROOM; chip.classList.remove("hidden");
   document.getElementById("setup").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
   renderMine(); renderOthers();
@@ -555,25 +548,13 @@ function leave(){
   document.getElementById("game").classList.add("hidden");
   document.getElementById("setup").classList.remove("hidden");
   setStatus("");
-  players={}; seenBingo={}; document.getElementById("theirBadge").classList.add("hidden");
-}
-
-/* ---------- tabs ---------- */
-function showTab(which){
-  const mine=which==="mine";
-  document.getElementById("tabMine").classList.toggle("active",mine);
-  document.getElementById("tabTheirs").classList.toggle("active",!mine);
-  document.getElementById("viewMine").classList.toggle("hidden",!mine);
-  document.getElementById("viewTheirs").classList.toggle("hidden",mine);
-  if(!mine){ document.getElementById("theirBadge").classList.add("hidden"); renderOthers(); }
+  players={}; seenBingo={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
 }
 
 /* ---------- wire up ---------- */
 document.getElementById("startBtn").addEventListener("click",startGame);
 document.getElementById("newCardBtn").addEventListener("click",newCard);
 document.getElementById("leaveBtn").addEventListener("click",leave);
-document.getElementById("tabMine").addEventListener("click",()=>showTab("mine"));
-document.getElementById("tabTheirs").addEventListener("click",()=>showTab("theirs"));
 document.getElementById("bwinClose").addEventListener("click",()=>document.getElementById("banner").classList.add("hidden"));
 document.getElementById("useSuggest").addEventListener("click",()=>{ document.getElementById("roomInput").value=document.getElementById("roomSuggest").textContent; });
 
@@ -588,7 +569,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
 // keep "updated Xs ago" fresh + prune players who left + refresh the tab badge
 setInterval(()=>{ if(ROOM) renderOthers(); }, 5000);
 // republish when app comes back to foreground
-document.addEventListener("visibilitychange",()=>{ if(!document.hidden && ROOM){ if(!pollActive){ connect(); } else { publish("state"); clearTimeout(pollTimer); poll(); } } });
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && ROOM){ if(!pollActive){ connect(); } else { publish("hello"); publish("state"); clearTimeout(pollTimer); poll(); } } });
 </script>
 <script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){});});}</script>
 </body>
