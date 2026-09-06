@@ -506,14 +506,27 @@ document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document
 updateTipVisibility();
 chooseSetup();
 </script>
-<script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){});});}</script>
+<script>
+if('serviceWorker' in navigator){
+  addEventListener('load', function(){
+    navigator.serviceWorker.register('../sw.js', {updateViaCache:'none'}).then(function(reg){
+      reg.update();
+      setInterval(function(){ reg.update(); }, 60*60*1000);
+    }).catch(function(){});
+    var reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if(reloaded) return; reloaded=true; location.reload();
+    });
+  });
+}
+</script>
 <div class="gn-build" id="gnBuild"></div>
 <style>.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:16px 0 10px;
   font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px;}</style>
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v35", ISO="2026-09-06T02:51:00Z";
+  var V="v36", ISO="2026-09-06T02:51:00Z";
   var d=new Date(ISO), when=isNaN(d)?ISO:d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+" \u00b7 "+when;
 })();
