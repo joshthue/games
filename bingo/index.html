@@ -1012,8 +1012,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v46";
-const BUILD_ISO="2026-09-06T16:45:00Z";
+const BUILD_V="v47";
+const BUILD_ISO="2026-09-06T17:23:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1308,7 +1308,8 @@ function setMatchup(away, home, announce, awayRoster, homeRoster){
                           roster:ROSTER, matchupAt:MATCHUP_AT }));
     publish("state");
     const n=starCalls().length+matchupCalls().length;
-    showToast("🏟️ "+matchupLabel()+" — "+n+" calls dealt in");
+    showToast(n ? "🏟️ "+matchupLabel()+" — "+n+" calls dealt in"
+                : "🏟️ Matchup cleared — general "+theme().name.toLowerCase()+" calls only");
   }
 }
 function adoptMatchup(m, at, who, roster){
@@ -1330,12 +1331,15 @@ function adoptMatchup(m, at, who, roster){
 
 /* ---------- the pack picker ---------- */
 function paintPacks(){
+  const keys=allPackKeys();
+  const live=PACKS_ON.filter(k=>keys.indexOf(k)>=0);      // drop packs the current theme/matchup no longer has
+  if(live.length!==PACKS_ON.length){ PACKS_ON=live; savePacksOn(); }
   const box=document.getElementById("packOpts");
   const chip=document.getElementById("packChip");
-  if(chip) chip.textContent="\u{1F3B4} "+PACKS_ON.length+"/"+allPackKeys().length;
+  if(chip) chip.textContent="\u{1F3B4} "+PACKS_ON.length+"/"+keys.length;
   if(!box) return;
   box.innerHTML="";
-  for(const key of allPackKeys()){
+  for(const key of keys){
     const b=document.createElement("button");
     b.className="patopt"+(packOn(key)?" on":"");
     b.innerHTML="<b>"+escapeHtml(packLabel(key))+"</b><span>"+packCalls(key).length+" call"+(packCalls(key).length===1?"":"s")+"</span>";

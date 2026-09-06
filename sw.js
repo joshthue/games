@@ -1,7 +1,7 @@
 /* Game Night service worker — offline app shell + games
    HTML is network-first so a new build reaches phones as soon as they're online;
    everything else stays cache-first for speed and offline play. */
-const CACHE = "gamenight-v46";
+const CACHE = "gamenight-v47";
 const ASSETS = [
   "./", "index.html",
   "theleechlakegame/", "theleechlakegame/index.html",

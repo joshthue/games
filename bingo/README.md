@@ -42,7 +42,9 @@ Rosters travel on the matchup message rather than in every state heartbeat (a
 53-man roster would blow past ntfy's ~4KB message cap); a `hello` from a late
 joiner re-sends the matchup so they get the same players.
 
-The **🏟️ chip** also still picks two teams by hand. Each side gets a
+The **🏟️ chip** also still picks two teams by hand, and **Clear** in that modal drops
+the matchup entirely — the player and team packs disappear and the card re-deals from
+the general football calls. Each side gets a
 dozen of its own calls generated from `MATCHUP_TEMPLATES` — *Vikings touchdown*,
 *Packers punt*, *Vikings coach on camera* — which land in a "matchup" pack you can
 switch on and off like any other. The matchup syncs to the room the same way the
