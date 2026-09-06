@@ -179,7 +179,7 @@
 
   <header>
     <div class="brand"><a href="../" title="All games" style="text-decoration:none;margin-right:8px;font-size:20px;">🏠</a><span class="lights">🚨</span><h1>On Patrol <b>BINGO</b></h1></div>
-    <div class="status"><span id="dot" class="dot"></span><span id="statusText">offline</span></div>
+    <div class="status" id="statusBox" style="cursor:pointer;"><span id="dot" class="dot"></span><span id="statusText">offline</span></div>
   </header>
 
   <!-- SETUP -->
@@ -341,7 +341,7 @@ let suggestions=[];             // [{sid, from, kind, text, t}] newest first
 let peek={};                    // player id -> square index they last tapped
 let sugKind="square";
 let seenBingo={};               // id -> bool (already toasted this bingo)
-let pollTimer=null, lastId=null, pollActive=false, wsReady=false, pubTimer=null, heartbeat=null, reconnectT=null;
+let pollActive=false, pubTimer=null, heartbeat=null, reconnectT=null;
 
 /* ---------- extra squares added from suggestions ---------- */
 let extraPool=[];
@@ -618,45 +618,105 @@ function roomKey(s){
   return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 }
 function topic(){ return "oplbingo-v1-"+roomKey(ROOM); }
-function setStatus(state){
+// Two independent public relays. A phone only has to reach ONE of them, and we
+// publish to both, so a blocked or rate-limited relay can't kill the room.
+const RELAYS = ["https://ntfy.sh", "https://ntfy.envs.net"];
+const relay = {};   // host -> {live, es, pollT, lastId, err, tries}
+function relayState(h){ return relay[h] || (relay[h] = {live:false, es:null, pollT:null, lastId:null, err:"", tries:0}); }
+function liveRelays(){ return RELAYS.filter(h=>relayState(h).live).length; }
+function refreshStatus(){
   const dot=document.getElementById("dot"), t=document.getElementById("statusText");
-  dot.className="dot"+(state==="on"?" on":state==="bad"?" bad":"");
-  t.textContent = state==="on"?"synced":state==="bad"?"reconnecting…":"connecting…";
+  if(!ROOM){ dot.className="dot"; t.textContent="offline"; return; }
+  const n=liveRelays();
+  dot.className="dot"+(n?" on":" bad");
+  t.textContent = n===RELAYS.length ? "synced" : n ? "synced ("+n+"/"+RELAYS.length+")" : "no signal — tap";
 }
+function setStatus(){ refreshStatus(); }   // kept so callers read the same everywhere
+function syncDetails(){
+  const lines=RELAYS.map(h=>{
+    const st=relayState(h);
+    return h.replace("https://","")+": "+(st.live?"connected":(st.err||"not connected"));
+  });
+  alert("Room: "+ROOM+"\nTopic: "+topic()+"\n\n"+lines.join("\n")+
+        "\n\nIf both say blocked, this network is filtering them — try cell data / a hotspot.");
+  connect();   // tapping also retries
+}
+
 function connect(){
   cleanupSocket();
-  pollActive=true; lastId=null;
-  setStatus("connecting");
-  publish("hello");            // ask partner to (re)send their state
+  pollActive=true;
+  RELAYS.forEach(h=>{ const st=relayState(h); st.lastId=null; st.tries=0; openRelay(h); });
+  refreshStatus();
+  publish("hello");            // ask the room to (re)send state
   publish("state");            // announce myself
-  poll();                      // start the polling loop
   clearInterval(heartbeat);
   heartbeat=setInterval(()=>{ if(pollActive) publish("state"); }, 20000);
 }
-// Poll for new messages with a plain HTTPS GET — works anywhere ordinary web
-// requests do, so router/carrier/proxy WebSocket blocks don't matter.
-async function poll(){
-  if(!pollActive) return;
-  const since = lastId || "20s";
+
+// Preferred: one long-lived SSE stream per relay — instant updates and a single
+// request, so nobody trips a rate limit. Falls back to slow polling per relay.
+function openRelay(h){
+  const st=relayState(h);
+  closeRelay(h);
+  if(typeof EventSource==="undefined"){ st.err="no EventSource"; pollRelay(h); return; }
   try{
-    const res = await fetch("https://ntfy.sh/"+topic()+"/json?poll=1&since="+encodeURIComponent(since));
+    const es=new EventSource(h+"/"+topic()+"/sse?since=30s");
+    st.es=es;
+    es.onopen=()=>{ st.live=true; st.err=""; st.tries=0; refreshStatus(); };
+    es.onmessage=ev=>{
+      st.live=true; st.err=""; refreshStatus();
+      let m; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+      if(m.event!=="message") return;
+      let body; try{ body=JSON.parse(m.message); }catch(e){ return; }
+      handleIncoming(body);
+    };
+    es.onerror=()=>{
+      st.live=false; st.err="stream blocked"; refreshStatus();
+      try{ es.close(); }catch(e){}
+      st.es=null;
+      pollRelay(h);                                   // keep trying the plain-GET route
+      const wait=Math.min(30000, 4000*Math.pow(2, st.tries++));
+      setTimeout(()=>{ if(pollActive && !st.es) openRelay(h); }, wait);
+    };
+  }catch(e){ st.err="stream unavailable"; pollRelay(h); }
+}
+// Fallback transport: ordinary HTTPS GETs, slow enough to stay under rate limits.
+async function pollRelay(h){
+  const st=relayState(h);
+  if(!pollActive) return;
+  clearTimeout(st.pollT);
+  try{
+    const since = st.lastId || "30s";
+    const res = await fetch(h+"/"+topic()+"/json?poll=1&since="+encodeURIComponent(since));
     if(res.ok){
-      wsReady=true; setStatus("on");
-      const text = await res.text();
+      st.live=true; st.err="";
+      const text=await res.text();
       for(const line of text.split("\n")){
         if(!line.trim()) continue;
         let msg; try{ msg=JSON.parse(line); }catch(e){ continue; }
-        if(msg.id) lastId=msg.id;               // advance cursor (since=<id> is exclusive)
+        if(msg.id) st.lastId=msg.id;
         if(msg.event!=="message") continue;
         let body; try{ body=JSON.parse(msg.message); }catch(e){ continue; }
         handleIncoming(body);
       }
-    } else { wsReady=false; setStatus("bad"); }
-  }catch(e){ wsReady=false; setStatus("bad"); }
-  if(pollActive) pollTimer=setTimeout(poll, 2500);
+    } else {
+      st.live=false;
+      st.err = res.status===429 ? "rate-limited (429)" : "HTTP "+res.status;
+    }
+  }catch(e){ st.live=false; st.err="unreachable"; }
+  refreshStatus();
+  if(pollActive && !st.es) st.pollT=setTimeout(()=>pollRelay(h), st.live?5000:9000);
 }
-function cleanupSocket(){ pollActive=false; clearTimeout(pollTimer); clearTimeout(reconnectT); clearInterval(heartbeat); wsReady=false; }
-function scheduleReconnect(){ clearTimeout(reconnectT); reconnectT=setTimeout(connect, 2500); }
+function closeRelay(h){
+  const st=relayState(h);
+  if(st.es){ try{ st.es.close(); }catch(e){} st.es=null; }
+  clearTimeout(st.pollT); st.pollT=null;
+}
+function cleanupSocket(){
+  pollActive=false;
+  RELAYS.forEach(h=>{ closeRelay(h); relayState(h).live=false; });
+  clearTimeout(reconnectT); clearInterval(heartbeat);
+}
 
 function payload(kind){
   return JSON.stringify({
@@ -664,11 +724,10 @@ function payload(kind){
     card:CARD, marks:MARKS, bingo:myBingo, t:Date.now()
   });
 }
-function publish(kind){
-  const body=payload(kind);
-  // publish via a simple HTTP POST (ntfy publish endpoint)
-  fetch("https://ntfy.sh/"+topic(), {method:"POST", body}).catch(()=>{});
+function post(body){
+  RELAYS.forEach(h=>{ fetch(h+"/"+topic(), {method:"POST", body}).catch(()=>{}); });
 }
+function publish(kind){ post(payload(kind)); }
 // someone who joins late still gets tonight's ideas: answer "hello" with a digest
 function publishSuggestionDigest(){
   if(!ROOM || !suggestions.length) return;
@@ -676,15 +735,13 @@ function publishSuggestionDigest(){
   for(let i=0;i<recent.length;i+=4){
     const batch=recent.slice(i,i+4);
     setTimeout(()=>{
-      fetch("https://ntfy.sh/"+topic(), {method:"POST",
-        body: JSON.stringify({ v:1, kind:"sugdigest", id:ME, room:ROOM, name:NAME, sugs:batch })}).catch(()=>{});
+      post(JSON.stringify({ v:1, kind:"sugdigest", id:ME, room:ROOM, name:NAME, sugs:batch }));
     }, i*160);
   }
 }
 function publishSuggestion(sug){
   if(!ROOM) return;   // solo play: it still lands in the local list
-  fetch("https://ntfy.sh/"+topic(), {method:"POST",
-    body: JSON.stringify({ v:1, kind:"suggest", id:ME, room:ROOM, name:NAME, sug })}).catch(()=>{});
+  post(JSON.stringify({ v:1, kind:"suggest", id:ME, room:ROOM, name:NAME, sug }));
 }
 function schedulePublish(){
   clearTimeout(pubTimer);
@@ -796,6 +853,7 @@ document.getElementById("startBtn").addEventListener("click",startGame);
 document.getElementById("newCardBtn").addEventListener("click",newCard);
 document.getElementById("leaveBtn").addEventListener("click",leave);
 document.getElementById("bwinClose").addEventListener("click",()=>document.getElementById("banner").classList.add("hidden"));
+document.getElementById("statusBox").addEventListener("click",()=>{ if(ROOM) syncDetails(); });
 document.getElementById("addSugBtn").addEventListener("click",openSugModal);
 document.getElementById("copySugBtn").addEventListener("click",copySuggestions);
 document.getElementById("sugCancel").addEventListener("click",closeSugModal);
@@ -817,7 +875,11 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
 // keep "updated Xs ago" fresh + prune players who left + refresh the tab badge
 setInterval(()=>{ if(ROOM) renderOthers(); }, 5000);
 // republish when app comes back to foreground
-document.addEventListener("visibilitychange",()=>{ if(!document.hidden && ROOM){ if(!pollActive){ connect(); } else { publish("hello"); publish("state"); clearTimeout(pollTimer); poll(); } } });
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden || !ROOM) return;
+  if(!pollActive || !liveRelays()) connect();
+  else { publish("hello"); publish("state"); }
+});
 </script>
 <script>if('serviceWorker'in navigator){addEventListener('load',function(){navigator.serviceWorker.register('../sw.js').catch(function(){});});}</script>
 </body>

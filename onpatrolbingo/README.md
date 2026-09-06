@@ -12,9 +12,15 @@ couch/group chat crowd. Tap squares as they happen and chase a line (or a full c
   list so you can check everyone matched.
 - **In the room** sits right under your own card — every other player's name,
   their live mini board, and how many lines they have. No tab to switch to.
-- Sync runs over [ntfy.sh](https://ntfy.sh) with ordinary HTTPS requests, so it
-  works over cell data and across networks — you don't have to share Wi-Fi.
-  The room code is a shared password, not private.
+- Sync runs over two public relays — [ntfy.sh](https://ntfy.sh) and
+  ntfy.envs.net. Each phone publishes to both and listens to both, so a relay
+  that's blocked or rate-limited on one network doesn't break the room; you only
+  need to share **one** working relay. The room code is a shared password, not private.
+- Transport is a long-lived SSE stream per relay (instant, one request), falling
+  back to slow HTTPS polling when a stream is blocked.
+- **Tap the status line** (top-right, next to the dot) for a per-relay diagnosis —
+  connected / blocked / rate-limited — plus the room topic. Tapping also retries.
+  If both relays say blocked, that network is filtering them: try cell data or a hotspot.
 
 ## The card
 
