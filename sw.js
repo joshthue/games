@@ -1,5 +1,5 @@
 /* Game Night service worker — offline app shell + games */
-const CACHE = "gamenight-v24";
+const CACHE = "gamenight-v25";
 const ASSETS = [
   "./", "index.html",
   "theleechlakegame/", "theleechlakegame/index.html",

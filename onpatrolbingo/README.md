@@ -81,6 +81,21 @@ accepted from someone's suggestion) can come in; anything removed from your pool
 drops out. Marked squares, and any line you've built, are untouched — so it's
 safe to hit mid-game. **🔀 New card** is still the full wipe.
 
+## Rounds and the scoreboard
+
+- **🆕 New round (everyone)** deals a fresh card to every phone in the room and
+  bumps the round number. Wins carry over; cards don't.
+- **🏆 Round N · name 2 · name 1** above the player list is the night's tally.
+  A win is recorded against the round the *player* was in when they sent that
+  board, so a stale card arriving after a new round can't score twice.
+- **↩︎ Undo** takes back your last tap (up to 60 deep) — mis-taps on a phone-sized
+  grid are inevitable, and on cover-all one bad tap hides for a long time.
+- A **progress bar** under your card and each opponent's board fills toward the
+  active pattern, turning gold at one away and red/blue on the win.
+- **🔊 / 🔇** next to 🎯 toggles the siren audio (a generated two-tone wail, no
+  audio files). Muting is remembered per phone; audio unlocks on the tap that
+  starts the game, so the first siren isn't silent.
+
 ## Show-off bits
 
 - Player list is sorted **closest to bingo first**, with 👑 on whoever's leading.

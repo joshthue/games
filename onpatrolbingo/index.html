@@ -156,6 +156,13 @@
   .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
   @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
   .crown{font-size:13px;}
+  .bar{height:6px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; margin-top:8px;}
+  .bar > i{display:block; height:100%; width:0%; border-radius:6px; background:linear-gradient(90deg,var(--blue),var(--green));
+    transition:width .35s ease;}
+  .bar.close > i{background:linear-gradient(90deg,var(--gold),#ff8a3d);}
+  .bar.done > i{background:linear-gradient(90deg,#ff4d5e,#2e6bff);}
+  .scores{font-size:12px; color:var(--muted); margin:-2px 0 10px; font-weight:700;}
+  .scores b{color:var(--gold);}
   .patchip{font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; cursor:pointer;
     background:var(--panel2); border:1px solid var(--line); color:var(--gold); flex-shrink:0;}
   .patopt{display:block; width:100%; text-align:left; font-family:inherit; margin-top:8px; cursor:pointer;
@@ -251,13 +258,19 @@
         <div class="pname"><span>🚓</span><span class="who" id="myName">You</span></div>
         <div class="plineright">
           <span class="patchip" id="patChip">🎯 Cover all</span>
+          <span class="patchip" id="soundChip" title="Sound">🔊</span>
           <div class="pill" id="myPill">playing…</div>
         </div>
       </div>
       <div id="myGrid" class="grid"></div>
+      <div class="bar" id="myBar"><i></i></div>
       <div class="footbar">
+        <button class="btn ghost small" id="undoBtn">↩︎ Undo</button>
         <button class="btn ghost small" id="freshBtn">♻️ Fresh squares</button>
-        <button class="btn ghost small" id="newCardBtn">🔀 New card</button>
+      </div>
+      <div class="footbar">
+        <button class="btn ghost small" id="roundBtn">🆕 New round (everyone)</button>
+        <button class="btn ghost small" id="newCardBtn">🔀 My card</button>
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
       <div class="meta"><span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
@@ -273,6 +286,7 @@
           <div class="pill" id="othersCount">nobody yet</div>
         </div>
       </div>
+      <div class="scores" id="scoreLine">🏆 Round 1 · no wins yet</div>
       <div id="othersList"></div>
       <div id="theirWaiting" class="waiting">
         <div class="big">📡</div>
@@ -368,8 +382,8 @@ const POOL = [
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v24";
-const BUILD_ISO="2026-09-06T02:43:00Z";
+const BUILD_V="v25";
+const BUILD_ISO="2026-09-06T02:48:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -478,7 +492,10 @@ function evalMarks(marks){
   const toGo = won ? 0 : left.slice(0,pat.need).reduce((a,b)=>a+b,0);
   const cells=new Set();
   if(won) done.forEach(g=>g.forEach(i=>cells.add(i)));
-  return {won, toGo, cells, done:done.length};
+  // how far along the easiest route to the win is (0-1), for the progress bar
+  const target = pat.groups.slice(0,1).reduce((a,g)=>a+g.length,0) * pat.need;
+  const pct = target ? Math.max(0, Math.min(1, (target-toGo)/target)) : 0;
+  return {won, toGo, cells, done:done.length, pct};
 }
 function progressLabel(marks){
   const e=evalMarks(marks);
@@ -539,6 +556,10 @@ function renderMine(){
   const mine=progressLabel(MARKS);
   document.getElementById("myPill").textContent = mine.txt;
   document.getElementById("myPill").className = "pill"+mine.cls;
+  const bar=document.getElementById("myBar");
+  bar.className = "bar"+(won?" done":mine.rank===1?" close":"");
+  bar.firstElementChild.style.width = Math.round(evalMarks(MARKS).pct*100)+"%";
+  if(won) recordWin(ME, NAME||"You", ROUND);
   const wasBingo=myBingo; myBingo=won;
   if(myBingo && !wasBingo){ celebrate(true); }
 }
@@ -593,6 +614,10 @@ function renderOthers(){
       d.addEventListener("click",()=>{ peek[id] = (peek[id]===i? null : i); renderOthers(); });
       grid.appendChild(d);
     }
+    const pbar=document.createElement("div");
+    pbar.className="bar"+(prog.rank===0?" done":prog.rank===1?" close":"");
+    pbar.innerHTML="<i style='width:"+Math.round(evalMarks(p.marks).pct*100)+"%'></i>";
+    block.appendChild(pbar);
     block.appendChild(grid);
     // tapping one of their squares spells it out in the open, since the mini board has no room for text
     const read=document.createElement("div");
@@ -610,16 +635,72 @@ function renderOthers(){
     block.appendChild(meta);
     list.appendChild(block);
     // toast once when a player completes the pattern
+    if(prog.rank===0){ recordWin(id, p.name, p.round||ROUND); }
     if(prog.rank===0 && !seenBingo[id]){ seenBingo[id]=true; onPlayerBingo(p.name); }
     if(prog.rank!==0) seenBingo[id]=false;
   }
 }
 
+let markHistory=[];
 function toggle(i){
+  markHistory.push(i); if(markHistory.length>60) markHistory.shift();
   MARKS[i]=!MARKS[i];
   saveProgress();
   renderMine();
   schedulePublish();
+}
+
+function undoMark(){
+  const i=markHistory.pop();
+  if(i==null){ showToast("Nothing to undo"); return; }
+  MARKS[i]=!MARKS[i];
+  saveProgress(); renderMine(); schedulePublish();
+  showToast((MARKS[i]?"Re-marked: ":"Un-marked: ")+CARD[i]);
+}
+
+/* ---------- rounds & the night's scoreboard ---------- */
+let ROUND=1, ROUND_AT=0, wins={};
+function winsKey(){ return "opl_wins_"+roomKey(ROUND_NAME_ROOM()); }
+function ROUND_NAME_ROOM(){ return ROOM||"solo"; }
+function loadRound(){
+  try{ const w=JSON.parse(store.get(winsKey())||"null"); if(w&&typeof w==="object"){ wins=w.wins||{}; ROUND=w.round||1; ROUND_AT=w.at||0; } }
+  catch(e){ wins={}; }
+}
+function saveRound(){ store.set(winsKey(), JSON.stringify({wins, round:ROUND, at:ROUND_AT})); }
+function recordWin(id, name, round){
+  const r = round || ROUND;
+  const w = wins[id] || (wins[id]={name:name||"Player", rounds:[]});
+  w.name = name || w.name;
+  if(w.rounds.indexOf(r)<0){ w.rounds.push(r); saveRound(); renderScores(); }
+}
+function renderScores(){
+  const el=document.getElementById("scoreLine"); if(!el) return;
+  const rows=Object.keys(wins).map(id=>({name:wins[id].name, n:wins[id].rounds.length}))
+    .filter(r=>r.n>0).sort((a,b)=>b.n-a.n);
+  el.innerHTML = "🏆 Round "+ROUND+" · " + (rows.length
+    ? rows.map(r=>escapeHtml(r.name)+" <b>"+r.n+"</b>").join(" · ")
+    : "no wins yet");
+}
+function startRound(announce){
+  ROUND++; ROUND_AT=Date.now(); saveRound();
+  players={};
+  dealFreshRound();
+  if(announce){
+    post(JSON.stringify({ v:1, kind:"round", id:ME, room:ROOM, name:NAME, round:ROUND, at:ROUND_AT }));
+    showToast("🆕 Round "+ROUND+" — fresh cards for everyone");
+  }
+}
+function adoptRound(n, at, who){
+  if(!n || n<=ROUND) return;
+  ROUND=n; ROUND_AT=at||Date.now(); saveRound();
+  players={};                      // their old boards belong to the last round
+  dealFreshRound();
+  showToast("🆕 "+(who||"Someone")+" started round "+ROUND);
+  sirens(600);
+}
+function dealFreshRound(){
+  CARD=buildCard(); MARKS=freshMarks(); myBingo=false; markHistory=[]; peek={}; seenBingo={}; seenClose={};
+  saveProgress(); renderMine(); renderOthers(); renderScores(); publish("state");
 }
 
 /* ---------- suggestions ---------- */
@@ -847,7 +928,7 @@ function cleanupSocket(){
 function payload(kind){
   return JSON.stringify({
     v:1, kind, id:ME, room:ROOM, name:NAME,
-    card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, t:Date.now()
+    card:CARD, marks:MARKS, bingo:myBingo, pat:PAT, patAt:PAT_AT, round:ROUND, roundAt:ROUND_AT, t:Date.now()
   });
 }
 function post(body){
@@ -877,6 +958,7 @@ function handleIncoming(b){
   if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
   if(b.kind==="hello"){ publish("state"); publishSuggestionDigest(); return; }   // someone joined -> resend
   if(b.kind==="pattern"){ adoptPattern(b.pat, b.patAt, b.name); return; }
+  if(b.kind==="round"){ adoptRound(b.round, b.at, b.name); return; }
   if(b.kind==="suggest"){
     if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
     return;
@@ -887,18 +969,55 @@ function handleIncoming(b){
   }
   if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
   if(b.pat) adoptPattern(b.pat, b.patAt, b.name);        // late joiners pick up the house rule
-  players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, t:Date.now() };
+  if(b.round) adoptRound(b.round, b.roundAt, b.name);
+  players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, round:b.round||ROUND, t:Date.now() };
   renderOthers();
 }
 
+/* ---------- siren sound (generated, no assets) ---------- */
+let SOUND = store.get("opl_sound")!=="off";
+let actx=null;
+function audio(){
+  if(!SOUND) return null;
+  try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; }
+  if(actx.state==="suspended") actx.resume().catch(()=>{});
+  return actx;
+}
+function paintSound(){ const c=document.getElementById("soundChip"); if(c) c.textContent = SOUND?"🔊":"🔇"; }
+function toggleSound(){
+  SOUND=!SOUND; store.set("opl_sound", SOUND?"on":"off"); paintSound();
+  if(SOUND){ audio(); wail(1, 0.5); showToast("🔊 Sound on"); } else showToast("🔇 Muted");
+}
+// two-tone wail; sweeps is how many up-down passes
+function wail(sweeps, vol){
+  const ac=audio(); if(!ac) return;
+  const t0=ac.currentTime, gain=ac.createGain(), osc=ac.createOscillator();
+  osc.type="sawtooth";
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(vol||0.16, t0+0.05);
+  const each=0.42;
+  for(let i=0;i<sweeps;i++){
+    const a=t0+i*each*2;
+    osc.frequency.setValueAtTime(620, a);
+    osc.frequency.linearRampToValueAtTime(980, a+each);
+    osc.frequency.linearRampToValueAtTime(620, a+each*2);
+  }
+  const end=t0+sweeps*each*2;
+  gain.gain.setValueAtTime(vol||0.16, end-0.12);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(t0); osc.stop(end+0.05);
+}
+
 /* ---------- celebration ---------- */
-function sirens(ms){
+function sirens(ms, sweeps){
+  wail(sweeps||1);
   const s=document.getElementById("siren"), l=document.querySelector(".lights");
   s.classList.remove("go"); void s.offsetWidth; s.classList.add("go");
   if(l){ l.classList.add("on"); setTimeout(()=>l.classList.remove("on"), ms||1400); }
 }
 function celebrate(){
-  sirens(2200);
+  sirens(2200, 3);
   const b=document.getElementById("banner");
   document.getElementById("bwinEm").textContent="🎉";
   document.getElementById("bwinTitle").textContent="BINGO!";
@@ -910,7 +1029,7 @@ function celebrate(){
 }
 function onPlayerBingo(name){
   showToast((name||"A player")+" got BINGO! 🎉");
-  sirens(2200); fireConfetti();
+  sirens(2200, 2); fireConfetti();
   if(navigator.vibrate){ try{navigator.vibrate([30,50,30]);}catch(e){} }
 }
 function onPlayerClose(name){
@@ -960,7 +1079,9 @@ function startGame(){
   if(!r){ document.getElementById("roomInput").focus(); return shake("roomInput"); }
   NAME=n; ROOM=r;
   store.set("opl_name", NAME); store.set("opl_lastroom", ROOM);
+  loadRound(); renderScores();
   if(!loadProgress()){ CARD=buildCard(); MARKS=freshMarks(); saveProgress(); }
+  audio();   // unlock sound on this tap, so the first siren isn't silent
   myBingo = evalMarks(MARKS).won;
   document.getElementById("myName").textContent=NAME;
   document.getElementById("roomEcho").textContent=ROOM;
@@ -1008,6 +1129,11 @@ function leave(){
 
 /* ---------- wire up ---------- */
 document.getElementById("startBtn").addEventListener("click",startGame);
+document.getElementById("undoBtn").addEventListener("click",undoMark);
+document.getElementById("soundChip").addEventListener("click",toggleSound);
+document.getElementById("roundBtn").addEventListener("click",()=>{
+  if(confirm("Deal everyone in the room a fresh card and start round "+(ROUND+1)+"?")) startRound(true);
+});
 document.getElementById("freshBtn").addEventListener("click",freshSquares);
 document.getElementById("newCardBtn").addEventListener("click",newCard);
 document.getElementById("leaveBtn").addEventListener("click",leave);
@@ -1044,7 +1170,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("roomSuggest").textContent = suggestRoom();
   loadPool(); loadSuggestions(); renderSuggestions();
   PAT = PATTERNS[store.get("opl_pattern")] ? store.get("opl_pattern") : "all";
-  paintPattern();
+  paintPattern(); paintSound();
   const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;
