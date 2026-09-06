@@ -795,8 +795,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v39";
-const BUILD_ISO="2026-09-06T15:51:00Z";
+const BUILD_V="v40";
+const BUILD_ISO="2026-09-06T15:56:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -850,8 +850,16 @@ const DEFAULT_ROOM_TAG="Room ideas";
 function loadPool(){
   try{
     const raw=JSON.parse(store.get("opl_extra_pool")||"null");
-    if(Array.isArray(raw)) extraPacks={[DEFAULT_ROOM_TAG]: raw.filter(x=>typeof x==="string")};   // migrate the old flat list
-    else if(raw && typeof raw==="object") extraPacks=raw;
+    if(Array.isArray(raw)){                                   // oldest format: one flat list
+      extraPacks={[DEFAULT_ROOM_TAG]:{theme:"onpatrol", calls:raw.filter(x=>typeof x==="string")}};
+    } else if(raw && typeof raw==="object"){
+      extraPacks={};
+      for(const tag in raw){
+        const v=raw[tag];
+        if(Array.isArray(v)) extraPacks[tag]={theme:"onpatrol", calls:v};   // pre-theme packs were all On Patrol
+        else if(v && Array.isArray(v.calls)) extraPacks[tag]={theme:v.theme||"onpatrol", calls:v.calls};
+      }
+    }
   }catch(e){ extraPacks={}; }
   try{
     const on=JSON.parse(store.get("opl_packs_on")||"null");
@@ -861,17 +869,19 @@ function loadPool(){
 function savePool(){ store.set("opl_extra_pool", JSON.stringify(extraPacks)); }
 function savePacksOn(){ store.set("opl_packs_on", JSON.stringify(PACKS_ON)); }
 function tagKey(tag){ return "tag:"+String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24); }
+function packTheme(tag){ return (extraPacks[tag] && extraPacks[tag].theme) || "onpatrol"; }
+function packList(tag){ return (extraPacks[tag] && extraPacks[tag].calls) || []; }
+function themeTags(){ return Object.keys(extraPacks).filter(t=>packTheme(t)===THEME); }
 function themePacks(){
   return theme().packs.filter(k =>
     (k!=="matchup" || matchupCalls().length) && (k!=="stars" || starCalls().length));
 }
-function allPackKeys(){ return themePacks().concat(Object.keys(extraPacks).map(tagKey)); }
+function allPackKeys(){ return themePacks().concat(themeTags().map(tagKey)); }
 function packCalls(key){
   if(key==="matchup") return matchupCalls();
   if(key==="stars") return starCalls();
   if(PACKS[key]) return PACKS[key].calls;
-  const tag=key.slice(4);
-  return extraPacks[tag]||[];
+  return packList(key.slice(4));
 }
 function packLabel(key){
   if(key==="matchup") return "\u{1F3DF}\uFE0F "+matchupLabel()+" \u2014 team calls";
@@ -882,34 +892,41 @@ function packLabel(key){
 function packOn(key){ return PACKS_ON.indexOf(key)>=0; }
 function extraCalls(){
   const out=[];
-  for(const tag in extraPacks){ if(packOn(tagKey(tag))) out.push(...extraPacks[tag]); }
+  for(const tag of themeTags()){ if(packOn(tagKey(tag))) out.push(...packList(tag)); }
   return out;
 }
 function everyCall(){                       // every call this theme knows, packs on or off
   const out=[];
   for(const k of themePacks()) out.push(...packCalls(k));
-  for(const tag in extraPacks) out.push(...extraPacks[tag]);
+  for(const tag of themeTags()) out.push(...packList(tag));
   return out;
 }
 function inPool(t){ return everyCall().indexOf(t)>=0; }
+function inAnyTagPack(t){
+  for(const tag in extraPacks) if(packList(tag).indexOf(t)>=0) return tag;
+  return null;
+}
 function inBuiltIn(t){ return PACK_ORDER.some(k=>PACKS[k].calls.indexOf(t)>=0) || matchupCalls().indexOf(t)>=0 || starCalls().indexOf(t)>=0; }
-function togglePool(t, tag){
+function togglePool(t, tag, forTheme){
   if(inBuiltIn(t)){ showToast("Already a standard call"); return; }
+  const th = forTheme && THEMES[forTheme] ? forTheme : THEME;   // ideas stay on their own night
   const key=String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24) || DEFAULT_ROOM_TAG;
   for(const g in extraPacks){
-    const i=extraPacks[g].indexOf(t);
+    const i=packList(g).indexOf(t);
     if(i>=0){                                   // already accepted -> drop it back out
-      extraPacks[g].splice(i,1);
-      if(!extraPacks[g].length) delete extraPacks[g];
+      extraPacks[g].calls.splice(i,1);
+      if(!extraPacks[g].calls.length) delete extraPacks[g];
       savePool(); renderSuggestions(); paintPacks();
       showToast("Removed from your packs");
       return;
     }
   }
-  (extraPacks[key] = extraPacks[key]||[]).push(t);
-  if(!packOn(tagKey(key))){ PACKS_ON.push(tagKey(key)); savePacksOn(); }
+  if(!extraPacks[key] || extraPacks[key].theme!==th) extraPacks[key]={theme:th, calls:[]};
+  extraPacks[key].calls.push(t);
+  if(th===THEME && !packOn(tagKey(key))){ PACKS_ON.push(tagKey(key)); savePacksOn(); }
   savePool(); renderSuggestions(); paintPacks();
-  showToast("Added to \u201C"+key+"\u201D — hit \u267B\uFE0F to pull it in");
+  showToast(th===THEME ? "Added to \u201C"+key+"\u201D"
+                       : "Saved to \u201C"+key+"\u201D for "+THEMES[th].name+" night");
 }
 function fullPool(){
   const out=[];
@@ -945,7 +962,7 @@ function paintTheme(){
 function setTheme(key, announce){
   if(!THEMES[key] || key===THEME) { paintTheme(); return; }
   THEME=key; THEME_AT=Date.now(); store.set("opl_theme", THEME);
-  PACKS_ON = themePacks().slice(); savePacksOn();          // a theme brings its own packs
+  PACKS_ON = allPackKeys().slice(); savePacksOn();          // a theme brings its own packs
   paintTheme(); paintPacks();
   if(ROOM){
     CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
@@ -966,7 +983,7 @@ function adoptTheme(key, at, who){
     return;
   }
   THEME=key; THEME_AT=at; store.set("opl_theme", THEME);
-  PACKS_ON = themePacks().slice(); savePacksOn();
+  PACKS_ON = allPackKeys().slice(); savePacksOn();
   CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
   saveProgress(); paintTheme(); paintPacks(); renderMine();
   showToast((who||"Someone")+" switched to "+theme().name+" BINGO");
@@ -1409,6 +1426,7 @@ function addSuggestion(sug){
   if(suggestions.some(x=>x.sid===sug.sid)) return false;
   suggestions.unshift({ sid:sug.sid, from:sug.from||"Player", kind:sug.kind==="app"?"app":"square",
                         tag:(sug.tag?String(sug.tag).trim().slice(0,24):""),
+                        theme:(sug.theme && THEMES[sug.theme] ? sug.theme : "onpatrol"),
                         text:String(sug.text).slice(0,240), t:sug.t||Date.now() });
   saveSuggestions(); renderSuggestions(); return true;
 }
@@ -1418,9 +1436,9 @@ function renderSuggestions(){
   count.textContent = suggestions.length? suggestions.length+(suggestions.length===1?" idea":" ideas") : "none yet";
   const meta=document.getElementById("sugMeta");
   if(meta){
-    const added=Object.keys(extraPacks).reduce((a,k)=>a+extraPacks[k].length,0);
+    const mine=themeTags(), added=mine.reduce((a,k)=>a+packList(k).length,0);
     meta.textContent = added
-      ? added+" accepted idea"+(added===1?"":"s")+" across "+Object.keys(extraPacks).length+" tag pack"+(Object.keys(extraPacks).length===1?"":"s")+" — hit ♻️ Fresh squares to pull them in. 📌 Everyone shares an idea with the room; text or email the list to keep it."
+      ? added+" accepted idea"+(added===1?"":"s")+" in "+mine.length+" "+theme().name+" pack"+(mine.length===1?"":"s")+" — ideas stay on the night they were added. 📌 Everyone shares an idea with the room; text or email the list to keep it."
       : "Square ideas and app ideas go to everyone in the room. Tag one and it becomes its own pack.";
   }
   list.innerHTML="";
@@ -1436,6 +1454,7 @@ function renderSuggestions(){
     const when=new Date(s.t);
     d.innerHTML="<div class='top'><span class='tag"+(s.kind==="app"?"":" idea")+"'>"+(s.kind==="app"?"App":"Square")+"</span>"+
       (s.tag?"<span class='tag pack'>\u{1F3F7}\uFE0F "+escapeHtml(s.tag)+"</span>":"")+
+      (s.kind!=="app" && s.theme && THEMES[s.theme] ? "<span class='tag pack'>"+THEMES[s.theme].emoji+"</span>" : "")+
       "<span class='from'>"+escapeHtml(s.from)+"</span></div>"+
       "<div class='txt'>"+escapeHtml(s.text)+"</div>"+
       "<div class='when'>"+when.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})+"</div>";
@@ -1444,7 +1463,7 @@ function renderSuggestions(){
       const on=inPool(s.text);
       const btn=document.createElement("button");
       btn.className=on?"in":""; btn.textContent=on?"✓ in a pack":"➕ Add to my packs";
-      btn.addEventListener("click",()=>togglePool(s.text, s.tag));
+      btn.addEventListener("click",()=>togglePool(s.text, s.tag, s.theme));
       act.appendChild(btn);
       const all=document.createElement("button");
       all.style.marginLeft="6px"; all.textContent="📌 Everyone";
@@ -1504,7 +1523,7 @@ function sendSuggestion(){
   const text=document.getElementById("sugText").value.trim();
   if(!text){ document.getElementById("sugText").focus(); return; }
   const tag=document.getElementById("sugTag").value.trim().slice(0,24);
-  const sug={ sid: ME+"-"+Date.now(), from: NAME||"You", kind: sugKind, tag, text, t: Date.now() };
+  const sug={ sid: ME+"-"+Date.now(), from: NAME||"You", kind: sugKind, tag, theme: THEME, text, t: Date.now() };
   addSuggestion(sug);
   publishSuggestion(sug);
   closeSugModal();
@@ -1666,9 +1685,9 @@ function publishSuggestionDigest(){
   }
 }
 function pushToRoom(text, tag){
-  if(!inPool(text)) togglePool(text, tag);
+  if(!inPool(text)) togglePool(text, tag, THEME);
   if(!ROOM){ showToast("Added to your packs"); return; }
-  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text, tag:tag||"" }));
+  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text, tag:tag||"", theme:THEME }));
   showToast("📌 Sent to everyone's packs");
 }
 function publishSuggestion(sug){
@@ -1690,8 +1709,8 @@ function handleIncoming(b){
   }
   if(b.kind==="pool"){
     const t=String(b.text||"").slice(0,240);
-    if(t && !inPool(t)){
-      togglePool(t, b.tag);
+    if(t && !inAnyTagPack(t) && !inBuiltIn(t)){
+      togglePool(t, b.tag, b.theme);
       showToast("📌 "+(b.name||"Someone")+" added \u201C"+t+"\u201D — hit ♻️ to pull it in");
     }
     return;
@@ -2198,7 +2217,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   if(!ROSTER.away.length && ROSTERS[MATCHUP.away]) ROSTER.away=ROSTERS[MATCHUP.away].slice();
   if(!ROSTER.home.length && ROSTERS[MATCHUP.home]) ROSTER.home=ROSTERS[MATCHUP.home].slice();
   // packs saved under another theme shouldn't leave this one with nothing switched on
-  if(!themePacks().some(k=>packOn(k))){ PACKS_ON = themePacks().slice(); savePacksOn(); }
+  if(!allPackKeys().some(k=>packOn(k))){ PACKS_ON = allPackKeys().slice(); savePacksOn(); }
   paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks(); paintApplyMode();
   const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
   const bl=buildLabel();

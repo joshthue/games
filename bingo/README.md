@@ -160,8 +160,12 @@ whether they've marked it. Tap it again (or another square) to change it.
   instead of each person opting in with ➕.
 - **Tag a suggestion** (optional field — "IHOP", "catchphrase", "Oklahoma") and
   accepting it creates a **pack of that name**, switchable on and off with the
-  built-ins. Untagged ideas land in "Room ideas". An older flat list of accepted
-  ideas migrates into that pack automatically.
+  built-ins. Untagged ideas land in "Room ideas".
+- **Ideas stay on the night they were added.** A pack created during On Patrol
+  never appears on football night and vice versa — the theme is recorded with the
+  pack, and switching themes brings that theme's tag packs back with it. The
+  suggestion list shows each idea's night with its emoji. Packs saved before
+  themes existed are filed under On Patrol.
 - A square idea has **➕ Add to my pool** — tap it and that call joins your
   personal pool, so it can land on your next 🔀 New card (it doesn't change the
   card you're holding). Tap again to remove it. The pool lives on your phone;
