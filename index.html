@@ -114,5 +114,16 @@ window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferred=
 
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
+<div class="gn-build" id="gnBuild"></div>
+<style>.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:16px 0 10px;
+  font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px;}</style>
+<script>
+/* build stamp — bumped with the sw.js cache version */
+(function(){
+  var V="v27", ISO="2026-09-06T02:51:00Z";
+  var d=new Date(ISO), when=isNaN(d)?ISO:d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+" \u00b7 "+when;
+})();
+</script>
 </body>
 </html>
