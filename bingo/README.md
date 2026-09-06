@@ -68,7 +68,13 @@ it sees "You're invited 🎉", the game and room already set, and **one field: t
 name**. Everything else is hidden behind "⚙️ Change the game or room" for anyone who
 wants it.
 
-Params are `?room=&theme=&pat=&vs=away|home` — a link can be hand-written too.
+Params are `?room=&theme=&pat=&vs=away|home&v=` — a link can be hand-written too.
+
+The **`v` is load-bearing**: it's the build the invite was made on. If the phone
+opening it is running something older (a stale cache), the app reloads once past
+the cache onto the newer build before joining. It only ever retries once — if the
+version still doesn't match it plays anyway and says so, so a bad `v` can never
+trap someone in a reload loop. An invite older than the running build is ignored.
 
 ## Playing together
 

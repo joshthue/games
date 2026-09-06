@@ -175,6 +175,7 @@
   .invitebox .sub{font-size:13.5px; color:var(--ink);}
   .invitebox .sub code{background:var(--panel2); padding:2px 8px; border-radius:7px; color:var(--gold); font-weight:700;}
   .invitebox .sub2{font-size:12px; color:var(--muted); margin-top:7px; font-weight:700;}
+  .invbuild{font-family:ui-monospace,Menlo,monospace; font-size:10.5px; opacity:.7; margin-left:6px;}
   .linkbox{background:var(--panel2); border:1px dashed var(--line); border-radius:10px; padding:11px;
     font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--gold); word-break:break-all; margin-top:10px;}
   .presets{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px;}
@@ -280,7 +281,7 @@
     <div id="inviteBox" class="invitebox hidden">
       <div class="ttl"><span id="invEmoji">🎯</span> <b id="invGame">BINGO</b></div>
       <div class="sub">You're joining room <code id="invRoom">—</code><span id="invExtra"></span></div>
-      <div class="sub2">Just put your name in and tap Start.</div>
+      <div class="sub2">Just put your name in and tap Start. <span id="invBuild" class="invbuild"></span></div>
     </div>
 
     <label>Your name</label>
@@ -1005,8 +1006,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v44";
-const BUILD_ISO="2026-09-06T16:33:00Z";
+const BUILD_V="v45";
+const BUILD_ISO="2026-09-06T16:36:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1170,12 +1171,35 @@ function shareInvite(how){
   if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, ()=>fallbackCopy(url,done));
   else fallbackCopy(url,done);
 }
+// An invite carries the build it was made on. If this phone is running something
+// older, it's a stale cache — reload past it once rather than letting a guest play
+// a version the host has moved past.
+function versionNum(v){ const m=/(\d+)/.exec(String(v||"")); return m ? parseInt(m[1],10) : 0; }
+function catchUpToInvite(q){
+  const want=versionNum(q.get("v")), have=versionNum(BUILD_V);
+  if(!want || want<=have) return false;
+  let tried=false;
+  try{ tried = sessionStorage.getItem("opl_catchup")===String(want); }catch(e){}
+  if(tried){                                    // already tried once — play on, but say so
+    setTimeout(()=>showToast("This invite is for build v"+want+"; you're on "+BUILD_V), 700);
+    return false;
+  }
+  try{ sessionStorage.setItem("opl_catchup", String(want)); }catch(e){}
+  if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+    navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.update())).catch(()=>{});
+  }
+  const u=new URL(location.href);
+  u.searchParams.set("cb", Date.now());         // a new URL can't be served from a cache-first worker
+  location.replace(u.toString());
+  return true;
+}
 // read an invite before anything paints, so the setup screen can shrink to one field
 function applyInvite(){
   let q; try{ q=new URLSearchParams(location.search); }catch(e){ return false; }
   const room=(q.get("room")||"").trim();
   const th=q.get("theme"), pat=q.get("pat"), vs=q.get("vs");
   if(!room && !th) return false;
+  if(catchUpToInvite(q)) return true;            // reloading onto the invite's build
   if(th && THEMES[th]){ THEME=th; THEME_AT=Date.now(); store.set("opl_theme", THEME); PACKS_ON=allPackKeys().slice(); savePacksOn(); }
   if(pat && PATTERNS[pat]){ PAT=pat; PAT_AT=Date.now(); store.set("opl_pattern", PAT); }
   if(vs && vs.indexOf("|")>0){
@@ -1192,6 +1216,9 @@ function applyInvite(){
     document.getElementById("invGame").textContent=theme().name+" BINGO";
     document.getElementById("invRoom").textContent=room;
     document.getElementById("invExtra").textContent = (MATCHUP.away&&MATCHUP.home) ? " · "+matchupLabel() : "";
+    const inv=q.get("v");
+    document.getElementById("invBuild").textContent =
+      inv && versionNum(inv)!==versionNum(BUILD_V) ? "invite made on "+inv+" · you're on "+BUILD_V : BUILD_V;
     box.classList.remove("hidden");
     document.getElementById("setupRest").classList.add("hidden");
     document.getElementById("showRest").classList.remove("hidden");
