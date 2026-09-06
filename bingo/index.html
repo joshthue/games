@@ -163,9 +163,24 @@
   .presets{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px;}
   .presets button{font-family:inherit; font-size:12.5px; font-weight:800; padding:9px 12px; border-radius:10px;
     cursor:pointer; background:var(--blue); color:#fff; border:none;}
-  .rosterbox{width:100%; margin-top:6px; background:var(--panel2); border:1px solid var(--line); color:var(--ink);
-    font-family:inherit; font-size:15px; padding:10px; border-radius:12px; outline:none; font-weight:600; resize:vertical;}
-  .rosterbox:focus{border-color:var(--blue);}
+  .rosterhead{display:flex; align-items:center; justify-content:space-between; margin:8px 0 4px; gap:8px;}
+  .rcount{font-size:11.5px; color:var(--muted); font-weight:800;}
+  .rlink{background:none; border:none; color:var(--gold); font-family:inherit; font-weight:800; font-size:12px;
+    padding:4px 6px; cursor:pointer;}
+  .rlink.add{background:var(--blue); color:#fff; border-radius:9px; padding:8px 12px; font-size:15px;}
+  .rosterlist{max-height:210px; overflow-y:auto; background:var(--panel2); border:1px solid var(--line); border-radius:12px;}
+  .rosterlist:empty::after{content:"Pick a team above, or add players below."; display:block; padding:14px;
+    color:var(--muted); font-size:12.5px;}
+  .rrow{display:flex; align-items:center; gap:10px; padding:9px 11px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .rrow:last-child{border-bottom:none;}
+  .rrow input{width:20px; height:20px; accent-color:var(--blue); flex-shrink:0;}
+  .rrow .nm{font-size:14.5px; font-weight:700; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rrow .ps{font-size:10px; font-weight:800; letter-spacing:.4px; padding:2px 7px; border-radius:20px;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);}
+  .rrow.off .nm{opacity:.4; text-decoration:line-through;}
+  .addrow{display:flex; gap:8px; margin-top:8px;}
+  .addrow input{flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--ink); font-family:inherit;
+    font-size:15px; padding:10px; border-radius:12px; outline:none; font-weight:600;}
   .teamsel{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink); font-family:inherit;
     font-size:16px; padding:12px; border-radius:12px; outline:none; font-weight:700; margin-top:4px;}
   .teamtag{font-size:9.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; padding:2px 7px;
@@ -380,11 +395,21 @@
     <div id="matchPresets" class="presets"></div>
     <label style="display:block;margin-top:10px;">Away</label>
     <select id="awaySel" class="teamsel"></select>
-    <textarea id="awayRoster" class="rosterbox" rows="6" placeholder="(pick a team and its roster fills in here)"></textarea>
+    <div class="rosterhead"><span id="awayCount" class="rcount">—</span>
+      <span><button type="button" class="rlink" data-all="away">All</button>
+            <button type="button" class="rlink" data-none="away">None</button></span></div>
+    <div id="awayRoster" class="rosterlist"></div>
+    <div class="addrow"><input id="awayAdd" type="text" maxlength="30" placeholder="Add a player — Name POS">
+      <button type="button" class="rlink add" data-add="away">＋</button></div>
     <label style="display:block;margin-top:10px;">Home</label>
     <select id="homeSel" class="teamsel"></select>
-    <textarea id="homeRoster" class="rosterbox" rows="6" placeholder="(pick a team and its roster fills in here)"></textarea>
-    <div class="hint">One player per line — <b>Name POS</b> (QB, RB, WR, TE, K, DEF). Each gets their own calls:
+    <div class="rosterhead"><span id="homeCount" class="rcount">—</span>
+      <span><button type="button" class="rlink" data-all="home">All</button>
+            <button type="button" class="rlink" data-none="home">None</button></span></div>
+    <div id="homeRoster" class="rosterlist"></div>
+    <div class="addrow"><input id="homeAdd" type="text" maxlength="30" placeholder="Add a player — Name POS">
+      <button type="button" class="rlink add" data-add="home">＋</button></div>
+    <div class="hint">Everyone starts checked — untick anyone you don't want calls for. Each player brings their own:
       <i>Jefferson 20+ yard catch</i>, <i>Love throws a pick</i>, <i>Van Ness sack</i>. Rosters go to the whole room.</div>
     <div class="footbar">
       <button class="btn ghost small" id="matchClear">Clear</button>
@@ -756,8 +781,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v34";
-const BUILD_ISO="2026-09-06T15:16:00Z";
+const BUILD_V="v35";
+const BUILD_ISO="2026-09-06T15:19:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1937,6 +1962,43 @@ function closeTeamModal(){ document.getElementById("teamModal").classList.add("h
   }
 })();
 function openThemeModal(){ paintTheme(); document.getElementById("themeModal").classList.remove("hidden"); }
+let modalRoster = { away:[], home:[] };   // [{n,s,p,on}] while the picker is open
+function candidates(side){
+  const team = side==="away" ? MATCHUP.away : MATCHUP.home;
+  const chosen = ROSTER[side]||[];
+  const base = (ROSTERS[team]||[]).slice();
+  const out = base.map(pl => ({...pl, on: chosen.length ? chosen.some(c=>c.n===pl.n) : true}));
+  for(const c of chosen){                                  // custom names added earlier
+    if(!out.some(pl=>pl.n===c.n)) out.push({...c, on:true});
+  }
+  return out;
+}
+function renderRoster(side){
+  const box=document.getElementById(side+"Roster"); if(!box) return;
+  box.innerHTML="";
+  for(const pl of modalRoster[side]){
+    const row=document.createElement("label");
+    row.className="rrow"+(pl.on?"":" off");
+    const cb=document.createElement("input");
+    cb.type="checkbox"; cb.checked=!!pl.on;
+    cb.addEventListener("change",()=>{ pl.on=cb.checked; row.classList.toggle("off",!pl.on); paintRosterCount(side); });
+    const nm=document.createElement("span"); nm.className="nm"; nm.textContent=pl.n;
+    const ps=document.createElement("span"); ps.className="ps"; ps.textContent=pl.p;
+    row.appendChild(cb); row.appendChild(nm); row.appendChild(ps);
+    box.appendChild(row);
+  }
+  paintRosterCount(side);
+}
+function paintRosterCount(side){
+  const el=document.getElementById(side+"Count"); if(!el) return;
+  const on=modalRoster[side].filter(pl=>pl.on);
+  const calls=on.reduce((a,pl)=>a+((PLAY_TEMPLATES[pl.p]||PLAY_TEMPLATES.DEF).length),0);
+  el.textContent = modalRoster[side].length
+    ? on.length+" of "+modalRoster[side].length+" players · "+calls+" calls"
+    : "no players yet";
+}
+function loadSideRoster(side){ modalRoster[side]=candidates(side); renderRoster(side); }
+
 const MATCH_PRESETS = [["Vikings","Packers"]];
 function buildPresets(){
   const box=document.getElementById("matchPresets"); if(!box || box.children.length) return;
@@ -1961,8 +2023,7 @@ function openMatchModal(){
   }
   document.getElementById("awaySel").value=MATCHUP.away||"";
   document.getElementById("homeSel").value=MATCHUP.home||"";
-  document.getElementById("awayRoster").value=rosterText(ROSTER.away.length?ROSTER.away:ROSTERS[MATCHUP.away]);
-  document.getElementById("homeRoster").value=rosterText(ROSTER.home.length?ROSTER.home:ROSTERS[MATCHUP.home]);
+  loadSideRoster("away"); loadSideRoster("home");
   document.getElementById("matchModal").classList.remove("hidden");
 }
 document.getElementById("themeChip").addEventListener("click",openThemeModal);
@@ -1972,18 +2033,32 @@ document.getElementById("themeModal").addEventListener("click",e=>{ if(e.target.
 document.getElementById("matchChip").addEventListener("click",openMatchModal);
 document.getElementById("matchPickBtn").addEventListener("click",openMatchModal);
 document.getElementById("matchClear").addEventListener("click",()=>{ setMatchup("","",true,[],[]); document.getElementById("matchModal").classList.add("hidden"); });
-// picking a team drops in its roster, unless you've typed your own
-for(const [sel,box] of [["awaySel","awayRoster"],["homeSel","homeRoster"]]){
-  document.getElementById(sel).addEventListener("change",e=>{
-    const cur=document.getElementById(box);
-    const known=Object.keys(ROSTERS).map(t=>rosterText(ROSTERS[t]));
-    if(!cur.value.trim() || known.indexOf(cur.value.trim())>=0) cur.value=rosterText(ROSTERS[e.target.value]);
+// picking a team loads its roster, all ticked
+for(const side of ["away","home"]){
+  document.getElementById(side+"Sel").addEventListener("change",e=>{
+    MATCHUP[side]=e.target.value;                       // so candidates() sees the new team
+    modalRoster[side]=(ROSTERS[e.target.value]||[]).map(pl=>({...pl, on:true}));
+    renderRoster(side);
   });
 }
+document.querySelectorAll(".rlink[data-all]").forEach(b=>b.addEventListener("click",()=>{
+  const side=b.dataset.all; modalRoster[side].forEach(pl=>pl.on=true); renderRoster(side);
+}));
+document.querySelectorAll(".rlink[data-none]").forEach(b=>b.addEventListener("click",()=>{
+  const side=b.dataset.none; modalRoster[side].forEach(pl=>pl.on=false); renderRoster(side);
+}));
+document.querySelectorAll(".rlink[data-add]").forEach(b=>b.addEventListener("click",()=>{
+  const side=b.dataset.add, inp=document.getElementById(side+"Add");
+  const added=parseRoster(inp.value);
+  if(!added.length){ showToast("Type a name and position, e.g. \u201CJalen Nailor WR\u201D"); return; }
+  for(const pl of added) if(!modalRoster[side].some(x=>x.n===pl.n)) modalRoster[side].push({...pl, on:true});
+  inp.value=""; renderRoster(side);
+}));
 document.getElementById("matchSave").addEventListener("click",()=>{
   const away=document.getElementById("awaySel").value, home=document.getElementById("homeSel").value;
-  const ar=parseRoster(document.getElementById("awayRoster").value);
-  const hr=parseRoster(document.getElementById("homeRoster").value);
+  const strip = pl => ({n:pl.n, s:pl.s, p:pl.p});
+  const ar=modalRoster.away.filter(pl=>pl.on).map(strip);
+  const hr=modalRoster.home.filter(pl=>pl.on).map(strip);
   if(!away && !home && !ar.length && !hr.length){
     showToast("Pick both teams first ☝️");
     document.getElementById("awaySel").focus();

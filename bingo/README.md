@@ -34,9 +34,11 @@ the grey text in the roster boxes is example text, not a loaded roster.
 
 ### ⭐ Star plays (specific players, specific plays)
 
-The matchup modal also carries a **roster box per team** — one player per line as
-`Name POS` (QB, RB, WR, TE, K, DEF). Each player generates their own calls from
-`PLAY_TEMPLATES`:
+Picking a team loads its roster as a **checklist, everyone ticked** — untick anyone
+you don't want calls for (backup RB, a kicker nobody watches) and the count updates
+live: *"12 of 14 players · 46 calls"*. **All** / **None** do the whole side, and the
+add row takes `Name POS` for anyone missing. Choices are remembered when you reopen
+the picker. Each checked player generates their own calls from `PLAY_TEMPLATES`:
 
 - **QB** — touchdown pass · gets sacked · scrambles for a first · throws a pick · converts on 3rd down
 - **RB** — 10+ yard run · rushing touchdown · catch out of the backfield · stuffed at the line
