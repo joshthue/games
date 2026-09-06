@@ -160,6 +160,9 @@
   .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
   @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
   .crown{font-size:13px;}
+  .cathead{font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted);
+    margin:14px 0 2px;}
+  .cathead:first-child{margin-top:8px;}
   .applyrow{margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
   .applylbl{display:block; font-size:11.5px; color:var(--muted); font-weight:800; margin-bottom:7px;}
   .choice2{display:flex; gap:8px;}
@@ -269,7 +272,7 @@
     <label>Your name</label>
     <input id="nameInput" type="text" placeholder="e.g. Junior" autocomplete="off" maxlength="16">
 
-    <label>Tonight's game</label>
+    <label>Tonight's game <span id="catLabel" style="float:right;font-weight:700;opacity:.6;"></span></label>
     <div class="roomgen">
       <div id="themeChipSetup" class="code">🚨 On Patrol</div>
       <button class="btn ghost small" id="themePickBtn" style="width:auto; padding:11px 14px;">Change</button>
@@ -387,7 +390,7 @@
 <div id="themeModal" class="modal hidden">
   <div class="modalbox">
     <h3>🎬 Tonight's game</h3>
-    <div class="hint">Same bingo — different calls. Switching deals everyone in the room a fresh card.</div>
+    <div class="hint">Same bingo — different calls. Switching deals everyone in the room a fresh card. Calls never cross between games.</div>
     <div id="themeOpts"></div>
     <div class="footbar"><button class="btn ghost small" id="themeClose">Done</button></div>
   </div>
@@ -682,17 +685,135 @@ const PACKS = {
     "Roughing call changes a drive",
     "Ref announces the wrong number",
   ]},
+  frbits: { theme:"friends", name:"Classic bits", emoji:"☕", calls:[
+    "Somebody's on the Central Perk couch",
+    "Gunther appears",
+    "Joey eats someone else's food",
+    "Monica cleans something nobody asked her to",
+    "Phoebe plays a song on her guitar",
+    "Ross explains something nobody asked about",
+    "Chandler deflects with a joke",
+    "Rachel has a work crisis",
+    "Someone bursts in without knocking",
+    "Group hug",
+    "A date goes wrong over one small flaw",
+    "Foosball table gets used",
+    "Someone eavesdrops from the hallway",
+    "Ugly Naked Guy comes up",
+    "A misunderstanding could be fixed by one sentence",
+    "Someone runs to the airport / a big gesture",
+    "Thanksgiving or a holiday episode beat",
+    "The apartment swap / bet comes up",
+    "Somebody sits in the big orange chair",
+    "A guest star everyone recognizes",
+    "Someone gets locked out or locked in",
+    "A terrible roommate/date decision",
+    "Ross gets flustered and squeaky",
+    "Phoebe says something oddly profound",
+    "Somebody's parents show up",
+    "A job interview or a firing",
+    "The gang crams into the smaller apartment",
+    "Someone hides in a bedroom to avoid a conversation",
+  ]},
+  frsay: { theme:"friends", name:"Catchphrases & gags", emoji:"🗝️", calls:[
+    "\"How you doin'?\"",
+    "\"We were on a break!\"",
+    "\"Could I BE any more…\"",
+    "\"Oh. My. God.\" (Janice)",
+    "Smelly Cat",
+    "\"Pivot!\"",
+    "Joey doesn't share food",
+    "Ross says \"unagi\" or talks dinosaurs",
+    "Someone says \"BIG mistake\"",
+    "Marcel or a pet turns up",
+    "Chandler's job nobody understands",
+    "Monica and Chandler share a secret look",
+    "Ross's ex-wife comes up",
+    "Someone's audition or callback",
+    "The one where a name is on the whiteboard",
+    "\"Joey doesn't share food!\"",
+    "Chandler can't handle a serious moment",
+    "Somebody says \"seriously?\"",
+    "A list gets written and read aloud",
+    "Ross and Rachel tension",
+    "Monica's competitive streak",
+    "Somebody spills a secret",
+  ]},
+  sebits: { theme:"seinfeld", name:"Classic bits", emoji:"🥨", calls:[
+    "Kramer slides through the door",
+    "The gang is in the diner booth",
+    "George gets worked up about nothing",
+    "Elaine shoves someone",
+    "Jerry does a stand-up bit",
+    "A petty rule gets litigated at length",
+    "Newman turns up",
+    "George lies about his job",
+    "A parking spot or space dispute",
+    "Kramer has a business scheme",
+    "Someone is dumped over something trivial",
+    "Jerry's cereal cupboard is on screen",
+    "A misunderstanding snowballs for the whole episode",
+    "Frank Costanza yells",
+    "Somebody waits in a line or a lobby",
+    "The four end up in the same place by accident",
+    "A neighbor complains",
+    "Something petty comes back at the very end",
+    "Somebody's dating flaw gets a nickname",
+    "George quits or nearly gets fired",
+    "Elaine's boss does something bizarre",
+    "Kramer walks off with Jerry's food",
+    "A bet or a pact between the four",
+    "Somebody gets caught in a lie in public",
+    "Jerry can't hide his disgust",
+    "A stranger ruins someone's day",
+    "The subway, a taxi or a rental car",
+    "A restaurant or a movie line drags on",
+  ]},
+  sesay: { theme:"seinfeld", name:"Catchphrases & gags", emoji:"🍞", calls:[
+    "\"Hello, Newman.\"",
+    "\"No soup for you!\"",
+    "\"Get out!\" (with a shove)",
+    "\"Yada yada yada\"",
+    "\"These pretzels are making me thirsty\"",
+    "\"Serenity now\"",
+    "Festivus gets mentioned",
+    "The puffy shirt / a ridiculous outfit",
+    "Marble rye",
+    "Soup, muffins or a black-and-white cookie",
+    "\"That's a shame.\"",
+    "Somebody double dips",
+    "A close talker / low talker / high talker",
+    "\"Not that there's anything wrong with that\"",
+    "George's answering machine or alias",
+    "\"Giddy up\"",
+    "The Soup Nazi, the Bubble Boy or another one-off legend",
+    "Somebody says \"master of my domain\"",
+    "A junior mint / candy incident",
+    "Elaine's exclamation point energy",
+    "Jerry's parents call from Florida",
+    "Somebody eats a candy bar with a knife and fork",
+  ]},
 };
-const PACK_ORDER = ["stops","words","chase","scene","show","cabin","fbcalls","fbrefs"];
+const PACK_ORDER = ["stops","words","chase","scene","show","cabin","fbcalls","fbrefs","frbits","frsay","sebits","sesay"];
 
 /* ---------- themes: one bingo engine, different nights ---------- */
+const CATEGORIES = {
+  shows:  { name:"Shows",  emoji:"📺" },
+  sports: { name:"Sports", emoji:"🏆" }
+};
+const CATEGORY_ORDER = ["shows","sports"];
 const THEMES = {
-  onpatrol: { name:"On Patrol", emoji:"🚨", title:"On Patrol <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
+  onpatrol: { cat:"shows", name:"On Patrol", emoji:"🚨", title:"On Patrol <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
               packs:["stops","words","chase","scene","show","cabin"], matchup:false },
-  football: { name:"Football",  emoji:"🏈", title:"Football <b>BINGO</b>", sub:"PICK A MATCHUP · PLAY ALONG",
+  friends:  { cat:"shows", name:"Friends",   emoji:"☕", title:"Friends <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
+              packs:["frbits","frsay"], matchup:false },
+  seinfeld: { cat:"shows", name:"Seinfeld",  emoji:"🥨", title:"Seinfeld <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
+              packs:["sebits","sesay"], matchup:false },
+  football: { cat:"sports", name:"Football", emoji:"🏈", title:"Football <b>BINGO</b>", sub:"PICK A MATCHUP · PLAY ALONG",
               packs:["fbcalls","fbrefs","matchup","stars"], matchup:true }
 };
-const THEME_ORDER = ["onpatrol","football"];
+const THEME_ORDER = ["onpatrol","friends","seinfeld","football"];
+function themesIn(cat){ return THEME_ORDER.filter(k=>THEMES[k].cat===cat); }
 let THEME = "onpatrol", THEME_AT = 0;
 let MATCHUP = { away:"", home:"" }, MATCHUP_AT = 0;
 let ROSTER = { away:[], home:[] };
@@ -795,8 +916,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v40";
-const BUILD_ISO="2026-09-06T15:56:00Z";
+const BUILD_V="v41";
+const BUILD_ISO="2026-09-06T16:00:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -948,8 +1069,10 @@ function paintTheme(){
   if(lights) lights.textContent=t.emoji;
   const chip=document.getElementById("themeChip");
   if(chip) chip.textContent=t.emoji+" "+t.name;
+  const catChip=document.getElementById("catLabel");
+  if(catChip) catChip.textContent=CATEGORIES[t.cat] ? CATEGORIES[t.cat].emoji+" "+CATEGORIES[t.cat].name : "";
   const setupChip=document.getElementById("themeChipSetup");
-  if(setupChip) setupChip.textContent=t.emoji+" "+t.name;
+  if(setupChip) setupChip.textContent=(CATEGORIES[t.cat]?CATEGORIES[t.cat].emoji+" "+CATEGORIES[t.cat].name+" · ":"")+t.emoji+" "+t.name;
   const mrow=document.getElementById("matchupRow");
   if(mrow) mrow.style.display = t.matchup ? "" : "none";
   const mchip=document.getElementById("matchChip");
@@ -2053,13 +2176,23 @@ function openTeamModal(){
 function closeTeamModal(){ document.getElementById("teamModal").classList.add("hidden"); }
 (function buildThemeOpts(){
   const box=document.getElementById("themeOpts");
-  for(const key of THEME_ORDER){
-    const t=THEMES[key];
-    const b=document.createElement("button");
-    b.className="patopt"; b.dataset.key=key;
-    b.innerHTML="<b>"+t.emoji+" "+t.name+" BINGO</b><span>"+t.packs.length+" packs</span>";
-    b.addEventListener("click",()=>{ setTheme(key,true); document.getElementById("themeModal").classList.add("hidden"); });
-    box.appendChild(b);
+  for(const cat of CATEGORY_ORDER){
+    const list=themesIn(cat);
+    if(!list.length) continue;
+    const h=document.createElement("div");
+    h.className="cathead";
+    h.textContent=CATEGORIES[cat].emoji+" "+CATEGORIES[cat].name;
+    box.appendChild(h);
+    for(const key of list){
+      const t=THEMES[key];
+      const calls=t.packs.filter(k=>PACKS[k]).reduce((a,k)=>a+PACKS[k].calls.length,0);
+      const b=document.createElement("button");
+      b.className="patopt"; b.dataset.key=key;
+      b.innerHTML="<b>"+t.emoji+" "+t.name+"</b><span>"+
+        (t.matchup ? "pick a matchup · player calls" : calls+" calls")+"</span>";
+      b.addEventListener("click",()=>{ setTheme(key,true); document.getElementById("themeModal").classList.add("hidden"); });
+      box.appendChild(b);
+    }
   }
 })();
 function openThemeModal(){ paintTheme(); document.getElementById("themeModal").classList.remove("hidden"); }

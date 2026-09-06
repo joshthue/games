@@ -7,13 +7,18 @@ Formerly *On Patrol Live BINGO* at `../onpatrolbingo/` (that path now redirects 
 
 ## Tonight's game (themes)
 
-The **🎬 chip** (or the setup screen) picks the theme; it's a room rule, so switching
-deals everyone a fresh card and the whole room follows.
+The **🎬 chip** (or the setup screen) picks the game, grouped by category; it's a
+room rule, so switching deals everyone a fresh card and the whole room follows.
 
-| Theme | Packs |
-| --- | --- |
-| 🚨 **On Patrol** | Traffic stops · Things people say · Pursuits & action · On scene · The broadcast · Cabin night |
-| 🏈 **Football** | Broadcast clichés · Refs & replay · the matchup |
+| Category | Game | Packs |
+| --- | --- | --- |
+| 📺 Shows | 🚨 **On Patrol** | Traffic stops · Things people say · Pursuits & action · On scene · The broadcast · Cabin night |
+| 📺 Shows | ☕ **Friends** | Classic bits · Catchphrases & gags |
+| 📺 Shows | 🥨 **Seinfeld** | Classic bits · Catchphrases & gags |
+| 🏆 Sports | 🏈 **Football** | Broadcast clichés · Refs & replay · the matchup · ⭐ Star plays |
+
+Categories are just `CATEGORIES` + a `cat` on each theme — adding a show is one
+THEMES entry plus its packs, and it slots under the right heading automatically.
 
 Adding a theme is a `THEMES` entry plus packs tagged with that theme key — the
 rooms, teams, patterns, sizing and sync are all theme-agnostic.
