@@ -60,6 +60,16 @@ and shared with the room**, so a trade, an injury or a stale name is a ten-secon
 fix rather than a deploy — and last names are derived automatically, particles
 included (Van Ginkel, Van Ness).
 
+## Inviting people
+
+**📣 Invite** (next to ↩︎ Undo) builds a link carrying the room, the game, the win
+pattern and the matchup, and hands it to Share / Copy / Text / Email. Whoever opens
+it sees "You're invited 🎉", the game and room already set, and **one field: their
+name**. Everything else is hidden behind "⚙️ Change the game or room" for anyone who
+wants it.
+
+Params are `?room=&theme=&pat=&vs=away|home` — a link can be hand-written too.
+
 ## Playing together
 
 - Everyone types their **name** and the **same room code** on the setup screen.

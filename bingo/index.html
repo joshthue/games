@@ -169,6 +169,14 @@
   .choice2 button{flex:1; font-family:inherit; font-size:12.5px; font-weight:800; padding:10px 6px; border-radius:11px;
     cursor:pointer; background:var(--panel2); color:var(--muted); border:1px solid var(--line);}
   .choice2 button.on{background:var(--blue); color:#fff; border-color:transparent;}
+  .invitebox{background:linear-gradient(180deg,rgba(46,107,255,.18),rgba(46,107,255,.06));
+    border:1px solid var(--blue); border-radius:14px; padding:14px; margin:4px 0 16px;}
+  .invitebox .ttl{font-size:19px; font-weight:800; margin-bottom:5px;}
+  .invitebox .sub{font-size:13.5px; color:var(--ink);}
+  .invitebox .sub code{background:var(--panel2); padding:2px 8px; border-radius:7px; color:var(--gold); font-weight:700;}
+  .invitebox .sub2{font-size:12px; color:var(--muted); margin-top:7px; font-weight:700;}
+  .linkbox{background:var(--panel2); border:1px dashed var(--line); border-radius:10px; padding:11px;
+    font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--gold); word-break:break-all; margin-top:10px;}
   .presets{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px;}
   .presets button{font-family:inherit; font-size:12.5px; font-weight:800; padding:9px 12px; border-radius:10px;
     cursor:pointer; background:var(--blue); color:#fff; border:none;}
@@ -266,12 +274,19 @@
 
   <!-- SETUP -->
   <section id="setup" class="panel setup">
-    <h2>Let's play 🎲</h2>
-    <p>Pick tonight's game, type your name and a shared <b>room code</b>. Whoever you play with types the <b>same room code</b> on their phone — then you'll each get a card and see everyone else's live.</p>
+    <h2 id="setupTitle">Let's play 🎲</h2>
+    <p id="setupBlurb">Pick tonight's game, type your name and a shared <b>room code</b>. Whoever you play with types the <b>same room code</b> on their phone — then you'll each get a card and see everyone else's live.</p>
+
+    <div id="inviteBox" class="invitebox hidden">
+      <div class="ttl"><span id="invEmoji">🎯</span> <b id="invGame">BINGO</b></div>
+      <div class="sub">You're joining room <code id="invRoom">—</code><span id="invExtra"></span></div>
+      <div class="sub2">Just put your name in and tap Start.</div>
+    </div>
 
     <label>Your name</label>
     <input id="nameInput" type="text" placeholder="e.g. Junior" autocomplete="off" maxlength="16">
 
+    <div id="setupRest">
     <label>Tonight's game <span id="catLabel" style="float:right;font-weight:700;opacity:.6;"></span></label>
     <div class="roomgen">
       <div id="themeChipSetup" class="code">🚨 On Patrol</div>
@@ -307,7 +322,9 @@
       <button class="btn ghost small" id="useSuggest" style="flex:0 0 auto; width:auto; padding:11px 14px;">Use this</button>
     </div>
     <div class="hint">The room code is a shared password, not private — anyone who types the exact same code lands in your game. A goofy phrase you both know works great.</div>
+    </div>
 
+    <button class="btn ghost small hidden" id="showRest" style="margin-top:12px;">⚙️ Change the game or room</button>
     <button class="btn gold" id="startBtn" style="margin-top:18px;">Start playing 🎉</button>
     <div class="meta">Add to Home Screen for an app-like experience. Works over the internet — you don't have to be on the same Wi-Fi.</div>
     <div class="build" id="buildStampSetup">—</div>
@@ -333,6 +350,7 @@
       <div id="myGrid" class="grid"></div>
       <div class="bar" id="myBar"><i></i></div>
       <div class="footbar">
+        <button class="btn ghost small" id="inviteBtn">📣 Invite</button>
         <button class="btn ghost small" id="undoBtn">↩︎ Undo</button>
         <button class="btn ghost small" id="freshBtn">♻️ Fresh squares</button>
       </div>
@@ -384,6 +402,24 @@
     </div>
   </section>
 
+</div>
+
+<!-- INVITE MODAL -->
+<div id="inviteModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>📣 Invite people</h3>
+    <div class="hint">This link carries the room, the game and the pattern — whoever opens it only has to type their name.</div>
+    <div class="linkbox" id="inviteLink">—</div>
+    <div class="footbar">
+      <button class="btn gold small" id="invShare">📲 Share</button>
+      <button class="btn ghost small" id="invCopy">📋 Copy</button>
+    </div>
+    <div class="footbar">
+      <button class="btn ghost small" id="invSms">💬 Text</button>
+      <button class="btn ghost small" id="invMail">✉️ Email</button>
+    </div>
+    <div class="footbar"><button class="btn ghost small" id="invClose">Done</button></div>
+  </div>
 </div>
 
 <!-- THEME MODAL -->
@@ -969,8 +1005,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v43";
-const BUILD_ISO="2026-09-06T16:24:00Z";
+const BUILD_V="v44";
+const BUILD_ISO="2026-09-06T16:33:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1109,6 +1145,61 @@ function fullPool(){
   const seen={}, uniq=[];
   for(const t of out){ if(!seen[t]){ seen[t]=1; uniq.push(t); } }
   return uniq.length>=24 ? uniq : everyCall();     // never deal from a pool too small for a card
+}
+
+/* ---------- invite links: everything but the name, in a URL ---------- */
+function inviteURL(){
+  const base = location.origin + location.pathname;
+  const q = ["room="+encodeURIComponent(ROOM||""), "theme="+encodeURIComponent(THEME), "pat="+encodeURIComponent(PAT)];
+  if(MATCHUP.away && MATCHUP.home) q.push("vs="+encodeURIComponent(MATCHUP.away+"|"+MATCHUP.home));
+  q.push("v="+BUILD_V);
+  return base+"?"+q.join("&");
+}
+function openInvite(){
+  document.getElementById("inviteLink").textContent=inviteURL();
+  document.getElementById("inviteModal").classList.remove("hidden");
+}
+function shareInvite(how){
+  const url=inviteURL();
+  const msg = NAME ? NAME+" invited you to "+theme().name+" BINGO — open this, put your name in, and you're in:"
+                   : "Join my "+theme().name+" BINGO game — open this and put your name in:";
+  if(how==="share" && navigator.share){ navigator.share({title:"Game Night BINGO", text:msg, url}).catch(()=>{}); return; }
+  if(how==="sms"){ location.href="sms:?&body="+encodeURIComponent(msg+"\n"+url); return; }
+  if(how==="mail"){ location.href="mailto:?subject="+encodeURIComponent(theme().name+" BINGO")+"&body="+encodeURIComponent(msg+"\n\n"+url); return; }
+  const done=()=>showToast("Invite link copied 📋");
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, ()=>fallbackCopy(url,done));
+  else fallbackCopy(url,done);
+}
+// read an invite before anything paints, so the setup screen can shrink to one field
+function applyInvite(){
+  let q; try{ q=new URLSearchParams(location.search); }catch(e){ return false; }
+  const room=(q.get("room")||"").trim();
+  const th=q.get("theme"), pat=q.get("pat"), vs=q.get("vs");
+  if(!room && !th) return false;
+  if(th && THEMES[th]){ THEME=th; THEME_AT=Date.now(); store.set("opl_theme", THEME); PACKS_ON=allPackKeys().slice(); savePacksOn(); }
+  if(pat && PATTERNS[pat]){ PAT=pat; PAT_AT=Date.now(); store.set("opl_pattern", PAT); }
+  if(vs && vs.indexOf("|")>0){
+    const [away,home]=vs.split("|");
+    MATCHUP={away:away||"",home:home||""}; MATCHUP_AT=Date.now();
+    ROSTER={away:(ROSTERS[MATCHUP.away]||[]).slice(), home:(ROSTERS[MATCHUP.home]||[]).slice()};
+    store.set("opl_matchup", JSON.stringify(MATCHUP)); store.set("opl_roster", JSON.stringify(ROSTER));
+    PACKS_ON=allPackKeys().slice(); savePacksOn();
+  }
+  if(room){
+    document.getElementById("roomInput").value=room;
+    const box=document.getElementById("inviteBox");
+    document.getElementById("invEmoji").textContent=theme().emoji;
+    document.getElementById("invGame").textContent=theme().name+" BINGO";
+    document.getElementById("invRoom").textContent=room;
+    document.getElementById("invExtra").textContent = (MATCHUP.away&&MATCHUP.home) ? " · "+matchupLabel() : "";
+    box.classList.remove("hidden");
+    document.getElementById("setupRest").classList.add("hidden");
+    document.getElementById("showRest").classList.remove("hidden");
+    document.getElementById("setupTitle").textContent="You're invited 🎉";
+    document.getElementById("setupBlurb").textContent="Everything's set up already — you just need a name.";
+    setTimeout(()=>document.getElementById("nameInput").focus(), 200);
+  }
+  return true;
 }
 
 /* ---------- themes ---------- */
@@ -2200,6 +2291,17 @@ function leave(){
 /* ---------- wire up ---------- */
 document.getElementById("startBtn").addEventListener("click",startGame);
 document.getElementById("undoBtn").addEventListener("click",undoMark);
+document.getElementById("inviteBtn").addEventListener("click",openInvite);
+document.getElementById("invShare").addEventListener("click",()=>shareInvite("share"));
+document.getElementById("invCopy").addEventListener("click",()=>shareInvite("copy"));
+document.getElementById("invSms").addEventListener("click",()=>shareInvite("sms"));
+document.getElementById("invMail").addEventListener("click",()=>shareInvite("mail"));
+document.getElementById("invClose").addEventListener("click",()=>document.getElementById("inviteModal").classList.add("hidden"));
+document.getElementById("inviteModal").addEventListener("click",e=>{ if(e.target.id==="inviteModal") document.getElementById("inviteModal").classList.add("hidden"); });
+document.getElementById("showRest").addEventListener("click",()=>{
+  document.getElementById("setupRest").classList.remove("hidden");
+  document.getElementById("showRest").classList.add("hidden");
+});
 document.getElementById("soundChip").addEventListener("click",toggleSound);
 document.getElementById("sizeChip").addEventListener("click",cycleSize);
 document.getElementById("roundBtn").addEventListener("click",()=>{
@@ -2409,6 +2511,8 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;
   document.getElementById("buildStampSetup").textContent=bl;
+  applyInvite();          // a shared link fills in everything but the name
+  paintTheme(); paintPacks();
   setStatus("");
 })();
 
