@@ -24,7 +24,13 @@ With the football theme on, the **🏟️ chip** picks two NFL teams. Each side 
 dozen of its own calls generated from `MATCHUP_TEMPLATES` — *Vikings touchdown*,
 *Packers punt*, *Vikings coach on camera* — which land in a "matchup" pack you can
 switch on and off like any other. The matchup syncs to the room the same way the
-theme does; after changing it, hit ♻️ Fresh squares or 🆕 New round to deal it in.
+theme does, and **setting it deals a fresh card immediately** on every phone in the
+room — no second step, and it doesn't cost the ♻️ cooldown.
+
+There's a one-tap **⭐ Vikings vs Packers** preset for a matchup that ships with
+rosters; teams that have one are marked ⭐ in the dropdowns. Hitting "Set matchup"
+with both dropdowns still on "—" now says so instead of quietly doing nothing —
+the grey text in the roster boxes is example text, not a loaded roster.
 
 ### ⭐ Star plays (specific players, specific plays)
 

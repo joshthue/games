@@ -160,6 +160,9 @@
   .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
   @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
   .crown{font-size:13px;}
+  .presets{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px;}
+  .presets button{font-family:inherit; font-size:12.5px; font-weight:800; padding:9px 12px; border-radius:10px;
+    cursor:pointer; background:var(--blue); color:#fff; border:none;}
   .rosterbox{width:100%; margin-top:6px; background:var(--panel2); border:1px solid var(--line); color:var(--ink);
     font-family:inherit; font-size:15px; padding:10px; border-radius:12px; outline:none; font-weight:600; resize:vertical;}
   .rosterbox:focus{border-color:var(--blue);}
@@ -374,12 +377,13 @@
   <div class="modalbox">
     <h3>🏟️ Matchup</h3>
     <div class="hint">Each team gets a dozen of its own calls on the card.</div>
+    <div id="matchPresets" class="presets"></div>
     <label style="display:block;margin-top:10px;">Away</label>
     <select id="awaySel" class="teamsel"></select>
-    <textarea id="awayRoster" class="rosterbox" rows="6" placeholder="Justin Jefferson WR&#10;Kyler Murray QB"></textarea>
+    <textarea id="awayRoster" class="rosterbox" rows="6" placeholder="(pick a team and its roster fills in here)"></textarea>
     <label style="display:block;margin-top:10px;">Home</label>
     <select id="homeSel" class="teamsel"></select>
-    <textarea id="homeRoster" class="rosterbox" rows="6" placeholder="Jordan Love QB&#10;Tucker Kraft TE"></textarea>
+    <textarea id="homeRoster" class="rosterbox" rows="6" placeholder="(pick a team and its roster fills in here)"></textarea>
     <div class="hint">One player per line — <b>Name POS</b> (QB, RB, WR, TE, K, DEF). Each gets their own calls:
       <i>Jefferson 20+ yard catch</i>, <i>Love throws a pick</i>, <i>Van Ness sack</i>. Rosters go to the whole room.</div>
     <div class="footbar">
@@ -752,8 +756,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v33";
-const BUILD_ISO="2026-09-06T04:57:00Z";
+const BUILD_V="v34";
+const BUILD_ISO="2026-09-06T15:16:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -934,10 +938,16 @@ function setMatchup(away, home, announce, awayRoster, homeRoster){
   store.set("opl_roster", JSON.stringify(ROSTER));
   for(const k of ["matchup","stars"]) if(packCalls(k).length && !packOn(k)){ PACKS_ON.push(k); savePacksOn(); }
   paintTheme(); paintPacks();
+  // deal it straight in — the calls are the whole point of setting a matchup
+  CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+  freshAt=0; store.set(coolKey(),"0"); paintCooldown();
+  saveProgress(); renderMine();
   if(ROOM && announce){
     post(JSON.stringify({ v:1, kind:"matchup", id:ME, room:ROOM, name:NAME, matchup:MATCHUP,
                           roster:ROSTER, matchupAt:MATCHUP_AT }));
-    showToast("🏟️ "+matchupLabel()+" — hit ♻️ or 🆕 to deal it in");
+    publish("state");
+    const n=starCalls().length+matchupCalls().length;
+    showToast("🏟️ "+matchupLabel()+" — "+n+" calls dealt in");
   }
 }
 function adoptMatchup(m, at, who, roster){
@@ -952,7 +962,9 @@ function adoptMatchup(m, at, who, roster){
   store.set("opl_roster", JSON.stringify(ROSTER));
   for(const k of ["matchup","stars"]) if(packCalls(k).length && !packOn(k)){ PACKS_ON.push(k); savePacksOn(); }
   paintTheme(); paintPacks();
-  showToast("🏟️ "+(who||"Someone")+" set "+matchupLabel()+(sameTeams?" — roster updated":""));
+  CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
+  saveProgress(); renderMine(); publish("state");
+  showToast("🏟️ "+(who||"Someone")+" set "+matchupLabel()+" — fresh card");
 }
 
 /* ---------- the pack picker ---------- */
@@ -1925,12 +1937,26 @@ function closeTeamModal(){ document.getElementById("teamModal").classList.add("h
   }
 })();
 function openThemeModal(){ paintTheme(); document.getElementById("themeModal").classList.remove("hidden"); }
+const MATCH_PRESETS = [["Vikings","Packers"]];
+function buildPresets(){
+  const box=document.getElementById("matchPresets"); if(!box || box.children.length) return;
+  for(const [a,h] of MATCH_PRESETS){
+    const b=document.createElement("button");
+    b.textContent="⭐ "+a+" vs "+h;
+    b.addEventListener("click",()=>{
+      setMatchup(a,h,true,(ROSTERS[a]||[]).slice(),(ROSTERS[h]||[]).slice());
+      document.getElementById("matchModal").classList.add("hidden");
+    });
+    box.appendChild(b);
+  }
+}
 function openMatchModal(){
+  buildPresets();
   for(const id of ["awaySel","homeSel"]){
     const sel=document.getElementById(id);
     if(!sel.options.length){
       sel.appendChild(new Option("—",""));
-      for(const t of NFL_TEAMS) sel.appendChild(new Option(t,t));
+      for(const t of NFL_TEAMS) sel.appendChild(new Option(ROSTERS[t] ? t+" ⭐" : t, t));
     }
   }
   document.getElementById("awaySel").value=MATCHUP.away||"";
@@ -1955,9 +1981,15 @@ for(const [sel,box] of [["awaySel","awayRoster"],["homeSel","homeRoster"]]){
   });
 }
 document.getElementById("matchSave").addEventListener("click",()=>{
-  setMatchup(document.getElementById("awaySel").value, document.getElementById("homeSel").value, true,
-             parseRoster(document.getElementById("awayRoster").value),
-             parseRoster(document.getElementById("homeRoster").value));
+  const away=document.getElementById("awaySel").value, home=document.getElementById("homeSel").value;
+  const ar=parseRoster(document.getElementById("awayRoster").value);
+  const hr=parseRoster(document.getElementById("homeRoster").value);
+  if(!away && !home && !ar.length && !hr.length){
+    showToast("Pick both teams first ☝️");
+    document.getElementById("awaySel").focus();
+    return;                                   // the boxes show grey examples, not a roster
+  }
+  setMatchup(away, home, true, ar, hr);
   document.getElementById("matchModal").classList.add("hidden");
 });
 document.getElementById("matchModal").addEventListener("click",e=>{ if(e.target.id==="matchModal") document.getElementById("matchModal").classList.add("hidden"); });
