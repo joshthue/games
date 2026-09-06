@@ -24,6 +24,22 @@ couch/group chat crowd. Tap squares as they happen and chase a line (or a full c
 - First to a full line — across, down, or diagonal — wins. 🎉 fires for you and
   toasts the rest of the room.
 
+## Reading another player's board
+
+Their boards are shown as compact mark-only grids. **Tap any of their squares**
+and the full text appears in the open area right below their board, along with
+whether they've marked it. Tap it again (or another square) to change it.
+
+## Suggestions
+
+- **💡 Add a suggestion** — either a **square idea** (a call to consider for the
+  card pool) or an **app idea**. It's broadcast to everyone in the room and kept
+  on your phone.
+- **📋 Copy all** puts the whole list on the clipboard as plain text, tagged
+  `[SQUARE]` / `[APP]`, ready to paste somewhere durable.
+- Suggestions are a collection box, not a live feature request queue — square
+  ideas still have to be added to the pool in `index.html` by hand.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once

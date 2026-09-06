@@ -112,6 +112,41 @@
   .waiting .big{font-size:32px; margin-bottom:8px;}
   .waiting code{background:var(--panel2); padding:2px 8px; border-radius:7px; color:var(--gold); font-weight:700;}
 
+  /* Tapped-square readout under another player's board */
+  .readout{margin-top:8px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    padding:9px 11px; font-size:12.5px; line-height:1.4; color:var(--ink); min-height:18px;}
+  .readout .q{color:var(--gold); font-weight:700;}
+  .readout .state{display:block; margin-top:3px; font-size:11px; color:var(--muted); font-weight:700;}
+  .readout .state.yes{color:var(--green);}
+  .readout.empty{color:var(--muted); font-weight:600;}
+  .mini .cell{cursor:pointer;}
+  .mini .cell.peek{box-shadow:0 0 0 2px var(--gold);}
+
+  /* Suggestions */
+  .sug{background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:10px 12px; margin-top:8px;}
+  .sug .top{display:flex; align-items:center; gap:7px; margin-bottom:4px;}
+  .sug .from{font-weight:800; font-size:12.5px;}
+  .sug .tag{font-size:9.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase;
+    padding:2px 7px; border-radius:20px; background:var(--blue); color:#fff;}
+  .sug .tag.idea{background:var(--gold); color:#2a1e00;}
+  .sug .txt{font-size:13.5px; line-height:1.45; overflow-wrap:break-word;}
+  .sug .when{font-size:10.5px; color:var(--muted); margin-top:4px;}
+
+  /* Modal */
+  .modal{position:fixed; inset:0; z-index:75; display:flex; align-items:center; justify-content:center; padding:18px;
+    background:rgba(4,7,14,.72);}
+  .modal.hidden{display:none;}
+  .modalbox{background:linear-gradient(180deg,#1a2340 0,#101828 100%); border:1px solid var(--line); border-radius:18px;
+    padding:20px; width:100%; max-width:380px; box-shadow:0 30px 80px -20px #000;}
+  .modalbox h3{margin:0 0 4px; font-size:18px;}
+  .modalbox textarea{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink); font-family:inherit;
+    font-size:16px; padding:12px; border-radius:12px; outline:none; font-weight:600; resize:vertical; min-height:92px;}
+  .modalbox textarea:focus{border-color:var(--blue);}
+  .choice{display:flex; gap:8px; margin:12px 0 10px;}
+  .choice button{flex:1; border:1px solid var(--line); background:var(--panel2); color:var(--muted); font-weight:800;
+    font-size:12.5px; padding:10px 6px; border-radius:11px; cursor:pointer; font-family:inherit;}
+  .choice button.on{background:var(--blue); color:#fff; border-color:transparent;}
+
   .footbar{display:flex; gap:8px; margin-top:12px;}
   .footbar .btn{margin-top:0;}
 
@@ -195,8 +230,39 @@
         (capitals and spaces don't matter).
       </div>
     </div>
+
+    <!-- SUGGESTIONS -->
+    <div id="viewSug" class="panel stack">
+      <div class="pline">
+        <div class="pname"><span>💡</span><span class="who">Suggestions</span></div>
+        <div class="pill" id="sugCount">none yet</div>
+      </div>
+      <div id="sugList"></div>
+      <div class="footbar">
+        <button class="btn ghost small" id="addSugBtn">💡 Add a suggestion</button>
+        <button class="btn ghost small" id="copySugBtn">📋 Copy all</button>
+      </div>
+      <div class="meta">Square ideas and app ideas go to everyone in the room, and stay on this phone.</div>
+    </div>
   </section>
 
+</div>
+
+<!-- SUGGESTION MODAL -->
+<div id="sugModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>💡 Suggestion</h3>
+    <div class="choice">
+      <button id="sugKindSquare" class="on">🟦 Square idea</button>
+      <button id="sugKindApp">🛠️ App idea</button>
+    </div>
+    <textarea id="sugText" maxlength="240" placeholder="e.g. &quot;Suspect trips over own feet&quot;"></textarea>
+    <div class="hint" id="sugHint">A call for a bingo square — something you'd expect to see on the show.</div>
+    <div class="footbar">
+      <button class="btn ghost small" id="sugCancel">Cancel</button>
+      <button class="btn gold small" id="sugSend">Send 📨</button>
+    </div>
+  </div>
 </div>
 
 <!-- WIN BANNER -->
@@ -266,6 +332,9 @@ function suggestRoom(){
 /* ---------- state ---------- */
 let ROOM="", NAME="", CARD=[], MARKS=[], myBingo=false;
 let players={};                 // id -> {name, card, marks, bingo, t}
+let suggestions=[];             // [{sid, from, kind, text, t}] newest first
+let peek={};                    // player id -> square index they last tapped
+let sugKind="square";
 let seenBingo={};               // id -> bool (already toasted this bingo)
 let pollTimer=null, lastId=null, pollActive=false, wsReady=false, pubTimer=null, heartbeat=null, reconnectT=null;
 
@@ -358,11 +427,22 @@ function renderOthers(){
     for(let i=0;i<25;i++){
       const d=document.createElement("div");
       const free=(i===12);
-      d.className="cell"+(p.marks[i]?" marked":"")+(free?" free":"")+(cells.has(i)?" win":"");
+      d.className="cell"+(p.marks[i]?" marked":"")+(free?" free":"")+(cells.has(i)?" win":"")+(peek[id]===i?" peek":"");
       d.innerHTML="<span>"+escapeHtml(p.card[i])+"</span>";
+      d.addEventListener("click",()=>{ peek[id] = (peek[id]===i? null : i); renderOthers(); });
       grid.appendChild(d);
     }
     block.appendChild(grid);
+    // tapping one of their squares spells it out in the open, since the mini board has no room for text
+    const read=document.createElement("div");
+    const pi=peek[id];
+    if(pi==null || pi<0){ read.className="readout empty"; read.textContent="Tap one of their squares to read it."; }
+    else {
+      read.className="readout";
+      read.innerHTML="<span class='q'>"+escapeHtml(p.card[pi])+"</span>"+
+        "<span class='state"+(p.marks[pi]?" yes":"")+"'>"+(p.marks[pi]?"✓ they've marked this":"not marked yet")+"</span>";
+    }
+    block.appendChild(read);
     const meta=document.createElement("div");
     meta.className="meta";
     meta.textContent="updated "+(secs<3?"just now":secs+"s ago");
@@ -379,6 +459,88 @@ function toggle(i){
   saveProgress();
   renderMine();
   schedulePublish();
+}
+
+/* ---------- suggestions ---------- */
+function loadSuggestions(){
+  try{ const a=JSON.parse(store.get("opl_suggestions")||"[]"); if(Array.isArray(a)) suggestions=a; }catch(e){}
+}
+function saveSuggestions(){
+  suggestions=suggestions.slice(0,200);
+  store.set("opl_suggestions", JSON.stringify(suggestions));
+}
+function addSuggestion(sug){
+  if(!sug || !sug.sid || !sug.text) return false;
+  if(suggestions.some(x=>x.sid===sug.sid)) return false;
+  suggestions.unshift({ sid:sug.sid, from:sug.from||"Player", kind:sug.kind==="app"?"app":"square",
+                        text:String(sug.text).slice(0,240), t:sug.t||Date.now() });
+  saveSuggestions(); renderSuggestions(); return true;
+}
+function renderSuggestions(){
+  const list=document.getElementById("sugList");
+  const count=document.getElementById("sugCount");
+  count.textContent = suggestions.length? suggestions.length+(suggestions.length===1?" idea":" ideas") : "none yet";
+  list.innerHTML="";
+  if(!suggestions.length){
+    const e=document.createElement("div");
+    e.className="readout empty";
+    e.textContent="Nothing yet — square ideas (\"K-9 refuses to get out of the car\") or anything you'd change about the app.";
+    list.appendChild(e);
+    return;
+  }
+  for(const s of suggestions){
+    const d=document.createElement("div"); d.className="sug";
+    const when=new Date(s.t);
+    d.innerHTML="<div class='top'><span class='tag"+(s.kind==="app"?"":" idea")+"'>"+(s.kind==="app"?"App":"Square")+"</span>"+
+      "<span class='from'>"+escapeHtml(s.from)+"</span></div>"+
+      "<div class='txt'>"+escapeHtml(s.text)+"</div>"+
+      "<div class='when'>"+when.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})+"</div>";
+    list.appendChild(d);
+  }
+}
+function suggestionsText(){
+  return suggestions.slice().reverse().map(s=>
+    "["+(s.kind==="app"?"APP":"SQUARE")+"] "+s.from+": "+s.text
+  ).join("\n");
+}
+function copySuggestions(){
+  if(!suggestions.length){ showToast("No suggestions yet"); return; }
+  const txt=suggestionsText();
+  const done=()=>showToast("Copied "+suggestions.length+" suggestion"+(suggestions.length>1?"s":""));
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, ()=>fallbackCopy(txt,done)); }
+  else fallbackCopy(txt,done);
+}
+function fallbackCopy(txt,done){
+  const ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){ showToast("Couldn't copy"); }
+  document.body.removeChild(ta);
+}
+function openSugModal(){
+  setSugKind("square");
+  document.getElementById("sugText").value="";
+  document.getElementById("sugModal").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("sugText").focus(),50);
+}
+function closeSugModal(){ document.getElementById("sugModal").classList.add("hidden"); }
+function setSugKind(k){
+  sugKind=k;
+  document.getElementById("sugKindSquare").classList.toggle("on",k==="square");
+  document.getElementById("sugKindApp").classList.toggle("on",k==="app");
+  document.getElementById("sugText").placeholder = k==="square"
+    ? "e.g. \"Suspect trips over own feet\"" : "e.g. \"Let the host pick the card size\"";
+  document.getElementById("sugHint").textContent = k==="square"
+    ? "A call for a bingo square — something you'd expect to see on the show."
+    : "Anything about the game itself — a feature, a fix, a nitpick.";
+}
+function sendSuggestion(){
+  const text=document.getElementById("sugText").value.trim();
+  if(!text){ document.getElementById("sugText").focus(); return; }
+  const sug={ sid: ME+"-"+Date.now(), from: NAME||"You", kind: sugKind, text, t: Date.now() };
+  addSuggestion(sug);
+  publishSuggestion(sug);
+  closeSugModal();
+  showToast("Suggestion sent 💡");
 }
 
 /* ---------- persistence per room ---------- */
@@ -454,6 +616,11 @@ function publish(kind){
   // publish via a simple HTTP POST (ntfy publish endpoint)
   fetch("https://ntfy.sh/"+topic(), {method:"POST", body}).catch(()=>{});
 }
+function publishSuggestion(sug){
+  if(!ROOM) return;   // solo play: it still lands in the local list
+  fetch("https://ntfy.sh/"+topic(), {method:"POST",
+    body: JSON.stringify({ v:1, kind:"suggest", id:ME, room:ROOM, name:NAME, sug })}).catch(()=>{});
+}
 function schedulePublish(){
   clearTimeout(pubTimer);
   pubTimer=setTimeout(()=>publish("state"), 500);
@@ -461,6 +628,10 @@ function schedulePublish(){
 function handleIncoming(b){
   if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
   if(b.kind==="hello"){ publish("state"); return; }     // someone joined -> resend
+  if(b.kind==="suggest"){
+    if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
+    return;
+  }
   if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
   players[b.id]={ name:b.name, card:b.card, marks:b.marks, bingo:!!b.bingo, t:Date.now() };
   renderOthers();
@@ -548,7 +719,7 @@ function leave(){
   document.getElementById("game").classList.add("hidden");
   document.getElementById("setup").classList.remove("hidden");
   setStatus("");
-  players={}; seenBingo={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
+  players={}; seenBingo={}; peek={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
 }
 
 /* ---------- wire up ---------- */
@@ -556,6 +727,13 @@ document.getElementById("startBtn").addEventListener("click",startGame);
 document.getElementById("newCardBtn").addEventListener("click",newCard);
 document.getElementById("leaveBtn").addEventListener("click",leave);
 document.getElementById("bwinClose").addEventListener("click",()=>document.getElementById("banner").classList.add("hidden"));
+document.getElementById("addSugBtn").addEventListener("click",openSugModal);
+document.getElementById("copySugBtn").addEventListener("click",copySuggestions);
+document.getElementById("sugCancel").addEventListener("click",closeSugModal);
+document.getElementById("sugSend").addEventListener("click",sendSuggestion);
+document.getElementById("sugKindSquare").addEventListener("click",()=>setSugKind("square"));
+document.getElementById("sugKindApp").addEventListener("click",()=>setSugKind("app"));
+document.getElementById("sugModal").addEventListener("click",e=>{ if(e.target.id==="sugModal") closeSugModal(); });
 document.getElementById("useSuggest").addEventListener("click",()=>{ document.getElementById("roomInput").value=document.getElementById("roomSuggest").textContent; });
 
 // prefill
@@ -563,6 +741,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("nameInput").value = store.get("opl_name")||"";
   document.getElementById("roomInput").value = store.get("opl_lastroom")||"";
   document.getElementById("roomSuggest").textContent = suggestRoom();
+  loadSuggestions(); renderSuggestions();
   setStatus("");
 })();
 
