@@ -793,8 +793,59 @@ const PACKS = {
     "Jerry's parents call from Florida",
     "Somebody eats a candy bar with a knife and fork",
   ]},
+  dlnarr: { theme:"dateline", name:"Narration & style", emoji:"🎙️", calls:[
+    "Keith Morrison pauses… for effect",
+    "\"But…\" starts the next sentence",
+    "\"Little did she know…\"",
+    "Slow zoom on a photograph",
+    "Aerial shot of a quiet little town",
+    "\"A place where nothing bad ever happens\"",
+    "Home video or wedding footage",
+    "The music turns ominous",
+    "\"Everyone loved her\"",
+    "A rhetorical question to the audience",
+    "Reenactment with a stand-in you never see clearly",
+    "A newspaper front page fills the screen",
+    "An interview subject dabs their eyes",
+    "Freeze-frame on a face",
+    "A time stamp appears on screen",
+    "Text messages shown on screen",
+    "Golden-hour drone shot over water or fields",
+    "Rain on a window",
+    "\"That's when everything changed\"",
+    "The episode teases the next twist before a break",
+    "Split screen of two timelines",
+    "A dramatic re-read of a quote",
+  ]},
+  dlcase: { theme:"dateline", name:"The case unfolds", emoji:"🔎", calls:[
+    "The 911 call is played",
+    "Investigators say something didn't add up",
+    "Phone records get pulled",
+    "The timeline graphic appears",
+    "A life insurance policy comes up",
+    "An alibi doesn't hold",
+    "A second interview at the station",
+    "Someone gets a lawyer",
+    "A polygraph is mentioned",
+    "Surveillance footage from a gas station",
+    "A doorbell or dashcam clip",
+    "Financial trouble comes out",
+    "An affair comes out",
+    "A search warrant is served",
+    "New forensic testing years later",
+    "A witness changes their story",
+    "The case goes cold, then reopens",
+    "Opening statements",
+    "A courtroom sketch",
+    "How long the jury deliberated",
+    "The verdict is read",
+    "Sentencing",
+    "\"Maintains their innocence\"",
+    "A family member speaks outside the courthouse",
+    "A juror is interviewed afterward",
+  ]},
 };
-const PACK_ORDER = ["stops","words","chase","scene","show","cabin","fbcalls","fbrefs","frbits","frsay","sebits","sesay"];
+const PACK_ORDER = ["stops","words","chase","scene","show","cabin","fbcalls","fbrefs","frbits","frsay","sebits","sesay","dlnarr","dlcase"];
 
 /* ---------- themes: one bingo engine, different nights ---------- */
 const CATEGORIES = {
@@ -805,6 +856,8 @@ const CATEGORY_ORDER = ["shows","sports"];
 const THEMES = {
   onpatrol: { cat:"shows", name:"On Patrol", emoji:"🚨", title:"On Patrol <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
               packs:["stops","words","chase","scene","show","cabin"], matchup:false },
+  dateline: { cat:"shows", name:"Dateline",  emoji:"🔎", title:"Dateline <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
+              packs:["dlnarr","dlcase"], matchup:false },
   friends:  { cat:"shows", name:"Friends",   emoji:"☕", title:"Friends <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
               packs:["frbits","frsay"], matchup:false },
   seinfeld: { cat:"shows", name:"Seinfeld",  emoji:"🥨", title:"Seinfeld <b>BINGO</b>", sub:"PLAY ALONG WITH THE SHOW",
@@ -812,7 +865,7 @@ const THEMES = {
   football: { cat:"sports", name:"Football", emoji:"🏈", title:"Football <b>BINGO</b>", sub:"PICK A MATCHUP · PLAY ALONG",
               packs:["fbcalls","fbrefs","matchup","stars"], matchup:true }
 };
-const THEME_ORDER = ["onpatrol","friends","seinfeld","football"];
+const THEME_ORDER = ["onpatrol","dateline","friends","seinfeld","football"];
 function themesIn(cat){ return THEME_ORDER.filter(k=>THEMES[k].cat===cat); }
 let THEME = "onpatrol", THEME_AT = 0;
 let MATCHUP = { away:"", home:"" }, MATCHUP_AT = 0;
@@ -916,8 +969,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v41";
-const BUILD_ISO="2026-09-06T16:00:00Z";
+const BUILD_V="v42";
+const BUILD_ISO="2026-09-06T16:13:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO

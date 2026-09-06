@@ -13,6 +13,7 @@ room rule, so switching deals everyone a fresh card and the whole room follows.
 | Category | Game | Packs |
 | --- | --- | --- |
 | 📺 Shows | 🚨 **On Patrol** | Traffic stops · Things people say · Pursuits & action · On scene · The broadcast · Cabin night |
+| 📺 Shows | 🔎 **Dateline** | Narration & style · The case unfolds |
 | 📺 Shows | ☕ **Friends** | Classic bits · Catchphrases & gags |
 | 📺 Shows | 🥨 **Seinfeld** | Classic bits · Catchphrases & gags |
 | 🏆 Sports | 🏈 **Football** | Broadcast clichés · Refs & replay · the matchup · ⭐ Star plays |
