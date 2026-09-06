@@ -89,7 +89,12 @@ whether they've marked it. Tap it again (or another square) to change it.
 the pool *as it stands right now*. Calls added since the deal (yours or ones you
 accepted from someone's suggestion) can come in; anything removed from your pool
 drops out. Marked squares, and any line you've built, are untouched — so it's
-safe to hit mid-game. **🔀 New card** is still the full wipe.
+safe to hit mid-game. **🔀 My card** is still the full wipe.
+
+It isn't free: after a refresh the button sits out a **90-second cooldown**,
+counting down on the button face with a gold progress line. The timer is stored
+per room, so reloading the page doesn't dodge it — but **starting a new round
+clears it**.
 
 ## Rounds and the scoreboard
 

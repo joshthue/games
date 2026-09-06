@@ -192,6 +192,9 @@
     font-size:12.5px; padding:10px 6px; border-radius:11px; cursor:pointer; font-family:inherit;}
   .choice button.on{background:var(--blue); color:#fff; border-color:transparent;}
 
+  .btn.cooling{opacity:.55; cursor:default; position:relative; overflow:hidden;}
+  .btn.cooling::after{content:""; position:absolute; left:0; bottom:0; height:3px; background:var(--gold);
+    width:var(--cool,0%); transition:width 1s linear;}
   .footbar{display:flex; gap:8px; margin-top:12px;}
   .footbar .btn{margin-top:0;}
 
@@ -275,7 +278,7 @@
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
       <div class="meta"><span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
-        <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked (the centre stays put), pulling in whatever's in the pool now.</div>
+        <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked (the centre stays put), pulling in whatever's in the pool now — then sits out 90 seconds before you can do it again. A new round clears the wait.</div>
     </div>
 
     <!-- OTHER PLAYERS -->
@@ -442,8 +445,8 @@ const POOL = [
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v27";
-const BUILD_ISO="2026-09-06T02:51:00Z";
+const BUILD_V="v28";
+const BUILD_ISO="2026-09-06T03:13:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -776,6 +779,7 @@ function adoptRound(n, at, who){
 }
 function dealFreshRound(){
   CARD=buildCard(); MARKS=freshMarks(); myBingo=false; markHistory=[]; peek={}; seenBingo={}; seenClose={};
+  freshAt=0; store.set(coolKey(), "0"); paintCooldown();
   saveProgress(); renderMine(); renderOthers(); renderScores(); publish("state");
 }
 
@@ -1183,7 +1187,7 @@ function startGame(){
   if(!r){ document.getElementById("roomInput").focus(); return shake("roomInput"); }
   NAME=n; ROOM=r;
   store.set("opl_name", NAME); store.set("opl_lastroom", ROOM);
-  loadRound(); renderScores();
+  loadRound(); renderScores(); loadCooldown();
   if(!loadProgress()){ CARD=buildCard(); MARKS=freshMarks(); saveProgress(); }
   audio();   // unlock sound on this tap, so the first siren isn't silent
   myBingo = evalMarks(MARKS).won;
@@ -1199,10 +1203,38 @@ function shake(id){
   const el=document.getElementById(id);
   el.animate([{transform:"translateX(0)"},{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],{duration:250});
 }
+/* ---------- ♻️ costs you a wait ---------- */
+const FRESH_COOLDOWN = 90000;   // 90s between refreshes
+let freshAt = 0, coolTimer = null;
+function coolLeft(){ return Math.max(0, FRESH_COOLDOWN - (Date.now()-freshAt)); }
+function paintCooldown(){
+  const b=document.getElementById("freshBtn"); if(!b) return;
+  const left=coolLeft();
+  if(left<=0){
+    b.classList.remove("cooling"); b.disabled=false; b.textContent="♻️ Fresh squares";
+    b.style.removeProperty("--cool");
+    clearInterval(coolTimer); coolTimer=null;
+    return;
+  }
+  b.classList.add("cooling"); b.disabled=true;
+  b.textContent="♻️ Fresh in "+Math.ceil(left/1000)+"s";
+  b.style.setProperty("--cool", Math.round((1-left/FRESH_COOLDOWN)*100)+"%");
+  if(!coolTimer) coolTimer=setInterval(paintCooldown, 500);
+}
+function startCooldown(){ freshAt=Date.now(); store.set(coolKey(), String(freshAt)); paintCooldown(); }
+function coolKey(){ return "opl_freshat_"+roomKey(ROOM||"solo"); }
+function loadCooldown(){
+  const v=parseInt(store.get(coolKey())||"0",10);
+  freshAt = isNaN(v)?0:v;
+  paintCooldown();
+}
+
 // Redraw every square you haven't marked yet, from the pool as it stands NOW —
 // so ideas added since the deal come in, and anything removed drops out. Your
 // marked squares (and your lines) are untouched.
 function freshSquares(){
+  const left=coolLeft();
+  if(left>0){ showToast("♻️ Cooling down — "+Math.ceil(left/1000)+"s to go"); paintCooldown(); return; }
   const open=[];
   for(let i=0;i<25;i++){ if(i!==12 && !MARKS[i]) open.push(i); }
   if(!open.length){ showToast("Every square is marked — nothing to refresh"); return; }
@@ -1216,7 +1248,8 @@ function freshSquares(){
     CARD[i]=avail[n++];
   }
   saveProgress(); renderMine(); publish("state");
-  showToast("♻️ Refreshed "+changed+" open square"+(changed===1?"":"s"));
+  startCooldown();
+  showToast("♻️ Refreshed "+changed+" open square"+(changed===1?"":"s")+" — next in 90s");
 }
 function newCard(){
   if(!confirm("Start a fresh card? Your current marks will be cleared.")) return;
