@@ -52,6 +52,14 @@ whether they've marked it. Tap it again (or another square) to change it.
 - Joining late still gets you the night's ideas: whoever's already in the room
   replays their recent suggestions when you arrive.
 
+## Fresh squares
+
+**♻️ Fresh squares** re-deals only the squares you haven't marked, drawing from
+the pool *as it stands right now*. Calls added since the deal (yours or ones you
+accepted from someone's suggestion) can come in; anything removed from your pool
+drops out. Marked squares, and any line you've built, are untouched — so it's
+safe to hit mid-game. **🔀 New card** is still the full wipe.
+
 ## Show-off bits
 
 - Player list is sorted **closest to bingo first**, with 👑 on whoever's leading.
