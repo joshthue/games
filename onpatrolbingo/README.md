@@ -22,6 +22,21 @@ couch/group chat crowd. Tap squares as they happen and chase a line (or a full c
   connected / blocked / rate-limited — plus the room topic. Tapping also retries.
   If both relays say blocked, that network is filtering them: try cell data or a hotspot.
 
+## Teams — one card, two phones
+
+Pick a team from the **👥 chip** (or on the setup screen); leave it on **Solo** for
+your own card. Everyone on the same team plays **one shared card**: same 25
+squares on every phone, either of you can tap, and the boards stay in sync.
+
+- Sync is last-tap-wins **per square**, not a union — so un-marking works, and a
+  mis-tap fixed on one phone clears on the other instead of bouncing back.
+- A newer deal replaces the card outright: whoever hits ♻️ Fresh squares, 🔀 My
+  card, or starts a new round re-deals the whole team.
+- The room list tags teammates **"TEAM · SAME CARD"**, and the 👥 count on your
+  own squares skips teammates — they're on your card, not a separate sighting.
+- **First team to finish the pattern takes the round**, and the win is scored to
+  the team name once rather than to each member.
+
 ## Win pattern
 
 **Cover all is the default** — the whole card. Change it from the setup screen or
