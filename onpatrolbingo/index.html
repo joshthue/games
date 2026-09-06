@@ -70,29 +70,31 @@
     border:1px dashed var(--line); border-radius:10px; padding:11px; text-align:center; color:var(--gold); font-weight:700;}
 
   /* Room chip in the header */
-  .plineright{display:flex; align-items:center; gap:6px; min-width:0;}
+  .plineright{display:flex; align-items:center; gap:6px; min-width:0; flex-wrap:wrap; justify-content:flex-end;}
   .roomchip{font-family:ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:1px; color:var(--gold);
     background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:2px 8px; font-weight:700;
     max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .stack{margin-top:12px;}
 
   /* Player line */
-  .pline{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;}
-  .pname{font-weight:800; font-size:15px; display:flex; align-items:center; gap:7px; min-width:0;}
+  .pline{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; flex-wrap:wrap;}
+  .pname{font-weight:800; font-size:15px; display:flex; align-items:center; gap:7px; min-width:0; flex:0 1 auto;}
   .pname .who{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .pill{font-size:10.5px; padding:3px 9px; border-radius:20px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); font-weight:700; flex-shrink:0;}
   .pill.win{background:var(--gold); color:#2a1e00; border-color:transparent;}
 
   /* Bingo grid */
+  /* card text size — set by the 🔠 chip, remembered per phone */
+  :root{--cellfs:10.5px; --cellmin:0px; --cellpad:5px; --readfs:12.5px; --notefs:13.5px; --cellar:1/1;}
   .grid{display:grid; grid-template-columns:repeat(5,1fr); gap:7px;}
-  .cell{position:relative; aspect-ratio:1/1; background:var(--panel2); border:1px solid var(--line); border-radius:11px;
-    display:flex; align-items:center; justify-content:center; text-align:center; padding:5px;
-    font-size:10.5px; line-height:1.12; font-weight:600; color:var(--ink); cursor:pointer; overflow:hidden; overflow-wrap:break-word; -webkit-hyphens:auto; hyphens:auto; transition:transform .08s, background .15s;}
-  .cell span{display:block;}
+  .cell{position:relative; aspect-ratio:var(--cellar); min-height:var(--cellmin); background:var(--panel2); border:1px solid var(--line); border-radius:11px;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:var(--cellpad);
+    font-size:var(--cellfs); line-height:1.15; font-weight:600; color:var(--ink); cursor:pointer; overflow:hidden; overflow-wrap:normal; word-break:normal; -webkit-hyphens:auto; hyphens:auto; transition:transform .08s, background .15s;}
+  .cell span{display:block; max-width:100%; min-width:0; overflow:hidden;}
   .cell.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); border-color:transparent; color:#fff;}
   .cell.marked::after{content:""; position:absolute; inset:0; background:
     radial-gradient(circle at 70% 25%, rgba(255,255,255,.25), transparent 45%);}
-  .cell.free{background:linear-gradient(180deg,#2a3350,#1a2136); color:var(--gold); font-weight:800; font-size:10px;}
+  .cell.free{background:linear-gradient(180deg,#2a3350,#1a2136); color:var(--gold); font-weight:800;}
   .cell.free.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); color:#fff;}
   .cell:active{transform:scale(.95);}
   .cell.win{animation:winflash 1s ease infinite alternate;}
@@ -102,7 +104,7 @@
 
   /* Mini (other players') progress grids — compact, mark-only */
   .mini{max-width:220px; gap:5px; margin-top:2px;}
-  .mini .cell{font-size:0; padding:0; border-radius:6px; cursor:default;}
+  .mini .cell{font-size:0; padding:0; border-radius:6px; cursor:default; min-height:0; aspect-ratio:1/1;}
   .mini .cell span{display:none;}
   .mini .cell.marked{background:linear-gradient(180deg,var(--green) 0%, #1c8f6f 100%);}
   .playerblock{padding-top:12px; margin-top:12px; border-top:1px solid var(--line);}
@@ -115,7 +117,7 @@
 
   /* Tapped-square readout under another player's board */
   .readout{margin-top:8px; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
-    padding:9px 11px; font-size:12.5px; line-height:1.4; color:var(--ink); min-height:18px;}
+    padding:9px 11px; font-size:var(--readfs); line-height:1.4; color:var(--ink); min-height:18px;}
   .readout .q{color:var(--gold); font-weight:700;}
   .readout .state{display:block; margin-top:3px; font-size:11px; color:var(--muted); font-weight:700;}
   .readout .state.yes{color:var(--green);}
@@ -131,7 +133,7 @@
     padding:2px 7px; border-radius:20px; background:var(--blue); color:#fff;}
   .sug .tag.idea{background:var(--gold); color:#2a1e00;}
   .sug .tag.pack{background:var(--panel); color:var(--gold); border:1px solid var(--line);}
-  .sug .txt{font-size:13.5px; line-height:1.45; overflow-wrap:break-word;}
+  .sug .txt{font-size:var(--notefs); line-height:1.45; overflow-wrap:break-word;}
   .sug .when{font-size:10.5px; color:var(--muted); margin-top:4px;}
   .sug .act{margin-top:8px;}
   .sug .act button{font-family:inherit; font-size:11.5px; font-weight:800; padding:7px 11px; border-radius:9px; cursor:pointer;
@@ -264,6 +266,7 @@
         <div class="plineright">
           <span class="patchip" id="patChip">🎯 Cover all</span>
           <span class="patchip" id="packChip" title="Call packs">🎴</span>
+          <span class="patchip" id="sizeChip" title="Text size">🔠 M</span>
           <span class="patchip" id="soundChip" title="Sound">🔊</span>
           <div class="pill" id="myPill">playing…</div>
         </div>
@@ -279,7 +282,7 @@
         <button class="btn ghost small" id="newCardBtn">🔀 My card</button>
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
-      <div class="meta"><span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
+      <div class="meta">🔠 sets the card text size — tap it until it reads right. <span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
         <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked (the centre stays put), pulling in whatever's in the pool now — then sits out 90 seconds before you can do it again. A new round clears the wait.</div>
     </div>
 
@@ -526,8 +529,8 @@ const PACK_ORDER = ["stops","words","chase","scene","show","cabin"];
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v29";
-const BUILD_ISO="2026-09-06T03:41:00Z";
+const BUILD_V="v30";
+const BUILD_ISO="2026-09-06T03:50:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -801,6 +804,7 @@ function renderMine(){
   const mine=progressLabel(MARKS);
   document.getElementById("myPill").textContent = mine.txt;
   document.getElementById("myPill").className = "pill"+mine.cls;
+  fitCells();
   const bar=document.getElementById("myBar");
   bar.className = "bar"+(won?" done":mine.rank===1?" close":"");
   bar.firstElementChild.style.width = Math.round(evalMarks(MARKS).pct*100)+"%";
@@ -1258,6 +1262,68 @@ function handleIncoming(b){
   renderOthers(); renderMine();
 }
 
+/* ---------- card text size ---------- */
+const SIZES = [
+  { key:"s",  label:"S",  cell:"10.5px", min:"0px",  ar:"1/1",  pad:"5px", read:"12.5px", note:"13.5px" },
+  { key:"m",  label:"M",  cell:"12px",   min:"74px", ar:"auto", pad:"5px", read:"13.5px", note:"14px"   },
+  { key:"l",  label:"L",  cell:"13.5px", min:"88px", ar:"auto", pad:"5px", read:"15px",   note:"15px"   },
+  { key:"xl", label:"XL", cell:"15.5px", min:"104px",ar:"auto", pad:"5px", read:"16.5px", note:"16.5px" }
+];
+let SIZE = store.get("opl_textsize") || "l";     // large by default — these get read from across a room
+function applySize(){
+  const z = SIZES.find(x=>x.key===SIZE) || SIZES[2];
+  const r = document.documentElement.style;
+  r.setProperty("--cellfs", z.cell);
+  r.setProperty("--cellmin", z.min);
+  r.setProperty("--cellar", z.ar);
+  r.setProperty("--cellpad", z.pad);
+  r.setProperty("--readfs", z.read);
+  r.setProperty("--notefs", z.note);
+  const chip=document.getElementById("sizeChip");
+  if(chip) chip.textContent="🔠 "+z.label;
+}
+// A few calls are long enough to clip at the bigger sizes — shrink just those
+// cells until they fit, so the size chip never costs you a readable square.
+const _measure = (function(){ try{ return document.createElement("canvas").getContext("2d"); }catch(e){ return null; } })();
+function widestWord(text, weight, fs, family){
+  if(!_measure) return 0;
+  _measure.font = weight+" "+fs+"px "+family;
+  let w=0;
+  for(const word of String(text).split(/\s+/)){ const m=_measure.measureText(word).width; if(m>w) w=m; }
+  return w;
+}
+function fitCells(){
+  const grid=document.getElementById("myGrid"); if(!grid) return;
+  const base=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cellfs"))||12;
+  for(const c of grid.children){
+    const sp=c.querySelector("span"); if(!sp) continue;
+    const cs=getComputedStyle(c);
+    const family=cs.fontFamily, weight=cs.fontWeight;
+    const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
+    const avail=c.clientWidth-padX-1;
+    const text=sp.textContent;
+    let fs=base, guard=0;
+    c.style.overflowWrap="normal";
+    c.style.fontSize=fs+"px";
+    const tooWide = ()=> widestWord(text, weight, fs, family) > avail;
+    const tooTall = ()=> sp.scrollHeight > c.clientHeight-4;
+    // shrink until the longest word fits on a line and the whole call fits the cell
+    while((tooWide() || tooTall()) && fs > 9.5 && guard++ < 14){ fs -= 0.5; c.style.fontSize=fs+"px"; }
+    // a genuinely long word may break rather than shrink the whole square to nothing
+    if(tooWide() || tooTall()){
+      c.style.overflowWrap="break-word";
+      while(tooTall() && fs > 7.5 && guard++ < 26){ fs -= 0.5; c.style.fontSize=fs+"px"; }
+    }
+  }
+}
+function cycleSize(){
+  const i = SIZES.findIndex(x=>x.key===SIZE);
+  SIZE = SIZES[(i+1)%SIZES.length].key;
+  store.set("opl_textsize", SIZE);
+  applySize(); fitCells();
+  showToast("🔠 Card text: "+SIZES.find(x=>x.key===SIZE).label);
+}
+
 /* ---------- siren sound (generated, no assets) ---------- */
 let SOUND = store.get("opl_sound")!=="off";
 let actx=null;
@@ -1331,7 +1397,7 @@ function showToast(txt){
 const cv=document.getElementById("confetti"); const ctx=cv.getContext("2d");
 let parts=[], raf=null;
 function sizeCanvas(){ cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio; }
-addEventListener("resize",sizeCanvas); sizeCanvas();
+addEventListener("resize",()=>{ sizeCanvas(); fitCells(); }); sizeCanvas();
 function fireConfetti(){
   const colors=["#ffcf4a","#2e6bff","#33d6a6","#ff4d5e","#ffffff"];
   for(let i=0;i<130;i++){
@@ -1444,6 +1510,7 @@ function leave(){
 document.getElementById("startBtn").addEventListener("click",startGame);
 document.getElementById("undoBtn").addEventListener("click",undoMark);
 document.getElementById("soundChip").addEventListener("click",toggleSound);
+document.getElementById("sizeChip").addEventListener("click",cycleSize);
 document.getElementById("roundBtn").addEventListener("click",()=>{
   if(confirm("Deal everyone in the room a fresh card and start round "+(ROUND+1)+"?")) startRound(true);
 });
@@ -1488,7 +1555,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("roomSuggest").textContent = suggestRoom();
   loadPool(); loadSuggestions(); renderSuggestions(); paintPacks();
   PAT = PATTERNS[store.get("opl_pattern")] ? store.get("opl_pattern") : "all";
-  paintPattern(); paintSound();
+  paintPattern(); paintSound(); applySize();
   const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;

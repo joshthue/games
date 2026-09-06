@@ -39,6 +39,19 @@ The pattern is a **house rule, not a personal setting**: whoever changes it sets
 it for everyone in the room (last change wins) and the others get a toast saying
 who changed it to what. Someone joining mid-game picks it up from the room.
 
+## Text size
+
+The **🔠 chip** beside your name cycles **S → M → L → XL** and is remembered per
+phone (**L** is the default — these cards get read across a room). Only the card,
+the tapped-square readout and the suggestion text scale; the mini boards stay
+mark-only.
+
+Bigger sizes grow the cells **downward** — `aspect-ratio` is dropped in favour of
+`min-height`, since keeping the square ratio would widen the cells past the screen.
+Each square then auto-fits: a canvas measures the longest word against the cell's
+inner width and steps the text down until it fits, only breaking a word when one
+is genuinely too long (paraphernalia, windshield) rather than mangling every call.
+
 ## The card
 
 - 5×5 card drawn from the **call packs** that are switched on (🎴 chip next to
