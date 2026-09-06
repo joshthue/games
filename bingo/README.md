@@ -26,6 +26,26 @@ dozen of its own calls generated from `MATCHUP_TEMPLATES` — *Vikings touchdown
 switch on and off like any other. The matchup syncs to the room the same way the
 theme does; after changing it, hit ♻️ Fresh squares or 🆕 New round to deal it in.
 
+### ⭐ Star plays (specific players, specific plays)
+
+The matchup modal also carries a **roster box per team** — one player per line as
+`Name POS` (QB, RB, WR, TE, K, DEF). Each player generates their own calls from
+`PLAY_TEMPLATES`:
+
+- **QB** — touchdown pass · gets sacked · scrambles for a first · throws a pick · converts on 3rd down
+- **RB** — 10+ yard run · rushing touchdown · catch out of the backfield · stuffed at the line
+- **WR** — 20+ yard catch · touchdown catch · drops one · first-down grab
+- **TE** — catch on 3rd down · touchdown catch · springs a run with a block
+- **K** — field goal · misses one
+- **DEF** — sack · tackle for loss · pass breakup · forces a turnover
+
+A full two-team roster produces ~100 calls in a "⭐ Star plays" pack. Vikings and
+Packers ship with rosters baked in (verified against depth charts on 2026-09-05);
+every other team starts empty and you type it. **Rosters are editable in the app
+and shared with the room**, so a trade, an injury or a stale name is a ten-second
+fix rather than a deploy — and last names are derived automatically, particles
+included (Van Ginkel, Van Ness).
+
 ## Playing together
 
 - Everyone types their **name** and the **same room code** on the setup screen.
