@@ -135,7 +135,31 @@
   .sug .act button{font-family:inherit; font-size:11.5px; font-weight:800; padding:7px 11px; border-radius:9px; cursor:pointer;
     background:var(--panel); color:var(--ink); border:1px solid var(--line);}
   .sug .act button.in{background:var(--green); color:#04241b; border-color:transparent;}
-  .pill.close{background:var(--gold); color:#2a1e00; border-color:transparent;}
+  .pill.close{background:var(--gold); color:#2a1e00; border-color:transparent; animation:tick 1s ease infinite alternate;}
+  @keyframes tick{from{transform:scale(1);}to{transform:scale(1.07);}}
+  .pill.bingo{background:linear-gradient(90deg,#ff4d5e,#2e6bff); color:#fff; border-color:transparent;}
+
+  /* Siren flash across the whole screen */
+  .siren{position:fixed; inset:0; z-index:64; pointer-events:none; opacity:0;}
+  .siren.go{animation:siren 1.4s linear 1;}
+  @keyframes siren{
+    0%{opacity:0; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,.55), transparent 55%);}
+    15%{opacity:1; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,.55), transparent 55%);}
+    35%{opacity:1; background:radial-gradient(circle at 100% 50%, rgba(46,107,255,.55), transparent 55%);}
+    55%{opacity:1; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,.55), transparent 55%);}
+    75%{opacity:1; background:radial-gradient(circle at 100% 50%, rgba(46,107,255,.55), transparent 55%);}
+    100%{opacity:0; background:radial-gradient(circle at 0% 50%, rgba(255,77,94,0), transparent 55%);}
+  }
+  .lights.on{animation:wig 0.45s steps(2,end) infinite;}
+  @keyframes wig{from{transform:rotate(-14deg) scale(1.15); filter:drop-shadow(0 0 6px #ff4d5e);}
+                 to{transform:rotate(14deg) scale(1.15); filter:drop-shadow(0 0 6px #2e6bff);}}
+  .playerblock.hot{animation:hotglow 1.2s ease infinite alternate;}
+  @keyframes hotglow{from{background:transparent;}to{background:rgba(255,207,74,.06);}}
+  .crown{font-size:13px;}
+
+  /* Build stamp */
+  .build{margin-top:14px; text-align:center; font-size:10.5px; color:var(--muted); opacity:.75;
+    font-family:ui-monospace,Menlo,monospace; letter-spacing:.3px;}
 
   /* Modal */
   .modal{position:fixed; inset:0; z-index:75; display:flex; align-items:center; justify-content:center; padding:18px;
@@ -175,6 +199,7 @@
 </head>
 <body>
 <canvas id="confetti"></canvas>
+<div id="siren" class="siren"></div>
 <div class="wrap">
 
   <header>
@@ -200,6 +225,7 @@
 
     <button class="btn gold" id="startBtn" style="margin-top:18px;">Start playing 🎉</button>
     <div class="meta">Add to Home Screen for an app-like experience. Works over the internet — you don't have to be on the same Wi-Fi.</div>
+    <div class="build" id="buildStampSetup">—</div>
   </section>
 
   <!-- GAME -->
@@ -247,6 +273,7 @@
         <button class="btn ghost small" id="addSugBtn">💡 Add a suggestion</button>
         <button class="btn ghost small" id="copySugBtn">📋 Copy all</button>
       </div>
+      <div class="build" id="buildStamp">—</div>
       <div class="meta" id="sugMeta">Square ideas and app ideas go to everyone in the room, and stay on this phone.</div>
     </div>
   </section>
@@ -309,6 +336,16 @@ const POOL = [
   "Hype: \"this is a good one\"", "Prayer or blessing moment"
 ];
 
+/* ---------- build stamp (bump with the sw.js cache version) ---------- */
+const BUILD_V="v21";
+const BUILD_ISO="2026-09-06T01:47:00Z";
+function buildLabel(){
+  const d=new Date(BUILD_ISO);
+  const when=isNaN(d) ? BUILD_ISO
+    : d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  return "build "+BUILD_V+" · "+when;
+}
+
 /* ---------- tiny storage helper (safe if disabled) ---------- */
 const store = {
   get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
@@ -341,6 +378,7 @@ let suggestions=[];             // [{sid, from, kind, text, t}] newest first
 let peek={};                    // player id -> square index they last tapped
 let sugKind="square";
 let seenBingo={};               // id -> bool (already toasted this bingo)
+let seenClose={};               // id -> bool (already shouted "one away")
 let pollActive=false, pubTimer=null, heartbeat=null, reconnectT=null;
 
 /* ---------- extra squares added from suggestions ---------- */
@@ -395,12 +433,12 @@ function toGo(marks){
 }
 function progressLabel(marks){
   const {lines}=winningCells(marks);
-  if(lines) return {txt: lines+" line"+(lines>1?"s":""), cls:" win"};
+  if(lines) return {txt: lines>1? "🚨 "+lines+" LINES" : "🚨 BINGO!", cls:" bingo", rank:0};
   const need=toGo(marks);
-  if(need===1) return {txt:"1 away 👀", cls:" close"};
+  if(need===1) return {txt:"👀 1 away", cls:" close", rank:1};
+  if(need===2) return {txt:"🔥 2 away", cls:"", rank:2};
   const marked=marks.reduce((a,v)=>a+(v?1:0),0);
-  if(need===2) return {txt:"2 away", cls:""};
-  return {txt: marked>0? marked+" marked" : "playing…", cls:""};
+  return {txt: marked>0? marked+" marked" : "playing…", cls:"", rank:need};
 }
 function winningCells(marks){
   const set=new Set();
@@ -438,7 +476,12 @@ function renderOthers(){
   const now=Date.now();
   // drop players we haven't heard from in ~50s (they closed the game)
   for(const id in players){ if(now-players[id].t>50000){ delete players[id]; delete seenBingo[id]; } }
-  const ids=Object.keys(players).sort((a,b)=>(players[a].name||"").localeCompare(players[b].name||""));
+  // closest to a bingo first — it's a race, not a roster
+  const ids=Object.keys(players).sort((a,b)=>{
+    const ra=progressLabel(players[a].marks).rank, rb=progressLabel(players[b].marks).rank;
+    if(ra!==rb) return ra-rb;
+    return (players[a].name||"").localeCompare(players[b].name||"");
+  });
   if(!ids.length){
     list.innerHTML=""; waiting.classList.remove("hidden");
     count.textContent="nobody yet"; count.className="pill";
@@ -456,10 +499,15 @@ function renderOthers(){
     block.className="playerblock";
     const secs=Math.max(0,Math.round((now-p.t)/1000));
     const prog=progressLabel(p.marks);
+    if(prog.rank<=1) block.className="playerblock hot";
+    const crown = (id===ids[0] && ids.length>1 && prog.rank<3) ? "<span class='crown'>👑</span>" : "";
     const head=document.createElement("div");
     head.className="pline";
-    head.innerHTML="<div class='pname'><span>🚓</span><span class='who'>"+escapeHtml(p.name||"Player")+"</span></div>"+
+    head.innerHTML="<div class='pname'><span>🚓</span><span class='who'>"+escapeHtml(p.name||"Player")+"</span>"+crown+"</div>"+
       "<div class='pill"+prog.cls+"'>"+prog.txt+"</div>";
+    // shout once when somebody gets within one square
+    if(prog.rank===1 && !seenClose[id]){ seenClose[id]=true; onPlayerClose(p.name); }
+    if(prog.rank!==1) seenClose[id]=false;
     block.appendChild(head);
     const grid=document.createElement("div");
     grid.className="grid mini";
@@ -637,7 +685,7 @@ function syncDetails(){
     const st=relayState(h);
     return h.replace("https://","")+": "+(st.live?"connected":(st.err||"not connected"));
   });
-  alert("Room: "+ROOM+"\nTopic: "+topic()+"\n\n"+lines.join("\n")+
+  alert("Room: "+ROOM+"\nTopic: "+topic()+"\n"+buildLabel()+"\n\n"+lines.join("\n")+
         "\n\nIf both say blocked, this network is filtering them — try cell data / a hotspot.");
   connect();   // tapping also retries
 }
@@ -764,7 +812,13 @@ function handleIncoming(b){
 }
 
 /* ---------- celebration ---------- */
+function sirens(ms){
+  const s=document.getElementById("siren"), l=document.querySelector(".lights");
+  s.classList.remove("go"); void s.offsetWidth; s.classList.add("go");
+  if(l){ l.classList.add("on"); setTimeout(()=>l.classList.remove("on"), ms||1400); }
+}
 function celebrate(){
+  sirens(2200);
   const b=document.getElementById("banner");
   document.getElementById("bwinEm").textContent="🎉";
   document.getElementById("bwinTitle").textContent="BINGO!";
@@ -776,8 +830,13 @@ function celebrate(){
 }
 function onPlayerBingo(name){
   showToast((name||"A player")+" got BINGO! 🎉");
-  fireConfetti();
+  sirens(2200); fireConfetti();
   if(navigator.vibrate){ try{navigator.vibrate([30,50,30]);}catch(e){} }
+}
+function onPlayerClose(name){
+  showToast("👀 "+(name||"Someone")+" is ONE square away");
+  sirens(900);
+  if(navigator.vibrate){ try{navigator.vibrate([20,40,20]);}catch(e){} }
 }
 let toastT=null;
 function showToast(txt){
@@ -845,7 +904,7 @@ function leave(){
   document.getElementById("game").classList.add("hidden");
   document.getElementById("setup").classList.remove("hidden");
   setStatus("");
-  players={}; seenBingo={}; peek={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
+  players={}; seenBingo={}; seenClose={}; peek={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
 }
 
 /* ---------- wire up ---------- */
@@ -869,6 +928,9 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("roomInput").value = store.get("opl_lastroom")||"";
   document.getElementById("roomSuggest").textContent = suggestRoom();
   loadPool(); loadSuggestions(); renderSuggestions();
+  const bl=buildLabel();
+  document.getElementById("buildStamp").textContent=bl;
+  document.getElementById("buildStampSetup").textContent=bl;
   setStatus("");
 })();
 

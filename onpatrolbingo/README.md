@@ -52,6 +52,21 @@ whether they've marked it. Tap it again (or another square) to change it.
 - Joining late still gets you the night's ideas: whoever's already in the room
   replays their recent suggestions when you arrive.
 
+## Show-off bits
+
+- Player list is sorted **closest to bingo first**, with 👑 on whoever's leading.
+- Pills escalate: `3 marked` → `🔥 2 away` → `👀 1 away` (pulsing) → `🚨 BINGO!`
+- Anyone reaching one square out sets off a short **red/blue siren sweep**, a
+  wig-wag on the header 🚨, a toast and a buzz — everyone in the room sees it.
+- A bingo runs the sirens longer plus confetti.
+
+## Build stamp
+
+The bottom of the setup screen and the suggestions panel show `build vNN · <date>`
+in your local time — the quickest way to confirm a refresh actually took.
+`BUILD_V` / `BUILD_ISO` sit at the top of the script and are bumped together with
+the `sw.js` cache version.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once
