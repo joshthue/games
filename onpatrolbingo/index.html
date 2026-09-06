@@ -131,6 +131,11 @@
   .sug .tag.idea{background:var(--gold); color:#2a1e00;}
   .sug .txt{font-size:13.5px; line-height:1.45; overflow-wrap:break-word;}
   .sug .when{font-size:10.5px; color:var(--muted); margin-top:4px;}
+  .sug .act{margin-top:8px;}
+  .sug .act button{font-family:inherit; font-size:11.5px; font-weight:800; padding:7px 11px; border-radius:9px; cursor:pointer;
+    background:var(--panel); color:var(--ink); border:1px solid var(--line);}
+  .sug .act button.in{background:var(--green); color:#04241b; border-color:transparent;}
+  .pill.close{background:var(--gold); color:#2a1e00; border-color:transparent;}
 
   /* Modal */
   .modal{position:fixed; inset:0; z-index:75; display:flex; align-items:center; justify-content:center; padding:18px;
@@ -242,7 +247,7 @@
         <button class="btn ghost small" id="addSugBtn">💡 Add a suggestion</button>
         <button class="btn ghost small" id="copySugBtn">📋 Copy all</button>
       </div>
-      <div class="meta">Square ideas and app ideas go to everyone in the room, and stay on this phone.</div>
+      <div class="meta" id="sugMeta">Square ideas and app ideas go to everyone in the room, and stay on this phone.</div>
     </div>
   </section>
 
@@ -338,6 +343,22 @@ let sugKind="square";
 let seenBingo={};               // id -> bool (already toasted this bingo)
 let pollTimer=null, lastId=null, pollActive=false, wsReady=false, pubTimer=null, heartbeat=null, reconnectT=null;
 
+/* ---------- extra squares added from suggestions ---------- */
+let extraPool=[];
+function loadPool(){
+  try{ const a=JSON.parse(store.get("opl_extra_pool")||"[]"); if(Array.isArray(a)) extraPool=a.filter(x=>typeof x==="string"); }catch(e){}
+}
+function savePool(){ store.set("opl_extra_pool", JSON.stringify(extraPool)); }
+function inPool(t){ return extraPool.indexOf(t)>=0 || POOL.indexOf(t)>=0; }
+function togglePool(t){
+  const i=extraPool.indexOf(t);
+  if(i>=0){ extraPool.splice(i,1); showToast("Removed from your pool"); }
+  else if(POOL.indexOf(t)>=0){ showToast("Already in the standard pool"); return; }
+  else { extraPool.push(t); showToast("Added — it can land on your next card"); }
+  savePool(); renderSuggestions();
+}
+function fullPool(){ return POOL.concat(extraPool.filter(t=>POOL.indexOf(t)<0)); }
+
 /* ---------- card building ---------- */
 function shuffle(arr){
   const a=arr.slice();
@@ -345,7 +366,7 @@ function shuffle(arr){
   return a;
 }
 function buildCard(){
-  const picks = shuffle(POOL).slice(0,24);
+  const picks = shuffle(fullPool()).slice(0,24);
   const cells = [];
   for(let i=0;i<25;i++){
     if(i===12){ cells.push("★ FREE ★"); }
@@ -363,6 +384,24 @@ const LINES=(function(){
   L.push([0,6,12,18,24]); L.push([4,8,12,16,20]);
   return L;
 })();
+// how many squares away from the nearest line (0 = bingo)
+function toGo(marks){
+  let best=5;
+  for(const line of LINES){
+    const need=line.reduce((a,i)=>a+(marks[i]?0:1),0);
+    if(need<best) best=need;
+  }
+  return best;
+}
+function progressLabel(marks){
+  const {lines}=winningCells(marks);
+  if(lines) return {txt: lines+" line"+(lines>1?"s":""), cls:" win"};
+  const need=toGo(marks);
+  if(need===1) return {txt:"1 away 👀", cls:" close"};
+  const marked=marks.reduce((a,v)=>a+(v?1:0),0);
+  if(need===2) return {txt:"2 away", cls:""};
+  return {txt: marked>0? marked+" marked" : "playing…", cls:""};
+}
 function winningCells(marks){
   const set=new Set();
   let lines=0;
@@ -385,8 +424,9 @@ function renderMine(){
     d.addEventListener("click",()=>toggle(i));
     grid.appendChild(d);
   }
-  document.getElementById("myPill").textContent = lines? (lines+" line"+(lines>1?"s":"")) : "0 lines";
-  document.getElementById("myPill").className = "pill"+(lines?" win":"");
+  const mine=progressLabel(MARKS);
+  document.getElementById("myPill").textContent = mine.txt;
+  document.getElementById("myPill").className = "pill"+mine.cls;
   const wasBingo=myBingo; myBingo=lines>0;
   if(myBingo && !wasBingo){ celebrate(true); }
 }
@@ -415,12 +455,11 @@ function renderOthers(){
     const block=document.createElement("div");
     block.className="playerblock";
     const secs=Math.max(0,Math.round((now-p.t)/1000));
-    const marked=p.marks.reduce((a,v)=>a+(v?1:0),0);
-    const pillTxt=lines? (lines+" line"+(lines>1?"s":"")) : (marked>0? marked+" marked" : "playing…");
+    const prog=progressLabel(p.marks);
     const head=document.createElement("div");
     head.className="pline";
     head.innerHTML="<div class='pname'><span>🚓</span><span class='who'>"+escapeHtml(p.name||"Player")+"</span></div>"+
-      "<div class='pill"+(lines?" win":"")+"'>"+pillTxt+"</div>";
+      "<div class='pill"+prog.cls+"'>"+prog.txt+"</div>";
     block.appendChild(head);
     const grid=document.createElement("div");
     grid.className="grid mini";
@@ -480,6 +519,12 @@ function renderSuggestions(){
   const list=document.getElementById("sugList");
   const count=document.getElementById("sugCount");
   count.textContent = suggestions.length? suggestions.length+(suggestions.length===1?" idea":" ideas") : "none yet";
+  const meta=document.getElementById("sugMeta");
+  if(meta){
+    meta.textContent = extraPool.length
+      ? "Ideas go to everyone in the room. "+extraPool.length+" added square"+(extraPool.length>1?"s":"")+" can appear on your next 🔀 New card."
+      : "Square ideas and app ideas go to everyone in the room, and stay on this phone.";
+  }
   list.innerHTML="";
   if(!suggestions.length){
     const e=document.createElement("div");
@@ -495,6 +540,14 @@ function renderSuggestions(){
       "<span class='from'>"+escapeHtml(s.from)+"</span></div>"+
       "<div class='txt'>"+escapeHtml(s.text)+"</div>"+
       "<div class='when'>"+when.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})+"</div>";
+    if(s.kind!=="app"){
+      const act=document.createElement("div"); act.className="act";
+      const on=inPool(s.text);
+      const btn=document.createElement("button");
+      btn.className=on?"in":""; btn.textContent=on?"✓ in your pool":"➕ Add to my pool";
+      btn.addEventListener("click",()=>togglePool(s.text));
+      act.appendChild(btn); d.appendChild(act);
+    }
     list.appendChild(d);
   }
 }
@@ -616,6 +669,18 @@ function publish(kind){
   // publish via a simple HTTP POST (ntfy publish endpoint)
   fetch("https://ntfy.sh/"+topic(), {method:"POST", body}).catch(()=>{});
 }
+// someone who joins late still gets tonight's ideas: answer "hello" with a digest
+function publishSuggestionDigest(){
+  if(!ROOM || !suggestions.length) return;
+  const recent=suggestions.slice(0,12);
+  for(let i=0;i<recent.length;i+=4){
+    const batch=recent.slice(i,i+4);
+    setTimeout(()=>{
+      fetch("https://ntfy.sh/"+topic(), {method:"POST",
+        body: JSON.stringify({ v:1, kind:"sugdigest", id:ME, room:ROOM, name:NAME, sugs:batch })}).catch(()=>{});
+    }, i*160);
+  }
+}
 function publishSuggestion(sug){
   if(!ROOM) return;   // solo play: it still lands in the local list
   fetch("https://ntfy.sh/"+topic(), {method:"POST",
@@ -627,9 +692,13 @@ function schedulePublish(){
 }
 function handleIncoming(b){
   if(!b || b.id===ME || roomKey(b.room)!==roomKey(ROOM)) return;   // ignore self / other rooms
-  if(b.kind==="hello"){ publish("state"); return; }     // someone joined -> resend
+  if(b.kind==="hello"){ publish("state"); publishSuggestionDigest(); return; }   // someone joined -> resend
   if(b.kind==="suggest"){
     if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
+    return;
+  }
+  if(b.kind==="sugdigest"){
+    if(Array.isArray(b.sugs)) b.sugs.forEach(x=>addSuggestion(x));   // quiet catch-up, no toast
     return;
   }
   if(!Array.isArray(b.card) || b.card.length!==25 || !Array.isArray(b.marks)) return;
@@ -741,7 +810,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   document.getElementById("nameInput").value = store.get("opl_name")||"";
   document.getElementById("roomInput").value = store.get("opl_lastroom")||"";
   document.getElementById("roomSuggest").textContent = suggestRoom();
-  loadSuggestions(); renderSuggestions();
+  loadPool(); loadSuggestions(); renderSuggestions();
   setStatus("");
 })();
 

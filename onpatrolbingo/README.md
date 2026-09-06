@@ -23,6 +23,8 @@ couch/group chat crowd. Tap squares as they happen and chase a line (or a full c
   a line until you claim it.
 - First to a full line — across, down, or diagonal — wins. 🎉 fires for you and
   toasts the rest of the room.
+- Each player's pill shows how they're doing — marks, **2 away**, **1 away 👀**,
+  then lines — so you can see who to worry about.
 
 ## Reading another player's board
 
@@ -37,8 +39,12 @@ whether they've marked it. Tap it again (or another square) to change it.
   on your phone.
 - **📋 Copy all** puts the whole list on the clipboard as plain text, tagged
   `[SQUARE]` / `[APP]`, ready to paste somewhere durable.
-- Suggestions are a collection box, not a live feature request queue — square
-  ideas still have to be added to the pool in `index.html` by hand.
+- A square idea has **➕ Add to my pool** — tap it and that call joins your
+  personal pool, so it can land on your next 🔀 New card (it doesn't change the
+  card you're holding). Tap again to remove it. The pool lives on your phone;
+  good ones still get folded into the shared pool in `index.html` by hand.
+- Joining late still gets you the night's ideas: whoever's already in the room
+  replays their recent suggestions when you arrive.
 
 ## Running it
 
