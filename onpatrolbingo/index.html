@@ -92,7 +92,7 @@
   .cell.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); border-color:transparent; color:#fff;}
   .cell.marked::after{content:""; position:absolute; inset:0; background:
     radial-gradient(circle at 70% 25%, rgba(255,255,255,.25), transparent 45%);}
-  .cell.free{background:linear-gradient(180deg,#2a3350,#1a2136); color:var(--gold); font-weight:800; font-size:11px;}
+  .cell.free{background:linear-gradient(180deg,#2a3350,#1a2136); color:var(--gold); font-weight:800; font-size:10px;}
   .cell.free.marked{background:linear-gradient(180deg,var(--blue) 0%, var(--blue2) 100%); color:#fff;}
   .cell:active{transform:scale(.95);}
   .cell.win{animation:winflash 1s ease infinite alternate;}
@@ -260,8 +260,8 @@
         <button class="btn ghost small" id="newCardBtn">🔀 New card</button>
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
-      <div class="meta"><span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — including the centre ★ FREE ★. Tap 🎯 to change the pattern for everyone.<br>
-        <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked, pulling in whatever's in the pool now.</div>
+      <div class="meta"><span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
+        <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked (the centre stays put), pulling in whatever's in the pool now.</div>
     </div>
 
     <!-- OTHER PLAYERS -->
@@ -367,8 +367,9 @@ const POOL = [
 ];
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
-const BUILD_V="v23";
-const BUILD_ISO="2026-09-06T02:32:00Z";
+const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
+const BUILD_V="v24";
+const BUILD_ISO="2026-09-06T02:43:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -434,10 +435,10 @@ function shuffle(arr){
   return a;
 }
 function buildCard(){
-  const picks = shuffle(fullPool()).slice(0,24);
+  const picks = shuffle(fullPool().filter(t=>t!==CENTER_SQUARE)).slice(0,24);
   const cells = [];
   for(let i=0;i<25;i++){
-    if(i===12){ cells.push("★ FREE ★"); }
+    if(i===12){ cells.push(CENTER_SQUARE); }
     else { cells.push(picks[i>12? i-1 : i]); }
   }
   return cells;
@@ -727,7 +728,11 @@ function loadProgress(){
   try{
     const c=JSON.parse(store.get(keyBase()+"_card")||"null");
     const m=JSON.parse(store.get(keyBase()+"_marks")||"null");
-    if(Array.isArray(c)&&c.length===25&&Array.isArray(m)&&m.length===25){ CARD=c; MARKS=m; return true; }
+    if(Array.isArray(c)&&c.length===25&&Array.isArray(m)&&m.length===25){
+      CARD=c; MARKS=m;
+      if(CARD[12]!==CENTER_SQUARE){ CARD[12]=CENTER_SQUARE; saveProgress(); }   // centre changed since the deal
+      return true;
+    }
   }catch(e){}
   return false;
 }
@@ -1040,6 +1045,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   loadPool(); loadSuggestions(); renderSuggestions();
   PAT = PATTERNS[store.get("opl_pattern")] ? store.get("opl_pattern") : "all";
   paintPattern();
+  const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;
   document.getElementById("buildStampSetup").textContent=bl;

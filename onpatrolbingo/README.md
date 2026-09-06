@@ -41,9 +41,13 @@ who changed it to what. Someone joining mid-game picks it up from the room.
 
 ## The card
 
-- 5×5 card drawn from the show's greatest-hits pool, with **★ FREE ★** in the middle.
-- **The centre square is tapped like any other square** — it doesn't count toward
-  a line until you claim it.
+- 5×5 card drawn from the show's greatest-hits pool. The centre is the one square
+  **every player shares** — set by `CENTER_SQUARE` at the top of the script
+  (currently `Gran falls asleep`; `★ FREE ★` is the classic). Change that string
+  and every card picks it up on the next load, in-progress cards included, without
+  losing any marks.
+- **The centre is tapped like any other square** — it doesn't count toward the
+  pattern until someone claims it, and ♻️ Fresh squares leaves it in place.
 - First to complete the chosen pattern wins. 🎉 fires for you and toasts the rest
   of the room.
 - Each player's pill shows how they're doing — marks, **2 away**, **1 away 👀**,
