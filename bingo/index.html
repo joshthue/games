@@ -444,7 +444,6 @@
       <button class="btn ghost small" id="loadGames">📅 This week's games</button>
     </div>
     <div id="gameList"></div>
-    <div id="matchPresets" class="presets"></div>
     <label style="display:block;margin-top:10px;">Away</label>
     <select id="awaySel" class="teamsel"></select>
     <div class="rosterhead"><span id="awayCount" class="rcount">—</span>
@@ -919,38 +918,13 @@ const NFL_TEAMS = ["49ers","Bears","Bengals","Bills","Broncos","Browns","Buccane
   "Patriots","Raiders","Rams","Ravens","Saints","Seahawks","Steelers","Texans","Titans","Vikings"];
 /* Star plays: real players doing specific things. Rosters are editable in the app
    (and shared with the room), so a stale name is a 10-second fix, not a deploy. */
-const ROSTERS = {
-  "Vikings": [
-    {n:"Kyler Murray", s:"Murray", p:"QB"},
-    {n:"Aaron Jones", s:"Jones", p:"RB"},
-    {n:"Jordan Mason", s:"Mason", p:"RB"},
-    {n:"Justin Jefferson", s:"Jefferson", p:"WR"},
-    {n:"Jordan Addison", s:"Addison", p:"WR"},
-    {n:"Jauan Jennings", s:"Jennings", p:"WR"},
-    {n:"T.J. Hockenson", s:"Hockenson", p:"TE"},
-    {n:"Will Reichard", s:"Reichard", p:"K"},
-    {n:"Dallas Turner", s:"Turner", p:"DEF"},
-    {n:"Andrew Van Ginkel", s:"Van Ginkel", p:"DEF"},
-    {n:"Blake Cashman", s:"Cashman", p:"DEF"},
-    {n:"Byron Murphy Jr.", s:"Murphy", p:"DEF"},
-    {n:"Josh Metellus", s:"Metellus", p:"DEF"}
-  ],
-  "Packers": [
-    {n:"Jordan Love", s:"Love", p:"QB"},
-    {n:"MarShawn Lloyd", s:"Lloyd", p:"RB"},
-    {n:"Christian Watson", s:"Watson", p:"WR"},
-    {n:"Jayden Reed", s:"Reed", p:"WR"},
-    {n:"Matthew Golden", s:"Golden", p:"WR"},
-    {n:"Tucker Kraft", s:"Kraft", p:"TE"},
-    {n:"Trey Smack", s:"Smack", p:"K"},
-    {n:"Lukas Van Ness", s:"Van Ness", p:"DEF"},
-    {n:"Devonte Wyatt", s:"Wyatt", p:"DEF"},
-    {n:"Edgerrin Cooper", s:"Cooper", p:"DEF"},
-    {n:"Zaire Franklin", s:"Franklin", p:"DEF"},
-    {n:"Keisean Nixon", s:"Nixon", p:"DEF"},
-    {n:"Xavier McKinney", s:"McKinney", p:"DEF"}
-  ]
-};
+// Team nickname -> ESPN abbreviation. Rosters are never hardcoded: they come from
+// the live schedule/roster endpoints, so a trade or an injury is never stale here.
+const TEAM_ABBR = {"49ers":"sf","Bears":"chi","Bengals":"cin","Bills":"buf","Broncos":"den","Browns":"cle",
+  "Buccaneers":"tb","Cardinals":"ari","Chargers":"lac","Chiefs":"kc","Colts":"ind","Commanders":"wsh",
+  "Cowboys":"dal","Dolphins":"mia","Eagles":"phi","Falcons":"atl","Giants":"nyg","Jaguars":"jax","Jets":"nyj",
+  "Lions":"det","Packers":"gb","Panthers":"car","Patriots":"ne","Raiders":"lv","Rams":"lar","Ravens":"bal",
+  "Saints":"no","Seahawks":"sea","Steelers":"pit","Texans":"hou","Titans":"ten","Vikings":"min"};
 const PLAY_TEMPLATES = {
   QB:  ["{S} touchdown pass","{S} gets sacked","{S} scrambles for a first","{S} throws a pick","{S} converts on 3rd down"],
   RB:  ["{S} 10+ yard run","{S} rushing touchdown","{S} catch out of the backfield","{S} stuffed at the line"],
@@ -1012,8 +986,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v47";
-const BUILD_ISO="2026-09-06T17:23:00Z";
+const BUILD_V="v48";
+const BUILD_ISO="2026-09-07T14:41:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1211,7 +1185,7 @@ function applyInvite(){
   if(vs && vs.indexOf("|")>0){
     const [away,home]=vs.split("|");
     MATCHUP={away:away||"",home:home||""}; MATCHUP_AT=Date.now();
-    ROSTER={away:(ROSTERS[MATCHUP.away]||[]).slice(), home:(ROSTERS[MATCHUP.home]||[]).slice()};
+    ROSTER={away:[], home:[]};                    // the room's matchup message brings the players
     store.set("opl_matchup", JSON.stringify(MATCHUP)); store.set("opl_roster", JSON.stringify(ROSTER));
     PACKS_ON=allPackKeys().slice(); savePacksOn();
   }
@@ -1291,8 +1265,8 @@ function adoptTheme(key, at, who){
 function setMatchup(away, home, announce, awayRoster, homeRoster){
   MATCHUP={ away:String(away||"").trim().slice(0,20), home:String(home||"").trim().slice(0,20) };
   ROSTER={
-    away: awayRoster!==undefined ? awayRoster : (ROSTERS[MATCHUP.away]||[]).slice(),
-    home: homeRoster!==undefined ? homeRoster : (ROSTERS[MATCHUP.home]||[]).slice()
+    away: awayRoster!==undefined ? awayRoster : ROSTER.away.slice(),
+    home: homeRoster!==undefined ? homeRoster : ROSTER.home.slice()
   };
   MATCHUP_AT=Date.now();
   store.set("opl_matchup", JSON.stringify(MATCHUP));
@@ -1319,7 +1293,7 @@ function adoptMatchup(m, at, who, roster){
   if(sameTeams && sameRoster) return;
   MATCHUP={ away:m.away||"", home:m.home||"" }; MATCHUP_AT=at;
   if(roster && typeof roster==="object") ROSTER={ away:roster.away||[], home:roster.home||[] };
-  else ROSTER={ away:(ROSTERS[MATCHUP.away]||[]).slice(), home:(ROSTERS[MATCHUP.home]||[]).slice() };
+  else ROSTER={ away:[], home:[] };
   store.set("opl_matchup", JSON.stringify(MATCHUP));
   store.set("opl_roster", JSON.stringify(ROSTER));
   for(const k of ["matchup","stars"]) if(packCalls(k).length && !packOn(k)){ PACKS_ON.push(k); savePacksOn(); }
@@ -2496,7 +2470,7 @@ let modalRoster = { away:[], home:[] };   // [{n,s,p,on}] while the picker is op
 function candidates(side){
   const team = side==="away" ? MATCHUP.away : MATCHUP.home;
   const chosen = ROSTER[side]||[];
-  const base = (ROSTERS[team]||[]).slice();
+  const base = [];                                // nothing is baked in; live fetch or hand-entry fills this
   const out = base.map(pl => ({...pl, on: chosen.length ? chosen.some(c=>c.n===pl.n) : true}));
   for(const c of chosen){                                  // custom names added earlier
     if(!out.some(pl=>pl.n===c.n)) out.push({...c, on:true});
@@ -2536,26 +2510,12 @@ function paintRosterCount(side){
 }
 function loadSideRoster(side){ modalRoster[side]=candidates(side); renderRoster(side); }
 
-const MATCH_PRESETS = [["Vikings","Packers"]];
-function buildPresets(){
-  const box=document.getElementById("matchPresets"); if(!box || box.children.length) return;
-  for(const [a,h] of MATCH_PRESETS){
-    const b=document.createElement("button");
-    b.textContent="⭐ "+a+" vs "+h;
-    b.addEventListener("click",()=>{
-      setMatchup(a,h,true,(ROSTERS[a]||[]).slice(),(ROSTERS[h]||[]).slice());
-      document.getElementById("matchModal").classList.add("hidden");
-    });
-    box.appendChild(b);
-  }
-}
 function openMatchModal(){
-  buildPresets();
   for(const id of ["awaySel","homeSel"]){
     const sel=document.getElementById(id);
     if(!sel.options.length){
       sel.appendChild(new Option("—",""));
-      for(const t of NFL_TEAMS) sel.appendChild(new Option(ROSTERS[t] ? t+" ⭐" : t, t));
+      for(const t of NFL_TEAMS) sel.appendChild(new Option(t,t));
     }
   }
   document.getElementById("awaySel").value=MATCHUP.away||"";
@@ -2575,8 +2535,19 @@ document.getElementById("matchClear").addEventListener("click",()=>{ setMatchup(
 for(const side of ["away","home"]){
   document.getElementById(side+"Sel").addEventListener("change",e=>{
     MATCHUP[side]=e.target.value;                       // so candidates() sees the new team
-    modalRoster[side]=(ROSTERS[e.target.value]||[]).map(pl=>({...pl, on:true}));
+    const team=e.target.value, abbr=TEAM_ABBR[team];
+    modalRoster[side]=[];
     renderRoster(side);
+    if(!abbr) return;
+    const cnt=document.getElementById(side+"Count");
+    if(cnt) cnt.textContent="loading "+team+" roster…";
+    fetchRoster(abbr).then(list=>{
+      modalRoster[side]=list.map(x=>({...x}));
+      renderRoster(side);
+    }).catch(()=>{
+      renderRoster(side);
+      if(cnt) cnt.textContent="couldn't load — add players below";
+    });
   });
 }
 document.querySelectorAll(".rlink[data-all]").forEach(b=>b.addEventListener("click",()=>{
@@ -2651,8 +2622,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
   THEME = THEMES[store.get("opl_theme")] ? store.get("opl_theme") : "onpatrol";
   try{ const m=JSON.parse(store.get("opl_matchup")||"null"); if(m&&typeof m==="object") MATCHUP={away:m.away||"",home:m.home||""}; }catch(e){}
   try{ const r=JSON.parse(store.get("opl_roster")||"null"); if(r&&typeof r==="object") ROSTER={away:r.away||[],home:r.home||[]}; }catch(e){}
-  if(!ROSTER.away.length && ROSTERS[MATCHUP.away]) ROSTER.away=ROSTERS[MATCHUP.away].slice();
-  if(!ROSTER.home.length && ROSTERS[MATCHUP.home]) ROSTER.home=ROSTERS[MATCHUP.home].slice();
+
   // packs saved under another theme shouldn't leave this one with nothing switched on
   if(!allPackKeys().some(k=>packOn(k))){ PACKS_ON = allPackKeys().slice(); savePacksOn(); }
   paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks(); paintApplyMode();

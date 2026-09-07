@@ -71,12 +71,11 @@ the picker. Each checked player generates their own calls from `PLAY_TEMPLATES`:
 - **K** — field goal · misses one
 - **DEF** — sack · tackle for loss · pass breakup · forces a turnover
 
-A full two-team roster produces ~100 calls in a "⭐ Star plays" pack. Vikings and
-Packers ship with rosters baked in (verified against depth charts on 2026-09-05);
-every other team starts empty and you type it. **Rosters are editable in the app
-and shared with the room**, so a trade, an injury or a stale name is a ten-second
-fix rather than a deploy — and last names are derived automatically, particles
-included (Van Ginkel, Van Ness).
+A full two-team roster produces ~100 calls in a "⭐ Star plays" pack. **No roster is
+hardcoded** — picking a game from 📅, or picking a team by hand, fetches that team's
+live roster with injury designations. Only the nickname→abbreviation map lives in
+the file. Rosters stay editable in the app and shared with the room, and last names
+are derived automatically, particles included (Van Ginkel, Van Ness).
 
 ## Inviting people
 
