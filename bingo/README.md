@@ -87,6 +87,11 @@ wants it.
 
 Params are `?room=&theme=&pat=&vs=away|home&v=` — a link can be hand-written too.
 
+`vs` only rides along when the game in play actually uses a matchup, and it's
+ignored on arrival for any theme that doesn't — so a football matchup can't leak
+into a Seinfeld invite. Switching themes clears a matchup that doesn't belong to
+the new one.
+
 The **`v` is load-bearing**: it's the build the invite was made on. If the phone
 opening it is running something older (a stale cache), the app reloads once past
 the cache onto the newer build before joining. It only ever retries once — if the
@@ -198,8 +203,15 @@ whether they've marked it. Tap it again (or another square) to change it.
 - **📌 Everyone** on a square idea pushes it into *every* phone's packs at once,
   instead of each person opting in with ➕.
 - **Tag a suggestion** (optional field — "IHOP", "catchphrase", "Oklahoma") and
-  accepting it creates a **pack of that name**, switchable on and off with the
-  built-ins. Untagged ideas land in "Room ideas".
+  it creates a **pack of that name**, switchable on and off with the built-ins.
+  Untagged ideas land in "Room ideas". Tags pick up an icon from their name —
+  📍 places, 🍔 food, 💬 catchphrases, 👤 people, 🏷️ for anything else — and the
+  tag field offers the tags already in use in the room instead of making you
+  retype them.
+- **Tag packs are derived, not synced.** Every phone builds the same pack from the
+  same shared suggestions, so a pack toggled on is on for the *whole room* — no
+  more each-person-taps-➕ before a call can show up. Turning one off turns it off
+  for everyone.
 - **Ideas stay on the night they were added.** A pack created during On Patrol
   never appears on football night and vice versa — the theme is recorded with the
   pack, and switching themes brings that theme's tag packs back with it. The
@@ -242,6 +254,39 @@ It isn't free: after a manual refresh the button sits out a **90-second cooldown
 counting down on the button face with a gold progress line. The timer is stored
 per room, so reloading the page doesn't dodge it — but **starting a new round
 clears it**.
+
+## Organize mode — the room's pool
+
+Long-press any square on your own card for **Edit / Tag / Remove**:
+
+- **Edit** rewords the call everywhere it appears.
+- **Tag** moves it into another pack — including built-in calls, which leave their
+  original pack when they're retagged.
+- **Remove** takes it out of the pool for the whole room. If the square you removed
+  was unmarked, it's swapped for a fresh one on your card immediately; a marked
+  square stays put so you don't lose a line.
+
+Edits, tags and removals are room-wide and travel on their own message, replayed to
+anyone who joins later. The **🗂 Organize** panel lists everything removed or
+reworded with a one-tap restore, plus **Restore everything**.
+
+Because it's room-wide, it can be **PIN-locked**: set a PIN in the Organize panel
+and the destructive parts need an unlock first. The first PIN set locks it —
+changing it later means unlocking first, so nobody can quietly take the room over.
+The PIN is stored as a hash, never in the clear.
+
+Not implemented: **reordering** the pool. Cards are shuffled on every deal, so pool
+order has no effect on what you get.
+
+## Auto-refresh
+
+Changes that reshape the pool — theme, packs, matchup, organize edits — normally
+apply themselves the moment they land. The **⏸ Auto-refresh** toggle (bottom of the
+🎴 picker) holds them instead: a banner appears saying what changed and who did it,
+and the board only moves when you tap it. Newest change per kind wins, so a run of
+changes while you're paused collapses into one apply. Setting is per phone.
+
+New rounds are never held — a new round always deals.
 
 ## Rounds and the scoreboard
 

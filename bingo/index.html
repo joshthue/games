@@ -169,6 +169,19 @@
   .choice2 button{flex:1; font-family:inherit; font-size:12.5px; font-weight:800; padding:10px 6px; border-radius:11px;
     cursor:pointer; background:var(--panel2); color:var(--muted); border:1px solid var(--line);}
   .choice2 button.on{background:var(--blue); color:#fff; border-color:transparent;}
+  .syncbar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;
+    background:linear-gradient(180deg,rgba(46,107,255,.22),rgba(46,107,255,.08)); border:1px solid var(--blue);
+    border-radius:12px; padding:9px 12px; font-size:12.5px; font-weight:700;}
+  .syncbar button{font-family:inherit; font-size:12.5px; font-weight:800; padding:7px 14px; border-radius:9px;
+    background:var(--blue); color:#fff; border:none; cursor:pointer;}
+  .cell.peekmenu{box-shadow:0 0 0 3px var(--gold);}
+  .grid.locked .cell{-webkit-touch-callout:none; -webkit-user-select:none; user-select:none;}
+  .orgrow{display:flex; align-items:center; gap:9px; padding:9px 11px; border-bottom:1px solid var(--line); font-size:13px;}
+  .orgrow:last-child{border-bottom:none;}
+  .orgrow .t{flex:1; min-width:0;}
+  .orgrow .t.gone{opacity:.5; text-decoration:line-through;}
+  .orgrow button{font-family:inherit; font-size:11.5px; font-weight:800; padding:6px 10px; border-radius:9px;
+    background:var(--panel); color:var(--ink); border:1px solid var(--line); cursor:pointer;}
   .invitebox{background:linear-gradient(180deg,rgba(46,107,255,.18),rgba(46,107,255,.06));
     border:1px solid var(--blue); border-radius:14px; padding:14px; margin:4px 0 16px;}
   .invitebox .ttl{font-size:19px; font-weight:800; margin-bottom:5px;}
@@ -344,11 +357,17 @@
           <span class="patchip" id="themeChip" title="Tonight's game">🚨 On Patrol</span>
           <span class="patchip" id="matchChip" title="Matchup" style="display:none;">🏟️</span>
           <span class="patchip" id="teamChip" title="Team">👥 Solo</span>
+          <span class="patchip" id="autoChip" title="Auto-refresh">⚡ Auto</span>
+          <span class="patchip" id="lockChip" title="Organize">🔒</span>
           <span class="patchip" id="packChip" title="Call packs">🎴</span>
           <span class="patchip" id="sizeChip" title="Text size">🔠 M</span>
           <span class="patchip" id="soundChip" title="Sound">🔊</span>
           <div class="pill" id="myPill">playing…</div>
         </div>
+      </div>
+      <div id="syncBar" class="syncbar hidden">
+        <span id="syncWhat">Room updated</span>
+        <button type="button" id="syncNow">Sync</button>
       </div>
       <div id="myGrid" class="grid"></div>
       <div class="bar" id="myBar"><i></i></div>
@@ -405,6 +424,42 @@
     </div>
   </section>
 
+</div>
+
+<!-- SQUARE MENU (long-press, organize unlocked) -->
+<div id="sqModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🧹 <span id="sqText">Square</span></h3>
+    <div class="hint">Changes apply to everyone in the room.</div>
+    <input id="sqEdit" type="text" maxlength="80" placeholder="Edit the wording" style="margin-top:10px;">
+    <label style="display:block;margin-top:10px;font-size:12px;color:var(--muted);font-weight:800;">Pack</label>
+    <input id="sqTag" type="text" maxlength="24" list="tagOptions" placeholder="Room ideas" autocomplete="off">
+    <datalist id="tagOptions"></datalist>
+    <div class="footbar">
+      <button class="btn gold small" id="sqSave">Save</button>
+      <button class="btn ghost small" id="sqRemove">🗑️ Remove call</button>
+    </div>
+    <div class="footbar"><button class="btn ghost small" id="sqClose">Cancel</button></div>
+  </div>
+</div>
+
+<!-- ORGANIZE / PIN MODAL -->
+<div id="orgModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>🧹 Organize</h3>
+    <div class="hint" id="orgHint">Set a PIN to unlock organizing for this room. It gates the buttons on each phone, not the wire — right level for a family game. Forgot it? Start a room with a new code.</div>
+    <input id="pinInput" type="tel" inputmode="numeric" maxlength="8" placeholder="4-digit PIN" autocomplete="off" style="margin-top:10px;">
+    <div class="footbar">
+      <button class="btn gold small" id="pinGo">Unlock</button>
+      <button class="btn ghost small" id="pinLock">Lock</button>
+    </div>
+    <div id="orgBody" class="hidden">
+      <div class="meta" id="orgCount">—</div>
+      <div id="orgList" class="rosterlist"></div>
+      <div class="footbar"><button class="btn ghost small" id="orgRestoreAll">↩︎ Restore everything</button></div>
+    </div>
+    <div class="footbar"><button class="btn ghost small" id="orgClose">Done</button></div>
+  </div>
 </div>
 
 <!-- INVITE MODAL -->
@@ -522,8 +577,8 @@
       <button id="sugKindApp">🛠️ App idea</button>
     </div>
     <textarea id="sugText" maxlength="240" placeholder="e.g. &quot;Suspect trips over own feet&quot;"></textarea>
-    <input id="sugTag" type="text" maxlength="24" placeholder="Tag (optional) — e.g. IHOP, catchphrase, Oklahoma"
-      style="margin-top:8px;" autocomplete="off">
+    <input id="sugTag" type="text" maxlength="24" list="tagOptions"
+      placeholder="Pack (optional) — pick one or type a new name" style="margin-top:8px;" autocomplete="off">
     <div class="hint" id="sugHint">A call for a bingo square — something you'd expect to see on the show.</div>
     <div class="hint">A tag groups accepted ideas into their own pack you can switch on and off.</div>
     <div class="footbar">
@@ -986,8 +1041,8 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v48";
-const BUILD_ISO="2026-09-07T14:41:00Z";
+const BUILD_V="v49";
+const BUILD_ISO="2026-09-07T14:59:00Z";
 function buildLabel(){
   const d=new Date(BUILD_ISO);
   const when=isNaN(d) ? BUILD_ISO
@@ -1033,52 +1088,340 @@ let seenBingo={};               // id -> bool (already toasted this bingo)
 let seenClose={};               // id -> bool (already shouted "one away")
 let pollActive=false, pubTimer=null, heartbeat=null, reconnectT=null;
 
-/* ---------- packs the room has switched on, plus packs grown from suggestion tags ---------- */
-let extraPacks={};              // tag -> [calls]  (ideas accepted from the room)
-let PACKS_ON=[], PACKS_AT=0;    // which packs cards are dealt from (a room rule, like the pattern)
+/* ---------- organize UI ---------- */
+function paintOrganize(){
+  const chip=document.getElementById("lockChip");
+  if(chip) chip.textContent = UNLOCKED ? "\u{1F513} Organize" : "\u{1F512}";
+  const grid=document.getElementById("myGrid");
+  if(grid) grid.classList.toggle("locked", UNLOCKED);
+  const body=document.getElementById("orgBody");
+  if(body) body.classList.toggle("hidden", !UNLOCKED);
+  const hint=document.getElementById("orgHint");
+  if(hint) hint.textContent = UNLOCKED
+    ? "Unlocked. Long-press any square on your card to retag, reword or remove it for the whole room."
+    : (PIN_HASH ? "Enter the room's organize PIN." : "Set a PIN to unlock organizing for this room. It gates the buttons on each phone, not the wire — right level for a family game. Forgot it? Start a room with a new code.");
+  if(UNLOCKED) renderOrgList();
+}
+function renderOrgList(){
+  const box=document.getElementById("orgList"), cnt=document.getElementById("orgCount");
+  if(!box) return;
+  const rows=[];
+  for(const k in ORGANIZE.removed) rows.push({call:k, kind:"removed"});
+  for(const k in ORGANIZE.edits) rows.push({call:k, kind:"edited", to:ORGANIZE.edits[k]});
+  for(const k in ORGANIZE.retags) rows.push({call:k, kind:"retagged", to:ORGANIZE.retags[k]});
+  box.innerHTML="";
+  cnt.textContent = rows.length ? rows.length+" change"+(rows.length===1?"":"s")+" in this room" : "Nothing changed yet.";
+  for(const r of rows){
+    const d=document.createElement("div"); d.className="orgrow";
+    const t=document.createElement("span");
+    t.className="t"+(r.kind==="removed"?" gone":"");
+    t.textContent = r.kind==="edited" ? r.call+" → "+r.to
+                  : r.kind==="retagged" ? r.call+" → "+tagIcon(r.to)+" "+r.to
+                  : r.call;
+    const b=document.createElement("button"); b.textContent="↩︎";
+    b.addEventListener("click",()=>{
+      if(r.kind==="removed") delete ORGANIZE.removed[r.call];
+      if(r.kind==="edited") delete ORGANIZE.edits[r.call];
+      if(r.kind==="retagged") delete ORGANIZE.retags[r.call];
+      pushOrganize("Restored"); renderOrgList();
+    });
+    d.appendChild(t); d.appendChild(b); box.appendChild(d);
+  }
+}
+function fillTagOptions(){
+  const dl=document.getElementById("tagOptions"); if(!dl) return;
+  const tags=new Set(themeTags());
+  for(const k of themePacks()) if(PACKS[k]) tags.add(PACKS[k].name);
+  tags.add(DEFAULT_ROOM_TAG);
+  dl.innerHTML="";
+  for(const t of tags){ const o=document.createElement("option"); o.value=t; dl.appendChild(o); }
+}
+let sqIndex=-1;
+function openSquareMenu(i){
+  if(!UNLOCKED) return;
+  sqIndex=i;
+  const shown=CARD[i], base=baseOf(shown);
+  document.getElementById("sqText").textContent=shown;
+  document.getElementById("sqEdit").value=shown;
+  document.getElementById("sqTag").value=retagOf(base)||"";
+  fillTagOptions();
+  document.getElementById("sqModal").classList.remove("hidden");
+}
+function closeSquareMenu(){ document.getElementById("sqModal").classList.add("hidden"); sqIndex=-1; }
+function squareSave(){
+  if(sqIndex<0) return;
+  const base=baseOf(CARD[sqIndex]);
+  const txt=document.getElementById("sqEdit").value.trim().slice(0,80);
+  const tag=document.getElementById("sqTag").value.trim().slice(0,24);
+  let did=[];
+  if(txt && txt!==base){ ORGANIZE.edits[base]=txt; did.push("reworded"); }
+  else if(txt===base && ORGANIZE.edits[base]!==undefined){ delete ORGANIZE.edits[base]; did.push("reverted"); }
+  if(tag){ ORGANIZE.retags[base]=tag; did.push("moved to "+tag); }
+  else if(ORGANIZE.retags[base]){ delete ORGANIZE.retags[base]; did.push("untagged"); }
+  CARD[sqIndex]=callText(base); saveProgress();
+  closeSquareMenu();
+  pushOrganize(did.length ? "\u{1F9F9} "+did.join(" · ") : "No change");
+}
+function squareRemove(){
+  if(sqIndex<0) return;
+  const base=baseOf(CARD[sqIndex]), i=sqIndex;
+  ORGANIZE.removed[base]=1;
+  delete ORGANIZE.edits[base]; delete ORGANIZE.retags[base];
+  closeSquareMenu();
+  // swap it off your own card right away — but a marked square was earned, so it stays
+  if(!MARKS[i] && i!==12){
+    const keep=new Set(CARD.filter((t,j)=>j===12||MARKS[j]));
+    const pick=shuffle(fullPool().filter(t=>!keep.has(t)))[0];
+    if(pick){ CARD[i]=pick; CARD_AT=Date.now(); saveProgress(); }
+  }
+  pushOrganize("\u{1F5D1}\uFE0F Removed for the room");
+  publish("state");
+}
+// long-press that can't be confused with marking a square or scrolling the page
+function armLongPress(el, i){
+  let timer=null, sx=0, sy=0, fired=false;
+  const start=e=>{
+    if(!UNLOCKED) return;
+    const t=e.touches?e.touches[0]:e; sx=t.clientX; sy=t.clientY; fired=false;
+    el.classList.add("peekmenu");
+    timer=setTimeout(()=>{ fired=true; el.classList.remove("peekmenu");
+      if(navigator.vibrate){ try{navigator.vibrate(15);}catch(e){} }
+      openSquareMenu(i); }, 550);
+  };
+  const move=e=>{
+    if(!timer) return;
+    const t=e.touches?e.touches[0]:e;
+    if(Math.abs(t.clientX-sx)>10 || Math.abs(t.clientY-sy)>10) cancel();
+  };
+  const cancel=()=>{ clearTimeout(timer); timer=null; el.classList.remove("peekmenu"); };
+  el.addEventListener("touchstart", start, {passive:true});
+  el.addEventListener("touchmove", move, {passive:true});
+  el.addEventListener("touchend", e=>{ if(fired){ e.preventDefault(); } cancel(); });
+  el.addEventListener("mousedown", start);
+  el.addEventListener("mousemove", move);
+  el.addEventListener("mouseup", cancel);
+  el.addEventListener("mouseleave", cancel);
+  el.addEventListener("contextmenu", e=>{ if(UNLOCKED) e.preventDefault(); });
+  return ()=>fired;
+}
+
+/* ---------- auto-refresh: adopt room changes now, or queue them behind a banner ---------- */
+let SYNC_PAUSED = store.get("opl_autorefresh")==="off";
+let pending=[];                                  // [{key, apply, note}]
+function paintSync(){
+  const chip=document.getElementById("autoChip");
+  if(chip) chip.textContent = SYNC_PAUSED ? "\u23F8 Manual" : "\u26A1 Auto";
+  const bar=document.getElementById("syncBar");
+  if(bar) bar.classList.toggle("hidden", !pending.length);
+  const txt=document.getElementById("syncWhat");
+  if(txt && pending.length) txt.textContent = pending.length===1 ? pending[0].note : pending.length+" room updates waiting";
+}
+function queueSync(key, apply, note){
+  pending = pending.filter(p=>p.key!==key);      // newest wins, same as the wire
+  pending.push({key, apply, note});
+  paintSync();
+}
+function runSync(){
+  const q=pending.slice(); pending=[];
+  for(const p of q){ try{ p.apply(); }catch(e){} }
+  paintSync();
+}
+function toggleAutoRefresh(){
+  SYNC_PAUSED=!SYNC_PAUSED;
+  store.set("opl_autorefresh", SYNC_PAUSED?"off":"on");
+  if(!SYNC_PAUSED) runSync();
+  paintSync();
+  showToast(SYNC_PAUSED ? "\u23F8 Room changes will wait for Sync" : "\u26A1 Room changes apply as they arrive");
+}
+
+/* ---------- organize mode: three last-write-wins layers over the base calls ----------
+   removed: {call:1}      suppressed everywhere the pool is assembled
+   edits:   {call:newText} text-only override, so marks stay put
+   retags:  {call:tag}     move a call into another pack
+   All three travel together on an "organize" message (never in the state heartbeat,
+   which has to stay small) and are re-sent when a late joiner says hello. */
+let ORGANIZE={removed:{}, edits:{}, retags:{}}, ORGANIZE_AT=0;
+let PIN_HASH="", PIN_AT=0, UNLOCKED=false;
+
+function loadOrganize(){
+  try{ const o=JSON.parse(store.get("opl_organize_"+roomKey(ROOM||"solo"))||"null");
+    if(o&&typeof o==="object"){ ORGANIZE={removed:o.removed||{}, edits:o.edits||{}, retags:o.retags||{}}; ORGANIZE_AT=o.at||0; }
+  }catch(e){}
+  try{ const pin=JSON.parse(store.get("opl_pin_"+roomKey(ROOM||"solo"))||"null");
+    if(pin&&typeof pin==="object"){ PIN_HASH=pin.h||""; PIN_AT=pin.at||0; UNLOCKED=!!pin.unlocked; }
+  }catch(e){}
+  invalidatePacks();
+}
+function saveOrganize(){
+  store.set("opl_organize_"+roomKey(ROOM||"solo"),
+    JSON.stringify({removed:ORGANIZE.removed, edits:ORGANIZE.edits, retags:ORGANIZE.retags, at:ORGANIZE_AT}));
+  invalidatePacks();
+}
+function savePin(){ store.set("opl_pin_"+roomKey(ROOM||"solo"), JSON.stringify({h:PIN_HASH, at:PIN_AT, unlocked:UNLOCKED})); }
+
+function isRemoved(call){ return !!ORGANIZE.removed[call]; }
+function callText(call){ return ORGANIZE.edits[call]!==undefined ? ORGANIZE.edits[call] : call; }
+function retagOf(call){ return ORGANIZE.retags[call]||""; }
+function baseOf(text){                                   // edited text -> the original call id
+  if(ORGANIZE.edits[text]!==undefined) return text;
+  for(const k in ORGANIZE.edits) if(ORGANIZE.edits[k]===text) return k;
+  return text;
+}
+function pushOrganize(note){
+  ORGANIZE_AT=Date.now(); saveOrganize();
+  if(ROOM) post(JSON.stringify({ v:1, kind:"organize", id:ME, room:ROOM, name:NAME,
+                                 organize:ORGANIZE, organizeAt:ORGANIZE_AT }));
+  renderSuggestions(); paintPacks(); renderMine();
+  if(note) showToast(note);
+}
+function adoptOrganize(o, at, who){
+  if(!o || !at || at<=ORGANIZE_AT) return;
+  if(SYNC_PAUSED){ queueSync("organize", ()=>adoptOrganizeNow(o,at,who), (who||"Someone")+" curated the calls"); return; }
+  adoptOrganizeNow(o, at, who);
+}
+function adoptOrganizeNow(o, at, who){
+  ORGANIZE={removed:o.removed||{}, edits:o.edits||{}, retags:o.retags||{}};
+  ORGANIZE_AT=at; saveOrganize();
+  renderSuggestions(); paintPacks(); renderMine();
+  showToast("\u{1F9F9} "+(who||"Someone")+" tidied the call list");
+}
+
+/* PIN gates the organize UI on this device. It is not a security boundary — no
+   server exists to reject a hand-crafted message — which is the right level for
+   a family game. Only a hash is ever stored or synced. */
+async function hashPin(pin){
+  const txt=String(pin||"").trim();
+  if(!txt) return "";
+  try{
+    const buf=await crypto.subtle.digest("SHA-256", new TextEncoder().encode("opl:"+txt));
+    return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);
+  }catch(e){
+    let h=0; for(let i=0;i<txt.length;i++){ h=(h*31+txt.charCodeAt(i))|0; }   // ancient-browser fallback
+    return "fnv"+(h>>>0).toString(16);
+  }
+}
+async function setPin(pin){
+  const h=await hashPin(pin);
+  if(PIN_HASH && !UNLOCKED){ showToast("Unlock first to change the PIN"); return; }   // lock on first set
+  PIN_HASH=h; PIN_AT=Date.now(); UNLOCKED=!!h; savePin();
+  if(ROOM) post(JSON.stringify({ v:1, kind:"pin", id:ME, room:ROOM, name:NAME, pinHash:PIN_HASH, pinAt:PIN_AT }));
+  paintOrganize();
+  showToast(h ? "\u{1F512} Organize PIN set — you're unlocked" : "\u{1F513} PIN cleared");
+}
+async function tryUnlock(pin){
+  const h=await hashPin(pin);
+  if(!PIN_HASH){ await setPin(pin); return; }
+  UNLOCKED = h===PIN_HASH;
+  savePin(); paintOrganize();
+  showToast(UNLOCKED ? "\u{1F513} Organize mode unlocked" : "That PIN doesn't match");
+}
+function lockOrganize(){ UNLOCKED=false; savePin(); paintOrganize(); showToast("\u{1F512} Locked"); }
+function adoptPin(h, at){
+  if(!at || at<=PIN_AT) return;
+  PIN_HASH=h||""; PIN_AT=at;
+  if(!PIN_HASH) UNLOCKED=false;                          // PIN cleared for the room
+  savePin(); paintOrganize();
+}
+
+/* ---------- packs: built-ins, plus packs derived from the room's tagged suggestions ---------- */
+// Pack contents are never synced as a blob (ntfy caps messages ~4KB). Every phone
+// DERIVES the same extra packs from the suggestions it already has, so a pack id
+// resolves identically everywhere and the plain packs/packsAt toggle covers extras.
+let legacyPacks={};             // tag -> {theme, calls}  — locally accepted before packs were derived
+let PACKS_ON=[], PACKS_AT=0;
 const DEFAULT_ROOM_TAG="Room ideas";
+const TAG_ICONS=[
+  [/(store|shop|target|walmart|costco|gas station|mall)/i, "\u{1F4CD}"],
+  [/(restaurant|diner|ihop|food|burger|pizza|taco|coffee|snack|beer|drink)/i, "\u{1F354}"],
+  [/(catchphrase|quote|says|saying|line|phrase)/i, "\u{1F4AC}"],
+  [/(character|people|person|host|cast|player|announcer|ref)/i, "\u{1F464}"]
+];
+function tagIcon(tag){
+  for(const [re,ic] of TAG_ICONS) if(re.test(tag)) return ic;
+  return "\u{1F3F7}\uFE0F";
+}
 
 function loadPool(){
   try{
     const raw=JSON.parse(store.get("opl_extra_pool")||"null");
     if(Array.isArray(raw)){                                   // oldest format: one flat list
-      extraPacks={[DEFAULT_ROOM_TAG]:{theme:"onpatrol", calls:raw.filter(x=>typeof x==="string")}};
+      legacyPacks={[DEFAULT_ROOM_TAG]:{theme:"onpatrol", calls:raw.filter(x=>typeof x==="string")}};
     } else if(raw && typeof raw==="object"){
-      extraPacks={};
+      legacyPacks={};
       for(const tag in raw){
         const v=raw[tag];
-        if(Array.isArray(v)) extraPacks[tag]={theme:"onpatrol", calls:v};   // pre-theme packs were all On Patrol
-        else if(v && Array.isArray(v.calls)) extraPacks[tag]={theme:v.theme||"onpatrol", calls:v.calls};
+        if(Array.isArray(v)) legacyPacks[tag]={theme:"onpatrol", calls:v};
+        else if(v && Array.isArray(v.calls)) legacyPacks[tag]={theme:v.theme||"onpatrol", calls:v.calls};
       }
     }
-  }catch(e){ extraPacks={}; }
+  }catch(e){ legacyPacks={}; }
   try{
     const on=JSON.parse(store.get("opl_packs_on")||"null");
-    PACKS_ON = Array.isArray(on) && on.length ? on : allPackKeys();
+    PACKS_ON = Array.isArray(on) ? on : allPackKeys();
   }catch(e){ PACKS_ON=allPackKeys(); }
 }
-function savePool(){ store.set("opl_extra_pool", JSON.stringify(extraPacks)); }
+function savePool(){ store.set("opl_extra_pool", JSON.stringify(legacyPacks)); }
 function savePacksOn(){ store.set("opl_packs_on", JSON.stringify(PACKS_ON)); }
 function tagKey(tag){ return "tag:"+String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24); }
-function packTheme(tag){ return (extraPacks[tag] && extraPacks[tag].theme) || "onpatrol"; }
-function packList(tag){ return (extraPacks[tag] && extraPacks[tag].calls) || []; }
-function themeTags(){ return Object.keys(extraPacks).filter(t=>packTheme(t)===THEME); }
+
+// the derived view: every square suggestion on this night, grouped by its tag
+function derivedPacks(){
+  const out={};
+  const add=(tag,text,th)=>{
+    if(th!==THEME) return;
+    const key=String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24)||DEFAULT_ROOM_TAG;
+    (out[key]=out[key]||[]);
+    if(out[key].indexOf(text)<0) out[key].push(text);
+  };
+  for(const sg of suggestions){
+    if(sg.kind==="app") continue;
+    const txt=callText(sg.text);                       // organize-mode edits apply here
+    if(!txt || isRemoved(sg.text)) continue;
+    add(retagOf(sg.text) || sg.tag, txt, sg.theme||"onpatrol");
+  }
+  for(const k of themePacks()){                        // a retagged built-in call moves house
+    const src = k==="matchup" ? matchupCalls() : k==="stars" ? starCalls() : (PACKS[k]?PACKS[k].calls:[]);
+    for(const c of src){
+      const to=retagOf(c);
+      if(to && !isRemoved(c)) add(to, callText(c), THEME);
+    }
+  }
+  for(const tag in legacyPacks){                       // ideas accepted before packs were derived
+    for(const c of legacyPacks[tag].calls){
+      const txt=callText(c);
+      if(txt && !isRemoved(c)) add(retagOf(c)||tag, txt, legacyPacks[tag].theme);
+    }
+  }
+  return out;
+}
+let _derivedCache=null, _derivedKey="";
+function packsByTag(){
+  const key=THEME+"|"+suggestions.length+"|"+ORGANIZE_AT+"|"+Object.keys(legacyPacks).length;
+  if(_derivedKey!==key){ _derivedCache=derivedPacks(); _derivedKey=key; }
+  return _derivedCache;
+}
+function invalidatePacks(){ _derivedKey=""; }
+function packList(tag){ return packsByTag()[tag]||[]; }
+function themeTags(){ return Object.keys(packsByTag()); }
 function themePacks(){
   return theme().packs.filter(k =>
     (k!=="matchup" || matchupCalls().length) && (k!=="stars" || starCalls().length));
 }
 function allPackKeys(){ return themePacks().concat(themeTags().map(tagKey)); }
 function packCalls(key){
-  if(key==="matchup") return matchupCalls();
-  if(key==="stars") return starCalls();
-  if(PACKS[key]) return PACKS[key].calls;
+  if(key==="matchup") return matchupCalls().filter(c=>!isRemoved(c) && !retagOf(c)).map(callText);
+  if(key==="stars") return starCalls().filter(c=>!isRemoved(c) && !retagOf(c)).map(callText);
+  if(PACKS[key]) return PACKS[key].calls
+    .filter(c=>!isRemoved(c) && !retagOf(c))           // removed, or moved to a tag pack
+    .map(callText);
   return packList(key.slice(4));
 }
 function packLabel(key){
   if(key==="matchup") return "\u{1F3DF}\uFE0F "+matchupLabel()+" \u2014 team calls";
   if(key==="stars") return "\u2B50 Star plays";
   if(PACKS[key]) return PACKS[key].emoji+" "+PACKS[key].name;
-  return "\u{1F3F7}\uFE0F "+key.slice(4);
+  const tag=key.slice(4);
+  return tagIcon(tag)+" "+tag;
 }
 function packOn(key){ return PACKS_ON.indexOf(key)>=0; }
 function extraCalls(){
@@ -1093,31 +1436,8 @@ function everyCall(){                       // every call this theme knows, pack
   return out;
 }
 function inPool(t){ return everyCall().indexOf(t)>=0; }
-function inAnyTagPack(t){
-  for(const tag in extraPacks) if(packList(tag).indexOf(t)>=0) return tag;
-  return null;
-}
-function inBuiltIn(t){ return PACK_ORDER.some(k=>PACKS[k].calls.indexOf(t)>=0) || matchupCalls().indexOf(t)>=0 || starCalls().indexOf(t)>=0; }
-function togglePool(t, tag, forTheme){
-  if(inBuiltIn(t)){ showToast("Already a standard call"); return; }
-  const th = forTheme && THEMES[forTheme] ? forTheme : THEME;   // ideas stay on their own night
-  const key=String(tag||DEFAULT_ROOM_TAG).trim().slice(0,24) || DEFAULT_ROOM_TAG;
-  for(const g in extraPacks){
-    const i=packList(g).indexOf(t);
-    if(i>=0){                                   // already accepted -> drop it back out
-      extraPacks[g].calls.splice(i,1);
-      if(!extraPacks[g].calls.length) delete extraPacks[g];
-      savePool(); renderSuggestions(); paintPacks();
-      showToast("Removed from your packs");
-      return;
-    }
-  }
-  if(!extraPacks[key] || extraPacks[key].theme!==th) extraPacks[key]={theme:th, calls:[]};
-  extraPacks[key].calls.push(t);
-  if(th===THEME && !packOn(tagKey(key))){ PACKS_ON.push(tagKey(key)); savePacksOn(); }
-  savePool(); renderSuggestions(); paintPacks();
-  showToast(th===THEME ? "Added to \u201C"+key+"\u201D"
-                       : "Saved to \u201C"+key+"\u201D for "+THEMES[th].name+" night");
+function inBuiltIn(t){
+  return PACK_ORDER.some(k=>PACKS[k].calls.indexOf(t)>=0) || matchupCalls().indexOf(t)>=0 || starCalls().indexOf(t)>=0;
 }
 function fullPool(){
   const out=[];
@@ -1132,7 +1452,8 @@ function fullPool(){
 function inviteURL(){
   const base = location.origin + location.pathname;
   const q = ["room="+encodeURIComponent(ROOM||""), "theme="+encodeURIComponent(THEME), "pat="+encodeURIComponent(PAT)];
-  if(MATCHUP.away && MATCHUP.home) q.push("vs="+encodeURIComponent(MATCHUP.away+"|"+MATCHUP.home));
+  if(theme().matchup && MATCHUP.away && MATCHUP.home)      // only a matchup theme owns a vs
+    q.push("vs="+encodeURIComponent(MATCHUP.away+"|"+MATCHUP.home));
   q.push("v="+BUILD_V);
   return base+"?"+q.join("&");
 }
@@ -1182,7 +1503,7 @@ function applyInvite(){
   if(catchUpToInvite(q)) return true;            // reloading onto the invite's build
   if(th && THEMES[th]){ THEME=th; THEME_AT=Date.now(); store.set("opl_theme", THEME); PACKS_ON=allPackKeys().slice(); savePacksOn(); }
   if(pat && PATTERNS[pat]){ PAT=pat; PAT_AT=Date.now(); store.set("opl_pattern", PAT); }
-  if(vs && vs.indexOf("|")>0){
+  if(vs && vs.indexOf("|")>0 && theme().matchup){          // a vs from a themeless link is noise
     const [away,home]=vs.split("|");
     MATCHUP={away:away||"",home:home||""}; MATCHUP_AT=Date.now();
     ROSTER={away:[], home:[]};                    // the room's matchup message brings the players
@@ -1233,9 +1554,17 @@ function paintTheme(){
   document.title = "Game Night — "+t.name+" BINGO";
   [...document.querySelectorAll("#themeOpts .patopt")].forEach(b=>b.classList.toggle("on", b.dataset.key===THEME));
 }
+function clearMatchupForTheme(){
+  // a matchup belongs to the theme it was set on — don't let it echo into the next one
+  if(theme().matchup) return;
+  if(!MATCHUP.away && !MATCHUP.home) return;
+  MATCHUP={away:"",home:""}; ROSTER={away:[],home:[]}; MATCHUP_AT=Date.now();
+  store.set("opl_matchup", JSON.stringify(MATCHUP)); store.set("opl_roster", JSON.stringify(ROSTER));
+}
 function setTheme(key, announce){
   if(!THEMES[key] || key===THEME) { paintTheme(); return; }
   THEME=key; THEME_AT=Date.now(); store.set("opl_theme", THEME);
+  clearMatchupForTheme();
   PACKS_ON = allPackKeys().slice(); savePacksOn();          // a theme brings its own packs
   paintTheme(); paintPacks();
   if(ROOM){
@@ -1250,6 +1579,13 @@ function setTheme(key, announce){
   }
 }
 function adoptTheme(key, at, who){
+  if(THEMES[key] && at>THEME_AT && key!==THEME && SYNC_PAUSED){
+    queueSync("theme", ()=>adoptThemeNow(key,at,who), (who||"Someone")+" switched to "+THEMES[key].name);
+    return;
+  }
+  adoptThemeNow(key, at, who);
+}
+function adoptThemeNow(key, at, who){
   if(!THEMES[key] || !at || at<=THEME_AT){
     if(THEMES[key] && key===THEME && ROOM && CARD.length && !cardFitsTheme()){
       CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); saveProgress(); renderMine();
@@ -1257,6 +1593,7 @@ function adoptTheme(key, at, who){
     return;
   }
   THEME=key; THEME_AT=at; store.set("opl_theme", THEME);
+  clearMatchupForTheme();
   PACKS_ON = allPackKeys().slice(); savePacksOn();
   CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
   saveProgress(); paintTheme(); paintPacks(); renderMine();
@@ -1288,6 +1625,13 @@ function setMatchup(away, home, announce, awayRoster, homeRoster){
 }
 function adoptMatchup(m, at, who, roster){
   if(!m || !at || at<=MATCHUP_AT) return;
+  if(!theme().matchup) return;
+  if(SYNC_PAUSED){ queueSync("matchup", ()=>adoptMatchupNow(m,at,who,roster),
+                             (who||"Someone")+" set "+((m.away&&m.home)?m.away+" vs "+m.home:"a matchup")); return; }
+  adoptMatchupNow(m, at, who, roster);
+}
+function adoptMatchupNow(m, at, who, roster){
+  if(!m || !at || at<=MATCHUP_AT) return;                             // this night doesn't have matchups
   const sameTeams = m.away===MATCHUP.away && m.home===MATCHUP.home;
   const sameRoster = !roster || JSON.stringify(roster)===JSON.stringify(ROSTER);
   if(sameTeams && sameRoster) return;
@@ -1336,6 +1680,10 @@ function togglePack(key){
 }
 function adoptPacks(list, at, who){
   if(!Array.isArray(list) || !list.length || !at || at<=PACKS_AT) return;
+  if(SYNC_PAUSED){ queueSync("packs", ()=>adoptPacksNow(list,at,who), (who||"Someone")+" changed the packs"); return; }
+  adoptPacksNow(list, at, who);
+}
+function adoptPacksNow(list, at, who){
   PACKS_ON=list.slice(); PACKS_AT=at; savePacksOn(); paintPacks();
   if(APPLY_MODE==="fresh"){
     CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
@@ -1485,7 +1833,8 @@ function renderMine(){
     const alsoN=othersMarking(CARD[i]);
     d.innerHTML="<span>"+CARD[i]+"</span>"+(MARKS[i]?"<span class='chk'>✓</span>":"")+
       (alsoN?"<span class='others' title='others who marked this'>👥"+alsoN+"</span>":"");
-    d.addEventListener("click",()=>toggle(i));
+    const wasLongPress=armLongPress(d, i);
+    d.addEventListener("click",()=>{ if(wasLongPress()) return; toggle(i); });
     grid.appendChild(d);
   }
   const mine=progressLabel(MARKS);
@@ -1633,6 +1982,7 @@ function startRound(announce){
 }
 function adoptRound(n, at, who){
   if(!n || n<=ROUND) return;
+  // rounds always come through: wins are keyed to the round you were in
   ROUND=n; ROUND_AT=at||Date.now(); saveRound();
   players={};                      // their old boards belong to the last round
   dealFreshRound();
@@ -1667,8 +2017,8 @@ function setTeam(name, redeal){
     CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); myBingo=false; markHistory=[];
     saveProgress(); renderMine();
   }
-  publish("hello");   // ask the room to resend so a teammate's card finds you
-  publish("state");
+  publish("state");   // put my board on the wire before asking for theirs
+  publish("hello");   // ...then pull the newest teammate card in immediately
   showToast(TEAM ? "\u{1F465} You're on "+TEAM : "\u{1F465} Playing solo");
 }
 // Merge a teammate's board into mine: a newer deal replaces the card outright,
@@ -1698,6 +2048,7 @@ function loadSuggestions(){
 function saveSuggestions(){
   suggestions=suggestions.slice(0,200);
   store.set("opl_suggestions", JSON.stringify(suggestions));
+  invalidatePacks();
 }
 function addSuggestion(sug){
   if(!sug || !sug.sid || !sug.text) return false;
@@ -1706,7 +2057,7 @@ function addSuggestion(sug){
                         tag:(sug.tag?String(sug.tag).trim().slice(0,24):""),
                         theme:(sug.theme && THEMES[sug.theme] ? sug.theme : "onpatrol"),
                         text:String(sug.text).slice(0,240), t:sug.t||Date.now() });
-  saveSuggestions(); renderSuggestions(); return true;
+  saveSuggestions(); invalidatePacks(); renderSuggestions(); paintPacks(); return true;
 }
 function renderSuggestions(){
   const list=document.getElementById("sugList");
@@ -1731,22 +2082,24 @@ function renderSuggestions(){
     const d=document.createElement("div"); d.className="sug";
     const when=new Date(s.t);
     d.innerHTML="<div class='top'><span class='tag"+(s.kind==="app"?"":" idea")+"'>"+(s.kind==="app"?"App":"Square")+"</span>"+
-      (s.tag?"<span class='tag pack'>\u{1F3F7}\uFE0F "+escapeHtml(s.tag)+"</span>":"")+
+      (s.tag?"<span class='tag pack'>"+tagIcon(s.tag)+" "+escapeHtml(s.tag)+"</span>":"")+
       (s.kind!=="app" && s.theme && THEMES[s.theme] ? "<span class='tag pack'>"+THEMES[s.theme].emoji+"</span>" : "")+
       "<span class='from'>"+escapeHtml(s.from)+"</span></div>"+
       "<div class='txt'>"+escapeHtml(s.text)+"</div>"+
       "<div class='when'>"+when.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})+"</div>";
     if(s.kind!=="app"){
       const act=document.createElement("div"); act.className="act";
-      const on=inPool(s.text);
-      const btn=document.createElement("button");
-      btn.className=on?"in":""; btn.textContent=on?"✓ in a pack":"➕ Add to my packs";
-      btn.addEventListener("click",()=>togglePool(s.text, s.tag, s.theme));
-      act.appendChild(btn);
-      const all=document.createElement("button");
-      all.style.marginLeft="6px"; all.textContent="📌 Everyone";
-      all.addEventListener("click",()=>pushToRoom(s.text, s.tag));
-      act.appendChild(all);
+      const where=document.createElement("button");
+      const tag=retagOf(s.text)||s.tag||DEFAULT_ROOM_TAG;
+      const live=(s.theme||"onpatrol")===THEME;
+      where.className=live&&packOn(tagKey(tag))?"in":"";
+      where.textContent=(live?(packOn(tagKey(tag))?"✓ in ":"in ")+tagIcon(tag)+" "+tag
+                             :"saved for "+(THEMES[s.theme]?THEMES[s.theme].name:"another night"));
+      where.addEventListener("click",()=>{
+        if(!live){ showToast("That idea belongs to "+(THEMES[s.theme]?THEMES[s.theme].name:"another")+" night"); return; }
+        togglePack(tagKey(tag));                       // the pack itself is the on/off switch now
+      });
+      act.appendChild(where);
       d.appendChild(act);
     }
     list.appendChild(d);
@@ -1783,6 +2136,7 @@ function openSugModal(){
   setSugKind("square");
   document.getElementById("sugText").value="";
   document.getElementById("sugTag").value="";
+  fillTagOptions();
   document.getElementById("sugModal").classList.remove("hidden");
   setTimeout(()=>document.getElementById("sugText").focus(),50);
 }
@@ -1962,12 +2316,7 @@ function publishSuggestionDigest(){
     }, i*160);
   }
 }
-function pushToRoom(text, tag){
-  if(!inPool(text)) togglePool(text, tag, THEME);
-  if(!ROOM){ showToast("Added to your packs"); return; }
-  post(JSON.stringify({ v:1, kind:"pool", id:ME, room:ROOM, name:NAME, text, tag:tag||"", theme:THEME }));
-  showToast("📌 Sent to everyone's packs");
-}
+
 function publishSuggestion(sug){
   if(!ROOM) return;   // solo play: it still lands in the local list
   post(JSON.stringify({ v:1, kind:"suggest", id:ME, room:ROOM, name:NAME, sug }));
@@ -1983,6 +2332,11 @@ function handleIncoming(b){
     if(MATCHUP.away || MATCHUP.home)
       post(JSON.stringify({ v:1, kind:"matchup", id:ME, room:ROOM, name:NAME, matchup:MATCHUP,
                             roster:ROSTER, matchupAt:MATCHUP_AT }));
+    if(ORGANIZE_AT)
+      post(JSON.stringify({ v:1, kind:"organize", id:ME, room:ROOM, name:NAME,
+                            organize:ORGANIZE, organizeAt:ORGANIZE_AT }));
+    if(PIN_AT)
+      post(JSON.stringify({ v:1, kind:"pin", id:ME, room:ROOM, name:NAME, pinHash:PIN_HASH, pinAt:PIN_AT }));
     return;
   }
   if(b.kind==="pattern"){ adoptPattern(b.pat, b.patAt, b.name); return; }
@@ -1991,15 +2345,15 @@ function handleIncoming(b){
     if(addSuggestion(Object.assign({from:b.name}, b.sug||{}))) showToast((b.name||"Someone")+" suggested something 💡");
     return;
   }
-  if(b.kind==="pool"){
+  if(b.kind==="pool"){                       // older builds pushed single calls; file it as a suggestion
     const t=String(b.text||"").slice(0,240);
-    if(t && !inAnyTagPack(t) && !inBuiltIn(t)){
-      togglePool(t, b.tag, b.theme);
-      showToast("📌 "+(b.name||"Someone")+" added \u201C"+t+"\u201D — hit ♻️ to pull it in");
-    }
+    if(t) addSuggestion({sid:"pool-"+t.slice(0,24)+"-"+(b.id||""), from:b.name, kind:"square",
+                         tag:b.tag||"", theme:b.theme||THEME, text:t, t:Date.now()});
     return;
   }
   if(b.kind==="packs"){ adoptPacks(b.packs, b.packsAt, b.name); return; }
+  if(b.kind==="organize"){ adoptOrganize(b.organize, b.organizeAt, b.name); return; }
+  if(b.kind==="pin"){ adoptPin(b.pinHash, b.pinAt); return; }
   if(b.kind==="theme"){ adoptMatchup(b.matchup, b.matchupAt, b.name, b.roster); adoptTheme(b.theme, b.themeAt, b.name); return; }
   if(b.kind==="matchup"){ adoptMatchup(b.matchup, b.matchupAt, b.name, b.roster); return; }
   if(b.kind==="sugdigest"){
@@ -2185,7 +2539,7 @@ function startGame(){
   if(!r){ document.getElementById("roomInput").focus(); return shake("roomInput"); }
   NAME=n; ROOM=r;
   store.set("opl_name", NAME); store.set("opl_lastroom", ROOM);
-  loadRound(); renderScores(); loadCooldown();
+  loadRound(); renderScores(); loadCooldown(); loadOrganize(); paintOrganize(); paintSync();
   if(!loadProgress()){ CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); saveProgress(); }
   else if(!cardFitsTheme()){                  // saved card is from a different theme/matchup
     CARD=buildCard(); MARKS=freshMarks(); CARD_AT=Date.now(); markHistory=[]; saveProgress();
@@ -2309,6 +2663,21 @@ function leave(){
 document.getElementById("startBtn").addEventListener("click",startGame);
 document.getElementById("undoBtn").addEventListener("click",undoMark);
 document.getElementById("inviteBtn").addEventListener("click",openInvite);
+document.getElementById("autoChip").addEventListener("click",toggleAutoRefresh);
+document.getElementById("syncNow").addEventListener("click",runSync);
+document.getElementById("lockChip").addEventListener("click",()=>{ paintOrganize(); document.getElementById("orgModal").classList.remove("hidden"); });
+document.getElementById("orgClose").addEventListener("click",()=>document.getElementById("orgModal").classList.add("hidden"));
+document.getElementById("orgModal").addEventListener("click",e=>{ if(e.target.id==="orgModal") document.getElementById("orgModal").classList.add("hidden"); });
+document.getElementById("pinGo").addEventListener("click",()=>tryUnlock(document.getElementById("pinInput").value));
+document.getElementById("pinLock").addEventListener("click",lockOrganize);
+document.getElementById("orgRestoreAll").addEventListener("click",()=>{
+  ORGANIZE={removed:{}, edits:{}, retags:{}};
+  pushOrganize("↩︎ Everything restored"); renderOrgList();
+});
+document.getElementById("sqSave").addEventListener("click",squareSave);
+document.getElementById("sqRemove").addEventListener("click",squareRemove);
+document.getElementById("sqClose").addEventListener("click",closeSquareMenu);
+document.getElementById("sqModal").addEventListener("click",e=>{ if(e.target.id==="sqModal") closeSquareMenu(); });
 document.getElementById("invShare").addEventListener("click",()=>shareInvite("share"));
 document.getElementById("invCopy").addEventListener("click",()=>shareInvite("copy"));
 document.getElementById("invSms").addEventListener("click",()=>shareInvite("sms"));
