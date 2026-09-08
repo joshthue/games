@@ -46,9 +46,27 @@ runs about 16% VPIP / 10% PFR, Calls-a-Lot 37% / 7%, Maniac 44% / 42%.
 - **Blind speed**: Turbo (~20 min), Standard (~30), Marathon (~40). Turbo is the default.
 - **Text size**: S / M / L / XL, applied immediately — useful on a tablet, where the
   felt gets much bigger and the default type can look small.
+- **Felt logo**: Birch & Gran, Loonatic Cannabis, a plain Hold'em wordmark, or none.
 - **Four-color deck** and **Speed play** on by default; **Tips** (pot odds and each
   opponent's playing style) off by default.
 - A tournament in progress is saved between hands, so you can close the app and come back.
+
+## The felt watermark
+
+Two brand marks ship with the game, both built to read as watermarks on a dark ground
+rather than as pasted-on images.
+
+**Birch & Gran** is drawn as inline SVG straight from the brand kit's own rules: on a dark
+field the wordmark and birch go paper cream and the ornament gold *lifts* to `#C6A868`,
+because lichen is unreadable on a dark ground and gold is never set as text. Birch above,
+wordmark, gold rule and diamond, tagline — the letterhead lockup, vertically stacked.
+
+**Loonatic Cannabis** is the real artwork, not a redrawing — the loon has far too much in
+it to reproduce by hand and still be the same mark. The supplied image is cropped to the
+primary lockup, its photographic lake background keyed out by luminance (black point 75 —
+low enough to keep the arch, CANNABIS and the leaf, high enough that the mist and aurora
+don't leave a ghost rectangle on the felt), tinted paper cream, and embedded as a 13 KB
+WebP data URI so the game stays a single self-contained file.
 
 ## Laying out the table
 
