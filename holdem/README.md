@@ -89,6 +89,29 @@ alongside the turn, and again on the river**, because every card was recreated w
 deal class on it. `render()` also paints only what has actually been revealed rather than
 the whole of `T.board`, or the turn would appear an instant before its own animation.
 
+## Playing on a monitor
+
+At 1024px and up the felt becomes a **wide oval** (1.58:1) sized from the window height
+rather than its width, so the whole table always fits without scrolling and grows to fill
+a large screen instead of sitting at phone width in the middle of it. The seat ellipse
+widens with it — a radius tuned for a phone-shaped table leaves big empty lobes at each
+end of a wide one — and type, cards, chips and the felt art all get their own sizes at
+that breakpoint, since the container-query units that scale a phone table would make a
+1200px one enormous.
+
+This is the one place the game uses `vh`, and deliberately: the breakpoint is desktop
+browsers only, never the iOS PWA, which is where `vh` sizing misbehaves.
+
+**Keyboard** (hints appear on the buttons at this size):
+
+| key | action |
+|---|---|
+| `F` | fold |
+| `C` | check or call |
+| `R` | open the raise panel; `R` or `Enter` again confirms |
+| `↑` `↓` | size the raise · `A` sets all in |
+| `Esc` | close the raise panel or a sheet |
+
 ## Laying out the table
 
 Seats aren't a hand-maintained coordinate table — they're placed on an ellipse with the

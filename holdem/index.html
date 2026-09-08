@@ -48,6 +48,7 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 /* ---------- table ---------- */
 #tableWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;padding:10px 8px 0;min-height:0}
 #table{position:relative;width:100%;max-width:680px;aspect-ratio:1/1.12;container-type:inline-size;
+  --cardw:10.7cqw;
   border-radius:48% / 46%;
   background:
     radial-gradient(ellipse at 50% 38%, var(--felt1) 0%, var(--felt2) 55%, var(--felt3) 100%);
@@ -56,11 +57,12 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
   box-shadow:0 0 0 10px var(--rail2), 0 0 0 11px rgba(217,164,65,.35), 0 14px 34px rgba(0,0,0,.6),
              inset 0 3px 22px rgba(0,0,0,.45);
 }
+#table[data-seats="8"],#table[data-seats="9"]{--cardw:9.5cqw}
 #table::after{content:"";position:absolute;inset:14px;border-radius:48% / 46%;
   border:1px solid rgba(217,164,65,.16);pointer-events:none}
-.tlogo{position:absolute;left:50%;top:24%;transform:translate(-50%,-50%);text-align:center;
+.tlogo{position:absolute;left:50%;top:var(--y,24%);width:var(--w,52%);transform:translate(-50%,-50%);text-align:center;
   color:rgba(217,164,65,.16);font-weight:800;letter-spacing:.8cqw;font-size:3.6cqw;pointer-events:none;
-  width:52%;line-height:1}
+  line-height:1}
 
 .tlogo img,.tlogo svg{width:100%;height:auto;opacity:.34;display:block}
 
@@ -87,7 +89,7 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 
 .bubble{position:absolute;left:50%;top:-9px;transform:translate(-50%,-100%);
   background:#0c0a09;border:1px solid var(--gold-dim);color:var(--gold);font-weight:700;
-  padding:2px 7px;border-radius:9px;white-space:nowrap;opacity:0;transition:opacity .18s;
+  padding:2px 7px;border-radius:9px;white-space:nowrap;opacity:0;transition:opacity .18s;z-index:6;
   font-size:calc(2.7cqw * var(--fs))}
 .bubble.show{opacity:1}
 .bubble.fold{color:var(--ink-faint);border-color:#3a322c}
@@ -110,16 +112,16 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 .pot{display:inline-flex;align-items:center;gap:5px;background:rgba(6,5,4,.7);border:1px solid var(--gold-dim);
   border-radius:20px;padding:3px 12px;font-size:calc(3.4cqw * var(--fs));font-weight:700;color:var(--gold);
   white-space:nowrap;font-variant-numeric:tabular-nums;margin-bottom:8px}
-.board{display:flex;gap:1.1cqw;justify-content:center;min-height:calc(var(--cardw,10.7cqw) * 1.4);align-items:center}
+.board{display:flex;gap:1.1cqw;justify-content:center;min-height:calc(var(--cardw) * 1.4);align-items:center}
 .sidepots{margin-top:6px;font-size:calc(2.7cqw * var(--fs));color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- cards ---------- */
-.card{width:var(--cardw,10.7cqw);height:calc(var(--cardw,10.7cqw) * 1.4);border-radius:5px;background:linear-gradient(160deg,#fff,#eae4d8);
+.card{width:var(--cardw);height:calc(var(--cardw) * 1.4);border-radius:5px;background:linear-gradient(160deg,#fff,#eae4d8);
   color:#16181d;display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-weight:800;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.5);flex:0 0 auto;
   padding:2px 0;font-variant-numeric:tabular-nums}
-.card .rk{font-size:calc(var(--cardw,10.7cqw) * 0.43)}
-.card .su{font-size:calc(var(--cardw,10.7cqw) * 0.355);margin-top:1px}
+.card .rk{font-size:calc(var(--cardw) * 0.43)}
+.card .su{font-size:calc(var(--cardw) * 0.355);margin-top:1px}
 .card.back{background:repeating-linear-gradient(45deg,#7a2d2a 0 5px,#5e211f 5px 10px);
   border:1px solid #8d3d39;box-shadow:0 2px 6px rgba(0,0,0,.5)}
 .card.back .rk,.card.back .su{display:none}
@@ -216,8 +218,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
   #hero{padding:6px 10px 2px}
 }
 
-/* landscape / short-and-wide: cap the felt so the whole table still fits */
-@media (orientation:landscape){
+/* landscape phones/tablets: cap the felt so the whole table still fits */
+@media (orientation:landscape) and (max-width:1023px){
   #table{max-width:410px}
   #hero{padding:4px 12px 2px}
   #heroCards .card{width:calc(44px * var(--fs));height:calc(61px * var(--fs))}
@@ -225,6 +227,65 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
   #heroCards .card .su{font-size:calc(15px * var(--fs))}
   #msg{padding:2px 10px;min-height:16px}
 }
+
+/* keyboard hints — only meaningful where there is a keyboard */
+.kb{display:none;margin-left:7px;padding:1px 6px;border-radius:5px;font-size:.72em;font-weight:700;
+    border:1px solid currentColor;opacity:.5;vertical-align:middle}
+
+/* ============ large screens: a wide oval with room to breathe ============ */
+@media (min-width:1024px){
+  #tableWrap{padding:14px 20px 4px}
+  /* Height-led so the whole table always fits the window; width follows the aspect.
+     vh is safe here — this breakpoint is desktop browsers only, never the iOS PWA,
+     which is where vh sizing misbehaves. */
+  #table{width:auto;height:min(calc(100vh - 350px), 780px);max-width:min(1240px,100%);
+         aspect-ratio:1.58 / 1;border-radius:48% / 48%;--cardw:84px}
+  #table[data-seats="8"],#table[data-seats="9"]{--cardw:74px}
+  #table::after{inset:20px;border-radius:48% / 48%}
+  .seat{max-width:196px}
+  .pname{font-size:calc(14.5px * var(--fs))}
+  .pstack{font-size:calc(18px * var(--fs))}
+  .ptag{font-size:calc(11px * var(--fs))}
+  .mini{height:auto;gap:3px;margin-bottom:5px}
+  .mini .card{width:34px;height:47px;border-radius:4px}
+  .mini .card .rk{font-size:16px} .mini .card .su{font-size:13px}
+  .bubble{font-size:calc(12.5px * var(--fs));padding:3px 10px;top:-11px}
+  .bet{font-size:calc(13.5px * var(--fs));padding:2px 9px;border-radius:12px}
+  .bet .dot{width:10px;height:10px;max-width:10px;max-height:10px}
+  .dbtn{width:28px;height:28px;max-width:28px;max-height:28px;font-size:14px}
+  .pot{font-size:calc(18px * var(--fs));padding:5px 18px;margin-bottom:12px}
+  .sidepots{font-size:calc(12px * var(--fs))}
+  .board{gap:9px}
+  .timer{height:3px}
+
+  /* On a wide oval the same percentages become huge and start competing with the pot,
+     so the art is scaled back and re-seated into the clear bands above and below. */
+  #feltTop{width:calc(var(--w) * 0.62);top:calc(var(--y) + 1%)}
+  #feltBot{width:calc(var(--w) * 0.62)}
+  .tlogo img,.tlogo svg{opacity:.34}
+  .tlogo{font-size:calc(20px * var(--fs));letter-spacing:4px}
+
+  #hero{max-width:560px;gap:18px;padding:10px 18px 4px}
+  #heroCards{gap:8px}
+  #heroCards .card{width:calc(76px * var(--fs));height:calc(106px * var(--fs))}
+  #heroCards .card .rk{font-size:calc(33px * var(--fs))}
+  #heroCards .card .su{font-size:calc(26px * var(--fs))}
+  #heroStack{font-size:calc(28px * var(--fs))}
+  #heroHand{font-size:calc(16px * var(--fs))}
+  #heroName{font-size:calc(13px * var(--fs))}
+  #heroOdds{font-size:calc(12.5px * var(--fs))}
+  #msg{font-size:calc(15px * var(--fs));min-height:24px}
+  #actions{max-width:820px}
+  .abtn{height:calc(56px * var(--fs));font-size:calc(17px * var(--fs));border-radius:14px}
+  .abtn small{font-size:calc(12px * var(--fs))}
+  .presets{gap:8px} .pbtn{height:42px;font-size:13px}
+  .stepper button{width:52px;height:46px} .amt{height:46px;font-size:19px}
+  .sheet{max-width:520px}
+}
+
+/* the shortcuts work wherever a keyboard is attached, but only advertise them
+   where there is actually a pointer and keys — not a landscape tablet */
+@media (min-width:1024px) and (pointer:fine){ .kb{display:inline-block} }
 </style>
 </head>
 <body class="four">
@@ -301,6 +362,9 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
       <li>Straight flush · Four of a kind · Full house · Flush</li>
       <li>Straight · Three of a kind · Two pair · Pair · High card</li>
     </ul>
+    <h3>Keyboard</h3>
+    <p><b>F</b> fold · <b>C</b> check or call · <b>R</b> raise (again or <b>Enter</b> to confirm) ·
+       <b>↑ ↓</b> size it · <b>A</b> all in · <b>Esc</b> to close.</p>
     <h3>All in and side pots</h3>
     <p>If you go all in, you can only win the part of the pot you matched. Anything beyond it goes into a side pot the deeper stacks play for. Odd chips in a split pot go to the first player left of the button.</p>
     <h3>The tournament</h3>
@@ -900,7 +964,10 @@ function rng(){
 /* ---------------- geometry (percentages of the felt) ---------------- */
 // Seats sit on an ellipse with the hero pinned at the bottom, so 6 / 8 / 9 all
 // lay out from one formula instead of hand-maintained coordinate tables.
-const RX=39, RY=40, CX=50, CY=50;
+// A wide desktop oval has room to push the seats further out; on a phone-shaped
+// table the same radius would hang them off the rim.
+const isWide = () => window.matchMedia && window.matchMedia('(min-width:1024px)').matches;
+const RY=40, CX=50, CY=50;
 // The board and pot own the middle band. With 8 or 9 seats the side seats sit level
 // with it, so anything that would land on the board gets pushed to the near edge.
 const BOARD={l:21, r:79, t:36, b:57};
@@ -909,6 +976,7 @@ function clearOfBoard(x,y,sn){
   return {x,y};
 }
 function buildLayout(n){
+  const RX = isWide() ? 45.5 : 39;
   const seats=[], bets=[], dealers=[], cosines=[];
   for(let v=0; v<n; v++){
     const deg = 90 + v*360/n, a = deg*Math.PI/180;
@@ -976,7 +1044,7 @@ function applyFeltMark(){
     node.innerHTML = part ? part.html() : '';
     node.className = 'tlogo' + (part && !part.text ? ' art' : '');
     node.style.display = part ? 'block' : 'none';
-    if(part){ node.style.width=part.w+'%'; node.style.top=part.y+'%'; }
+    if(part){ node.style.setProperty('--w', part.w+'%'); node.style.setProperty('--y', part.y+'%'); }
   }
 }
 
@@ -1008,8 +1076,7 @@ function buildTable(){
   const t=$('table'), n=nSeats();
   LAY=buildLayout(n);
   t.style.setProperty('--seatw', LAY.seatW);
-  // a fuller table needs a narrower board so the side seats aren't crowded
-  t.style.setProperty('--cardw', n>=8 ? '9.5cqw' : '10.7cqw');
+  t.dataset.seats = n;          // CSS sizes the board off this (a fuller table needs a narrower one)
   t.innerHTML='';
   const mt=el('div','tlogo'); mt.id='feltTop'; t.appendChild(mt);
   const mb=el('div','tlogo'); mb.id='feltBot'; t.appendChild(mb);
@@ -1158,21 +1225,22 @@ function buildActionBar(){
   const pot=T.players.reduce((s,p)=>s+p.committed,0);
   const row=$('mainRow'); row.innerHTML='';
 
-  const bFold=el('button','abtn fold','Fold');
+  const kb=k=>'<span class="kb">'+k+'</span>';
+  const bFold=el('button','abtn fold','Fold'+kb('F'));
   bFold.onclick=()=>submit({type:'fold'});
   row.appendChild(bFold);
 
   if(la.check){
-    const b=el('button','abtn check','Check'); b.onclick=()=>submit({type:'check'}); row.appendChild(b);
+    const b=el('button','abtn check','Check'+kb('C')); b.onclick=()=>submit({type:'check'}); row.appendChild(b);
   } else {
     const amt=Math.min(toCall,me.stack);
-    const b=el('button','abtn check','Call<small>'+fmt(amt)+(amt>=me.stack?' · all in':'')+'</small>');
+    const b=el('button','abtn check','Call'+kb('C')+'<small>'+fmt(amt)+(amt>=me.stack?' · all in':'')+'</small>');
     b.onclick=()=>submit({type:'call'}); row.appendChild(b);
   }
 
   if(la.raise){
     const isBet=la.raise.isBet;
-    const b=el('button','abtn raise',(isBet?'Bet':'Raise'));
+    const b=el('button','abtn raise',(isBet?'Bet':'Raise')+kb('R'));
     b.onclick=()=>toggleRaise(la,pot,isBet);
     row.appendChild(b);
   }
@@ -1221,6 +1289,39 @@ function syncRaise(){
 }
 function submit(a){ if(!pendingResolve) return; const r=pendingResolve; pendingResolve=null; showActions(false); r(a); }
 const waitHuman=()=>new Promise(res=>{ pendingResolve=res; buildActionBar(); });
+
+/* ---------------- keyboard ---------------- */
+// F fold · C check/call · R open the raise panel, again (or Enter) to confirm
+// ↑/↓ size the raise · Esc closes the panel or an overlay
+function onKey(e){
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  const tag=(e.target&&e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select') return;
+  const k=(e.key||'').toLowerCase();
+
+  if(k==='escape'){
+    const open=document.querySelector('.ov.open');
+    if(open && open.id!=='ovStart' && open.id!=='ovResult'){ open.classList.remove('open'); e.preventDefault(); return; }
+    if($('raisePanel').classList.contains('open')){ closeRaise(); e.preventDefault(); }
+    return;
+  }
+  if(document.querySelector('.ov.open')) return;      // a sheet is up; leave it alone
+  if(!pendingResolve || !T || T.phase!=='betting') return;
+
+  const la=legalActions(T);
+  const panelOpen=$('raisePanel').classList.contains('open');
+  if(k==='f'){ e.preventDefault(); submit({type:'fold'}); }
+  else if(k==='c'){ e.preventDefault(); submit(la.check?{type:'check'}:{type:'call'}); }
+  else if(k==='r'||k==='enter'){
+    if(!la.raise) return;
+    e.preventDefault();
+    if(panelOpen) submit({type:'raise',to:raiseTo});
+    else toggleRaise(la, T.players.reduce((s,p)=>s+p.committed,0), la.raise.isBet);
+  }
+  else if(panelOpen && (k==='arrowup'||k==='arrowright')){ e.preventDefault(); raiseTo=snap(raiseTo+rStep*2); syncRaise(); }
+  else if(panelOpen && (k==='arrowdown'||k==='arrowleft')){ e.preventDefault(); raiseTo=snap(raiseTo-rStep*2); syncRaise(); }
+  else if(panelOpen && k==='a'){ e.preventDefault(); raiseTo=rMax; syncRaise(); }
+}
 
 /* ---------------- the hand ---------------- */
 async function playHand(){
@@ -1385,6 +1486,7 @@ function bindSeg(id,vals,get,set){
 /* ---------------- boot ---------------- */
 function boot(){
   applyTextSize();
+  document.addEventListener('keydown', onKey);
   buildTable();
   $('btnHome').onclick=()=>{ location.href='../'; };
   $('btnRules').onclick=()=>openOv('ovRules');
@@ -1413,6 +1515,11 @@ function boot(){
   bindSeg('segFelt',[['bg','B&G'],['loon','Loonatic'],['holdem','Hold’em'],['none','None']],
           ()=>S.feltLogo, v=>{ S.feltLogo=v; applyFeltMark(); });
   showActions(false);
+  let wasWide=isWide();
+  window.addEventListener('resize', ()=>{
+    if(isWide()===wasWide || !T) return;      // only when the breakpoint actually flips
+    wasWide=isWide(); buildTable(); render();
+  });
   const resumed=loadGame();
   $('resumeBtn').style.display=resumed?'block':'none';
   $('startTitle').textContent=resumed?'Welcome back':'6-Player Sit & Go';
@@ -1425,7 +1532,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v53", ISO="2026-09-08T18:08:34Z";
+(function(){ var V="v54", ISO="2026-09-08T18:34:17Z";
   var d=new Date(ISO);
   var s=V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
