@@ -47,6 +47,7 @@ runs about 16% VPIP / 10% PFR, Calls-a-Lot 37% / 7%, Maniac 44% / 42%.
 - **Text size**: S / M / L / XL, applied immediately — useful on a tablet, where the
   felt gets much bigger and the default type can look small.
 - **Felt logo**: Birch & Gran, Loonatic Cannabis, a plain Hold'em wordmark, or none.
+  Loonatic is split across the table — the loon roundel above the pot, the lettering below the board.
 - **Four-color deck** and **Speed play** on by default; **Tips** (pot odds and each
   opponent's playing style) off by default.
 - A tournament in progress is saved between hands, so you can close the app and come back.
@@ -62,11 +63,31 @@ because lichen is unreadable on a dark ground and gold is never set as text. Bir
 wordmark, gold rule and diamond, tagline — the letterhead lockup, vertically stacked.
 
 **Loonatic Cannabis** is the real artwork, not a redrawing — the loon has far too much in
-it to reproduce by hand and still be the same mark. The supplied image is cropped to the
-primary lockup, its photographic lake background keyed out by luminance (black point 75 —
-low enough to keep the arch, CANNABIS and the leaf, high enough that the mist and aurora
-don't leave a ghost rectangle on the felt), tinted paper cream, and embedded as a 13 KB
-WebP data URI so the game stays a single self-contained file.
+it to reproduce by hand and still be the same mark. It comes from the brand sheet's own
+**reversed-for-dark-grounds** panel rather than the hero image, which matters: keying the
+hero image by luminance drops the loon's black body and leaves only its white speckling,
+whereas the reversed lockup is already solid cream and survives keying intact.
+
+That panel's background measures 21 on max-channel, so the key uses a **black point of 30** —
+below it the panel floor survives and leaves a visible box on the felt; far above it and
+CANNABIS, the arch and the leaf start to disappear. The result is tinted paper cream and
+split into two WebP data URIs (12 KB + 10 KB), because the mark reads better wrapped around
+the action than stacked in one corner: **the roundel sits above the pot, the lettering below
+the board.**
+
+A felt logo is defined as up to two pieces — `top` above the pot, `bot` below the board —
+each with a width and a vertical position as percentages of the felt, so a new mark is a
+data entry rather than new layout code.
+
+## Dealing the board
+
+The five community slots are **reconciled, not rebuilt**. Each slot carries the card it is
+currently showing, and a repaint only replaces the slots whose card actually changed —
+so a card already on the felt keeps its DOM node, and its deal animation cannot replay.
+Rebuilding the row instead (the original approach) made **the flop slide down again
+alongside the turn, and again on the river**, because every card was recreated with the
+deal class on it. `render()` also paints only what has actually been revealed rather than
+the whole of `T.board`, or the turn would appear an instant before its own animation.
 
 ## Laying out the table
 
