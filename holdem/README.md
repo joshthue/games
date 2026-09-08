@@ -7,7 +7,7 @@ Hold'em against a table — not the casino you-vs-the-dealer game in
 
 ## How it plays
 
-- Six players, **5,000 chips** each. Blinds start at 10/20 and go up every few hands.
+- **6, 8 or 9 players**, 5,000 chips each. Blinds start at 10/20 and go up every few hands.
 - Two hole cards each, five community cards: **preflop → flop → turn → river → showdown**.
 - Bust and you're out. When you're knocked out the rest of the table plays on so the
   finishing order you're shown is the real one.
@@ -41,10 +41,27 @@ runs about 16% VPIP / 10% PFR, Calls-a-Lot 37% / 7%, Maniac 44% / 42%.
 
 ## Options
 
+- **Table size**: 6, 8 or 9 players, picked before a tournament starts. A fuller table
+  plays tighter and runs longer (roughly 84, 92 and 99 hands respectively).
 - **Blind speed**: Turbo (~20 min), Standard (~30), Marathon (~40). Turbo is the default.
+- **Text size**: S / M / L / XL, applied immediately — useful on a tablet, where the
+  felt gets much bigger and the default type can look small.
 - **Four-color deck** and **Speed play** on by default; **Tips** (pot odds and each
   opponent's playing style) off by default.
 - A tournament in progress is saved between hands, so you can close the app and come back.
+
+## Laying out the table
+
+Seats aren't a hand-maintained coordinate table — they're placed on an ellipse with the
+player pinned at the bottom, so 6, 8 and 9 all fall out of one formula. The widest a seat
+can be without overhanging the felt is computed from the same geometry, so no table size
+can produce horizontal scroll.
+
+Everything on the felt is sized in container-query units against the table's own width,
+so the whole table scales together from a 320px phone to a tablet; the text-size setting
+is a multiplier on top of that. With 8 or 9 seats the side seats sit level with the board,
+so the board narrows and anything that would land on it — bet chips, the dealer button —
+is pushed to the near edge.
 
 ## How it's put together
 

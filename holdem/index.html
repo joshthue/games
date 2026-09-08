@@ -21,6 +21,7 @@
   --good:#4bbf7a; --bad:#d4564f; --chip:#e8d5a8;
   --sp:#16181d; --he:#c8332f; --di:#2f6fd0; --cl:#1f8a4c;
   --r:14px; --tap:46px;
+  --fs:1;              /* text size toggle: S .86 / M 1 / L 1.15 / XL 1.32 */
 }
 html{height:100%}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);overflow-x:hidden;max-width:100%;
@@ -32,21 +33,21 @@ button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer
 /* ---------- header ---------- */
 header{display:flex;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;
   background:linear-gradient(180deg,#1d1715,#161110);border-bottom:1px solid var(--line);flex:0 0 auto}
-header .ttl{flex:1;min-width:0;font-weight:700;font-size:15px;letter-spacing:.3px;color:var(--gold);
+header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));letter-spacing:.3px;color:var(--gold);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbtn{min-width:38px;height:34px;padding:0 10px;border-radius:10px;background:#2a221e;border:1px solid var(--line);
-  font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.hbtn{min-width:38px;height:calc(34px * var(--fs));padding:0 10px;border-radius:10px;background:#2a221e;border:1px solid var(--line);
+  font-size:calc(13px * var(--fs));font-weight:600;display:flex;align-items:center;justify-content:center}
 .hbtn:active{background:#3a302a}
 
 /* ---------- blind / level strip ---------- */
 .strip{display:flex;align-items:center;gap:10px;padding:5px 12px;background:#171211;border-bottom:1px solid var(--line);
-  font-size:12px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;flex:0 0 auto}
+  font-size:calc(12px * var(--fs));color:var(--ink-dim);white-space:nowrap;overflow:hidden;flex:0 0 auto}
 .strip b{color:var(--ink);font-weight:600}
 .strip .sep{color:var(--ink-faint)}
 
 /* ---------- table ---------- */
 #tableWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;padding:10px 8px 0;min-height:0}
-#table{position:relative;width:100%;max-width:480px;aspect-ratio:1/1.12;
+#table{position:relative;width:100%;max-width:680px;aspect-ratio:1/1.12;container-type:inline-size;
   border-radius:48% / 46%;
   background:
     radial-gradient(ellipse at 50% 38%, var(--felt1) 0%, var(--felt2) 55%, var(--felt3) 100%);
@@ -58,62 +59,66 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:15px;letter-spacing:.3p
 #table::after{content:"";position:absolute;inset:14px;border-radius:48% / 46%;
   border:1px solid rgba(217,164,65,.16);pointer-events:none}
 .tlogo{position:absolute;left:50%;top:24%;transform:translate(-50%,-50%);text-align:center;
-  color:rgba(217,164,65,.16);font-weight:800;letter-spacing:3px;font-size:13px;pointer-events:none}
+  color:rgba(217,164,65,.16);font-weight:800;letter-spacing:.8cqw;font-size:3.6cqw;pointer-events:none;
+  width:52%;line-height:1}
+.tlogo img,.tlogo svg{width:100%;height:auto;opacity:.22;display:block}
 
 /* ---------- seats ---------- */
-.seat{position:absolute;transform:translate(-50%,-50%);width:30%;max-width:112px;text-align:center;transition:opacity .25s}
+.seat{position:absolute;transform:translate(-50%,-50%);width:var(--seatw,30%);text-align:center;transition:opacity .25s}
 .seat.folded{opacity:.34}
 .seat.out{display:none}
 .plaque{position:relative;background:rgba(10,8,7,.82);border:1px solid #40352d;border-radius:11px;
   padding:4px 6px;backdrop-filter:blur(3px)}
 .seat.active .plaque{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 16px rgba(217,164,65,.4)}
 .seat.winner .plaque{border-color:var(--good);box-shadow:0 0 0 1px var(--good),0 0 20px rgba(75,191,122,.55)}
-.pname{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.pstack{font-size:12px;font-weight:700;color:var(--chip);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pname{font-size:calc(3.1cqw * var(--fs));font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.pstack{font-size:calc(3.5cqw * var(--fs));font-weight:700;color:var(--chip);white-space:nowrap;font-variant-numeric:tabular-nums}
 .seat.allin .pstack{color:var(--bad)}
-.ptag{font-size:9px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptag{font-size:calc(2.5cqw * var(--fs));color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .timer{position:absolute;left:0;bottom:0;height:2px;background:var(--gold);width:0;border-radius:0 0 11px 11px}
 .seat.active .timer{animation:tick var(--tdur,3s) linear forwards}
 @keyframes tick{from{width:100%}to{width:0}}
 
-.mini{display:flex;gap:2px;justify-content:center;margin-bottom:3px;height:26px}
-.mini .card{width:19px;height:26px;font-size:9px;border-radius:3px;padding:1px 0}
-.mini .card .su{font-size:9px}
+.mini{display:flex;gap:2px;justify-content:center;margin-bottom:3px;height:7.2cqw}
+.mini .card{width:5.2cqw;height:7.2cqw;border-radius:3px;padding:1px 0}
+.mini .card .rk{font-size:2.9cqw}
+.mini .card .su{font-size:2.4cqw}
 
 .bubble{position:absolute;left:50%;top:-9px;transform:translate(-50%,-100%);
-  background:#0c0a09;border:1px solid var(--gold-dim);color:var(--gold);font-size:10px;font-weight:700;
-  padding:2px 7px;border-radius:9px;white-space:nowrap;opacity:0;transition:opacity .18s}
+  background:#0c0a09;border:1px solid var(--gold-dim);color:var(--gold);font-weight:700;
+  padding:2px 7px;border-radius:9px;white-space:nowrap;opacity:0;transition:opacity .18s;
+  font-size:calc(2.7cqw * var(--fs))}
 .bubble.show{opacity:1}
 .bubble.fold{color:var(--ink-faint);border-color:#3a322c}
 
-.dbtn{position:absolute;width:19px;height:19px;border-radius:50%;background:#f2ead9;color:#241d1a;
-  font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;
+.dbtn{position:absolute;width:5.2cqw;height:5.2cqw;max-width:26px;max-height:26px;border-radius:50%;background:#f2ead9;color:#241d1a;
+  font-size:2.8cqw;font-weight:800;display:flex;align-items:center;justify-content:center;
   border:1px solid #b9ae96;box-shadow:0 2px 5px rgba(0,0,0,.5);z-index:4;
   transition:left .35s ease,top .35s ease}
 
 /* bets on the felt */
 .bet{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:3px;
   background:rgba(8,6,5,.8);border:1px solid #4a3d31;border-radius:10px;padding:1px 5px;
-  font-size:10px;font-weight:700;color:var(--chip);white-space:nowrap;font-variant-numeric:tabular-nums;
+  font-size:calc(2.7cqw * var(--fs));font-weight:700;color:var(--chip);white-space:nowrap;font-variant-numeric:tabular-nums;
   transition:left .4s ease,top .4s ease,opacity .3s;z-index:3}
-.bet .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);
+.bet .dot{width:1.9cqw;height:1.9cqw;max-width:9px;max-height:9px;border-radius:50%;background:var(--gold);
   box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
 
 /* ---------- centre ---------- */
 .centre{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:88%;text-align:center;z-index:2}
 .pot{display:inline-flex;align-items:center;gap:5px;background:rgba(6,5,4,.7);border:1px solid var(--gold-dim);
-  border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;color:var(--gold);
+  border-radius:20px;padding:3px 12px;font-size:calc(3.4cqw * var(--fs));font-weight:700;color:var(--gold);
   white-space:nowrap;font-variant-numeric:tabular-nums;margin-bottom:8px}
-.board{display:flex;gap:4px;justify-content:center;min-height:56px;align-items:center}
-.sidepots{margin-top:6px;font-size:10px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board{display:flex;gap:1.1cqw;justify-content:center;min-height:calc(var(--cardw,10.7cqw) * 1.4);align-items:center}
+.sidepots{margin-top:6px;font-size:calc(2.7cqw * var(--fs));color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- cards ---------- */
-.card{width:40px;height:56px;border-radius:5px;background:linear-gradient(160deg,#fff,#eae4d8);
+.card{width:var(--cardw,10.7cqw);height:calc(var(--cardw,10.7cqw) * 1.4);border-radius:5px;background:linear-gradient(160deg,#fff,#eae4d8);
   color:#16181d;display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-weight:800;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.5);flex:0 0 auto;
   padding:2px 0;font-variant-numeric:tabular-nums}
-.card .rk{font-size:17px}
-.card .su{font-size:14px;margin-top:1px}
+.card .rk{font-size:calc(var(--cardw,10.7cqw) * 0.43)}
+.card .su{font-size:calc(var(--cardw,10.7cqw) * 0.355);margin-top:1px}
 .card.back{background:repeating-linear-gradient(45deg,#7a2d2a 0 5px,#5e211f 5px 10px);
   border:1px solid #8d3d39;box-shadow:0 2px 6px rgba(0,0,0,.5)}
 .card.back .rk,.card.back .su{display:none}
@@ -126,27 +131,27 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:15px;letter-spacing:.3p
 .card.dim{filter:grayscale(.75) brightness(.72)}
 
 /* ---------- hero ---------- */
-#hero{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 12px 4px;max-width:520px;
+#hero{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 12px 4px;max-width:700px;
   width:100%;margin:0 auto}
 #heroCards{display:flex;gap:5px}
-#heroCards .card{width:52px;height:72px}
-#heroCards .card .rk{font-size:23px}
-#heroCards .card .su{font-size:18px}
+#heroCards .card{width:calc(52px * var(--fs));height:calc(72px * var(--fs))}
+#heroCards .card .rk{font-size:calc(23px * var(--fs))}
+#heroCards .card .su{font-size:calc(18px * var(--fs))}
 #heroInfo{flex:1 1 auto;min-width:0}
-#heroName{font-size:12px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#heroHand{font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#heroStack{font-size:19px;font-weight:800;color:var(--chip);white-space:nowrap;font-variant-numeric:tabular-nums}
-#heroOdds{font-size:11px;color:var(--ink-faint);white-space:nowrap}
+#heroName{font-size:calc(12px * var(--fs));color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#heroHand{font-size:calc(13.5px * var(--fs));font-weight:700;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#heroStack{font-size:calc(20px * var(--fs));font-weight:800;color:var(--chip);white-space:nowrap;font-variant-numeric:tabular-nums}
+#heroOdds{font-size:calc(11px * var(--fs));color:var(--ink-faint);white-space:nowrap}
 
 /* ---------- action bar ---------- */
 #actions{position:sticky;bottom:0;z-index:20;flex:0 0 auto;background:linear-gradient(180deg,rgba(18,15,14,.6),var(--bg) 22%);
-  padding:6px 10px calc(8px + env(safe-area-inset-bottom));max-width:520px;width:100%;margin:0 auto}
+  padding:6px 10px calc(8px + env(safe-area-inset-bottom));max-width:700px;width:100%;margin:0 auto}
 .arow{display:flex;flex-direction:row;flex-wrap:nowrap;gap:7px}
-.abtn{flex:1 1 0;min-width:0;height:var(--tap);border-radius:12px;font-size:14px;font-weight:700;
+.abtn{flex:1 1 0;min-width:0;height:calc(var(--tap) * var(--fs));border-radius:12px;font-size:calc(14.5px * var(--fs));font-weight:700;
   background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;
   align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   padding:0 6px;font-variant-numeric:tabular-nums}
-.abtn small{font-size:10px;font-weight:600;color:var(--ink-dim);white-space:nowrap}
+.abtn small{font-size:calc(10.5px * var(--fs));font-weight:600;color:var(--ink-dim);white-space:nowrap}
 .abtn:active{transform:translateY(1px)}
 .abtn:disabled{opacity:.35}
 .abtn.fold{background:#3a2320;border-color:#5a3733}
@@ -162,11 +167,11 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:15px;letter-spacing:.3p
 .stepper{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:7px;margin-bottom:7px}
 .stepper button{width:44px;height:40px;border-radius:10px;background:#241d1a;border:1px solid var(--line);
   font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center}
-.amt{flex:1 1 auto;min-width:0;height:40px;border-radius:10px;background:#0e0b0a;border:1px solid var(--line);
+.amt{flex:1 1 auto;min-width:0;height:calc(40px * var(--fs));border-radius:10px;background:#0e0b0a;border:1px solid var(--line);
   display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--gold);
   white-space:nowrap;font-variant-numeric:tabular-nums}
 input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
-#msg{text-align:center;font-size:13px;color:var(--ink-dim);padding:4px 10px;min-height:20px;
+#msg{text-align:center;font-size:calc(13px * var(--fs));color:var(--ink-dim);padding:4px 10px;min-height:20px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- overlays ---------- */
@@ -205,13 +210,19 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 @media (max-width:345px){
   :root{--tap:42px}
   #table{aspect-ratio:1/1.02}
-  .card{width:34px;height:48px}
-  .card .rk{font-size:15px} .card .su{font-size:12px}
-  #heroCards .card{width:46px;height:64px}
-  #heroCards .card .rk{font-size:20px} #heroCards .card .su{font-size:16px}
-  #heroStack{font-size:17px}
-  .seat{max-width:100px}
+  #heroCards .card{width:calc(46px * var(--fs));height:calc(64px * var(--fs))}
+  #heroCards .card .rk{font-size:calc(20px * var(--fs))} #heroCards .card .su{font-size:calc(16px * var(--fs))}
   #hero{padding:6px 10px 2px}
+}
+
+/* landscape / short-and-wide: cap the felt so the whole table still fits */
+@media (orientation:landscape){
+  #table{max-width:410px}
+  #hero{padding:4px 12px 2px}
+  #heroCards .card{width:calc(44px * var(--fs));height:calc(61px * var(--fs))}
+  #heroCards .card .rk{font-size:calc(19px * var(--fs))}
+  #heroCards .card .su{font-size:calc(15px * var(--fs))}
+  #msg{padding:2px 10px;min-height:16px}
 }
 </style>
 </head>
@@ -219,7 +230,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 
 <header>
   <button class="hbtn" id="btnHome" aria-label="All games">🏠</button>
-  <div class="ttl">Hold’em · 6-Player Sit &amp; Go</div>
+  <div class="ttl" id="gameTitle">Hold’em · Sit &amp; Go</div>
   <button class="hbtn" id="btnRules">Rules</button>
   <button class="hbtn" id="btnMenu" aria-label="Menu">☰</button>
 </header>
@@ -261,9 +272,11 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
   <div class="sheet">
     <h2 id="startTitle">6-Player Sit &amp; Go</h2>
     <p id="startBlurb"></p>
+    <h3>Table size</h3>
+    <div class="seg" id="segSeats"></div>
     <h3>Blind speed</h3>
     <div class="seg" id="segBlinds"></div>
-    <p style="font-size:11px;color:var(--ink-faint)">Turbo ≈ 20 minutes · Standard ≈ 30 · Marathon ≈ 40</p>
+    <p style="font-size:11px;color:var(--ink-faint)">Turbo ≈ 20 minutes · Standard ≈ 30 · Marathon ≈ 40. A fuller table plays tighter and runs longer.</p>
     <button class="big" id="startBtn">New tournament</button>
     <button class="big ghost" id="resumeBtn">Resume</button>
   </div>
@@ -305,7 +318,11 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
       <div class="ctl"><div class="switch" id="swSpeed"><i></i></div></div></div>
     <div class="row"><div class="lbl">Tips<small>Show pot odds and each opponent’s playing style</small></div>
       <div class="ctl"><div class="switch" id="swTips"><i></i></div></div></div>
-    <div class="row"><div class="lbl">Blind speed<small>Applies to the next tournament</small></div></div>
+    <div class="row"><div class="lbl">Text size<small>Applies straight away</small></div></div>
+    <div class="seg" id="segText"></div>
+    <div class="row" style="margin-top:14px"><div class="lbl">Table size<small>Applies to the next tournament</small></div></div>
+    <div class="seg" id="segSeats2"></div>
+    <div class="row" style="margin-top:14px"><div class="lbl">Blind speed<small>Applies to the next tournament</small></div></div>
     <div class="seg" id="segBlinds2"></div>
     <button class="big" id="menuNew">New tournament</button>
     <button class="big ghost" id="menuHome">🏠 Back to all games</button>
@@ -855,7 +872,7 @@ const fmt=n=>n.toLocaleString('en-US');
 const LS='holdem.v1';
 
 /* ---------------- settings ---------------- */
-const DEF={fourColour:true, tips:false, speed:true, blinds:'turbo', sound:false};
+const DEF={fourColour:true, tips:false, speed:true, blinds:'turbo', seats:6, textSize:'m', sound:false};
 let S=Object.assign({},DEF);
 try{ const raw=localStorage.getItem(LS+'.set'); if(raw) S=Object.assign(S,JSON.parse(raw)); }catch(e){}
 const saveSet=()=>{ try{ localStorage.setItem(LS+'.set',JSON.stringify(S)); }catch(e){} };
@@ -865,6 +882,9 @@ try{ const raw=localStorage.getItem(LS+'.stats'); if(raw) STATS=Object.assign(ST
 const saveStats=()=>{ try{ localStorage.setItem(LS+'.stats',JSON.stringify(STATS)); }catch(e){} };
 
 const HANDS_PER_LEVEL={turbo:5, standard:8, marathon:12};
+const TEXT_SCALE={s:0.86, m:1, l:1.15, xl:1.32};
+const SEAT_COUNTS=[6,8,9];
+function applyTextSize(){ document.documentElement.style.setProperty('--fs', TEXT_SCALE[S.textSize]||1); }
 
 /* ---------------- rng ---------------- */
 function rng(){
@@ -875,9 +895,36 @@ function rng(){
 }
 
 /* ---------------- geometry (percentages of the felt) ---------------- */
-const SEATPOS=[{x:50,y:88},{x:15,y:72},{x:15,y:34},{x:50,y:11},{x:85,y:34},{x:85,y:72}];
-const BETPOS =[{x:50,y:71},{x:35,y:62},{x:35,y:34},{x:50,y:25},{x:65,y:34},{x:65,y:62}];
-const DPOS   =[{x:66,y:83},{x:33,y:67},{x:33,y:29},{x:63,y:17},{x:67,y:29},{x:67,y:67}];
+// Seats sit on an ellipse with the hero pinned at the bottom, so 6 / 8 / 9 all
+// lay out from one formula instead of hand-maintained coordinate tables.
+const RX=39, RY=40, CX=50, CY=50;
+// The board and pot own the middle band. With 8 or 9 seats the side seats sit level
+// with it, so anything that would land on the board gets pushed to the near edge.
+const BOARD={l:21, r:79, t:36, b:57};
+function clearOfBoard(x,y,sn){
+  if(x>BOARD.l && x<BOARD.r && y>BOARD.t && y<BOARD.b) y = sn>=0 ? BOARD.b+3 : BOARD.t-3;
+  return {x,y};
+}
+function buildLayout(n){
+  const seats=[], bets=[], dealers=[], cosines=[];
+  for(let v=0; v<n; v++){
+    const deg = 90 + v*360/n, a = deg*Math.PI/180;
+    const c=Math.cos(a), sn=Math.sin(a);
+    cosines.push(Math.abs(c));
+    seats.push({x:CX+RX*c, y:CY+RY*sn});
+    bets.push(clearOfBoard(CX+RX*0.58*c, CY+RY*0.62*sn, sn));
+    const da=(deg + (n<=6?26:19))*Math.PI/180, ds=Math.sin(da);
+    dealers.push(clearOfBoard(CX+RX*0.74*Math.cos(da), CY+RY*0.78*ds, ds));
+  }
+  // widest seat that still can't overhang the felt (and so can't scroll the page)
+  const margin = 100 - (CX + RX*Math.max.apply(null,cosines));
+  return {seats, bets, dealers, seatW: (2*margin*0.94).toFixed(2)+'%'};
+}
+let LAY=buildLayout(6);
+
+// The felt watermark. Swap this for an inline <svg>…</svg> (or an <img src="data:…">)
+// to put a logo on the table — .tlogo sizes and fades whatever goes in here.
+const FELT_MARK = 'HOLD\u2019EM';
 
 const NAMES=['Tuck','Marge','Bishop','Dolores','Rerun','Ozzie','Peaches','Hollis','Ruby','Gus',
              'Winnie','Cricket','Bo','Delia','Mack','June','Pip','Sarge','Nova','Clem'];
@@ -885,7 +932,8 @@ const NAMES=['Tuck','Marge','Bishop','Dolores','Rerun','Ozzie','Peaches','Hollis
 /* ---------------- state ---------------- */
 let T=null, heroSeat=0, busy=false, pendingResolve=null, raiseTo=0, lastBoard=0;
 let rMin=0, rMax=0, rStep=1;
-const vis=seat=>(seat-heroSeat+6)%6;
+const nSeats=()=>(T?T.cfg.seats:S.seats);
+const vis=seat=>(seat-heroSeat+nSeats())%nSeats();
 const spd=(a,b)=>S.speed?a:b;
 
 /* ---------------- card rendering ---------------- */
@@ -903,17 +951,21 @@ function cardEl(c,cls){
 
 /* ---------------- build the felt ---------------- */
 function buildTable(){
-  const t=$('table');
+  const t=$('table'), n=nSeats();
+  LAY=buildLayout(n);
+  t.style.setProperty('--seatw', LAY.seatW);
+  // a fuller table needs a narrower board so the side seats aren't crowded
+  t.style.setProperty('--cardw', n>=8 ? '9.5cqw' : '10.7cqw');
   t.innerHTML='';
-  t.appendChild(el('div','tlogo','HOLD’EM'));
+  const mark=el('div','tlogo', FELT_MARK); mark.id='feltMark'; t.appendChild(mark);
   const centre=el('div','centre');
   centre.appendChild(el('div','pot','<span id="potTxt">Pot 0</span>'));
   const b=el('div','board'); b.id='board'; centre.appendChild(b);
   centre.appendChild(el('div','sidepots','')).id='sidepots';
   t.appendChild(centre);
-  for(let v=0;v<6;v++){
+  for(let v=0;v<n;v++){
     const s=el('div','seat'); s.id='seat'+v;
-    s.style.left=SEATPOS[v].x+'%'; s.style.top=SEATPOS[v].y+'%';
+    s.style.left=LAY.seats[v].x+'%'; s.style.top=LAY.seats[v].y+'%';
     s.innerHTML='<div class="mini" id="mini'+v+'"></div>'+
       '<div class="plaque"><div class="bubble" id="bub'+v+'"></div>'+
       '<div class="pname" id="nm'+v+'"></div><div class="pstack" id="st'+v+'"></div>'+
@@ -932,6 +984,7 @@ function render(){
   const deckCls=S.fourColour?'four':'two';
   document.body.className=deckCls;
   const L=LEVELS[T.level];
+  const gt=$('gameTitle'); if(gt) gt.textContent='Hold\u2019em \u00b7 '+T.cfg.seats+'-Player Sit & Go';
   $('strip').innerHTML='Hand <b>'+T.handNo+'</b><span class="sep">|</span>Level <b>'+(T.level+1)+
     '</b><span class="sep">|</span>Blinds <b>'+fmt(L.sb)+'/'+fmt(L.bb)+'</b><span class="sep">|</span>Left <b>'+
     T.players.filter(p=>!p.out).length+'</b>';
@@ -963,11 +1016,11 @@ function render(){
       else { mini.appendChild(cardEl('back')); mini.appendChild(cardEl('back')); }
     }
     const bet=$('bet'+v);
-    if(p.street>0&&!p.out){ bet.style.opacity='1'; bet.style.left=BETPOS[v].x+'%'; bet.style.top=BETPOS[v].y+'%'; $('betv'+v).textContent=fmt(p.street); }
+    if(p.street>0&&!p.out){ bet.style.opacity='1'; bet.style.left=LAY.bets[v].x+'%'; bet.style.top=LAY.bets[v].y+'%'; $('betv'+v).textContent=fmt(p.street); }
     else bet.style.opacity='0';
   }
   const db=$('dbtn'), dv=vis(T.btnSeat);
-  db.style.left=DPOS[dv].x+'%'; db.style.top=DPOS[dv].y+'%';
+  db.style.left=LAY.dealers[dv].x+'%'; db.style.top=LAY.dealers[dv].y+'%';
 
   // hero
   const me=T.players[heroSeat];
@@ -997,15 +1050,15 @@ async function bubble(seat,text,fold){
   await sleep(spd(520,900));
   b.className='bubble'+(fold?' fold':'');
 }
-function clearBubbles(){ for(let v=0;v<6;v++) $('bub'+v).className='bubble'; }
+function clearBubbles(){ for(let v=0;v<nSeats();v++){ const b=$('bub'+v); if(b) b.className='bubble'; } }
 
 /* ---------------- board animation ---------------- */
 async function syncBoard(){
   while(lastBoard<T.board.length){
     // sweep the street's bets into the pot first
     let any=false;
-    for(let v=0;v<6;v++){ const b=$('bet'+v); if(b.style.opacity==='1'){ b.style.left='50%'; b.style.top='47%'; any=true; } }
-    if(any){ await sleep(spd(320,460)); for(let v=0;v<6;v++) $('bet'+v).style.opacity='0'; }
+    for(let v=0;v<nSeats();v++){ const b=$('bet'+v); if(b&&b.style.opacity==='1'){ b.style.left='50%'; b.style.top='47%'; any=true; } }
+    if(any){ await sleep(spd(320,460)); for(let v=0;v<nSeats();v++){ const b=$('bet'+v); if(b) b.style.opacity='0'; } }
     const n=Math.min(T.board.length,lastBoard===0?3:lastBoard+1);
     lastBoard=n;
     const bd=$('board'); bd.innerHTML='';
@@ -1132,8 +1185,8 @@ async function finishUp(){
   await syncBoard();
   // sweep any last bets in
   let any=false;
-  for(let v=0;v<6;v++){ const b=$('bet'+v); if(b.style.opacity==='1'){ b.style.left='50%'; b.style.top='47%'; any=true; } }
-  if(any){ await sleep(spd(300,440)); for(let v=0;v<6;v++) $('bet'+v).style.opacity='0'; }
+  for(let v=0;v<nSeats();v++){ const b=$('bet'+v); if(b&&b.style.opacity==='1'){ b.style.left='50%'; b.style.top='47%'; any=true; } }
+  if(any){ await sleep(spd(300,440)); for(let v=0;v<nSeats();v++){ const b=$('bet'+v); if(b) b.style.opacity='0'; } }
 
   const shown=T.players.filter(p=>p.showdown);
   if(shown.length){ T.reveal=true; render(); await sleep(spd(700,1100)); }
@@ -1160,7 +1213,8 @@ async function finishUp(){
 function newGame(){
   const pool=PERSONAS.slice().sort(()=>rng()-0.5);
   const names=NAMES.slice().sort(()=>rng()-0.5);
-  T=newTable({seats:6,startStack:5000,handsPerLevel:HANDS_PER_LEVEL[S.blinds]||5,rng:rng});
+  const n=SEAT_COUNTS.indexOf(S.seats)>=0?S.seats:6;
+  T=newTable({seats:n,startStack:5000,handsPerLevel:HANDS_PER_LEVEL[S.blinds]||5,rng:rng});
   T.players.forEach((p,i)=>{
     if(i===0){ p.isBot=false; p.name='You'; p.persona=null; }
     else { p.isBot=true; p.persona=pool[(i-1)%pool.length].key; p.name=names[i-1]; }
@@ -1175,7 +1229,7 @@ function saveGame(){
     if(!T||T.phase==='tourney-over'){ localStorage.removeItem(LS+'.game'); return; }
     localStorage.setItem(LS+'.game',JSON.stringify({
       level:T.level,handNo:T.handNo,handsThisLevel:T.handsThisLevel,bbSeat:T.bbSeat,
-      hpl:T.cfg.handsPerLevel, results:T.results,
+      hpl:T.cfg.handsPerLevel, seats:T.cfg.seats, results:T.results,
       players:T.players.map(p=>({name:p.name,persona:p.persona,isBot:p.isBot,stack:p.stack,out:p.out,place:p.place}))
     }));
   }catch(e){}
@@ -1184,8 +1238,9 @@ function loadGame(){
   try{
     const raw=localStorage.getItem(LS+'.game'); if(!raw) return false;
     const g=JSON.parse(raw);
-    if(!g||!g.players||g.players.length!==6) return false;
-    T=newTable({seats:6,startStack:5000,handsPerLevel:g.hpl||5,rng:rng});
+    const n=g.seats||g.players.length;
+    if(!g||!g.players||SEAT_COUNTS.indexOf(n)<0||g.players.length!==n) return false;
+    T=newTable({seats:n,startStack:5000,handsPerLevel:g.hpl||5,rng:rng});
     T.players.forEach((p,i)=>{ Object.assign(p,g.players[i]); });
     T.level=g.level; T.handNo=g.handNo; T.handsThisLevel=g.handsThisLevel; T.bbSeat=g.bbSeat;
     T.results=g.results||[];
@@ -1252,6 +1307,7 @@ function bindSeg(id,vals,get,set){
 
 /* ---------------- boot ---------------- */
 function boot(){
+  applyTextSize();
   buildTable();
   $('btnHome').onclick=()=>{ location.href='../'; };
   $('btnRules').onclick=()=>openOv('ovRules');
@@ -1270,20 +1326,27 @@ function boot(){
           ()=>S.blinds,v=>S.blinds=v);
   bindSeg('segBlinds2',[['turbo','Turbo'],['standard','Standard'],['marathon','Marathon']],
           ()=>S.blinds,v=>S.blinds=v);
+  const seatOpts=SEAT_COUNTS.map(n=>[n, n+' players']);
+  const setSeats=v=>{ S.seats=v; const b=$('startBlurb');
+    if(b && !localStorage.getItem(LS+'.game')) b.textContent=v+' players, 5,000 chips each, rising blinds. Last one standing wins.'; };
+  bindSeg('segSeats',  seatOpts, ()=>S.seats, setSeats);
+  bindSeg('segSeats2', seatOpts, ()=>S.seats, setSeats);
+  bindSeg('segText',[['s','S'],['m','M'],['l','L'],['xl','XL']],
+          ()=>S.textSize, v=>{ S.textSize=v; applyTextSize(); });
   showActions(false);
   const resumed=loadGame();
   $('resumeBtn').style.display=resumed?'block':'none';
   $('startTitle').textContent=resumed?'Welcome back':'6-Player Sit & Go';
   $('startBlurb').textContent=resumed
     ? 'You have a tournament in progress — hand '+T.handNo+', '+T.players.filter(p=>!p.out).length+' players left.'
-    : 'Six players, 5,000 chips each, rising blinds. Last one standing wins.';
+    : S.seats+' players, 5,000 chips each, rising blinds. Last one standing wins.';
   openOv('ovStart');
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
 </script>
 <script>
-(function(){ var V="v50", ISO="2026-09-07T21:23:26Z";
+(function(){ var V="v51", ISO="2026-09-08T04:38:44Z";
   var d=new Date(ISO);
   var s=V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
