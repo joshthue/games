@@ -1132,7 +1132,7 @@ function render(){
     $('st'+v).textContent=p.allIn?'ALL IN':fmt(p.stack);
     $('tg'+v).textContent=(S.tips&&p.isBot&&p.persona)?personaByKey(p.persona).name:'';
     const mini=$('mini'+v); mini.innerHTML='';
-    if(!p.out&&!p.folded&&p.cards.length){
+    if(p.cards.length&&(p.showdown||(!p.out&&!p.folded))){
       if(p.seat===heroSeat){ /* hero cards live in the hero bar */ }
       else if(p.showdown||T.reveal) { p.cards.forEach(c=>mini.appendChild(cardEl(c))); }
       else { mini.appendChild(cardEl('back')); mini.appendChild(cardEl('back')); }
@@ -1146,12 +1146,13 @@ function render(){
 
   // hero
   const me=T.players[heroSeat];
+  const meShow=me.showdown&&me.cards.length;
   const hc=$('heroCards'); hc.innerHTML='';
-  if(me.out){ hc.appendChild(cardEl(null)); hc.appendChild(cardEl(null)); }
-  else me.cards.forEach(c=>hc.appendChild(cardEl(c,me.folded?'dim':'')));
+  if(me.out&&!meShow){ hc.appendChild(cardEl(null)); hc.appendChild(cardEl(null)); }
+  else me.cards.forEach(c=>hc.appendChild(cardEl(c,(me.folded&&!meShow)?'dim':'')));
   $('heroName').textContent=me.name+(me.out?' — out':'');
   $('heroStack').textContent=fmt(me.stack);
-  $('heroHand').textContent = (me.out||me.folded||!me.cards.length) ? ''
+  $('heroHand').textContent = (!me.cards.length||((me.out||me.folded)&&!meShow)) ? ''
     : (T.board.length ? describeHand(evaluate(me.cards.concat(T.board))) : startingHand(me.cards));
   const toCall=T.phase==='betting'?Math.max(0,T.currentBet-me.street):0;
   $('heroOdds').textContent = (S.tips&&toCall>0)
@@ -1532,7 +1533,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v54", ISO="2026-09-08T18:34:17Z";
+(function(){ var V="v55", ISO="2026-09-11T20:15:19Z";
   var d=new Date(ISO);
   var s=V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
