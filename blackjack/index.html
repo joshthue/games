@@ -69,11 +69,12 @@
   /* player spots */
   .spots-wrap{flex:0 1 auto; min-height:0; display:grid;
     grid-template-columns:repeat(3, auto); align-items:end; justify-content:start;
-    overflow:auto; padding:4px 10px 6px; gap:16px 10px; scrollbar-width:none;}
+    width:100%; max-width:680px; margin-inline:auto;
+    overflow:auto; padding:4px 12px 6px; gap:24px 14px; scrollbar-width:none;}
   .spots-wrap::-webkit-scrollbar{display:none;}
-  .spots-wrap.center{justify-content:center;}
+  .spots-wrap.center{justify-content:space-evenly;}
   .spot{flex:0 0 auto; scroll-snap-align:center; display:flex; flex-direction:column;
-    align-items:center; gap:5px; min-width:calc(var(--cw) + 26px); transition:opacity .2s;}
+    align-items:center; gap:9px; min-width:calc(var(--cw) + 26px); transition:opacity .2s;}
   .spot.empty{opacity:.5;}
   .spot-hands{display:flex; gap:6px; align-items:flex-end; min-height:var(--ch);}
   .hand{position:relative; display:flex; padding:3px; border-radius:9px; transition:box-shadow .15s, background .15s;}
@@ -275,7 +276,7 @@ function canDouble(hand,bank,rules){
 /* =================================================================
    PERSISTENCE  (localStorage with in-memory fallback for sandboxes)
    ================================================================= */
-const BUILD='build v57 · 2026-09-12';
+const BUILD='build v58 · 2026-09-12';
 const mem={};
 const store={
   get(k){try{const v=localStorage.getItem(k);return v==null?(k in mem?mem[k]:null):v;}catch(e){return k in mem?mem[k]:null;}},
