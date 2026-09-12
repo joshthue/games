@@ -631,7 +631,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v56";
+  var BUILD_V = "v58";
   var BUILD_ISO = "2026-09-12";
   document.getElementById('buildStamp').textContent = "build " + BUILD_V + " \u00b7 " + BUILD_ISO;
 
@@ -707,7 +707,7 @@ window.SM = (function(){
   function doNewGame(){
     if(mode==='online'){
       if(net.role==='host'){ dealHost(); }
-      else { net.pending=true; netSend({t:'act', kind:'newGame'}); render(); }
+      else { net.pending=true; net.pendingAt=Date.now(); netSend({t:'act', kind:'newGame'}); render(); }
     } else { startSolo(); }
   }
 
@@ -883,7 +883,7 @@ window.SM = (function(){
   // ---- move commits: solo/host apply locally; guest sends an intent to the host ----
   function commitPlay(action){
     if(mode==='online' && net.role==='guest'){
-      net.pending=true;
+      net.pending=true; net.pendingAt=Date.now();
       netSend({t:'act', kind:'play', src:action.from.kind, i:action.from.i, to:action.to});
       render(); return;
     }
@@ -891,7 +891,7 @@ window.SM = (function(){
   }
   function commitDiscard(cardIndex, sideIndex){
     if(mode==='online' && net.role==='guest'){
-      net.pending=true;
+      net.pending=true; net.pendingAt=Date.now();
       netSend({t:'act', kind:'discard', cardIndex:cardIndex, sideIndex:sideIndex});
       render(); return;
     }
@@ -899,7 +899,7 @@ window.SM = (function(){
   }
   function commitPass(){
     if(mode==='online' && net.role==='guest'){
-      net.pending=true; netSend({t:'act', kind:'pass'}); render(); return;
+      net.pending=true; net.pendingAt=Date.now(); netSend({t:'act', kind:'pass'}); render(); return;
     }
     SM.pass(T); afterLocal();
   }
@@ -998,14 +998,19 @@ window.SM = (function(){
   }
 
   function handleNet(obj){
+    net.lastRecv=Date.now();
     if(net.role==='host'){
       if(obj.t==='join'){
         net.joined=true;
         if(!T){ dealHost(); } else { publishState(); }
         closeNetOv(); showGame(); updateNetbar(); render();
       } else if(obj.t==='act'){ handleGuestAction(obj); }
+      else if(obj.t==='sync'){ publishState(); }                 // guest asked for the current state
     } else if(net.role==='guest'){
       if(obj.t==='state'){
+        var vs=JSON.stringify(obj.view);
+        if(vs===net.lastAdopt) return;                            // unchanged keepalive — ignore (no flicker; keep any pending move)
+        net.lastAdopt=vs;
         var first=!net.joined; net.joined=true; net.pending=false;
         T=SM.decodeState(obj.view); sel=null;
         if(first){ closeNetOv(); showGame(); }
@@ -1028,15 +1033,38 @@ window.SM = (function(){
     if(T.winner!==null||T.draw) finish(); else considerHeroPass();
   }
 
+  // ---- keep the two phones in sync even when a relay drops a message or a stream stalls ----
+  var netHbTimer=null;
+  function netHeartbeat(){
+    if(!net.online || !net.joined) return;
+    var now=Date.now();
+    if(net.role==='guest' && net.pending && now-(net.pendingAt||0) > 6000){
+      net.pending=false; render(); netSend({t:'sync'}); net.lastBeat=now; return;   // our move looks lost — unlock + re-request
+    }
+    if(now-(net.lastBeat||0) >= 3000){
+      net.lastBeat=now;
+      if(net.role==='host') publishState();          // periodic re-broadcast = self-heal for a missed state
+      else netSend({t:'sync'});                       // keepalive + nudge host to resend
+    }
+    if(now-(net.lastRecv||0) > 9000 && now-(net.lastReconnect||0) > 9000){
+      net.lastReconnect=now;                          // stream has gone silent — force a reconnect
+      (net.ctrls||[]).forEach(function(c){ try{ c&&c.abort(); }catch(e){} });
+    }
+  }
+
   // ---- transport: streaming over ntfy, or an injected in-memory transport for tests ----
   function startNet(){
     net.id=newId(); net.seen=new Set(); net.since={}; net.ctrls=[];
+    net.lastRecv=Date.now(); net.lastAdopt=null; net.lastBeat=0;
+    if(netHbTimer) clearInterval(netHbTimer);
+    netHbTimer=setInterval(netHeartbeat, 1500);
     var t=tx();
     if(t){ net.connOk=true; updateNetbar(); pollLoop(t); return; }
     RELAYS.forEach(streamLoop);
   }
   function netStop(){
     net.online=false;
+    if(netHbTimer){ clearInterval(netHbTimer); netHbTimer=null; }
     (net.ctrls||[]).forEach(function(c){ try{ c&&c.abort(); }catch(e){} });
     if(pubTimer){ clearTimeout(pubTimer); pubTimer=null; }
   }

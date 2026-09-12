@@ -39,6 +39,12 @@ information isn't cryptographically secret — fine for friends, not for money.
 The **loser of a game deals in first** on the next one, and the win screen's **Rematch**
 button re-deals in place without kicking anyone back to setup.
 
+The sync is **self-healing**. If a relay drops a message or a phone's stream stalls (the
+phone sleeps, or hands off between Wi-Fi and cell), the two phones re-sync on their own
+within a few seconds: the host re-broadcasts the current state on a heartbeat, a guest
+left waiting on a move re-requests it, and a stream that's gone silent reconnects. A
+momentary blip that used to strand both players on “Opponent's turn” now clears itself.
+
 ## How it's put together
 
 Two script blocks, deliberately. The first is the **pure rules engine** (`window.SM`) —
