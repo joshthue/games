@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"/>
+<meta name="theme-color" content="#123524"/>
+<link rel="manifest" href="../manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="../icon-180.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Spite &amp; Malice</title>
+<style>
+:root{
+  --felt:#123524; --felt2:#0d2a1c; --felthi:#1c4a33;
+  --gold:#d9b45b; --gold2:#b8963f; --cream:#f4ecd8;
+  --line:rgba(217,180,91,.35); --line2:rgba(217,180,91,.18);
+  --card-bg:#f7f1e2; --card-ink:#1c2620; --red:#b23b34;
+  --ok:#3f9d6a; --warn:#d9b45b; --bad:#b23b34;
+  --shadow:0 4px 14px rgba(0,0,0,.35);
+  --cellfs:15px; /* text size (S/M/L/XL) */
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--cream);
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--felthi) 0%, var(--felt) 45%, var(--felt2) 100%);
+  min-height:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow-x:hidden;
+}
+.wrap{max-width:560px;margin:0 auto;padding:8px 8px 14px;min-height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.hdr{display:flex;align-items:center;gap:8px;padding:2px 2px 8px}
+.hdr .title{font-weight:800;letter-spacing:.3px;font-size:16px;color:var(--gold)}
+.hdr .spacer{flex:1}
+.iconbtn{background:linear-gradient(180deg,#1c4a33,#123524);border:1px solid var(--line);
+  color:var(--cream);border-radius:10px;padding:7px 10px;font-size:14px;font-weight:600;cursor:pointer}
+.iconbtn:active{transform:translateY(1px)}
+
+/* Buttons / segments */
+.btn{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#22180a;border:none;
+  border-radius:12px;padding:12px 16px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:linear-gradient(180deg,#1c4a33,#123524);color:var(--cream);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:default;box-shadow:none}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(0,0,0,.15)}
+.seg button{background:transparent;color:var(--cream);border:none;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer}
+.seg button.on{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#22180a}
+
+/* Panels / overlay */
+.panel{background:linear-gradient(180deg,rgba(28,74,51,.9),rgba(13,42,28,.92));
+  border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.overlay{position:fixed;inset:0;background:rgba(6,18,12,.72);display:none;align-items:center;justify-content:center;
+  padding:16px;z-index:50}
+.overlay.on{display:flex}
+.sheet{max-width:520px;width:100%;max-height:88vh;overflow:auto;background:linear-gradient(180deg,#153c29,#0f2c1e);
+  border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.sheet h2{margin:.1em 0 .4em;color:var(--gold);font-size:20px}
+.sheet h3{margin:1em 0 .3em;color:var(--gold);font-size:15px}
+.sheet p,.sheet li{font-size:14px;line-height:1.5;color:var(--cream)}
+.sheet ul{padding-left:18px;margin:.3em 0}
+.row{display:flex;align-items:center;gap:10px;margin:10px 0}
+.row .lbl{flex:1;font-size:14px}
+.switch{position:relative;width:48px;height:28px;flex:0 0 auto}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .track{position:absolute;inset:0;background:rgba(0,0,0,.35);border:1px solid var(--line);border-radius:999px;transition:.15s}
+.switch .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--cream);transition:.15s}
+.switch input:checked ~ .track{background:linear-gradient(180deg,var(--gold),var(--gold2))}
+.switch input:checked ~ .knob{left:23px}
+
+/* Setup */
+#setup .logo{font-size:34px;font-weight:900;color:var(--gold);letter-spacing:.5px;text-align:center;margin:18px 0 2px}
+#setup .sub{text-align:center;color:var(--cream);opacity:.85;font-size:14px;margin-bottom:16px}
+.setup-opt{margin:14px 0}
+.setup-opt .cap{font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--gold);opacity:.9;margin-bottom:6px}
+
+/* Board */
+.board{display:flex;flex-direction:column;gap:8px;flex:1}
+.side-area{display:flex;flex-direction:column;gap:6px}
+.zonecap{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);opacity:.8}
+.oppline,.youline{display:flex;align-items:flex-start;gap:8px}
+.payoff-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 auto}
+.payoff-lbl{font-size:10px;color:var(--cream);opacity:.75}
+.sides{display:flex;gap:5px;flex:1;flex-wrap:nowrap;justify-content:flex-start}
+.hand-count{font-size:11px;color:var(--cream);opacity:.75;align-self:center}
+
+.centers{display:flex;gap:7px;justify-content:center;padding:8px 0;flex-wrap:nowrap}
+.center-slot{display:flex;flex-direction:column;align-items:center;gap:2px}
+.center-need{font-size:10px;color:var(--gold);opacity:.75;min-height:12px}
+
+.stockrow{display:flex;align-items:center;justify-content:center;gap:14px;font-size:12px;color:var(--cream);opacity:.85;padding:2px 0}
+.stockrow b{color:var(--gold)}
+
+.hand{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;padding-top:2px;min-height:64px}
+
+/* Cards */
+.card{
+  width:44px;height:62px;border-radius:8px;background:var(--card-bg);color:var(--card-ink);
+  border:1px solid rgba(0,0,0,.25);box-shadow:0 2px 5px rgba(0,0,0,.3);
+  display:flex;flex-direction:column;justify-content:space-between;padding:3px 4px;position:relative;
+  font-weight:800;font-size:var(--cellfs);user-select:none;flex:0 0 auto;line-height:1;
+}
+.card.sm{width:38px;height:52px;font-size:calc(var(--cellfs) - 2px);padding:2px 3px}
+.card .r{font-size:1em}
+.card .s{align-self:flex-end;font-size:1em}
+.card.red{color:var(--red)}
+.card.wild{background:linear-gradient(135deg,#f7f1e2 0%,#ffe9b0 50%,#f7f1e2 100%);color:#7a5a12}
+.card.wild .r{font-size:.9em}
+.card.back{background:
+  repeating-linear-gradient(45deg,#1c4a33 0 6px,#153c29 6px 12px);
+  border:1px solid var(--line);color:transparent;box-shadow:0 2px 5px rgba(0,0,0,.35)}
+.card.empty{background:rgba(0,0,0,.18);border:1px dashed var(--line2);box-shadow:none}
+.card.selectable{cursor:pointer}
+.card.selected{outline:3px solid var(--gold);outline-offset:1px;transform:translateY(-4px)}
+.card.target{outline:3px dashed var(--ok);outline-offset:1px;cursor:pointer}
+.stack{position:relative;width:44px}
+.stack .count{position:absolute;top:-7px;right:-6px;background:var(--gold);color:#22180a;border-radius:999px;
+  font-size:10px;font-weight:800;padding:1px 5px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.stack.sm{width:38px}
+
+/* Turn banner + tips */
+.turnbar{display:flex;align-items:center;gap:8px;justify-content:center;font-size:13px;font-weight:700;
+  padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.18);margin:2px 0}
+.turnbar .dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.turnbar.opp .dot{background:var(--warn)}
+.tip-block{font-size:12px;color:var(--cream);opacity:.85;text-align:center;padding:2px 6px;min-height:16px}
+.actions{display:flex;gap:8px;justify-content:center;padding-top:4px;flex-wrap:wrap}
+
+.gn-build{position:fixed;left:0;right:0;bottom:2px;text-align:center;font-size:10px;color:var(--gold);opacity:.5;pointer-events:none}
+.hidden{display:none !important}
+.win-emoji{font-size:44px;text-align:center}
+@media (min-width:480px){ .card{width:50px;height:70px} .card.sm{width:44px;height:60px} .stack{width:50px} .stack.sm{width:44px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- ===== SETUP ===== -->
+  <section id="setup">
+    <div class="hdr">
+      <a class="iconbtn" href="../" title="All games">🏠</a>
+      <div class="spacer"></div>
+      <button class="iconbtn" id="setupRules">Rules</button>
+    </div>
+    <div class="logo">Spite &amp; Malice</div>
+    <div class="sub">Race the bot to empty your goal pile · Ace → King</div>
+    <div class="panel">
+      <div class="setup-opt">
+        <div class="cap">Goal pile</div>
+        <div class="seg" id="segGoal">
+          <button data-goal="13" class="on">Short · 13</button>
+          <button data-goal="20">Standard · 20</button>
+        </div>
+      </div>
+      <div class="setup-opt">
+        <div class="cap">Bot difficulty</div>
+        <div class="seg" id="segDiff">
+          <button data-diff="easy">Easy</button>
+          <button data-diff="normal" class="on">Normal</button>
+        </div>
+      </div>
+      <div class="setup-opt">
+        <div class="cap">Card text size</div>
+        <div class="seg" id="segSize">
+          <button data-fs="13">S</button>
+          <button data-fs="15" class="on">M</button>
+          <button data-fs="17">L</button>
+          <button data-fs="19">XL</button>
+        </div>
+      </div>
+      <div class="row"><div class="lbl">Show move hints</div>
+        <label class="switch"><input type="checkbox" id="optTips"><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="setup-opt">
+        <div class="cap">Opponent</div>
+        <div class="seg" id="segMode">
+          <button data-mode="solo" class="on">🤖 Solo vs bot</button>
+          <button data-mode="online">📱 Two phones</button>
+        </div>
+      </div>
+      <div id="soloStart"><button class="btn" id="startBtn" style="width:100%">Deal</button></div>
+      <div id="onlineStart" class="hidden">
+        <button class="btn" id="hostBtn" style="width:100%;margin-bottom:8px">➕ Create game (host)</button>
+        <button class="btn ghost" id="joinBtn" style="width:100%">🔑 Join with code</button>
+        <p style="font-size:12px;opacity:.75;margin:10px 2px 0">One of you creates a game and reads out the 4-letter code; the other joins with it. Then you each play on your own phone. Free public relay, no accounts.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GAME ===== -->
+  <section id="game" class="hidden">
+    <div class="hdr">
+      <a class="iconbtn" href="../" title="All games">🏠</a>
+      <div class="title">Spite &amp; Malice</div>
+      <div class="spacer"></div>
+      <button class="iconbtn" id="gameRules">Rules</button>
+      <button class="iconbtn" id="gameMenu">Menu</button>
+    </div>
+
+    <div class="turnbar hidden" id="netbar" style="margin-top:0"></div>
+    <div class="board">
+      <!-- opponent -->
+      <div class="side-area">
+        <div class="zonecap" id="oppLabel">Bot</div>
+        <div class="oppline">
+          <div class="payoff-col">
+            <div class="stack sm" id="oppPayoff"></div>
+            <div class="payoff-lbl">goal <b id="oppPayoffN">0</b></div>
+          </div>
+          <div class="sides" id="oppSides"></div>
+          <div class="hand-count">hand <b id="oppHandN">0</b></div>
+        </div>
+      </div>
+
+      <!-- centers -->
+      <div class="centers" id="centers"></div>
+      <div class="stockrow">
+        <span>stock <b id="stockN">0</b></span>
+        <span>done <b id="doneN">0</b></span>
+      </div>
+
+      <div class="turnbar" id="turnbar"><span class="dot"></span><span id="turntext">Your turn</span></div>
+      <div class="tip-block" id="tip"></div>
+
+      <!-- you -->
+      <div class="side-area">
+        <div class="youline">
+          <div class="payoff-col">
+            <div class="stack" id="youPayoff"></div>
+            <div class="payoff-lbl">goal <b id="youPayoffN">0</b></div>
+          </div>
+          <div class="sides" id="youSides"></div>
+        </div>
+        <div class="zonecap" style="text-align:center;margin-top:4px">Your hand</div>
+        <div class="hand" id="hand"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn ghost" id="undoSel">Clear selection</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== RULES ===== -->
+  <div class="overlay" id="rulesOv">
+    <div class="sheet">
+      <div style="display:flex;align-items:center"><h2 style="flex:1;margin:0">How to play</h2><button class="iconbtn" id="rulesClose">✕</button></div>
+      <p><b>Goal:</b> be the first to empty your face-up <b>goal pile</b> (bottom-left). The card on top of your goal pile is your most important card — play it whenever you can.</p>
+      <h3>The centre</h3>
+      <p>There are four shared centre stacks. Each is built <b>upward from Ace to King</b>. A stack starts with an Ace (or a wild), then 2, 3, 4 … up to King. A completed A→K stack is cleared away and recycled into the stock.</p>
+      <h3>Your turn</h3>
+      <ul>
+        <li>You start each turn with <b>5 cards</b> in hand.</li>
+        <li>Play cards to the centre from three places: the <b>top of your goal pile</b>, your <b>hand</b>, or the <b>top of any side stack</b>.</li>
+        <li>Empty your hand by playing? You immediately draw back up to 5 and keep going.</li>
+        <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). You can play to the centre or discard by tapping.</li>
+      </ul>
+      <h3>Wilds</h3>
+      <p>Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place.</p>
+      <h3>Strategy</h3>
+      <ul>
+        <li>The centre is shared — advancing a stack can help the bot’s goal card too, so watch its top goal card before you play.</li>
+        <li>Organise your side stacks in descending order (low cards on top) so you can dig them back out.</li>
+      </ul>
+      <div class="row" style="margin-top:6px"><button class="btn" id="rulesClose2" style="flex:1">Got it</button></div>
+    </div>
+  </div>
+
+  <!-- ===== MENU ===== -->
+  <div class="overlay" id="menuOv">
+    <div class="sheet">
+      <h2>Menu</h2>
+      <div class="row"><div class="lbl">Show move hints</div>
+        <label class="switch"><input type="checkbox" id="menuTips"><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="row"><div class="lbl">Card text size</div>
+        <div class="seg" id="menuSize">
+          <button data-fs="13">S</button><button data-fs="15">M</button>
+          <button data-fs="17">L</button><button data-fs="19">XL</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="btn" id="menuNew" style="flex:1">New game</button></div>
+      <div class="row"><a class="btn ghost" href="../" style="flex:1;text-align:center;text-decoration:none">🏠 Back to all games</a></div>
+      <div class="row"><button class="btn ghost" id="menuClose" style="flex:1">Close</button></div>
+    </div>
+  </div>
+
+  <!-- ===== NET (host code / join / waiting) ===== -->
+  <div class="overlay" id="netOv">
+    <div class="sheet" id="netSheet"></div>
+  </div>
+
+  <!-- ===== WIN ===== -->
+  <div class="overlay" id="winOv">
+    <div class="sheet" style="text-align:center">
+      <div class="win-emoji" id="winEmoji">🏆</div>
+      <h2 id="winTitle" style="text-align:center">You win!</h2>
+      <p id="winSub"></p>
+      <div class="row"><button class="btn" id="winAgain" style="flex:1">🔄 Rematch</button></div>
+      <div class="row"><button class="btn ghost" id="winSetup" style="flex:1">Change settings</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="gn-build" id="buildStamp"></div>
+
+<!-- ============================================================= -->
+<!-- BLOCK 1: pure rules engine + bot. No DOM. Exposed as window.SM -->
+<!-- ============================================================= -->
+<script>
+window.SM = (function(){
+  var SUITS = ['\u2660','\u2665','\u2666','\u2663']; // spade heart diamond club
+  var RED = {1:false}; // computed per suit below
+  function isRed(s){ return s===1 || s===2; } // hearts / diamonds
+  var RNAMES = {1:'A',11:'J',12:'Q',13:'K'};
+  function rname(r){ return RNAMES[r] || String(r); }
+  function isWild(c){ return !!(c && c.w); }
+
+  function makeDeck(numDecks, jokers){
+    var cards = [];
+    for(var d=0; d<numDecks; d++)
+      for(var s=0; s<4; s++)
+        for(var r=1; r<=13; r++) cards.push({r:r, s:s});
+    for(var j=0; j<jokers; j++) cards.push({w:true});
+    return cards;
+  }
+  function shuffle(a, rnd){
+    rnd = rnd || Math.random;
+    for(var i=a.length-1; i>0; i--){
+      var j = Math.floor(rnd()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  // centre stack: array of {card, val}. Builds 1..13. need = top.val+1 (1 if empty).
+  function stackNeed(stack){ return stack.length===0 ? 1 : stack[stack.length-1].val + 1; }
+  function canPlayOn(c, stack){
+    var need = stackNeed(stack);
+    if(need > 13) return false;
+    if(isWild(c)) return true;
+    return c.r === need;
+  }
+
+  function drawOne(T){
+    if(T.stock.length===0){
+      if(T.done.length===0) return null;
+      T.stock = shuffle(T.done.splice(0), T.rnd);
+    }
+    return T.stock.pop();
+  }
+  function refillHand(T, i){
+    var p = T.players[i];
+    while(p.hand.length < 5){
+      var c = drawOne(T);
+      if(!c) break;
+      p.hand.push(c);
+    }
+  }
+  function topPayoff(T, i){
+    var pf = T.players[i].payoff;
+    return pf.length ? pf[pf.length-1] : null;
+  }
+  // effective rank a card needs to be to leave the goal pile (wild = plays anywhere)
+  function payoffRank(T, i){
+    var c = topPayoff(T, i);
+    if(!c) return null;
+    return isWild(c) ? 0 : c.r; // 0 = wild, plays on any need
+  }
+
+  function newGame(opts){
+    opts = opts || {};
+    var goal = opts.goal || 20;
+    var numDecks = opts.decks || 2;
+    var jokers = (opts.jokers==null ? 4 : opts.jokers);
+    var rnd = opts.rnd || Math.random;
+    var stock = shuffle(makeDeck(numDecks, jokers), rnd);
+    var players = [0,1].map(function(){ return {payoff:[], hand:[], sides:[[],[],[],[]]}; });
+    var T = { players:players, stock:stock, done:[], centers:[[],[],[],[]],
+              turn:0, winner:null, draw:false, _passes:0, goal:goal, rnd:rnd, log:[] };
+    // deal goal piles
+    for(var i=0;i<2;i++) for(var k=0;k<goal;k++) players[i].payoff.push(T.stock.pop());
+    // initial hands
+    refillHand(T, 0); refillHand(T, 1);
+    // first player: forced (rematch => loser first) or higher goal-pile top (wild counts as 14)
+    if(opts.first===0 || opts.first===1){ T.turn = opts.first; }
+    else { var rv=function(idx){ var c=topPayoff(T,idx); return isWild(c)?14:(c?c.r:0); }; T.turn = rv(1) > rv(0) ? 1 : 0; }
+    return T;
+  }
+
+  // list of legal plays for the current player
+  function legalPlays(T){
+    var cur = T.turn, p = T.players[cur], out = [];
+    // sources
+    var srcs = [];
+    var pt = topPayoff(T, cur);
+    if(pt) srcs.push({kind:'payoff', card:pt});
+    for(var h=0; h<p.hand.length; h++) srcs.push({kind:'hand', i:h, card:p.hand[h]});
+    for(var s=0; s<4; s++){ var st=p.sides[s]; if(st.length) srcs.push({kind:'side', i:s, card:st[st.length-1]}); }
+    for(var q=0; q<srcs.length; q++){
+      for(var c=0; c<4; c++){
+        if(canPlayOn(srcs[q].card, T.centers[c])) out.push({from:srcs[q], to:c});
+      }
+    }
+    return out;
+  }
+  function canDiscard(T){ return T.players[T.turn].hand.length > 0; }
+
+  function clearIfComplete(T, c){
+    var st = T.centers[c];
+    if(st.length && st[st.length-1].val === 13){
+      for(var k=0;k<st.length;k++) T.done.push(st[k].card);
+      T.centers[c] = [];
+    }
+  }
+
+  // apply a play {from:{kind,i}, to:centerIndex}. Mutates T. Returns {win:bool,cleared:bool,val}
+  function applyPlay(T, action){
+    var cur = T.turn, p = T.players[cur], st = T.centers[action.to];
+    var need = stackNeed(st);
+    var card, res = {win:false, cleared:false};
+    if(action.from.kind==='payoff'){ card = p.payoff.pop(); }
+    else if(action.from.kind==='hand'){ card = p.hand.splice(action.from.i,1)[0]; }
+    else { card = p.sides[action.from.i].pop(); }
+    var val = isWild(card) ? need : card.r;
+    st.push({card:card, val:val});
+    res.val = val;
+    // completion
+    if(val===13){ clearIfComplete(T, action.to); res.cleared=true; }
+    // win
+    if(action.from.kind==='payoff' && p.payoff.length===0){ T.winner = cur; res.win=true; }
+    // hand emptied mid-turn -> draw back to 5, keep going
+    if(action.from.kind==='hand' && p.hand.length===0) refillHand(T, cur);
+    T._passes = 0; T._turnPlays = (T._turnPlays||0) + 1;
+    return res;
+  }
+
+  // apply discard {cardIndex, sideIndex}. Ends the turn.
+  function applyDiscard(T, action){
+    var cur = T.turn, p = T.players[cur];
+    var card = p.hand.splice(action.cardIndex,1)[0];
+    if(card===undefined){ return pass(T); }   // nothing to discard -> forced pass
+    p.sides[action.sideIndex].push(card);
+    T._passes = 0;
+    endTurn(T);
+  }
+  function pass(T){
+    T._passes = (T._passes||0) + 1;
+    if(T._passes >= 2){ T.draw = true; }       // both players stalled -> draw
+    endTurn(T);
+  }
+  function endTurn(T){
+    T._turnPlays = 0;
+    T.turn = 1 - T.turn;
+    refillHand(T, T.turn);
+  }
+
+  // ---- deep clone (for bot lookahead) ----
+  function clone(T){
+    function cc(c){ return c.w ? {w:true} : {r:c.r, s:c.s}; }
+    return {
+      players: T.players.map(function(p){
+        return { payoff:p.payoff.map(cc), hand:p.hand.map(cc),
+                 sides:p.sides.map(function(s){return s.map(cc);}) };
+      }),
+      stock: T.stock.map(cc), done: T.done.map(cc),
+      centers: T.centers.map(function(s){return s.map(function(x){return {card:cc(x.card), val:x.val};});}),
+      turn:T.turn, winner:T.winner, goal:T.goal, rnd:T.rnd, log:[]
+    };
+  }
+
+  // ---------------- opp() ----------------
+  // Returns a single action: {kind:'play', action:{from,to}} or {kind:'discard', action:{cardIndex,sideIndex}}
+  // diff: 'easy' | 'normal'
+  function botAction(T, diff){
+    var cur=T.turn, p=T.players[cur], opp=1-cur;
+    var plays=legalPlays(T);
+    if(plays.length===0 && p.hand.length===0) return {kind:'pass'};
+    var oppRank=payoffRank(T,opp), myRank=payoffRank(T,cur);
+    var oppClose=T.players[opp].payoff.length<=4;   // only block gifts when opponent is near winning
+    var budget=6, turnPlays=T._turnPlays||0;
+
+    function needAfter(a){ var need=stackNeed(T.centers[a.to]); return (isWild(a.from.card)?need:a.from.card.r)+1; }
+    function completes(a){ var need=stackNeed(T.centers[a.to]); var v=isWild(a.from.card)?need:a.from.card.r; return v===13; }
+    function gifts(a){ return oppClose && oppRank && needAfter(a)===oppRank; }
+
+    // 1. play the goal card (prefer a centre that doesn't gift the opponent)
+    var pf=plays.filter(function(a){return a.from.kind==='payoff';});
+    if(pf.length){ var safe=pf.filter(function(a){return !gifts(a);}); return {kind:'play',action:(safe[0]||pf[0])}; }
+
+    // 2. enabler: a play that makes the goal card playable this turn
+    if(myRank!==null){
+      var en=plays.filter(function(a){ return a.from.kind!=='payoff' && (myRank===0 || needAfter(a)===myRank) && !gifts(a); });
+      en.sort(function(a,b){return srcCost(a)-srcCost(b);});
+      if(en.length) return {kind:'play',action:en[0]};
+    }
+
+    // 3. completions always — finishing an A..K stack recycles the deck
+    var comp=plays.filter(function(a){ return a.from.kind!=='payoff' && !isWild(a.from.card) && completes(a) && !gifts(a); });
+    if(comp.length) return {kind:'play',action:comp[0]};
+
+    // 4. general centre-building, capped per turn so one turn can't drain the stock
+    if(turnPlays < budget){
+      var prog=[];
+      for(var j=0;j<plays.length;j++){ var a=plays[j];
+        if(a.from.kind==='payoff' || isWild(a.from.card) || gifts(a)) continue;
+        var sc=a.from.card.r;                          // higher builds are closer to completing
+        if(a.from.kind==='hand') sc+=2;                // clearing the hand draws fresh cards
+        if(a.from.kind==='side') sc+=1;                // digging a side stack frees a buried card
+        if(myRank && needAfter(a)===myRank) sc+=8;     // sets up my goal card next
+        if(diff==='easy' && Math.random()<0.35) continue;
+        prog.push({a:a,sc:sc});
+      }
+      if(prog.length){ prog.sort(function(x,y){return y.sc-x.sc;}); return {kind:'play',action:prog[0].a}; }
+    }
+
+    // 5. end the turn
+    if(p.hand.length===0) return {kind:'pass'};
+    return {kind:'discard', action:chooseDiscard(T, diff)};
+  }
+
+  function srcCost(a){ return (a.from.kind==='side'?2:0)+(isWild(a.from.card)?3:0); }
+
+  function chooseDiscard(T, diff){
+    var p = T.players[T.turn];
+    var best=null, bestScore=-1e9;
+    for(var c=0;c<p.hand.length;c++){
+      var card = p.hand[c];
+      var wildPenalty = isWild(card) ? 200 : 0; // hate discarding wilds
+      for(var s=0;s<4;s++){
+        var st = p.sides[s];
+        var topR = st.length ? (isWild(st[st.length-1])?14:st[st.length-1].r) : null;
+        var place;
+        if(topR===null) place = 6;                          // empty stack: good
+        else if(topR > (isWild(card)?14:card.r)) place = 8;// keeps descending (low on top)
+        else if(topR === (isWild(card)?14:card.r)) place = 4;
+        else place = -4;                                    // buries a lower card
+        var cardRank = isWild(card)?14:card.r;
+        var score = place + (cardRank>=11?2:0) - wildPenalty; // shed hard-to-place high cards first
+        if(diff==='easy') score += (Math.random()*3);
+        if(score>bestScore){ bestScore=score; best={cardIndex:c, sideIndex:s}; }
+      }
+    }
+    return best || {cardIndex:0, sideIndex:0};
+  }
+
+  // has the current player any legal action at all (else forced pass)
+  function stuck(T){ return legalPlays(T).length===0 && !canDiscard(T); }
+
+  // ---------------- NETWORK SYNC (pure) ----------------
+  // Cards <-> small ints for compact, sub-4KB relay messages.
+  function encodeCard(c){ return c.w ? 52 : (c.s*13 + (c.r-1)); }
+  function decodeCard(id){ return id===52 ? {w:true} : {r:(id%13)+1, s:Math.floor(id/13)}; }
+
+  // Build the view sent to `forSeat` (their hand revealed; everything hidden stays hidden:
+  // opponent hand -> count, stock/done -> counts, goal piles -> visible top + count).
+  function encodeState(T, forSeat){
+    function encSides(sides){ return sides.map(function(st){ return st.map(encodeCard); }); }
+    function encPlayer(i){
+      var p=T.players[i];
+      var pay = p.payoff.length ? p.payoff[p.payoff.length-1] : null;
+      var o = { payTop: pay?encodeCard(pay):null, payN:p.payoff.length, sides:encSides(p.sides) };
+      if(i===forSeat) o.hand = p.hand.map(encodeCard); else o.handN = p.hand.length;
+      return o;
+    }
+    return { v:1, forSeat:forSeat, turn:T.turn, winner:T.winner, draw:!!T.draw, goal:T.goal,
+             stockN:T.stock.length, doneN:T.done.length,
+             centers: T.centers.map(function(st){ return st.map(function(x){ return [encodeCard(x.card), x.val]; }); }),
+             players:[encPlayer(0), encPlayer(1)] };
+  }
+  // Rebuild a mirror state good enough to render + compute the recipient's own legal moves.
+  // Hidden cards become {back:true} placeholders that engine reads never touch on the mirror.
+  function decodeState(view){
+    function ph(){ return {back:true}; }
+    function decSides(a){ return a.map(function(st){ return st.map(decodeCard); }); }
+    function decPlayer(o){
+      var payoff=[]; for(var k=0;k<o.payN;k++) payoff.push((k===o.payN-1 && o.payTop!=null) ? decodeCard(o.payTop) : ph());
+      var hand = o.hand ? o.hand.map(decodeCard) : (function(){ var h=[]; for(var k=0;k<o.handN;k++) h.push(ph()); return h; })();
+      return { payoff:payoff, hand:hand, sides:decSides(o.sides) };
+    }
+    var stock=[],done=[];
+    for(var i=0;i<view.stockN;i++) stock.push({back:true});
+    for(var j=0;j<view.doneN;j++) done.push({back:true});
+    return { turn:view.turn, winner:view.winner, draw:view.draw, goal:view.goal, forSeat:view.forSeat,
+             stock:stock, done:done, _mirror:true, _passes:0, rnd:Math.random,
+             centers: view.centers.map(function(st){ return st.map(function(pr){ return {card:decodeCard(pr[0]), val:pr[1]}; }); }),
+             players:[decPlayer(view.players[0]), decPlayer(view.players[1])] };
+  }
+
+  // Host-side: validate + apply an action a guest (given seat) sent. Returns {ok, res?}.
+  // act = {kind:'play', src:'payoff'|'hand'|'side', i, to} | {kind:'discard', cardIndex, sideIndex} | {kind:'pass'}
+  function applyGuestAct(T, act, seat){
+    if(T.winner!==null || T.draw) return {ok:false};
+    if(T.turn!==seat) return {ok:false};
+    if(act.kind==='play'){
+      var plays=legalPlays(T), match=null;
+      for(var i=0;i<plays.length;i++){ var a=plays[i];
+        if(a.to!==act.to || a.from.kind!==act.src) continue;
+        if(act.src==='payoff'){ match=a; break; }
+        if(a.from.i===act.i){ match=a; break; }
+      }
+      if(!match) return {ok:false};
+      return {ok:true, res:applyPlay(T, match)};
+    }
+    if(act.kind==='discard'){
+      var p=T.players[seat];
+      if(act.cardIndex<0 || act.cardIndex>=p.hand.length || act.sideIndex<0 || act.sideIndex>3) return {ok:false};
+      applyDiscard(T, {cardIndex:act.cardIndex, sideIndex:act.sideIndex}); return {ok:true};
+    }
+    if(act.kind==='pass'){ pass(T); return {ok:true}; }
+    return {ok:false};
+  }
+  // Turn a legalPlays entry into a wire action.
+  function actOfPlay(a){ return {kind:'play', src:a.from.kind, i:a.from.i, to:a.to}; }
+
+  return {
+    SUITS:SUITS, isRed:isRed, rname:rname, isWild:isWild,
+    makeDeck:makeDeck, shuffle:shuffle, newGame:newGame,
+    stackNeed:stackNeed, canPlayOn:canPlayOn, legalPlays:legalPlays, canDiscard:canDiscard,
+    applyPlay:applyPlay, applyDiscard:applyDiscard, endTurn:endTurn, clone:clone,
+    topPayoff:topPayoff, payoffRank:payoffRank, botAction:botAction, stuck:stuck, drawOne:drawOne, pass:pass,
+    encodeCard:encodeCard, decodeCard:decodeCard, encodeState:encodeState, decodeState:decodeState, applyGuestAct:applyGuestAct, actOfPlay:actOfPlay
+  };
+})();
+</script>
+
+<!-- ============================================================= -->
+<!-- BLOCK 2: table UI + bot driver + build stamp                   -->
+<!-- ============================================================= -->
+<script>
+(function(){
+  var BUILD_V = "v56";
+  var BUILD_ISO = "2026-09-12";
+  document.getElementById('buildStamp').textContent = "build " + BUILD_V + " \u00b7 " + BUILD_ISO;
+
+  var LSK = 'sm_prefs_v1';
+  var prefs = { goal:13, diff:'normal', fs:15, tips:false };
+  try{ var raw=localStorage.getItem(LSK); if(raw) Object.assign(prefs, JSON.parse(raw)); }catch(e){}
+  function savePrefs(){ try{ localStorage.setItem(LSK, JSON.stringify(prefs)); }catch(e){} }
+  function applyFs(){ document.documentElement.style.setProperty('--cellfs', prefs.fs+'px'); }
+  applyFs();
+
+  var $ = function(id){ return document.getElementById(id); };
+  var T = null;            // game state
+  var mode = 'solo';       // 'solo' | 'online'
+  var net = { online:false, role:null, seat:0, code:null, id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false };
+  function me(){ return mode==='online' ? net.seat : 0; }
+  function opp(){ return 1 - me(); }
+  var lastWinner = null;                                   // seat that won the previous game (null = none/draw)
+  function firstSeat(){ return lastWinner==null ? undefined : (1-lastWinner); }  // loser deals-in first
+  var sel = null;          // current selection {kind, i}
+  var busy = false;        // bot animating / locked
+  var passScheduled = false;
+
+  // ---------- setup screen wiring ----------
+  function segInit(segId, key, cast){
+    var seg = $(segId);
+    Array.prototype.forEach.call(seg.querySelectorAll('button'), function(b){
+      var v = cast ? cast(b.dataset[Object.keys(b.dataset)[0]]) : b.dataset[Object.keys(b.dataset)[0]];
+      if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on');
+      b.addEventListener('click', function(){ prefs[key]=v; savePrefs(); setOn(seg,b); if(key==='fs') applyFs(); });
+    });
+  }
+  function setOn(seg,btn){ Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){x.classList.remove('on');}); btn.classList.add('on'); }
+  segInit('segGoal','goal', function(v){return parseInt(v,10);});
+  segInit('segDiff','diff', null);
+  segInit('segSize','fs', function(v){return parseInt(v,10);});
+  $('optTips').checked = prefs.tips;
+  $('optTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); });
+
+  $('startBtn').addEventListener('click', startSolo);
+  $('setupRules').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
+  $('gameRules').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
+  $('rulesClose').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
+  $('rulesClose2').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
+  $('gameMenu').addEventListener('click', openMenu);
+
+  // overlay close on backdrop tap
+  ['rulesOv','menuOv','winOv'].forEach(function(id){
+    $(id).addEventListener('click', function(e){ if(e.target===this && id!=='winOv') this.classList.remove('on'); });
+  });
+  // menu controls
+  $('menuTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); render(); });
+  segInit('menuSize','fs', function(v){return parseInt(v,10);});
+  $('menuNew').addEventListener('click', function(){ $('menuOv').classList.remove('on'); doNewGame(); });
+  $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
+  $('undoSel').addEventListener('click', function(){ sel=null; render(); });
+  $('winAgain').addEventListener('click', function(){ $('winOv').classList.remove('on'); doNewGame(); });
+  $('winSetup').addEventListener('click', function(){ $('winOv').classList.remove('on'); toSetup(); });
+
+  function openMenu(){ $('menuTips').checked=prefs.tips; syncSeg('menuSize','fs'); $('menuOv').classList.add('on'); }
+  function syncSeg(segId,key){ var seg=$(segId); Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ var v=b.dataset[Object.keys(b.dataset)[0]]; if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on'); }); }
+
+  function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; updateNetbar(); $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
+
+  // ---------- start ----------
+  function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); }
+  function startSolo(){
+    mode='solo'; net.online=false; net.joined=false;
+    T = SM.newGame({ goal:prefs.goal, decks:2, jokers:4, first:firstSeat() });
+    sel = null; busy=false; net.pending=false; passScheduled=false;
+    showGame(); render();
+    if(T.turn===opp()) setTimeout(botTurn, 500);   // bot won the deal
+  }
+  function doNewGame(){
+    if(mode==='online'){
+      if(net.role==='host'){ dealHost(); }
+      else { net.pending=true; netSend({t:'act', kind:'newGame'}); render(); }
+    } else { startSolo(); }
+  }
+
+  // ---------- card rendering ----------
+  function cardEl(card, opts){
+    opts = opts||{};
+    var d = document.createElement('div');
+    d.className = 'card' + (opts.sm?' sm':'');
+    if(!card){ d.className += ' empty'; if(opts.aceTarget) d.classList.add('target'); return d; }
+    if(opts.back){ d.className += ' back'; return d; }
+    if(SM.isWild(card)){
+      d.className += ' wild';
+      d.innerHTML = '<div class="r">\u2605</div><div class="s">WILD</div>';
+    } else {
+      if(SM.isRed(card.s)) d.classList.add('red');
+      d.innerHTML = '<div class="r">'+SM.rname(card.r)+'</div><div class="s">'+SM.SUITS[card.s]+'</div>';
+    }
+    return d;
+  }
+  function centerTopCard(st){
+    if(!st.length) return null;
+    var top = st[st.length-1];
+    // show the resolved value (wild shows as its number with a star)
+    if(SM.isWild(top.card)){
+      var c = document.createElement('div');
+      c.className='card wild';
+      c.innerHTML='<div class="r">'+SM.rname(top.val)+'\u2605</div><div class="s">WILD</div>';
+      return c;
+    }
+    return cardEl(top.card);
+  }
+
+  // ---------- selection / legality helpers ----------
+  function heroLegalTargets(card){
+    var t=[];
+    for(var c=0;c<4;c++) if(SM.canPlayOn(card, T.centers[c])) t.push(c);
+    return t;
+  }
+  function currentSelCard(){
+    if(!sel) return null;
+    var p=T.players[me()];
+    if(sel.kind==='payoff'){ return SM.topPayoff(T,me()); }
+    if(sel.kind==='hand'){ return p.hand[sel.i]; }
+    if(sel.kind==='side'){ var s=p.sides[sel.i]; return s.length?s[s.length-1]:null; }
+    return null;
+  }
+
+  // ---------- render ----------
+  function render(){
+    if(!T) return;
+    var p=T.players[me()], o=T.players[opp()];
+
+    // counts
+    $('stockN').textContent=T.stock.length;
+    $('doneN').textContent=T.done.length;
+    $('oppPayoffN').textContent=o.payoff.length;
+    $('youPayoffN').textContent=p.payoff.length;
+    $('oppHandN').textContent=o.hand.length;
+
+    // opponent payoff (face up top)
+    var oPay=$('oppPayoff'); oPay.innerHTML='';
+    oPay.appendChild(cardEl(SM.topPayoff(T,opp()),{sm:true}));
+    if(o.payoff.length){ var b=document.createElement('div'); b.className='count'; b.textContent=o.payoff.length; oPay.appendChild(b); }
+
+    // opponent sides (top card, face up)
+    var oSides=$('oppSides'); oSides.innerHTML='';
+    for(var s=0;s<4;s++){
+      var wrap=document.createElement('div'); wrap.className='stack sm';
+      var st=o.sides[s];
+      wrap.appendChild(cardEl(st.length?st[st.length-1]:null,{sm:true}));
+      if(st.length>1){ var cc=document.createElement('div'); cc.className='count'; cc.textContent=st.length; wrap.appendChild(cc); }
+      oSides.appendChild(wrap);
+    }
+
+    // centres
+    var ctr=$('centers'); ctr.innerHTML='';
+    var selCard = currentSelCard();
+    var targets = (selCard && isHeroTurn() && !busy) ? heroLegalTargets(selCard) : [];
+    for(var c=0;c<4;c++){
+      var slot=document.createElement('div'); slot.className='center-slot';
+      var need=document.createElement('div'); need.className='center-need';
+      var nd=SM.stackNeed(T.centers[c]); need.textContent = (T.centers[c].length? 'next '+SM.rname(nd) : 'Ace');
+      var stk=document.createElement('div'); stk.className='stack';
+      var top=centerTopCard(T.centers[c]) || cardEl(null,{});
+      if(targets.indexOf(c)>=0) top.classList.add('target');
+      (function(ci){ top.addEventListener('click', function(){ onCenterTap(ci); }); })(c);
+      stk.appendChild(top);
+      if(T.centers[c].length){ var n2=document.createElement('div'); n2.className='count'; n2.textContent=T.centers[c].length; stk.appendChild(n2); }
+      slot.appendChild(need); slot.appendChild(stk); ctr.appendChild(slot);
+    }
+
+    // your payoff
+    var yPay=$('youPayoff'); yPay.innerHTML='';
+    var payCard=cardEl(SM.topPayoff(T,me()),{});
+    if(isHeroTurn() && !busy && SM.topPayoff(T,me())){ payCard.classList.add('selectable'); if(sel&&sel.kind==='payoff') payCard.classList.add('selected'); payCard.addEventListener('click', function(){ selectSource('payoff',0); }); }
+    yPay.appendChild(payCard);
+    if(p.payoff.length){ var pb=document.createElement('div'); pb.className='count'; pb.textContent=p.payoff.length; yPay.appendChild(pb); }
+
+    // your sides
+    var ySides=$('youSides'); ySides.innerHTML='';
+    for(var s2=0;s2<4;s2++){
+      var wrp=document.createElement('div'); wrp.className='stack';
+      var st2=p.sides[s2];
+      var topc=cardEl(st2.length?st2[st2.length-1]:null,{});
+      if(isHeroTurn() && !busy){
+        // a side stack is a discard target when a hand card is selected; or a source when it has a card
+        if(sel && sel.kind==='hand'){ topc.classList.add('target'); }
+        else if(st2.length){ topc.classList.add('selectable'); if(sel&&sel.kind==='side'&&sel.i===s2) topc.classList.add('selected'); }
+      }
+      (function(si){ topc.addEventListener('click', function(){ onSideTap(si); }); })(s2);
+      wrp.appendChild(topc);
+      if(st2.length>1){ var c3=document.createElement('div'); c3.className='count'; c3.textContent=st2.length; wrp.appendChild(c3); }
+      ySides.appendChild(wrp);
+    }
+
+    // your hand
+    var handEl=$('hand'); handEl.innerHTML='';
+    for(var h=0; h<p.hand.length; h++){
+      var hc=cardEl(p.hand[h],{});
+      if(isHeroTurn() && !busy){ hc.classList.add('selectable'); if(sel&&sel.kind==='hand'&&sel.i===h) hc.classList.add('selected'); }
+      (function(hi){ hc.addEventListener('click', function(){ selectSource('hand',hi); }); })(h);
+      handEl.appendChild(hc);
+    }
+
+    // turn bar + tips
+    var tb=$('turnbar');
+    var oppWord = (mode==='online') ? 'Opponent' : 'Bot';
+    if(T.draw){ tb.className='turnbar'; $('turntext').textContent='Draw'; }
+    else if(T.winner!==null){ tb.className='turnbar'; $('turntext').textContent = T.winner===me()?'You win!':(oppWord+' wins'); }
+    else if(mode==='online' && !net.joined){ tb.className='turnbar opp'; $('turntext').textContent='Waiting for opponent\u2026'; }
+    else if(isHeroTurn()){ tb.className='turnbar'; $('turntext').textContent='Your turn'; }
+    else { tb.className='turnbar opp'; $('turntext').textContent = (mode==='online') ? 'Opponent\u2019s turn' : 'Bot thinking\u2026'; }
+    renderTip(selCard);
+    considerHeroPass();
+  }
+
+  function renderTip(selCard){
+    var el=$('tip');
+    if(!prefs.tips){ el.textContent=''; return; }
+    if(!isHeroTurn()){ el.textContent=''; return; }
+    if(sel && sel.kind==='hand'){
+      var t=heroLegalTargets(selCard);
+      el.textContent = t.length ? 'Tap a green centre to play, or a side stack to discard & end turn.' : 'No centre play — tap a side stack to discard & end turn.';
+    } else if(sel){
+      el.textContent = 'Tap a highlighted centre to play it there.';
+    } else {
+      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Tap a card to select it.';
+    }
+  }
+
+  // ---------- interaction ----------
+  function isHeroTurn(){ return T && T.winner===null && !T.draw && T.turn===me() && !busy && !(mode==='online' && (net.pending || !net.joined)); }
+  function selectSource(kind,i){
+    if(!isHeroTurn()||busy) return;
+    if(sel && sel.kind===kind && sel.i===i){ sel=null; } else { sel={kind:kind,i:i}; }
+    render();
+  }
+  function onSideTap(si){
+    if(!isHeroTurn()) return;
+    if(sel && sel.kind==='hand'){ var idx=sel.i; sel=null; commitDiscard(idx, si); return; }
+    if(T.players[me()].sides[si].length) selectSource('side',si);
+  }
+  function onCenterTap(ci){
+    if(!isHeroTurn()||!sel) return;
+    var card=currentSelCard();
+    if(!card || !SM.canPlayOn(card, T.centers[ci])) return;
+    var action;
+    if(sel.kind==='payoff') action={from:{kind:'payoff',i:undefined,card:card}, to:ci};
+    else if(sel.kind==='hand') action={from:{kind:'hand',i:sel.i,card:card}, to:ci};
+    else action={from:{kind:'side',i:sel.i,card:card}, to:ci};
+    sel=null; commitPlay(action);
+  }
+  // ---- move commits: solo/host apply locally; guest sends an intent to the host ----
+  function commitPlay(action){
+    if(mode==='online' && net.role==='guest'){
+      net.pending=true;
+      netSend({t:'act', kind:'play', src:action.from.kind, i:action.from.i, to:action.to});
+      render(); return;
+    }
+    SM.applyPlay(T, action); afterLocal();
+  }
+  function commitDiscard(cardIndex, sideIndex){
+    if(mode==='online' && net.role==='guest'){
+      net.pending=true;
+      netSend({t:'act', kind:'discard', cardIndex:cardIndex, sideIndex:sideIndex});
+      render(); return;
+    }
+    SM.applyDiscard(T, {cardIndex:cardIndex, sideIndex:sideIndex}); afterLocal();
+  }
+  function commitPass(){
+    if(mode==='online' && net.role==='guest'){
+      net.pending=true; netSend({t:'act', kind:'pass'}); render(); return;
+    }
+    SM.pass(T); afterLocal();
+  }
+  function afterLocal(){
+    render();
+    if(mode==='online' && net.role==='host') publishState();
+    if(T.winner!==null || T.draw) return finish();
+    if(mode==='solo'){
+      if(T.turn===opp()){ busy=true; render(); setTimeout(botTurn, 420); }
+      else considerHeroPass();
+    } else {
+      considerHeroPass();
+    }
+  }
+
+  // ---------- bot driver ----------
+  function botTurn(){
+    if(!T || T.winner!==null || T.draw){ busy=false; return render(); }
+    busy=true;
+    stepBot();
+  }
+  function stepBot(){
+    if(T.winner!==null || T.draw){ busy=false; return finish(); }
+    if(T.turn!==opp()){ busy=false; render(); return considerHeroPass(); }
+    var mv = SM.botAction(T, prefs.diff);
+    if(mv.kind==='play'){
+      var res=SM.applyPlay(T, mv.action);
+      render();
+      if(res.win){ busy=false; return finish(); }
+      setTimeout(stepBot, 400);
+    } else if(mv.kind==='discard'){
+      SM.applyDiscard(T, mv.action);   // ends bot turn
+      busy=false; render();
+      if(T.draw) return finish();
+      considerHeroPass();
+    } else { // pass
+      SM.pass(T);
+      busy=false; render();
+      if(T.draw) return finish();
+      considerHeroPass();
+    }
+  }
+  // auto-pass the human only when the deck is exhausted and there is literally no move
+  function considerHeroPass(){
+    if(!isHeroTurn()){ passScheduled=false; return; }
+    if(passScheduled) return;
+    if(SM.legalPlays(T).length===0 && T.players[me()].hand.length===0){
+      passScheduled=true;
+      $('tip').textContent='No legal moves \u2014 passing\u2026';
+      setTimeout(function(){
+        passScheduled=false;
+        if(isHeroTurn() && SM.legalPlays(T).length===0 && T.players[me()].hand.length===0){ commitPass(); }
+      }, 800);
+    }
+  }
+
+  // ---------- finish ----------
+  function finish(){
+    busy=false; sel=null; passScheduled=false;
+    lastWinner = T.draw ? null : T.winner;
+    render();
+    if(T.draw){
+      $('winEmoji').textContent = '\uD83E\uDD1D';
+      $('winTitle').textContent = 'It\u2019s a draw';
+      $('winSub').textContent = 'The deck ran out with neither goal pile cleared.';
+    } else {
+      var heroWon = T.winner===me();
+      var oppWord = (mode==='online') ? 'Opponent' : 'Bot';
+      $('winEmoji').textContent = heroWon ? '\uD83C\uDFC6' : '\uD83E\uDD16';
+      $('winTitle').textContent = heroWon ? 'You win!' : (oppWord+' wins');
+      $('winSub').textContent = heroWon ? 'You cleared your goal pile first.' : (oppWord+' cleared its goal pile first. Rematch?');
+    }
+    $('winOv').classList.add('on');
+  }
+
+
+  // ---------------- NETWORK (ntfy relays; host-authoritative) ----------------
+  var RELAYS = ['https://ntfy.sh/','https://ntfy.envs.net/'];
+  function ntfyTopic(){ return 'jtsm-v1-' + String(net.code).toLowerCase(); }
+  function randCode(){ var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s=''; for(var i=0;i<4;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
+  function newId(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+  function tx(){ return (typeof window!=='undefined' && window.__SM_TX) ? window.__SM_TX : null; }
+
+  function netPublish(obj){
+    obj.from=net.id; obj.mid=newId();
+    var body=JSON.stringify(obj), t=tx();
+    if(t){ try{ t.publish(ntfyTopic(), body); }catch(e){} return; }
+    RELAYS.forEach(function(base){ try{ fetch(base+ntfyTopic(), {method:'POST', body:body}); }catch(e){} });
+  }
+  function netSend(obj){ netPublish(obj); }
+  var pubTimer=null, pubPending=false;
+  function publishState(){
+    if(!(mode==='online' && net.role==='host')) return;
+    pubPending=true; if(pubTimer) return;
+    pubTimer=setTimeout(function(){ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:'state', view:SM.encodeState(T,1)}); } }, 80);
+  }
+
+  function handleNet(obj){
+    if(net.role==='host'){
+      if(obj.t==='join'){
+        net.joined=true;
+        if(!T){ dealHost(); } else { publishState(); }
+        closeNetOv(); showGame(); updateNetbar(); render();
+      } else if(obj.t==='act'){ handleGuestAction(obj); }
+    } else if(net.role==='guest'){
+      if(obj.t==='state'){
+        var first=!net.joined; net.joined=true; net.pending=false;
+        T=SM.decodeState(obj.view); sel=null;
+        if(first){ closeNetOv(); showGame(); }
+        render(); updateNetbar();
+        if(T.winner!==null || T.draw) finish(); else $('winOv').classList.remove('on');
+      }
+    }
+  }
+  function handleGuestAction(obj){
+    if(!T) return;
+    if(obj.kind==='newGame'){ dealHost(); return; }
+    var r=SM.applyGuestAct(T, {kind:obj.kind, src:obj.src, i:obj.i, to:obj.to, cardIndex:obj.cardIndex, sideIndex:obj.sideIndex}, 1);
+    if(r.ok){ render(); publishState(); if(T.winner!==null||T.draw) finish(); }
+  }
+  function dealHost(){
+    T=SM.newGame({ goal:prefs.goal, decks:2, jokers:4, first:firstSeat() });
+    sel=null; net.pending=false; passScheduled=false;
+    $('winOv').classList.remove('on');
+    render(); publishState();
+    if(T.winner!==null||T.draw) finish(); else considerHeroPass();
+  }
+
+  // ---- transport: streaming over ntfy, or an injected in-memory transport for tests ----
+  function startNet(){
+    net.id=newId(); net.seen=new Set(); net.since={}; net.ctrls=[];
+    var t=tx();
+    if(t){ net.connOk=true; updateNetbar(); pollLoop(t); return; }
+    RELAYS.forEach(streamLoop);
+  }
+  function netStop(){
+    net.online=false;
+    (net.ctrls||[]).forEach(function(c){ try{ c&&c.abort(); }catch(e){} });
+    if(pubTimer){ clearTimeout(pubTimer); pubTimer=null; }
+  }
+  function pollLoop(t){
+    (async function(){
+      var cursor=0;
+      while(net.online){
+        try{
+          var msgs=await t.poll(ntfyTopic(), cursor);
+          for(var i=0;i<msgs.length;i++){
+            cursor=Math.max(cursor, msgs[i].idx+1);
+            var obj; try{ obj=JSON.parse(msgs[i].body); }catch(e){ continue; }
+            if(obj.from===net.id) continue;
+            if(obj.mid){ if(net.seen.has(obj.mid)) continue; net.seen.add(obj.mid); }
+            handleNet(obj);
+          }
+        }catch(e){}
+        await new Promise(function(r){ setTimeout(r,50); });
+      }
+    })();
+  }
+  function streamLoop(base){
+    (async function(){
+      while(net.online){
+        var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+        net.ctrls.push(ctrl);
+        try{
+          var since=net.since[base] ? ('?since='+encodeURIComponent(net.since[base])) : '?since=all';
+          var res=await fetch(base+ntfyTopic()+'/json'+since, ctrl?{signal:ctrl.signal}:{});
+          if(!res.ok || !res.body) throw new Error('stream '+res.status);
+          var reader=res.body.getReader(), dec=new TextDecoder(), buf='';
+          net.connOk=true; updateNetbar();
+          while(net.online){
+            var rd=await reader.read(); if(rd.done) break;
+            buf += dec.decode(rd.value,{stream:true});
+            var nl;
+            while((nl=buf.indexOf('\n'))>=0){
+              var line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1);
+              if(!line) continue;
+              var ev; try{ ev=JSON.parse(line); }catch(e){ continue; }
+              if(ev.id) net.since[base]=ev.id;
+              if(ev.event!=='message' || !ev.message) continue;
+              var obj; try{ obj=JSON.parse(ev.message); }catch(e){ continue; }
+              if(obj.from===net.id) continue;
+              if(obj.mid){ if(net.seen.has(obj.mid)) continue; net.seen.add(obj.mid); }
+              handleNet(obj);
+            }
+          }
+        }catch(e){ net.connOk=false; updateNetbar(); }
+        if(!net.online) break;
+        await new Promise(function(r){ setTimeout(r,1200); });
+      }
+    })();
+  }
+
+  function hostCreate(){
+    mode='online';
+    net={online:true, role:'host', seat:0, code:randCode(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false};
+    T=null; startNet(); showHostWait();
+  }
+  function guestJoin(code){
+    mode='online';
+    net={online:true, role:'guest', seat:1, code:String(code).toUpperCase(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false};
+    T=null; startNet(); showGuestWait();
+    (function ping(){ if(net.online && !net.joined){ netSend({t:'join'}); setTimeout(ping, 2000); } })();
+  }
+
+  // ---- room panels ----
+  function openNetSheet(html){ $('netSheet').innerHTML=html; $('netOv').classList.add('on'); }
+  function closeNetOv(){ $('netOv').classList.remove('on'); }
+  function showJoinPanel(){
+    openNetSheet('<h2>Join a game</h2><p>Enter the 4-character code your friend read to you.</p>'
+      +'<input id="codeInput" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="ABCD" '
+      +'style="width:100%;box-sizing:border-box;text-transform:uppercase;font-size:26px;letter-spacing:8px;text-align:center;padding:12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--cream)">'
+      +'<div class="row" style="margin-top:12px"><button class="btn" id="joinGo" style="flex:1">Join</button></div>'
+      +'<div class="row"><button class="btn ghost" id="joinCancel" style="flex:1">Cancel</button></div>');
+    $('joinGo').addEventListener('click', function(){ var v=($('codeInput').value||'').trim().toUpperCase(); if(v.length!==4){ $('codeInput').style.borderColor='var(--bad)'; return; } guestJoin(v); });
+    $('joinCancel').addEventListener('click', closeNetOv);
+    setTimeout(function(){ var i=$('codeInput'); if(i) i.focus(); }, 80);
+  }
+  function showHostWait(){
+    openNetSheet('<h2>Your game is ready</h2><p>Read this code to the other player:</p>'
+      +'<div style="font-size:42px;font-weight:900;letter-spacing:12px;text-align:center;color:var(--gold);margin:10px 0">'+net.code+'</div>'
+      +'<p id="netWaitMsg" style="text-align:center;opacity:.85">Connecting\u2026</p>'
+      +'<div class="row"><button class="btn ghost" id="hostCancel" style="flex:1">Cancel</button></div>');
+    $('hostCancel').addEventListener('click', function(){ netStop(); closeNetOv(); });
+    var iv=setInterval(function(){ var w=$('netWaitMsg'); if(!w||net.joined){ clearInterval(iv); return; } w.textContent=net.connOk?'Waiting for the other player to join\u2026':'Connecting\u2026'; }, 500);
+  }
+  function showGuestWait(){
+    openNetSheet('<h2>Joining '+net.code+'\u2026</h2><p id="netWaitMsg" style="text-align:center;opacity:.85">Connecting\u2026</p>'
+      +'<div class="row"><button class="btn ghost" id="guestCancel" style="flex:1">Cancel</button></div>');
+    $('guestCancel').addEventListener('click', function(){ netStop(); closeNetOv(); });
+    var iv=setInterval(function(){ var m=$('netWaitMsg'); if(!m||net.joined){ clearInterval(iv); return; } m.textContent=net.connOk?'Connected \u2014 waiting for the host to deal\u2026':'Connecting\u2026'; }, 500);
+  }
+  function updateNetbar(){
+    var nb=$('netbar');
+    if(mode!=='online'){ nb.classList.add('hidden'); return; }
+    nb.classList.remove('hidden');
+    var who = net.role==='host'?'Host':'Guest';
+    var conn = net.joined ? 'connected' : (net.connOk ? 'waiting\u2026' : 'connecting\u2026');
+    nb.innerHTML='Room <b>'+(net.code||'----')+'</b> \u00b7 '+conn+' \u00b7 you are '+who;
+  }
+
+  // ---- setup mode wiring ----
+  (function(){
+    var seg=$('segMode');
+    Array.prototype.forEach.call(seg.querySelectorAll('button'), function(b){
+      b.addEventListener('click', function(){
+        Array.prototype.forEach.call(seg.querySelectorAll('button'), function(x){ x.classList.remove('on'); });
+        b.classList.add('on');
+        var m=b.dataset.mode;
+        $('soloStart').classList.toggle('hidden', m!=='solo');
+        $('onlineStart').classList.toggle('hidden', m!=='online');
+      });
+    });
+    $('hostBtn').addEventListener('click', hostCreate);
+    $('joinBtn').addEventListener('click', showJoinPanel);
+    $('netOv').addEventListener('click', function(e){ if(e.target===this) closeNetOv(); });
+  })();
+
+  // expose hooks for headless tests
+  window.__SMUI = { start:startSolo, state:function(){return T;}, prefs:prefs, botStep:stepBot,
+                    hostCreate:hostCreate, guestJoin:guestJoin, doNewGame:doNewGame,
+                    net:function(){return net;}, me:me };
+})();
+</script>
+</body>
+</html>

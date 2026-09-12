@@ -75,6 +75,7 @@ const GAMES = [
   { title:"Three-Card Poker", emoji:"🎰", sub:"Ante, Play & Pair Plus vs the dealer",              href:"threecardpoker/", updated:"2026-08-10" },
   { title:"Ultimate Texas Hold'em", emoji:"🤠", sub:"You vs the dealer · community cards",             href:"ultimatetexasholdem/", updated:"2026-08-10" },
   { title:"Hold'em",          emoji:"♠️", sub:"6-player sit & go · you vs five bots",              href:"holdem/", updated:"2026-09-07" },
+  { title:"Spite & Malice",   emoji:"😈", sub:"Race to empty your goal pile · vs bot or two phones", href:"spiteandmalice/", updated:"2026-09-12" },
   // { title:"New Game", emoji:"🎲", sub:"make a folder with an index.html, then add one line here", href:"newgame/" },
 ];
 
@@ -134,7 +135,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v55", ISO="2026-09-11T20:15:19Z";
+  var V="v56", ISO="2026-09-12T18:00:00Z";
   var d=new Date(ISO), when=isNaN(d)?ISO:d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+" \u00b7 "+when;
 })();
