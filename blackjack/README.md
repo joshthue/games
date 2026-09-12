@@ -8,7 +8,8 @@ persistent bankroll and casino table rules. Part of the Game Night home-screen a
 - **Single deck**, dealer **hits soft 17**, **Blackjack pays 3:2**.
 - **Split** up to 4 hands, **double** any two cards, **double after split** allowed,
   split aces get one card each and can't be re-split. Insurance is off.
-- Chips are $5 / $25 / $100 / $500; place bets on any of up to five spots.
+- Chips are $5 / $25 / $100 / $500; spread bets across up to **six spots**, laid out
+  in two rows. Settings offers 3 / 6 / 9 spots (one, two, or three rows).
 - Your **bankroll persists** between sessions (stored on the device). Rebuy from
   Settings if you bust out.
 

@@ -66,9 +66,9 @@
   .dealer-tag{font-size:11px; letter-spacing:.16em; color:#bfe6cf; height:15px;}
 
   /* player spots */
-  .spots-wrap{flex:1 1 auto; min-height:0; display:flex; align-items:flex-end;
-    overflow-x:auto; overflow-y:hidden; scroll-snap-type:x proximity;
-    padding:4px 10px 8px; gap:8px; scrollbar-width:none;}
+  .spots-wrap{flex:1 1 auto; min-height:0; display:grid;
+    grid-template-columns:repeat(3, auto); align-items:end; align-content:end;
+    justify-content:start; overflow:auto; padding:4px 10px 10px; gap:14px 10px; scrollbar-width:none;}
   .spots-wrap::-webkit-scrollbar{display:none;}
   .spots-wrap.center{justify-content:center;}
   .spot{flex:0 0 auto; scroll-snap-align:center; display:flex; flex-direction:column;
@@ -281,7 +281,7 @@ const store={
   set(k,v){mem[k]=v;try{localStorage.setItem(k,v);}catch(e){}}
 };
 const DEFAULT_RULES={decks:1,hitSoft17:true,blackjackPays:'3:2',maxSplitHands:4,
-  resplitAces:false,doubleAfterSplit:true,insurance:false,maxHands:5,
+  resplitAces:false,doubleAfterSplit:true,insurance:false,maxHands:6,
   tableMin:5,tableMax:500,startingBankroll:1000};
 function loadRules(){try{return{...DEFAULT_RULES,...JSON.parse(store.get('bj_rules')||'{}')};}catch(e){return{...DEFAULT_RULES};}}
 function saveRules(){store.set('bj_rules',JSON.stringify(rules));}
@@ -340,7 +340,6 @@ function renderDealer(){
 
 function renderSpots(){
   const betting=state.phase==='betting';
-  spotsEl.classList.toggle('center', rules.maxHands<=3);
   spotsEl.innerHTML='';
   state.spots.forEach((spot,si)=>{
     const el=document.createElement('div');
@@ -368,6 +367,8 @@ function renderSpots(){
     el.innerHTML=handsHTML+circle+clear;
     spotsEl.appendChild(el);
   });
+  // center when the whole row fits the table; otherwise left-align and let the active hand scroll into view
+  spotsEl.classList.toggle('center', spotsEl.scrollWidth <= spotsEl.clientWidth + 1);
 }
 
 function render(){renderBank();renderDealer();renderSpots();renderDock();}
@@ -611,7 +612,7 @@ function buildSettings(){
   const b=$('setBody');
   b.innerHTML=`
     <div class="opt"><div class="q">Hands (betting spots)<em>How many circles you can spread bets across</em></div>
-      ${seg('maxHands',[3,5,7],rules.maxHands)}</div>
+      ${seg('maxHands',[3,6,9],rules.maxHands)}</div>
     <div class="opt"><div class="q">Decks<em>Single deck reshuffles often with many spots</em></div>
       ${seg('decks',[1,2,6],rules.decks,o=>o+(o>1?' decks':' deck'))}</div>
     <div class="opt"><div class="q">Dealer on soft 17</div>
@@ -711,6 +712,7 @@ document.addEventListener('keydown',e=>{
    BOOT
    ================================================================= */
 applySize(); updateArc(); reshuffle(false); render();
+addEventListener('resize', function(){ try{ spotsEl.classList.toggle('center', spotsEl.scrollWidth <= spotsEl.clientWidth + 1); }catch(e){} });
 
 /* test seam — inert in normal use, lets a headless harness drive the flow */
 if(typeof window!=='undefined') window.__bj={state,rules,deal,hit,stand,double,split,addBet,clearAll,
