@@ -276,7 +276,7 @@ function canDouble(hand,bank,rules){
 /* =================================================================
    PERSISTENCE  (localStorage with in-memory fallback for sandboxes)
    ================================================================= */
-const BUILD='build v58 · 2026-09-12';
+const BUILD='build v59 · 2026-09-13';
 const mem={};
 const store={
   get(k){try{const v=localStorage.getItem(k);return v==null?(k in mem?mem[k]:null):v;}catch(e){return k in mem?mem[k]:null;}},

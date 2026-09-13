@@ -1,7 +1,7 @@
 /* Game Night service worker — offline app shell + games
    HTML is network-first so a new build reaches phones as soon as they're online;
    everything else stays cache-first for speed and offline play. */
-const CACHE = "gamenight-v58";
+const CACHE = "gamenight-v59";
 const ASSETS = [
   "./", "index.html",
   "theleechlakegame/", "theleechlakegame/index.html",
@@ -13,6 +13,7 @@ const ASSETS = [
   "holdem/", "holdem/index.html",
   "spiteandmalice/", "spiteandmalice/index.html",
   "blackjack/", "blackjack/index.html",
+  "pokersquares/", "pokersquares/index.html",
   "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"
 ];
 self.addEventListener("install", e=>{
