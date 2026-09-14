@@ -35,15 +35,18 @@ you can add the ones your room actually watches.
 
 Schedule and rosters come from ESPN's public site API (`site.api.espn.com`), which
 sends `access-control-allow-origin: *`, so the page fetches them directly — no
-backend and no key. Both are cached for 6 hours per phone, and if the request
-fails the manual team pickers below still work exactly as before.
+backend and no key. Both are cached for 6 hours per phone. **Picking a game is the
+only way to name the two teams** — the manual team dropdowns are gone. If the
+schedule can't be reached the modal says so; you can still build both sides by hand
+with the ＋ rows, but those players carry no team, so you don't get the dozen
+generated team calls per side.
 
 Rosters travel on the matchup message rather than in every state heartbeat (a
 53-man roster would blow past ntfy's ~4KB message cap); a `hello` from a late
 joiner re-sends the matchup so they get the same players.
 
-The **🏟️ chip** also still picks two teams by hand, and **Clear** in that modal drops
-the matchup entirely — the player and team packs disappear and the card re-deals from
+The **🏟️ chip** reopens the same modal, and **Clear** in it drops the matchup
+entirely — the player and team packs disappear and the card re-deals from
 the general football calls. Each side gets a
 dozen of its own calls generated from `MATCHUP_TEMPLATES` — *Vikings touchdown*,
 *Packers punt*, *Vikings coach on camera* — which land in a "matchup" pack you can
@@ -51,10 +54,13 @@ switch on and off like any other. The matchup syncs to the room the same way the
 theme does, and **setting it deals a fresh card immediately** on every phone in the
 room — no second step, and it doesn't cost the ♻️ cooldown.
 
-There's a one-tap **⭐ Vikings vs Packers** preset for a matchup that ships with
-rosters; teams that have one are marked ⭐ in the dropdowns. Hitting "Set matchup"
-with both dropdowns still on "—" now says so instead of quietly doing nothing —
-the grey text in the roster boxes is example text, not a loaded roster.
+Hitting "Set matchup" before a game is picked says so instead of quietly doing
+nothing — the grey text in the roster boxes is example text, not a loaded roster.
+
+With both 53-man rosters rendered the modal is taller than a phone, and `.modal` is
+`position:fixed`, so **`.modalbox` caps at the viewport height and scrolls**. Without
+that the "Set matchup" button sat below the fold with nothing to scroll and simply
+could not be tapped. It applies to every modal in the app, not just this one.
 
 ### ⭐ Star plays (specific players, specific plays)
 
