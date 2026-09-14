@@ -75,6 +75,7 @@ body{
 #setup .logo{font-size:34px;font-weight:900;color:var(--gold);letter-spacing:.5px;text-align:center;margin:18px 0 2px}
 #setup .sub{text-align:center;color:var(--cream);opacity:.85;font-size:14px;margin-bottom:16px}
 .setup-opt{margin:14px 0}
+.dirnote{font-size:11.5px;line-height:1.45;opacity:.72;margin:6px 2px 0}
 .setup-opt .cap{font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--gold);opacity:.9;margin-bottom:6px}
 
 /* Board */
@@ -89,7 +90,8 @@ body{
 
 .centers{display:flex;gap:7px;justify-content:center;padding:8px 0;flex-wrap:nowrap}
 .center-slot{display:flex;flex-direction:column;align-items:center;gap:2px}
-.center-need{font-size:10px;color:var(--gold);opacity:.75;min-height:12px}
+.center-need{font-size:10px;color:var(--gold);opacity:.75;min-height:12px;white-space:nowrap}
+.stack .count.hot{background:#c0563f;color:#fff}
 
 .stockrow{display:flex;align-items:center;justify-content:center;gap:14px;font-size:12px;color:var(--cream);opacity:.85;padding:2px 0}
 .stockrow b{color:var(--gold)}
@@ -145,7 +147,7 @@ body{
       <button class="iconbtn" id="setupRules">Rules</button>
     </div>
     <div class="logo">Spite &amp; Malice</div>
-    <div class="sub">Race the bot to empty your goal pile · Ace → King</div>
+    <div class="sub" id="setupSub">Race the bot to empty your goal pile · Ace → King</div>
     <div class="panel">
       <div class="setup-opt">
         <div class="cap">Goal pile</div>
@@ -153,6 +155,15 @@ body{
           <button data-goal="13" class="on">Short · 13</button>
           <button data-goal="20">Standard · 20</button>
         </div>
+      </div>
+      <div class="setup-opt">
+        <div class="cap">Centre stacks build</div>
+        <div class="seg" id="segDir">
+          <button data-dir="up" class="on">A → K</button>
+          <button data-dir="down">K → A</button>
+          <button data-dir="either">Either way</button>
+        </div>
+        <p class="dirnote" id="dirNote"></p>
       </div>
       <div class="setup-opt">
         <div class="cap">Bot difficulty</div>
@@ -249,7 +260,15 @@ body{
       <div style="display:flex;align-items:center"><h2 style="flex:1;margin:0">How to play</h2><button class="iconbtn" id="rulesClose">✕</button></div>
       <p><b>Goal:</b> be the first to empty your face-up <b>goal pile</b> (bottom-left). The card on top of your goal pile is your most important card — play it whenever you can.</p>
       <h3>The centre</h3>
-      <p>There are four shared centre stacks. Each is built <b>upward from Ace to King</b>. A stack starts with an Ace (or a wild), then 2, 3, 4 … up to King. A completed A→K stack is cleared away and recycled into the stock.</p>
+      <p>There are four shared centre stacks. In the standard game each is built <b>upward from Ace to King</b>: a stack starts with an Ace (or a wild), then 2, 3, 4 … up to King.</p>
+      <p><b>A stack is cleared away and recycled into the stock once it holds 13 cards</b> — that pile is the only thing that refills the stock, so completing stacks is what keeps the game moving.</p>
+      <h3>Which way stacks build</h3>
+      <p>Set on the deal screen, and it applies to the whole game:</p>
+      <ul>
+        <li><b>A → K</b> — the standard game. Stacks start at an Ace and climb to King.</li>
+        <li><b>K → A</b> — the mirror. Stacks start at a King and descend to Ace.</li>
+        <li><b>Either way</b> — a stack opens with an Ace <i>or</i> a King, and from then on every card may go <b>one up or one down</b>, wrapping King→Ace and Ace→King. Nothing ever reaches a dead end, so the 13-card rule is what clears a stack and sends it to the shuffler. Far more of your cards will play — and so will the bot's.</li>
+      </ul>
       <h3>Your turn</h3>
       <ul>
         <li>You start each turn with <b>5 cards</b> in hand.</li>
@@ -258,13 +277,24 @@ body{
         <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). You can play to the centre or discard by tapping.</li>
       </ul>
       <h3>Wilds</h3>
-      <p>Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place.</p>
+      <p>Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place. In <b>Either way</b> a stack usually needs one of two values, so you choose which one the Joker becomes.</p>
       <h3>Strategy</h3>
       <ul>
         <li>The centre is shared — advancing a stack can help the bot’s goal card too, so watch its top goal card before you play.</li>
         <li>Organise your side stacks in descending order (low cards on top) so you can dig them back out.</li>
+        <li>In <b>Either way</b> you can no longer read how close a stack is from its top card — watch the card count instead. It turns red at 11, two from clearing.</li>
       </ul>
       <div class="row" style="margin-top:6px"><button class="btn" id="rulesClose2" style="flex:1">Got it</button></div>
+    </div>
+  </div>
+
+  <!-- ===== WILD VALUE CHOOSER (either-way mode only) ===== -->
+  <div class="overlay" id="wildOv">
+    <div class="sheet">
+      <h2>Play the Joker as…</h2>
+      <p style="font-size:13px;opacity:.8;margin:0 2px 12px">This stack can go either way — pick the value the wild takes.</p>
+      <div class="row" id="wildBtns"></div>
+      <div class="row"><button class="btn ghost" id="wildCancel" style="flex:1">Cancel</button></div>
     </div>
   </div>
 
@@ -335,13 +365,34 @@ window.SM = (function(){
     return a;
   }
 
-  // centre stack: array of {card, val}. Builds 1..13. need = top.val+1 (1 if empty).
-  function stackNeed(stack){ return stack.length===0 ? 1 : stack[stack.length-1].val + 1; }
-  function canPlayOn(c, stack){
-    var need = stackNeed(stack);
-    if(need > 13) return false;
+  // ---- centre stacks ----
+  // A stack is an array of {card, val}. T.dir decides what it will accept:
+  //   'up'     A -> K          'down'   K -> A
+  //   'either' +1 or -1 on every play, wrapping K <-> A
+  // A stack is cleared to the shuffler (T.done) the moment it holds STACK_SIZE cards,
+  // whatever rank it happens to end on. In 'up'/'down' that is exactly the old A..K
+  // completion; in 'either' it is the ONLY thing that stops a wrapping stack growing
+  // forever and starving the stock, so it is the universal rule rather than a special case.
+  var STACK_SIZE = 13;
+  function stackNeeds(stack, dir){
+    dir = dir || 'up';
+    if(stack.length===0) return dir==='down' ? [13] : (dir==='either' ? [1,13] : [1]);
+    var v = stack[stack.length-1].val;
+    if(dir==='up')   return v>=13 ? [] : [v+1];
+    if(dir==='down') return v<=1  ? [] : [v-1];
+    return [ v===13?1:v+1, v===1?13:v-1 ];
+  }
+  // single value (first choice) — what a wild defaults to, and what the UI shows first
+  function stackNeed(stack, dir){ var n = stackNeeds(stack, dir); return n.length ? n[0] : 14; }
+  function pickWildVal(needs, want){
+    if(!needs.length) return 14;
+    return needs.indexOf(want) >= 0 ? want : needs[0];
+  }
+  function canPlayOn(c, stack, dir){
+    var needs = stackNeeds(stack, dir);
+    if(!needs.length) return false;
     if(isWild(c)) return true;
-    return c.r === need;
+    return needs.indexOf(c.r) >= 0;
   }
 
   function drawOne(T){
@@ -375,11 +426,12 @@ window.SM = (function(){
     var goal = opts.goal || 20;
     var numDecks = opts.decks || 2;
     var jokers = (opts.jokers==null ? 4 : opts.jokers);
+    var dir = opts.dir || 'up';
     var rnd = opts.rnd || Math.random;
     var stock = shuffle(makeDeck(numDecks, jokers), rnd);
     var players = [0,1].map(function(){ return {payoff:[], hand:[], sides:[[],[],[],[]]}; });
     var T = { players:players, stock:stock, done:[], centers:[[],[],[],[]],
-              turn:0, winner:null, draw:false, _passes:0, goal:goal, rnd:rnd, log:[] };
+              turn:0, winner:null, draw:false, _passes:0, goal:goal, dir:dir, rnd:rnd, log:[] };
     // deal goal piles
     for(var i=0;i<2;i++) for(var k=0;k<goal;k++) players[i].payoff.push(T.stock.pop());
     // initial hands
@@ -401,7 +453,7 @@ window.SM = (function(){
     for(var s=0; s<4; s++){ var st=p.sides[s]; if(st.length) srcs.push({kind:'side', i:s, card:st[st.length-1]}); }
     for(var q=0; q<srcs.length; q++){
       for(var c=0; c<4; c++){
-        if(canPlayOn(srcs[q].card, T.centers[c])) out.push({from:srcs[q], to:c});
+        if(canPlayOn(srcs[q].card, T.centers[c], T.dir)) out.push({from:srcs[q], to:c});
       }
     }
     return out;
@@ -410,7 +462,7 @@ window.SM = (function(){
 
   function clearIfComplete(T, c){
     var st = T.centers[c];
-    if(st.length && st[st.length-1].val === 13){
+    if(st.length >= STACK_SIZE){
       for(var k=0;k<st.length;k++) T.done.push(st[k].card);
       T.centers[c] = [];
     }
@@ -419,16 +471,18 @@ window.SM = (function(){
   // apply a play {from:{kind,i}, to:centerIndex}. Mutates T. Returns {win:bool,cleared:bool,val}
   function applyPlay(T, action){
     var cur = T.turn, p = T.players[cur], st = T.centers[action.to];
-    var need = stackNeed(st);
+    var needs = stackNeeds(st, T.dir);
     var card, res = {win:false, cleared:false};
     if(action.from.kind==='payoff'){ card = p.payoff.pop(); }
     else if(action.from.kind==='hand'){ card = p.hand.splice(action.from.i,1)[0]; }
     else { card = p.sides[action.from.i].pop(); }
-    var val = isWild(card) ? need : card.r;
+    // a wild becomes whatever the stack needs; where a stack accepts two values
+    // ('either' mode) the player picks, and action.val carries the choice
+    var val = isWild(card) ? pickWildVal(needs, action.val) : card.r;
     st.push({card:card, val:val});
     res.val = val;
-    // completion
-    if(val===13){ clearIfComplete(T, action.to); res.cleared=true; }
+    // a full stack is cleared away and recycled, wherever it ended up
+    if(st.length >= STACK_SIZE){ clearIfComplete(T, action.to); res.cleared = true; }
     // win
     if(action.from.kind==='payoff' && p.payoff.length===0){ T.winner = cur; res.win=true; }
     // hand emptied mid-turn -> draw back to 5, keep going
@@ -467,7 +521,7 @@ window.SM = (function(){
       }),
       stock: T.stock.map(cc), done: T.done.map(cc),
       centers: T.centers.map(function(s){return s.map(function(x){return {card:cc(x.card), val:x.val};});}),
-      turn:T.turn, winner:T.winner, goal:T.goal, rnd:T.rnd, log:[]
+      turn:T.turn, winner:T.winner, goal:T.goal, dir:T.dir, rnd:T.rnd, log:[]
     };
   }
 
@@ -482,38 +536,59 @@ window.SM = (function(){
     var oppClose=T.players[opp].payoff.length<=4;   // only block gifts when opponent is near winning
     var budget=6, turnPlays=T._turnPlays||0;
 
-    function needAfter(a){ var need=stackNeed(T.centers[a.to]); return (isWild(a.from.card)?need:a.from.card.r)+1; }
-    function completes(a){ var need=stackNeed(T.centers[a.to]); var v=isWild(a.from.card)?need:a.from.card.r; return v===13; }
-    function gifts(a){ return oppClose && oppRank && needAfter(a)===oppRank; }
+    // what the stack will accept AFTER this play (empty when the play clears it)
+    function valOf(a){ var needs=stackNeeds(T.centers[a.to], T.dir);
+                       return isWild(a.from.card) ? (a.val!=null ? a.val : (needs.length?needs[0]:14)) : a.from.card.r; }
+    function needsAfter(a){
+      var st=T.centers[a.to];
+      if(st.length+1 >= STACK_SIZE) return [];            // it clears — nothing left to gift
+      return stackNeeds(st.concat([{val:valOf(a)}]), T.dir);
+    }
+    function helpsMe(a){ return myRank===0 || needsAfter(a).indexOf(myRank)>=0; }
+    function completes(a){ return T.centers[a.to].length+1 >= STACK_SIZE; }
+    function gifts(a){ return oppClose && !!oppRank && needsAfter(a).indexOf(oppRank)>=0; }
+    // where a stack accepts two values, take the one that doesn't set up the opponent
+    function withVal(a){
+      var needs=stackNeeds(T.centers[a.to], T.dir);
+      if(isWild(a.from.card) && needs.length>1){
+        var safe=needs.filter(function(v){
+          if(T.centers[a.to].length+1 >= STACK_SIZE) return true;
+          var after=stackNeeds(T.centers[a.to].concat([{val:v}]), T.dir);
+          return !(oppClose && oppRank && after.indexOf(oppRank)>=0);
+        });
+        a.val = safe.length ? safe[0] : needs[0];
+      } else a.val = needs.length ? needs[0] : undefined;
+      return a;
+    }
 
     // 1. play the goal card (prefer a centre that doesn't gift the opponent)
     var pf=plays.filter(function(a){return a.from.kind==='payoff';});
-    if(pf.length){ var safe=pf.filter(function(a){return !gifts(a);}); return {kind:'play',action:(safe[0]||pf[0])}; }
+    if(pf.length){ var safe=pf.filter(function(a){return !gifts(a);}); return {kind:'play',action:withVal(safe[0]||pf[0])}; }
 
     // 2. enabler: a play that makes the goal card playable this turn
     if(myRank!==null){
-      var en=plays.filter(function(a){ return a.from.kind!=='payoff' && (myRank===0 || needAfter(a)===myRank) && !gifts(a); });
+      var en=plays.filter(function(a){ return a.from.kind!=='payoff' && helpsMe(a) && !gifts(a); });
       en.sort(function(a,b){return srcCost(a)-srcCost(b);});
-      if(en.length) return {kind:'play',action:en[0]};
+      if(en.length) return {kind:'play',action:withVal(en[0])};
     }
 
-    // 3. completions always — finishing an A..K stack recycles the deck
+    // 3. completions always — filling a stack to 13 sends it to the shuffler
     var comp=plays.filter(function(a){ return a.from.kind!=='payoff' && !isWild(a.from.card) && completes(a) && !gifts(a); });
-    if(comp.length) return {kind:'play',action:comp[0]};
+    if(comp.length) return {kind:'play',action:withVal(comp[0])};
 
     // 4. general centre-building, capped per turn so one turn can't drain the stock
     if(turnPlays < budget){
       var prog=[];
       for(var j=0;j<plays.length;j++){ var a=plays[j];
         if(a.from.kind==='payoff' || isWild(a.from.card) || gifts(a)) continue;
-        var sc=a.from.card.r;                          // higher builds are closer to completing
+        var sc=T.centers[a.to].length;                 // deeper stacks are closer to clearing
         if(a.from.kind==='hand') sc+=2;                // clearing the hand draws fresh cards
         if(a.from.kind==='side') sc+=1;                // digging a side stack frees a buried card
-        if(myRank && needAfter(a)===myRank) sc+=8;     // sets up my goal card next
+        if(myRank && helpsMe(a)) sc+=8;                // sets up my goal card next
         if(diff==='easy' && Math.random()<0.35) continue;
         prog.push({a:a,sc:sc});
       }
-      if(prog.length){ prog.sort(function(x,y){return y.sc-x.sc;}); return {kind:'play',action:prog[0].a}; }
+      if(prog.length){ prog.sort(function(x,y){return y.sc-x.sc;}); return {kind:'play',action:withVal(prog[0].a)}; }
     }
 
     // 5. end the turn
@@ -524,21 +599,31 @@ window.SM = (function(){
   function srcCost(a){ return (a.from.kind==='side'?2:0)+(isWild(a.from.card)?3:0); }
 
   function chooseDiscard(T, diff){
-    var p = T.players[T.turn];
+    var p = T.players[T.turn], dir = T.dir || 'up';
     var best=null, bestScore=-1e9;
     for(var c=0;c<p.hand.length;c++){
       var card = p.hand[c];
       var wildPenalty = isWild(card) ? 200 : 0; // hate discarding wilds
+      var cardRank = isWild(card) ? 14 : card.r;
       for(var s=0;s<4;s++){
         var st = p.sides[s];
         var topR = st.length ? (isWild(st[st.length-1])?14:st[st.length-1].r) : null;
         var place;
         if(topR===null) place = 6;                          // empty stack: good
-        else if(topR > (isWild(card)?14:card.r)) place = 8;// keeps descending (low on top)
-        else if(topR === (isWild(card)?14:card.r)) place = 4;
-        else place = -4;                                    // buries a lower card
-        var cardRank = isWild(card)?14:card.r;
-        var score = place + (cardRank>=11?2:0) - wildPenalty; // shed hard-to-place high cards first
+        else if(dir==='either'){
+          // any neighbour of the buried card is playable next turn, so keep runs together
+          var gap = Math.abs(topR - cardRank);
+          if(gap===1 || gap===12) place = 8;                // sits beside the card under it (12 = the K/A wrap)
+          else if(gap===0) place = 4;
+          else place = -2;
+        }
+        else if(topR === cardRank) place = 4;
+        // keep the end this game actually needs on top: low for A->K, high for K->A
+        else if(dir==='down' ? (topR < cardRank) : (topR > cardRank)) place = 8;
+        else place = -4;                                    // buries the card you'll want back
+        // shed the ranks this direction finds hardest to place
+        var awkward = dir==='down' ? (cardRank<=3) : (dir==='up' ? (cardRank>=11) : false);
+        var score = place + (awkward?2:0) - wildPenalty;
         if(diff==='easy') score += (Math.random()*3);
         if(score>bestScore){ bestScore=score; best={cardIndex:c, sideIndex:s}; }
       }
@@ -565,7 +650,7 @@ window.SM = (function(){
       if(i===forSeat) o.hand = p.hand.map(encodeCard); else o.handN = p.hand.length;
       return o;
     }
-    return { v:1, forSeat:forSeat, turn:T.turn, winner:T.winner, draw:!!T.draw, goal:T.goal,
+    return { v:1, forSeat:forSeat, turn:T.turn, winner:T.winner, draw:!!T.draw, goal:T.goal, dir:T.dir||'up',
              stockN:T.stock.length, doneN:T.done.length,
              centers: T.centers.map(function(st){ return st.map(function(x){ return [encodeCard(x.card), x.val]; }); }),
              players:[encPlayer(0), encPlayer(1)] };
@@ -583,7 +668,7 @@ window.SM = (function(){
     var stock=[],done=[];
     for(var i=0;i<view.stockN;i++) stock.push({back:true});
     for(var j=0;j<view.doneN;j++) done.push({back:true});
-    return { turn:view.turn, winner:view.winner, draw:view.draw, goal:view.goal, forSeat:view.forSeat,
+    return { turn:view.turn, winner:view.winner, draw:view.draw, goal:view.goal, dir:view.dir||'up', forSeat:view.forSeat,
              stock:stock, done:done, _mirror:true, _passes:0, rnd:Math.random,
              centers: view.centers.map(function(st){ return st.map(function(pr){ return {card:decodeCard(pr[0]), val:pr[1]}; }); }),
              players:[decPlayer(view.players[0]), decPlayer(view.players[1])] };
@@ -602,6 +687,7 @@ window.SM = (function(){
         if(a.from.i===act.i){ match=a; break; }
       }
       if(!match) return {ok:false};
+      match.val = act.val;                      // the guest's wild-value choice, validated in applyPlay
       return {ok:true, res:applyPlay(T, match)};
     }
     if(act.kind==='discard'){
@@ -613,12 +699,12 @@ window.SM = (function(){
     return {ok:false};
   }
   // Turn a legalPlays entry into a wire action.
-  function actOfPlay(a){ return {kind:'play', src:a.from.kind, i:a.from.i, to:a.to}; }
+  function actOfPlay(a){ return {kind:'play', src:a.from.kind, i:a.from.i, to:a.to, val:a.val}; }
 
   return {
     SUITS:SUITS, isRed:isRed, rname:rname, isWild:isWild,
     makeDeck:makeDeck, shuffle:shuffle, newGame:newGame,
-    stackNeed:stackNeed, canPlayOn:canPlayOn, legalPlays:legalPlays, canDiscard:canDiscard,
+    STACK_SIZE:STACK_SIZE, stackNeed:stackNeed, stackNeeds:stackNeeds, canPlayOn:canPlayOn, legalPlays:legalPlays, canDiscard:canDiscard,
     applyPlay:applyPlay, applyDiscard:applyDiscard, endTurn:endTurn, clone:clone,
     topPayoff:topPayoff, payoffRank:payoffRank, botAction:botAction, stuck:stuck, drawOne:drawOne, pass:pass,
     encodeCard:encodeCard, decodeCard:decodeCard, encodeState:encodeState, decodeState:decodeState, applyGuestAct:applyGuestAct, actOfPlay:actOfPlay
@@ -631,12 +717,12 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v59";
-  var BUILD_ISO = "2026-09-12";
+  var BUILD_V = "v60";
+  var BUILD_ISO = "2026-09-14";
   document.getElementById('buildStamp').textContent = "build " + BUILD_V + " \u00b7 " + BUILD_ISO;
 
   var LSK = 'sm_prefs_v1';
-  var prefs = { goal:13, diff:'normal', fs:15, tips:false };
+  var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false };
   try{ var raw=localStorage.getItem(LSK); if(raw) Object.assign(prefs, JSON.parse(raw)); }catch(e){}
   function savePrefs(){ try{ localStorage.setItem(LSK, JSON.stringify(prefs)); }catch(e){} }
   function applyFs(){ document.documentElement.style.setProperty('--cellfs', prefs.fs+'px'); }
@@ -665,8 +751,24 @@ window.SM = (function(){
   }
   function setOn(seg,btn){ Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){x.classList.remove('on');}); btn.classList.add('on'); }
   segInit('segGoal','goal', function(v){return parseInt(v,10);});
+  segInit('segDir','dir', null);
   segInit('segDiff','diff', null);
   segInit('segSize','fs', function(v){return parseInt(v,10);});
+  var DIR_SUB = { up:'Ace \u2192 King', down:'King \u2192 Ace', either:'either direction' };
+  var DIR_NOTE = {
+    up:   'The standard game — every stack starts at an Ace and climbs to King.',
+    down: 'The mirror image — every stack starts at a King and counts down to Ace.',
+    either:'A stack opens with an Ace or a King, then every card goes one up or one down, wrapping around. A stack clears once it holds 13 cards. Looser and faster — for both of you.'
+  };
+  function syncDirBlurb(){
+    $('dirNote').textContent = DIR_NOTE[prefs.dir] || DIR_NOTE.up;
+    $('setupSub').textContent = 'Race the bot to empty your goal pile \u00b7 ' + (DIR_SUB[prefs.dir] || DIR_SUB.up);
+  }
+  syncDirBlurb();
+  Array.prototype.forEach.call($('segDir').querySelectorAll('button'), function(b){
+    b.addEventListener('click', syncDirBlurb);
+  });
+
   $('optTips').checked = prefs.tips;
   $('optTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); });
 
@@ -678,7 +780,7 @@ window.SM = (function(){
   $('gameMenu').addEventListener('click', openMenu);
 
   // overlay close on backdrop tap
-  ['rulesOv','menuOv','winOv'].forEach(function(id){
+  ['rulesOv','menuOv','winOv','wildOv'].forEach(function(id){
     $(id).addEventListener('click', function(e){ if(e.target===this && id!=='winOv') this.classList.remove('on'); });
   });
   // menu controls
@@ -687,6 +789,7 @@ window.SM = (function(){
   $('menuNew').addEventListener('click', function(){ $('menuOv').classList.remove('on'); doNewGame(); });
   $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
   $('undoSel').addEventListener('click', function(){ sel=null; render(); });
+  $('wildCancel').addEventListener('click', function(){ closeWild(); });
   $('winAgain').addEventListener('click', function(){ $('winOv').classList.remove('on'); doNewGame(); });
   $('winSetup').addEventListener('click', function(){ $('winOv').classList.remove('on'); toSetup(); });
 
@@ -699,7 +802,7 @@ window.SM = (function(){
   function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); }
   function startSolo(){
     mode='solo'; net.online=false; net.joined=false;
-    T = SM.newGame({ goal:prefs.goal, decks:2, jokers:4, first:firstSeat() });
+    T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
     sel = null; busy=false; net.pending=false; passScheduled=false;
     showGame(); render();
     if(T.turn===opp()) setTimeout(botTurn, 500);   // bot won the deal
@@ -743,8 +846,18 @@ window.SM = (function(){
   // ---------- selection / legality helpers ----------
   function heroLegalTargets(card){
     var t=[];
-    for(var c=0;c<4;c++) if(SM.canPlayOn(card, T.centers[c])) t.push(c);
+    for(var c=0;c<4;c++) if(SM.canPlayOn(card, T.centers[c], T.dir)) t.push(c);
     return t;
+  }
+  // what a centre stack is asking for. Single-direction games keep the original wording;
+  // either-way shows both values compactly, because "next 10 or Queen" does not fit a phone.
+  var LONGNAME = {1:'Ace', 13:'King'};
+  function needLabel(stack){
+    var nn = SM.stackNeeds(stack, T.dir);
+    if(!nn.length) return '\u2014';
+    if(!stack.length) return nn.map(function(v){ return LONGNAME[v] || SM.rname(v); }).join(' \u00b7 ');
+    if(nn.length===1) return 'next ' + SM.rname(nn[0]);
+    return nn.map(SM.rname).join(' \u00b7 ');
   }
   function currentSelCard(){
     if(!sel) return null;
@@ -789,13 +902,18 @@ window.SM = (function(){
     for(var c=0;c<4;c++){
       var slot=document.createElement('div'); slot.className='center-slot';
       var need=document.createElement('div'); need.className='center-need';
-      var nd=SM.stackNeed(T.centers[c]); need.textContent = (T.centers[c].length? 'next '+SM.rname(nd) : 'Ace');
+      need.textContent = needLabel(T.centers[c]);
       var stk=document.createElement('div'); stk.className='stack';
       var top=centerTopCard(T.centers[c]) || cardEl(null,{});
       if(targets.indexOf(c)>=0) top.classList.add('target');
       (function(ci){ top.addEventListener('click', function(){ onCenterTap(ci); }); })(c);
       stk.appendChild(top);
-      if(T.centers[c].length){ var n2=document.createElement('div'); n2.className='count'; n2.textContent=T.centers[c].length; stk.appendChild(n2); }
+      if(T.centers[c].length){
+        var n2=document.createElement('div'); n2.className='count'; n2.textContent=T.centers[c].length;
+        // in either-way mode the top card no longer says how close the stack is — the depth does
+        if(T.dir==='either' && T.centers[c].length>=SM.STACK_SIZE-2) n2.classList.add('hot');
+        stk.appendChild(n2);
+      }
       slot.appendChild(need); slot.appendChild(stk); ctr.appendChild(slot);
     }
 
@@ -873,18 +991,41 @@ window.SM = (function(){
   function onCenterTap(ci){
     if(!isHeroTurn()||!sel) return;
     var card=currentSelCard();
-    if(!card || !SM.canPlayOn(card, T.centers[ci])) return;
+    if(!card || !SM.canPlayOn(card, T.centers[ci], T.dir)) return;
     var action;
     if(sel.kind==='payoff') action={from:{kind:'payoff',i:undefined,card:card}, to:ci};
     else if(sel.kind==='hand') action={from:{kind:'hand',i:sel.i,card:card}, to:ci};
     else action={from:{kind:'side',i:sel.i,card:card}, to:ci};
+    var needs=SM.stackNeeds(T.centers[ci], T.dir);
+    if(SM.isWild(card) && needs.length>1){        // wild on a two-way stack: the player picks
+      askWildVal(needs, function(v){ action.val=v; sel=null; commitPlay(action); });
+      return;
+    }
+    action.val = needs[0];
     sel=null; commitPlay(action);
   }
+  // ---- wild value chooser (only reachable in 'either' mode) ----
+  var wildCB=null;
+  function askWildVal(needs, cb){
+    wildCB=cb;
+    var box=$('wildBtns'); box.innerHTML='';
+    needs.forEach(function(v){
+      var b=document.createElement('button');
+      b.className='btn'; b.style.flex='1'; b.textContent=SM.rname(v);
+      b.addEventListener('click', function(){
+        $('wildOv').classList.remove('on');
+        var f=wildCB; wildCB=null; if(f) f(v);
+      });
+      box.appendChild(b);
+    });
+    $('wildOv').classList.add('on');
+  }
+  function closeWild(){ $('wildOv').classList.remove('on'); wildCB=null; render(); }
   // ---- move commits: solo/host apply locally; guest sends an intent to the host ----
   function commitPlay(action){
     if(mode==='online' && net.role==='guest'){
       net.pending=true;
-      netSend({t:'act', kind:'play', src:action.from.kind, i:action.from.i, to:action.to});
+      netSend({t:'act', kind:'play', src:action.from.kind, i:action.from.i, to:action.to, val:action.val});
       render(); return;
     }
     SM.applyPlay(T, action); afterLocal();
@@ -1017,11 +1158,11 @@ window.SM = (function(){
   function handleGuestAction(obj){
     if(!T) return;
     if(obj.kind==='newGame'){ dealHost(); return; }
-    var r=SM.applyGuestAct(T, {kind:obj.kind, src:obj.src, i:obj.i, to:obj.to, cardIndex:obj.cardIndex, sideIndex:obj.sideIndex}, 1);
+    var r=SM.applyGuestAct(T, {kind:obj.kind, src:obj.src, i:obj.i, to:obj.to, val:obj.val, cardIndex:obj.cardIndex, sideIndex:obj.sideIndex}, 1);
     if(r.ok){ render(); publishState(); if(T.winner!==null||T.draw) finish(); }
   }
   function dealHost(){
-    T=SM.newGame({ goal:prefs.goal, decks:2, jokers:4, first:firstSeat() });
+    T=SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
     sel=null; net.pending=false; passScheduled=false;
     $('winOv').classList.remove('on');
     render(); publishState();
