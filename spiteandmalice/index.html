@@ -261,13 +261,13 @@ body{
       <p><b>Goal:</b> be the first to empty your face-up <b>goal pile</b> (bottom-left). The card on top of your goal pile is your most important card — play it whenever you can.</p>
       <h3>The centre</h3>
       <p>There are four shared centre stacks. In the standard game each is built <b>upward from Ace to King</b>: a stack starts with an Ace (or a wild), then 2, 3, 4 … up to King.</p>
-      <p><b>A stack is cleared away and recycled into the stock once it holds 13 cards</b> — that pile is the only thing that refills the stock, so completing stacks is what keeps the game moving.</p>
+      <p><b>A stack is scooped up and recycled into the stock once it holds 13 cards</b> — that pile is the only thing that refills the stock, so filling stacks is what keeps the game moving.</p>
       <h3>Which way stacks build</h3>
       <p>Set on the deal screen, and it applies to the whole game:</p>
       <ul>
         <li><b>A → K</b> — the standard game. Stacks start at an Ace and climb to King.</li>
         <li><b>K → A</b> — the mirror. Stacks start at a King and descend to Ace.</li>
-        <li><b>Either way</b> — a stack opens with an Ace <i>or</i> a King, and from then on every card may go <b>one up or one down</b>, wrapping King→Ace and Ace→King. Nothing ever reaches a dead end, so the 13-card rule is what clears a stack and sends it to the shuffler. Far more of your cards will play — and so will the bot's.</li>
+        <li><b>Either way</b> — a stack opens with an Ace <i>or</i> a King, and from then on every card may go <b>one up or one down</b>, wrapping King→Ace and Ace→King. Nothing ever reaches a dead end, so the 13-card rule is what scoops a stack. Here <b>the top card stays put</b> — only the 12 beneath it go to the shuffler — so the stack carries straight on from wherever it landed. Far more of your cards will play; so will the bot's.</li>
       </ul>
       <h3>Your turn</h3>
       <ul>
@@ -282,7 +282,7 @@ body{
       <ul>
         <li>The centre is shared — advancing a stack can help the bot’s goal card too, so watch its top goal card before you play.</li>
         <li>Organise your side stacks in descending order (low cards on top) so you can dig them back out.</li>
-        <li>In <b>Either way</b> you can no longer read how close a stack is from its top card — watch the card count instead. It turns red at 11, two from clearing.</li>
+        <li>In <b>Either way</b> you can no longer read how close a stack is from its top card — watch the card count instead. It turns red at 11, two from scooping. A scoop drops it to 1, not 0.</li>
       </ul>
       <div class="row" style="margin-top:6px"><button class="btn" id="rulesClose2" style="flex:1">Got it</button></div>
     </div>
@@ -460,12 +460,16 @@ window.SM = (function(){
   }
   function canDiscard(T){ return T.players[T.turn].hand.length > 0; }
 
+  // A full stack is scooped to the shuffler. In 'either' the TOP card stays behind as the
+  // stack's new base — it can still go one up or one down from there, so the stack keeps
+  // running and only 12 cards are recycled. In 'up'/'down' the leftover would be a King
+  // (or an Ace) with nothing legal to follow it, so those scoop all 13 and reopen empty.
+  function keepOnScoop(T){ return T.dir==='either' ? 1 : 0; }
   function clearIfComplete(T, c){
     var st = T.centers[c];
-    if(st.length >= STACK_SIZE){
-      for(var k=0;k<st.length;k++) T.done.push(st[k].card);
-      T.centers[c] = [];
-    }
+    if(st.length < STACK_SIZE) return;
+    var scooped = st.splice(0, st.length - keepOnScoop(T));
+    for(var k=0;k<scooped.length;k++) T.done.push(scooped[k].card);
   }
 
   // apply a play {from:{kind,i}, to:centerIndex}. Mutates T. Returns {win:bool,cleared:bool,val}
@@ -539,11 +543,13 @@ window.SM = (function(){
     // what the stack will accept AFTER this play (empty when the play clears it)
     function valOf(a){ var needs=stackNeeds(T.centers[a.to], T.dir);
                        return isWild(a.from.card) ? (a.val!=null ? a.val : (needs.length?needs[0]:14)) : a.from.card.r; }
-    function needsAfter(a){
-      var st=T.centers[a.to];
-      if(st.length+1 >= STACK_SIZE) return [];            // it clears — nothing left to gift
-      return stackNeeds(st.concat([{val:valOf(a)}]), T.dir);
+    function needsAfterVal(to, v){
+      var st=T.centers[to];
+      // a clearing play leaves the played card behind in 'either', and nothing in 'up'/'down'
+      if(st.length+1 >= STACK_SIZE) return T.dir==='either' ? stackNeeds([{val:v}], T.dir) : [];
+      return stackNeeds(st.concat([{val:v}]), T.dir);
     }
+    function needsAfter(a){ return needsAfterVal(a.to, valOf(a)); }
     function helpsMe(a){ return myRank===0 || needsAfter(a).indexOf(myRank)>=0; }
     function completes(a){ return T.centers[a.to].length+1 >= STACK_SIZE; }
     function gifts(a){ return oppClose && !!oppRank && needsAfter(a).indexOf(oppRank)>=0; }
@@ -552,8 +558,7 @@ window.SM = (function(){
       var needs=stackNeeds(T.centers[a.to], T.dir);
       if(isWild(a.from.card) && needs.length>1){
         var safe=needs.filter(function(v){
-          if(T.centers[a.to].length+1 >= STACK_SIZE) return true;
-          var after=stackNeeds(T.centers[a.to].concat([{val:v}]), T.dir);
+          var after=needsAfterVal(a.to, v);
           return !(oppClose && oppRank && after.indexOf(oppRank)>=0);
         });
         a.val = safe.length ? safe[0] : needs[0];
@@ -717,7 +722,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v61";
+  var BUILD_V = "v62";
   var BUILD_ISO = "2026-09-14";
   document.getElementById('buildStamp').textContent = "build " + BUILD_V + " \u00b7 " + BUILD_ISO;
 
@@ -758,7 +763,7 @@ window.SM = (function(){
   var DIR_NOTE = {
     up:   'The standard game — every stack starts at an Ace and climbs to King.',
     down: 'The mirror image — every stack starts at a King and counts down to Ace.',
-    either:'A stack opens with an Ace or a King, then every card goes one up or one down, wrapping around. A stack clears once it holds 13 cards. Looser and faster — for both of you.'
+    either:'A stack opens with an Ace or a King, then every card goes one up or one down, wrapping around. At 13 cards the bottom 12 go to the shuffler and the top card stays. Looser and faster — for both of you.'
   };
   function syncDirBlurb(){
     $('dirNote').textContent = DIR_NOTE[prefs.dir] || DIR_NOTE.up;

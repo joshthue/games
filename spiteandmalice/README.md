@@ -13,8 +13,10 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
   and **four personal side stacks** to park cards on.
 - On your turn, play as many cards as you can to the four centre stacks — from your
   goal-pile top, your hand, or a side-stack top.
-- **A centre stack is cleared away to the shuffler the moment it holds 13 cards**,
-  whatever rank it ends on. That pile is the only thing that refills the stock.
+- **A centre stack is scooped to the shuffler the moment it holds 13 cards**, whatever
+  rank it ends on. That pile is the only thing that refills the stock. In `A → K` and
+  `K → A` all 13 go and the stack reopens empty; in `Either way` the **top card stays
+  behind** and only the 12 beneath it are recycled.
 - **Empty your goal pile to win.** You end your turn by discarding one hand card onto a
   side stack; if you empty your hand first you draw back up to five and keep going.
 - Tap a card to pick it up, tap a green centre to play it; tap a hand card then a side
@@ -32,15 +34,22 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
 
 A stack opens with an Ace *or* a King, and from then on every card may go **one up or one
 down**, wrapping King→Ace and Ace→King. Nothing ever reaches a dead end, so rank can no
-longer end a stack — which is exactly why clearing is depth-based. Without the 13-card
+longer end a stack — which is exactly why scooping is depth-based. Without the 13-card
 rule a wrapping stack would grow forever, nothing would return to the shuffler, and the
-stock would starve; with it, every stack still recycles on the same rhythm as the
+stock would starve; with it, every stack still recycles on roughly the rhythm of the
 standard game.
+
+**The top card is left behind when a stack is scooped**, so the stack carries straight on
+from wherever it landed instead of waiting for a fresh Ace or King. Only the single-
+direction modes scoop all 13: their leftover would be a King (or an Ace) with no legal
+card to follow it, and that stack would be dead for the rest of the game.
 
 Two consequences worth knowing before you pick it:
 
-- Far more of your cards play, so goal piles empty faster — bot-vs-bot games run about
-  a fifth shorter than `A → K`. The bot gets the same gift, so it is not easier, just looser.
+- Far more of your cards play, so goal piles empty much faster — bot-vs-bot games run
+  **under half the length** of `A → K` (≈24 turns against ≈51 at goal 13). Leaving the top
+  card is most of that: a stack never needs an opener twice. The bot gets the same gift, so
+  it is not easier, just much looser and faster. Pick Standard · 20 if it ends too quickly.
 - You can't read how close a stack is from its top card any more. Watch the card count
   instead; it turns red at 11, two from clearing.
 
@@ -76,7 +85,8 @@ peer is choosing the actions, which is what let the two-phone mode reuse it unch
 
 The engine was soaked over hundreds of bot-vs-bot games (both goal sizes, all three build
 directions) asserting every game terminates with a legal sequence, that the 108 cards are
-always all accounted for, and that no centre stack ever survives a play at 13 cards. The
+always all accounted for, that no centre stack ever survives a play at 13 cards, and that a
+scoop leaves exactly one card in `Either way` and none in the other two. The
 multiplayer path was checked over 250 full two-player simulations where the guest decides
 purely from its redacted view and the host validates every move — no desyncs, no
 information leak, a fresh deal serialising to well under ntfy's 4 KB message cap.
