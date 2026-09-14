@@ -276,7 +276,10 @@ function canDouble(hand,bank,rules){
 /* =================================================================
    PERSISTENCE  (localStorage with in-memory fallback for sandboxes)
    ================================================================= */
-const BUILD='build v62 · 2026-09-13';
+const BUILD=(function(){   // Last-Modified from Pages = the deploy time
+  const d=new Date(document.lastModified);
+  return 'build v63'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+})();
 const mem={};
 const store={
   get(k){try{const v=localStorage.getItem(k);return v==null?(k in mem?mem[k]:null):v;}catch(e){return k in mem?mem[k]:null;}},

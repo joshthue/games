@@ -1533,10 +1533,10 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v62", ISO="2026-09-11T20:15:19Z";
+(function(){ var V="v63", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
-  var s=V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
-        " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
+        " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));
   var n=document.getElementById('gnBuild'); if(n) n.textContent="build "+s;
 })();
 </script>

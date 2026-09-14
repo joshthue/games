@@ -722,9 +722,12 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v62";
-  var BUILD_ISO = "2026-09-14";
-  document.getElementById('buildStamp').textContent = "build " + BUILD_V + " \u00b7 " + BUILD_ISO;
+  var BUILD_V = "v63";
+  // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
+  // actually running instead of a constant somebody has to remember to bump.
+  var _d = new Date(document.lastModified);
+  var _when = isNaN(_d) ? "" : _d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  document.getElementById('buildStamp').textContent = "build " + BUILD_V + (_when ? " \u00b7 " + _when : "");
 
   var LSK = 'sm_prefs_v1';
   var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false };
