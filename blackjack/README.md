@@ -28,8 +28,11 @@ out and pays the winners. Keyboard shortcuts on desktop: `Enter` deal, `H` hit,
 
 ## Notes
 
-The card face uses the Oswald web font when online; offline it falls back to the
-system font, so the game still plays fully offline as part of the installed app.
+Type is set in **Oswald**, embedded in the page as a subset WOFF2 data URI
+(variable 200-700, SIL Open Font License 1.1). Nothing is fetched at runtime, so the
+game looks identical offline — this was the only file in the repo that reached out to
+the network, and on a plane it used to silently fall back to a system font. Don't
+replace it with a Google Fonts `<link>`.
 
 ## Running it
 
