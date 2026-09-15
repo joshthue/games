@@ -78,8 +78,10 @@
   .msg b{color:var(--gold);}
 
   /* ---------- overlays ---------- */
+  /* Sheets sit above everything, the architect (z 40) included — at z-index 30 the
+     Courses sheet opened *underneath* the architect and its canvas ate every click. */
   .overlay{position:fixed; inset:0; background:rgba(4,14,9,.72); display:none; place-items:center;
-    padding:16px; z-index:30; backdrop-filter:blur(2px);}
+    padding:16px; z-index:60; backdrop-filter:blur(2px);}
   .overlay.on{display:grid;}
   .sheet{width:100%; max-width:460px; max-height:86vh; overflow:auto; background:var(--panel);
     border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 50px rgba(0,0,0,.5);}
@@ -162,6 +164,7 @@
     <div class="switch" id="swGuide"><i></i></div></div>
   <div class="row"><div class="lbl">Text size</div></div>
   <div class="seg" id="segText"></div>
+  <button class="btn wide" id="menuArch">⛳ Design a course</button>
   <button class="btn wide" id="menuRestart">Restart the round</button>
   <button class="btn ghost wide" id="menuRules">How to play</button>
   <button class="btn ghost wide" onclick="location.href='../'">🏠 Back to all games</button>
@@ -1290,23 +1293,530 @@ window.GOLF_COURSES = {
   drawMeter();
   openHoleCard();
 
-  // a small door for the tests and, later, the architect's preview
+  // The door the architect and the tests come through.
   window.__GOLFUI = {
     state:function(){ return {R:R, H:H, club:club, aim:aim, meter:meter}; },
     setClub:function(i){ club=i; syncHud(); draw(); },
     swing:function(power,acc){ hit(power,acc); },
     course:function(){ return course; },
-    begin:beginHole
+    begin:beginHole,
+    // play an arbitrary course — this is how "preview this hole" works
+    loadCourse:function(c, holeIdx){
+      if(!G.validCourse(c)) return false;
+      course = c; R = G.newRound(course); R.hole = Math.min(holeIdx||0, c.holes.length-1);
+      anim = null; aim = 0;
+      ['menuOv','cardOv','doneOv','rulesOv'].forEach(function(id){ $(id).classList.remove('on'); });
+      openHoleCard();
+      return true;
+    }
   };
 })();
 </script>
 
 <script>
 (function(){
-  var V="v68", ISO=document.lastModified;
+  var V="v69", ISO=document.lastModified;
   var d=new Date(ISO);
   var el=document.getElementById('buildStamp');
   if(el) el.textContent='build '+V+(isNaN(d)?'':' · '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+})();
+</script>
+
+<!-- ================================================================= -->
+<!-- BLOCK 4: the course architect. Top-down editor writing the exact   -->
+<!-- same course objects the shipped course is written in.             -->
+<!-- ================================================================= -->
+<style>
+  #arch{position:fixed; inset:0; z-index:40; background:#0b1c13; display:none;
+    flex-direction:column; padding:env(safe-area-inset-top) 0 0;}
+  #arch.on{display:flex;}
+  .ahead{display:flex; align-items:center; gap:8px; padding:6px 10px; background:#0b2417;
+    border-bottom:1px solid var(--line); flex:0 0 auto;}
+  #archName{flex:1 1 auto; min-width:0; background:#0e2a1c; border:1px solid var(--line); color:var(--cream);
+    border-radius:9px; padding:7px 10px; font-size:calc(13.5px * var(--fs)); font-weight:700; font-family:inherit;}
+  .aholes{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#0a2114;
+    border-bottom:1px solid var(--line); flex:0 0 auto;}
+  .aholes .htag{flex:1 1 auto; text-align:center; font-size:calc(12.5px * var(--fs)); font-weight:700;}
+  .aholes .htag small{display:block; color:var(--dim); font-weight:400; font-size:calc(10.5px * var(--fs));}
+  #archStage{flex:1 1 auto; min-height:0; position:relative; background:#123522;}
+  #archCv{width:100%; height:100%; display:block; touch-action:none;}
+  .ahint{position:absolute; left:8px; top:8px; font-size:calc(11px * var(--fs)); color:#cfe6d8;
+    background:rgba(6,26,17,.72); border-radius:8px; padding:4px 8px; pointer-events:none; max-width:70%;}
+  .adock{flex:0 0 auto; background:#0b2417; border-top:1px solid var(--line);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:7px;}
+  .tools{display:flex; gap:5px;}
+  .tools button{flex:1; padding:9px 4px; border-radius:10px; background:var(--panel2); border:1px solid var(--line);
+    font-size:calc(11px * var(--fs)); font-weight:700; color:var(--dim); line-height:1.25;}
+  .tools button.on{background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#2a2008; border-color:transparent;}
+  .tools button i{display:block; font-style:normal; font-size:calc(15px * var(--fs)); margin-bottom:1px;}
+  .arow{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .arow .cap{font-size:calc(11.5px * var(--fs)); color:var(--dim); font-weight:700;}
+  .arow .val{font-size:calc(12.5px * var(--fs)); font-weight:700; min-width:46px; text-align:center;
+    font-variant-numeric:tabular-nums;}
+  .mini{width:36px; height:32px; border-radius:9px; background:var(--panel2); border:1px solid var(--line);
+    font-size:calc(15px * var(--fs)); font-weight:700; display:grid; place-items:center; flex:0 0 auto;}
+  .mini.warn{background:#4a1f1c; border-color:#7d3a34;}
+  .abtns{display:flex; gap:6px;}
+  .abtns .btn{flex:1; text-align:center; padding:11px 8px; font-size:calc(12.5px * var(--fs));}
+  #shareBox{width:100%; background:#0e2a1c; border:1px solid var(--line); color:var(--cream); border-radius:9px;
+    padding:8px; font-size:11px; font-family:ui-monospace,Menlo,monospace; margin-top:8px;}
+  .ok-flash{color:var(--ok); font-size:calc(11.5px * var(--fs)); text-align:center; min-height:15px;}
+</style>
+
+<div id="arch">
+  <div class="ahead">
+    <button class="hbtn" id="archBack">←</button>
+    <input id="archName" maxlength="28" placeholder="Course name">
+    <button class="hbtn" id="archMine">Courses</button>
+  </div>
+  <div class="aholes">
+    <button class="mini" id="archPrev">‹</button>
+    <div class="htag" id="archHoleTag">Hole 1 of 9<small>par 4 · 380 yds</small></div>
+    <button class="mini" id="archNext">›</button>
+    <button class="mini" id="archAdd">+</button>
+    <button class="mini warn" id="archDel">−</button>
+  </div>
+  <div id="archStage">
+    <canvas id="archCv"></canvas>
+    <div class="ahint" id="archHint">Drag the green to set the length. Tap with a tool to drop a hazard.</div>
+  </div>
+  <div class="adock">
+    <div class="tools" id="archTools">
+      <button data-t="move" class="on"><i>✥</i>Move</button>
+      <button data-t="sand"><i>🏖</i>Bunker</button>
+      <button data-t="water"><i>💧</i>Water</button>
+      <button data-t="trees"><i>🌲</i>Trees</button>
+      <button data-t="erase"><i>✕</i>Erase</button>
+    </div>
+    <div class="arow">
+      <div class="cap">Par</div>
+      <div class="seg" id="archPar" style="flex:1">
+        <button data-p="3">3</button><button data-p="4">4</button><button data-p="5">5</button>
+      </div>
+    </div>
+    <div class="arow">
+      <div class="cap">Fairway</div>
+      <button class="mini" id="fwDown">−</button>
+      <div class="val" id="fwVal">17 yds</div>
+      <button class="mini" id="fwUp">+</button>
+      <div class="cap" style="margin-left:auto">Selected</div>
+      <button class="mini" id="szDown">−</button>
+      <div class="val" id="szVal">—</div>
+      <button class="mini" id="szUp">+</button>
+    </div>
+    <div class="arow">
+      <div class="cap">Slope</div>
+      <button class="mini" id="slL">←</button>
+      <button class="mini" id="slR">→</button>
+      <div class="val" id="slVal">flat</div>
+      <button class="mini" id="slU">↑</button>
+      <button class="mini" id="slD">↓</button>
+    </div>
+    <div class="ok-flash" id="archFlash"></div>
+    <div class="abtns">
+      <button class="btn ghost" id="archPreview">Preview</button>
+      <button class="btn ghost" id="archSave">Save</button>
+      <button class="btn" id="archPlay">Play it</button>
+    </div>
+    <div class="abtns"><button class="btn ghost" id="archShare" style="flex:1">Copy share link</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="mineOv"><div class="sheet">
+  <h2>Courses</h2>
+  <div id="mineList"></div>
+  <h3>Paste a course code</h3>
+  <input id="importBox" class="" style="width:100%; background:#0e2a1c; border:1px solid var(--line); color:var(--cream); border-radius:9px; padding:9px; font-size:12px; font-family:ui-monospace,Menlo,monospace" placeholder="paste here">
+  <button class="btn wide" id="importGo">Load that course</button>
+  <button class="btn ghost wide" id="mineClose">Close</button>
+</div></div>
+
+<script>
+(function(){
+  "use strict";
+  var G = window.GOLF;
+  var $ = function(id){ return document.getElementById(id); };
+  var A = {course:null, hole:0, tool:'move', sel:null, drag:null, dirty:false};
+  var cv = $('archCv'), cx = cv.getContext('2d'), W=0, Hh=0, DPR=1;
+
+  /* ---------------- course scaffolding ---------------- */
+  function blankHole(n){
+    var len = 380;
+    return {name:'Hole '+n, par:4, len:len, ob:75,
+      cl:[[0,0],[len/2,0],[len,0]],
+      fw:[[0,17],[len/2,19],[len,16]],
+      green:{x:0, y:len, rx:12, ry:10, slope:[0,0]},
+      sand:[], water:[], trees:[], note:''};
+  }
+  function blankCourse(){
+    var c = {n:'My Course', sub:'', holes:[]};
+    for(var i=0;i<9;i++) c.holes.push(blankHole(i+1));
+    return c;
+  }
+  // deep copy, so editing never mutates the course you are playing
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  function hole(){ return A.course.holes[A.hole]; }
+
+  // length lives in two places (h.len and the green's y) — keep them honest,
+  // and drag the centreline and fairway control points along with it
+  function setLen(h, len){
+    len = Math.round(Math.max(90, Math.min(700, len)));
+    var old = h.len || len;
+    h.len = len;
+    h.green.y = len;
+    var k = len/old;
+    h.cl.forEach(function(p,i){ if(i>0) p[0] = Math.round(p[0]*k); });
+    h.fw.forEach(function(p,i){ if(i>0) p[0] = Math.round(p[0]*k); });
+    h.cl[h.cl.length-1][0] = len;
+    h.fw[h.fw.length-1][0] = len;
+  }
+  function setFw(h, w){
+    w = Math.max(7, Math.min(34, w));
+    h.fw = [[0, Math.round(w)], [Math.round(h.len/2), Math.round(w+2)], [h.len, Math.round(Math.max(7,w-1))]];
+  }
+  function fwWidth(h){ return h.fw[0][1]; }
+
+  /* ---------------- top-down view ---------------- */
+  var V = {sc:1, ox:0, oy:0};
+  function sizeCv(){
+    DPR = Math.min(2, window.devicePixelRatio||1);
+    var r = cv.parentNode.getBoundingClientRect();
+    W = Math.max(240, Math.floor(r.width)); Hh = Math.max(200, Math.floor(r.height));
+    cv.width = W*DPR; cv.height = Hh*DPR; cx.setTransform(DPR,0,0,DPR,0,0);
+    fit();
+  }
+  function fit(){
+    var h = hole();
+    var spanY = h.len + 150, spanX = Math.max(h.ob*2+20, 120);
+    V.sc = Math.min(W/spanX, Hh/spanY) * 0.94;
+    V.ox = W/2;
+    V.oy = Hh - 18 - 40*V.sc;                       // leave room below the tee
+  }
+  function toS(x,y){ return {x: V.ox + x*V.sc, y: V.oy - y*V.sc}; }
+  function toW(sx,sy){ return {x:(sx-V.ox)/V.sc, y:(V.oy-sy)/V.sc}; }
+
+  function ell(e, fill, stroke){
+    cx.save(); cx.translate.apply(cx, [toS(e.x,e.y).x, toS(e.x,e.y).y]);
+    cx.scale(1, e.ry/e.rx);
+    cx.beginPath(); cx.arc(0,0, e.rx*V.sc, 0, Math.PI*2);
+    cx.restore();
+    if(fill){ cx.fillStyle=fill; cx.fill(); }
+    if(stroke){ cx.strokeStyle=stroke; cx.lineWidth=2; cx.stroke(); }
+  }
+
+  function drawArch(){
+    if(!A.course) return;
+    var h = hole();
+    cx.clearRect(0,0,W,Hh);
+    cx.fillStyle='#17522e'; cx.fillRect(0,0,W,Hh);
+
+    // out of bounds
+    cx.save(); cx.setLineDash([5,6]); cx.strokeStyle='rgba(255,255,255,.22)'; cx.lineWidth=1.5;
+    [-h.ob, h.ob].forEach(function(x){
+      cx.beginPath();
+      var a=toS(x,-30), b=toS(x,h.len+90);
+      cx.moveTo(a.x,a.y); cx.lineTo(b.x,b.y); cx.stroke();
+    });
+    cx.restore();
+
+    // fairway
+    var left=[], right=[];
+    for(var y=0; y<=h.len+40; y+=6){
+      var c0=G.clAt(h,y), w=G.fwAt(h,y);
+      left.push(toS(c0-w,y)); right.push(toS(c0+w,y));
+    }
+    cx.beginPath();
+    left.concat(right.reverse()).forEach(function(p,i){ i?cx.lineTo(p.x,p.y):cx.moveTo(p.x,p.y); });
+    cx.closePath(); cx.fillStyle='#3c9a57'; cx.fill();
+
+    // hazards
+    (h.water||[]).forEach(function(e){ ell(e,'#2f78bd', A.sel&&A.sel.o===e?'#fff':null); });
+    (h.sand||[]).forEach(function(e){ ell(e,'#e4d2a0', A.sel&&A.sel.o===e?'#fff':null); });
+    (h.trees||[]).forEach(function(t){
+      var p=toS(t.x,t.y), r=Math.max(3,(t.r||9)*V.sc);
+      cx.fillStyle='#2e7d4a'; cx.beginPath(); cx.arc(p.x,p.y,r,0,Math.PI*2); cx.fill();
+      cx.fillStyle='#0f3f26'; cx.beginPath(); cx.arc(p.x,p.y,r*0.55,0,Math.PI*2); cx.fill();
+      if(A.sel&&A.sel.o===t){ cx.strokeStyle='#fff'; cx.lineWidth=2; cx.stroke(); }
+    });
+
+    // green + pin
+    ell(h.green, '#57c072', A.sel&&A.sel.k==='green' ? '#fff' : 'rgba(255,255,255,.35)');
+    var gp = toS(h.green.x, h.green.y);
+    cx.fillStyle='#0c2a18'; cx.beginPath(); cx.arc(gp.x,gp.y,3.5,0,Math.PI*2); cx.fill();
+    cx.strokeStyle='#f2f2f2'; cx.lineWidth=1.6;
+    cx.beginPath(); cx.moveTo(gp.x,gp.y); cx.lineTo(gp.x,gp.y-16); cx.stroke();
+    cx.fillStyle='#e04a43'; cx.beginPath();
+    cx.moveTo(gp.x,gp.y-16); cx.lineTo(gp.x+9,gp.y-12.5); cx.lineTo(gp.x,gp.y-9); cx.closePath(); cx.fill();
+    // slope arrow on the green
+    var sl=h.green.slope||[0,0];
+    if(sl[0]||sl[1]){
+      var ang=Math.atan2(-(-sl[1]), sl[0]);
+      cx.save(); cx.translate(gp.x,gp.y); cx.rotate(ang);
+      cx.strokeStyle='rgba(255,255,255,.85)'; cx.fillStyle='rgba(255,255,255,.85)'; cx.lineWidth=2;
+      cx.beginPath(); cx.moveTo(-11,0); cx.lineTo(11,0); cx.stroke();
+      cx.beginPath(); cx.moveTo(11,0); cx.lineTo(5,-4); cx.lineTo(5,4); cx.closePath(); cx.fill();
+      cx.restore();
+    }
+
+    // the dogleg handle
+    var mid = h.cl[1];
+    var mp = toS(mid[1], mid[0]);
+    cx.fillStyle = A.sel&&A.sel.k==='dog' ? '#fff' : 'rgba(255,255,255,.55)';
+    cx.beginPath(); cx.arc(mp.x,mp.y,7,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#0b2417'; cx.font='9px system-ui'; cx.textAlign='center'; cx.textBaseline='middle';
+    cx.fillText('↔', mp.x, mp.y);
+
+    // tee
+    var tp = toS(0,0);
+    cx.fillStyle='#d9e8dd';
+    cx.fillRect(tp.x-7, tp.y-3, 14, 6);
+    cx.fillStyle='rgba(255,255,255,.65)'; cx.font='10px system-ui'; cx.textBaseline='top';
+    cx.fillText('TEE', tp.x, tp.y+6);
+
+    // yardage ticks
+    cx.fillStyle='rgba(255,255,255,.4)'; cx.font='9px system-ui'; cx.textAlign='left';
+    for(var yy=100; yy<h.len; yy+=100){
+      var t=toS(-h.ob, yy);
+      cx.fillText(yy+'', t.x+3, t.y-10);
+    }
+  }
+
+  /* ---------------- hit testing + dragging ---------------- */
+  function hit(wx, wy){
+    var h = hole(), i;
+    var near = function(a,b,r){ return G.dist(wx,wy,a,b) < r; };
+    if(near(h.green.x, h.green.y, Math.max(h.green.rx,h.green.ry)+4)) return {k:'green', o:h.green};
+    for(i=(h.trees||[]).length-1;i>=0;i--){ var t=h.trees[i]; if(near(t.x,t.y,(t.r||9)+3)) return {k:'trees', o:t, i:i}; }
+    for(i=(h.sand||[]).length-1;i>=0;i--){ var s=h.sand[i]; if(G.inEllipse(wx,wy,s)) return {k:'sand', o:s, i:i}; }
+    for(i=(h.water||[]).length-1;i>=0;i--){ var w=h.water[i]; if(G.inEllipse(wx,wy,w)) return {k:'water', o:w, i:i}; }
+    var mid = h.cl[1];
+    if(near(mid[1], mid[0], 14/V.sc)) return {k:'dog', o:mid};
+    return null;
+  }
+
+  cv.addEventListener('pointerdown', function(e){
+    var r = cv.getBoundingClientRect();
+    var w = toW(e.clientX-r.left, e.clientY-r.top);
+    var h = hole();
+    var got = hit(w.x, w.y);
+
+    if(A.tool==='erase'){
+      if(got && got.k!=='green' && got.k!=='dog'){
+        h[got.k].splice(got.i,1); A.sel=null; touch(); drawArch();
+      }
+      return;
+    }
+    if(A.tool!=='move' && !got){
+      // drop a new hazard where you tapped
+      if(A.tool==='trees'){ (h.trees=h.trees||[]).push({x:Math.round(w.x), y:Math.round(w.y), r:9}); }
+      else {
+        var e2 = {x:Math.round(w.x), y:Math.round(w.y), rx:A.tool==='water'?18:10, ry:A.tool==='water'?16:7};
+        (h[A.tool]=h[A.tool]||[]).push(e2);
+      }
+      A.sel = {k:A.tool, o:h[A.tool][h[A.tool].length-1], i:h[A.tool].length-1};
+      touch(); syncDock(); drawArch();
+      return;
+    }
+    A.sel = got;
+    if(got){
+      cv.setPointerCapture(e.pointerId);
+      A.drag = {sx:w.x, sy:w.y,
+                ox: got.k==='dog' ? got.o[1] : got.o.x,
+                oy: got.k==='dog' ? got.o[0] : got.o.y};
+    }
+    syncDock(); drawArch();
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(!A.drag || !A.sel) return;
+    var r = cv.getBoundingClientRect();
+    var w = toW(e.clientX-r.left, e.clientY-r.top);
+    var h = hole(), dx = w.x-A.drag.sx, dy = w.y-A.drag.sy;
+    if(A.sel.k==='green'){
+      h.green.x = Math.round(A.drag.ox + dx);
+      setLen(h, A.drag.oy + dy);
+      h.cl[h.cl.length-1][1] = h.green.x;            // the hole ends where the green is
+    } else if(A.sel.k==='dog'){
+      A.sel.o[1] = Math.round(A.drag.ox + dx);
+    } else {
+      A.sel.o.x = Math.round(A.drag.ox + dx);
+      A.sel.o.y = Math.round(A.drag.oy + dy);
+    }
+    touch(); syncDock(); fit(); drawArch();
+  });
+  ['pointerup','pointercancel'].forEach(function(ev){
+    cv.addEventListener(ev, function(){ A.drag=null; });
+  });
+
+  /* ---------------- dock ---------------- */
+  function touch(){ A.dirty = true; }
+  function syncDock(){
+    var h = hole();
+    $('archHoleTag').innerHTML = 'Hole '+(A.hole+1)+' of '+A.course.holes.length+
+      '<small>par '+h.par+' · '+h.len+' yds</small>';
+    Array.prototype.forEach.call($('archPar').children, function(b){
+      b.classList.toggle('on', +b.dataset.p === h.par);
+    });
+    $('fwVal').textContent = fwWidth(h)+' yds';
+    var sl = h.green.slope||[0,0];
+    $('slVal').textContent = (!sl[0] && !sl[1]) ? 'flat'
+      : (sl[0]? (sl[0]>0?'right ':'left ')+Math.abs(sl[0]).toFixed(1):'') +
+        (sl[1]? (sl[1]>0?' up ':' down ')+Math.abs(sl[1]).toFixed(1):'');
+    if(A.sel && A.sel.k!=='dog'){
+      var o=A.sel.o;
+      $('szVal').textContent = A.sel.k==='green' ? (o.rx+'×'+o.ry)
+                             : A.sel.k==='trees' ? (o.r||9)+' yds'
+                             : (o.rx+'×'+o.ry);
+    } else $('szVal').textContent = '—';
+    $('archName').value = A.course.n;
+  }
+  function resize(mult){
+    if(!A.sel || A.sel.k==='dog') return;
+    var o=A.sel.o;
+    if(A.sel.k==='trees'){ o.r = Math.max(4, Math.min(30, Math.round((o.r||9)*mult))); }
+    else {
+      o.rx = Math.max(3, Math.min(60, Math.round(o.rx*mult)));
+      o.ry = Math.max(3, Math.min(60, Math.round(o.ry*mult)));
+    }
+    touch(); syncDock(); drawArch();
+  }
+  $('szUp').onclick = function(){ resize(1.18); };
+  $('szDown').onclick = function(){ resize(1/1.18); };
+  $('fwUp').onclick = function(){ setFw(hole(), fwWidth(hole())+2); touch(); syncDock(); drawArch(); };
+  $('fwDown').onclick = function(){ setFw(hole(), fwWidth(hole())-2); touch(); syncDock(); drawArch(); };
+  function slope(dx,dy){
+    var g=hole().green; g.slope = g.slope||[0,0];
+    g.slope[0] = Math.max(-1.5, Math.min(1.5, +(g.slope[0]+dx).toFixed(1)));
+    g.slope[1] = Math.max(-1.5, Math.min(1.5, +(g.slope[1]+dy).toFixed(1)));
+    touch(); syncDock(); drawArch();
+  }
+  $('slL').onclick=function(){ slope(-0.3,0); };
+  $('slR').onclick=function(){ slope(0.3,0); };
+  $('slU').onclick=function(){ slope(0,0.3); };
+  $('slD').onclick=function(){ slope(0,-0.3); };
+
+  Array.prototype.forEach.call($('archTools').children, function(b){
+    b.onclick = function(){
+      A.tool = b.dataset.t;
+      Array.prototype.forEach.call($('archTools').children, function(x){ x.classList.toggle('on', x===b); });
+      $('archHint').textContent = A.tool==='move' ? 'Drag the green, the hazards, or the ↔ handle to bend the hole.'
+        : A.tool==='erase' ? 'Tap a hazard to remove it.'
+        : 'Tap the map to drop one, then use Size to shape it.';
+    };
+  });
+  Array.prototype.forEach.call($('archPar').children, function(b){
+    b.onclick = function(){ hole().par = +b.dataset.p; touch(); syncDock(); };
+  });
+  $('archPrev').onclick = function(){ if(A.hole>0){ A.hole--; A.sel=null; fit(); syncDock(); drawArch(); } };
+  $('archNext').onclick = function(){ if(A.hole<A.course.holes.length-1){ A.hole++; A.sel=null; fit(); syncDock(); drawArch(); } };
+  $('archAdd').onclick = function(){
+    if(A.course.holes.length>=18) return flash('18 holes is the limit');
+    A.course.holes.splice(A.hole+1, 0, blankHole(A.course.holes.length+1));
+    A.hole++; A.sel=null; touch(); fit(); syncDock(); drawArch();
+  };
+  $('archDel').onclick = function(){
+    if(A.course.holes.length<=1) return flash('a course needs at least one hole');
+    A.course.holes.splice(A.hole,1);
+    A.hole = Math.max(0, A.hole-1); A.sel=null; touch(); fit(); syncDock(); drawArch();
+  };
+  $('archName').oninput = function(){ A.course.n = this.value.slice(0,28) || 'My Course'; touch(); };
+
+  function flash(m, good){
+    var el=$('archFlash'); el.textContent=m;
+    el.style.color = good===false ? 'var(--red)' : 'var(--ok)';
+    setTimeout(function(){ if(el.textContent===m) el.textContent=''; }, 2600);
+  }
+
+  /* ---------------- storage, sharing, playing ---------------- */
+  var KEY='gnGolfMine';
+  function mine(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch(e){ return []; } }
+  function saveMine(list){ try{ localStorage.setItem(KEY, JSON.stringify(list)); }catch(e){} }
+
+  $('archSave').onclick = function(){
+    if(!G.validCourse(A.course)) return flash('that course has a hole the game can’t play', false);
+    var list = mine();
+    var at = -1;
+    for(var i=0;i<list.length;i++) if(list[i].n === A.course.n) at = i;
+    if(at>=0) list[at] = clone(A.course); else list.push(clone(A.course));
+    saveMine(list); A.dirty=false;
+    flash('Saved “'+A.course.n+'”');
+  };
+  $('archPlay').onclick = function(){
+    if(!G.validCourse(A.course)) return flash('that course has a hole the game can’t play', false);
+    if(window.__GOLFUI.loadCourse(clone(A.course), 0)){ close(); }
+  };
+  $('archPreview').onclick = function(){
+    if(!G.validCourse(A.course)) return flash('that course has a hole the game can’t play', false);
+    if(window.__GOLFUI.loadCourse(clone(A.course), A.hole)){ close(); }
+  };
+  $('archShare').onclick = function(){
+    if(!G.validCourse(A.course)) return flash('that course has a hole the game can’t play', false);
+    var url = location.origin + location.pathname + '?c=' + G.encodeCourse(A.course);
+    var done = function(){ flash('Link copied — send it to anyone'); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(done, function(){ showBox(url); });
+    } else showBox(url);
+    function showBox(u){
+      var box = $('shareBox');
+      if(!box){ box=document.createElement('textarea'); box.id='shareBox'; box.rows=3; $('archShare').parentNode.appendChild(box); }
+      box.value=u; box.select(); flash('Copy the link below');
+    }
+  };
+
+  $('archMine').onclick = function(){
+    var list = mine(), h='';
+    if(!list.length) h = '<p style="color:var(--dim)">Nothing saved yet. Build a hole and press Save.</p>';
+    list.forEach(function(c,i){
+      h += '<div class="row"><div class="lbl">'+esc(c.n)+'<small>'+c.holes.length+' holes · par '+
+           c.holes.reduce(function(a,x){return a+x.par;},0)+'</small></div>'+
+           '<div style="display:flex;gap:6px"><button class="btn ghost" data-load="'+i+'">Edit</button>'+
+           '<button class="btn" data-play="'+i+'">Play</button></div></div>';
+    });
+    $('mineList').innerHTML = h;
+    Array.prototype.forEach.call($('mineList').querySelectorAll('[data-load]'), function(b){
+      b.onclick = function(){ A.course = clone(mine()[+b.dataset.load]); A.hole=0; A.sel=null;
+        $('mineOv').classList.remove('on'); fit(); syncDock(); drawArch(); };
+    });
+    Array.prototype.forEach.call($('mineList').querySelectorAll('[data-play]'), function(b){
+      b.onclick = function(){ var c=mine()[+b.dataset.play];
+        if(window.__GOLFUI.loadCourse(clone(c),0)){ $('mineOv').classList.remove('on'); close(); } };
+    });
+    $('mineOv').classList.add('on');
+  };
+  function esc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  $('mineClose').onclick = function(){ $('mineOv').classList.remove('on'); };
+  $('importGo').onclick = function(){
+    var v = $('importBox').value.trim();
+    var m = v.match(/[?&]c=([^&\s]+)/);           // a whole link works too
+    var code = m ? m[1] : v;
+    var c = G.decodeCourse(code);
+    if(!c){ flash('that code didn’t decode to a course', false); $('mineOv').classList.remove('on'); return; }
+    A.course = c; A.hole=0; A.sel=null;
+    $('mineOv').classList.remove('on'); fit(); syncDock(); drawArch();
+    flash('Loaded “'+c.n+'”');
+  };
+
+  /* ---------------- open / close ---------------- */
+  function open(){
+    if(!A.course) A.course = blankCourse();
+    $('arch').classList.add('on');
+    sizeCv(); syncDock(); drawArch();
+  }
+  function close(){ $('arch').classList.remove('on'); }
+  $('archBack').onclick = function(){
+    if(A.dirty && !confirmLeave()) return;
+    close();
+  };
+  function confirmLeave(){ return true; }        // never block; Save is one tap away
+  $('menuArch').onclick = function(){ $('menuOv').classList.remove('on'); open(); };
+  window.addEventListener('resize', function(){ if($('arch').classList.contains('on')){ sizeCv(); drawArch(); } });
+
+  // a door for the tests
+  window.__ARCH = {
+    open:open, close:close, state:function(){ return A; },
+    set:function(c){ A.course=clone(c); A.hole=0; A.sel=null; if($('arch').classList.contains('on')){ fit(); syncDock(); drawArch(); } },
+    blank:blankCourse, blankHole:blankHole
+  };
 })();
 </script>
 </body>
