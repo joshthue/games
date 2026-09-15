@@ -423,7 +423,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
          the room is a public channel, so nobody else at the table can read them.</p>
     </div>
     <div id="netLobby" style="display:none">
-      <div class="row"><div class="lbl">Room <b id="netRoomLabel"></b></div>
+      <div class="row" id="netStatusRow" style="cursor:pointer"><div class="lbl">Room <b id="netRoomLabel"></b>
+          <small>Tap this line if it won't connect</small></div>
         <div class="ctl"><span class="dot" id="netDot"></span><span id="netText">offline</span></div></div>
       <div id="netSeats"></div>
       <p id="netWaiting"></p>
@@ -1601,7 +1602,25 @@ function netStatus(){
 function netPost(obj){
   obj.room=netKey(NET.room); obj.t=Date.now();
   const body=JSON.stringify(obj);
-  RELAYS.forEach(h=>{ fetch(h+'/'+topic(), {method:'POST', body}).catch(()=>{}); });
+  RELAYS.forEach(h=>{
+    const st=rstate(h);
+    fetch(h+'/'+topic(), {method:'POST', body})
+      .then(r=>{ if(r.ok){ st.perr=''; } else { st.perr = r.status===429 ? 'rate-limited (429)' : 'send failed HTTP '+r.status; } })
+      .catch(()=>{ st.perr='send failed'; });
+  });
+}
+// On a plane you can't open a console, so make the status line say what is wrong.
+function netDetails(){
+  const lines=RELAYS.map(h=>{
+    const st=rstate(h);
+    return '· '+h.replace('https://','')+': '+
+      (st.live?'receiving':(st.err||'not connected'))+(st.perr?' / '+st.perr:'');
+  });
+  alert('Room: '+NET.room+'\nTopic: '+topic()+'\nYou are '+(NET.host?'dealing':'a player')+
+        '\nPlayers seated: '+NET.seats.length+'\n\n'+lines.join('\n')+
+        '\n\nOnly one of the two needs to work. If both are blocked, this network is '+
+        'filtering them — try a phone hotspot.');
+  if(NET.on){ RELAYS.forEach(h=>openRelay(h)); }     // tapping also retries
 }
 function openRelay(h){
   const st=rstate(h); closeRelay(h);
@@ -1978,6 +1997,7 @@ function boot(){
   $('netJoin').onclick=()=>netJoin();
   $('netLeave').onclick=()=>{ netLeave(); renderLobby(); };
   $('netDeal').onclick=()=>startOnlineGame();
+  $('netStatusRow').onclick=()=>netDetails();
   bindSeg('segBots',[[0,'No bots'],[1,'+1'],[2,'+2'],[3,'+3'],[4,'+4']],
           ()=>NET.bots, v=>{ NET.bots=v; if(NET.host){ broadcastSeats(); renderLobby(); } });
   window.addEventListener('beforeunload', ()=>{ if(NET.on) netPost({k:'bye', id:NET.me}); });
@@ -1994,7 +2014,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v72", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+(function(){ var V="v73", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
   var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));

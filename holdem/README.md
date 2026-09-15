@@ -114,6 +114,11 @@ fallback. Rate limits are per IP and a cabin puts a whole table behind one, so o
 the dealer broadcasts, clients speak only when they act, and the polling fallback is
 slower here than in BINGO for the same reason.
 
+**Diagnosing it in the air.** The room line in the lobby is tappable and reports each
+relay separately — receiving / not connected / rate-limited — because on a plane there
+is no console to open. Only one of the two relays has to work. Both blocked means the
+network is filtering them, and a phone hotspot is the way out.
+
 **When things go wrong.** A player who goes quiet for 45 seconds is checked if it's
 free and folded otherwise, so one asleep phone can't stall the table. Reconnecting
 with the same device id drops you back into your seat with your cards — the id is
