@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Stratego</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stratego">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --felt:#0d5c3f; --felt2:#0a4a33; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24;
+    --board:#c9b087; --board2:#bda278; --lake:#2f7fb5; --lake2:#24638f;
+    --red1:#cf3b2c; --red2:#8e2118; --blue1:#3577b8; --blue2:#1d4a77;
+    --sticker:#f4efe0; --cell:38px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; min-height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(circle at 50% 10%, var(--felt) 0%, var(--felt2) 70%, #063324 100%);
+    color:var(--cream); min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:max(12px,env(safe-area-inset-top)) 10px calc(18px + env(safe-area-inset-bottom));
+  }
+  .wrap{width:100%; max-width:520px;}
+  a{color:var(--gold);}
+
+  /* ---- chrome ---- */
+  header{display:flex; align-items:center; gap:10px; margin:2px 0 10px;}
+  header h1{font-size:19px; margin:0; letter-spacing:2.5px; color:var(--gold); flex:1;
+    text-shadow:0 2px 4px rgba(0,0,0,.5);}
+  .back{text-decoration:none; color:var(--cream); opacity:.75; font-size:13px; padding:6px 8px;}
+  .iconbtn{background:rgba(255,255,255,.08); border:1px solid rgba(240,198,116,.3); color:var(--cream);
+    border-radius:10px; padding:6px 10px; font-size:13px; font-family:inherit; cursor:pointer;}
+  .iconbtn:active{transform:scale(.96);}
+
+  /* ---- panels ---- */
+  .panel{background:rgba(0,0,0,.22); border:1px solid rgba(240,198,116,.22); border-radius:16px;
+    padding:16px; margin-bottom:12px;}
+  .panel h2{margin:0 0 4px; font-size:15px; color:var(--gold); letter-spacing:1px;}
+  .panel p.sub{margin:0 0 14px; font-size:12.5px; opacity:.75; line-height:1.45;}
+  .row{margin-bottom:14px;}
+  .row label{display:block; font-size:11px; letter-spacing:1.2px; opacity:.68; margin-bottom:6px; text-transform:uppercase;}
+  .seg{display:flex; gap:6px; flex-wrap:wrap;}
+  .seg button{flex:1; min-width:78px; font-family:inherit; font-size:13px; font-weight:600;
+    background:rgba(255,255,255,.07); color:var(--cream); border:1.5px solid rgba(255,255,255,.14);
+    border-radius:11px; padding:10px 8px; cursor:pointer; transition:all .12s ease;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+  .seg button:active{transform:scale(.97);}
+  .bigbtn{width:100%; font-family:inherit; font-weight:800; font-size:15px; letter-spacing:.5px;
+    background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:14px;
+    box-shadow:0 2px 7px rgba(0,0,0,.35); cursor:pointer;}
+  .bigbtn:active{transform:scale(.985);}
+  .bigbtn.ghost{background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(240,198,116,.3); box-shadow:none;}
+  .btnrow{display:flex; gap:8px;}
+
+  /* ---- status strip ---- */
+  .status{display:flex; align-items:center; gap:8px; min-height:38px; margin-bottom:8px;
+    background:rgba(0,0,0,.25); border-radius:12px; padding:8px 12px; font-size:13px; line-height:1.35;}
+  .dot{width:10px; height:10px; border-radius:50%; flex:0 0 auto;}
+  .dot.red{background:var(--red1); box-shadow:0 0 6px rgba(207,59,44,.8);}
+  .dot.blue{background:var(--blue1); box-shadow:0 0 6px rgba(53,119,184,.8);}
+  .status .txt{flex:1; min-width:0;}
+
+  /* ---- board ---- */
+  .boardwrap{position:relative; width:100%; margin:0 auto 10px;
+    background:linear-gradient(180deg,#5b4a33,#42351f); padding:6px; border-radius:12px;
+    box-shadow:0 5px 16px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);}
+  .board{display:grid; grid-template-columns:repeat(10,1fr); gap:2px; width:100%; aspect-ratio:1/1;}
+  .sq{position:relative; border-radius:4px; background:var(--board);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .sq.alt{background:var(--board2);}
+  .sq.lake{background:linear-gradient(180deg,var(--lake),var(--lake2)); box-shadow:inset 0 2px 5px rgba(0,0,0,.4);}
+  .sq.lake::after{content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(115deg, rgba(255,255,255,.14) 0 2px, transparent 2px 7px);}
+  .sq.sel{outline:3px solid var(--gold); outline-offset:-3px;}
+  .sq.move::before{content:""; position:absolute; width:30%; height:30%; border-radius:50%;
+    background:rgba(240,198,116,.55); box-shadow:0 0 6px rgba(0,0,0,.35);}
+  .sq.hit{outline:3px solid #ff6b57; outline-offset:-3px;}
+  .sq.from{box-shadow:inset 0 0 0 2px rgba(240,198,116,.45);}
+  .sq.place{outline:2px dashed rgba(240,198,116,.55); outline-offset:-2px;}
+
+  /* ---- pieces: chunky plastic with a crooked sticker ---- */
+  .pc{position:absolute; inset:7%; border-radius:15%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 3px rgba(0,0,0,.45), inset 0 1.5px 0 rgba(255,255,255,.4), inset 0 -2px 3px rgba(0,0,0,.35);}
+  .pc.red{background:linear-gradient(165deg,var(--red1) 0%,#b02e22 55%,var(--red2) 100%);}
+  .pc.blue{background:linear-gradient(165deg,var(--blue1) 0%,#26598e 55%,var(--blue2) 100%);}
+  .pc .st{width:74%; height:74%; border-radius:12%; background:var(--sticker); color:#2a2420;
+    display:flex; align-items:center; justify-content:center; font-weight:900; line-height:1;
+    font-size:clamp(9px,3.1vw,15px); letter-spacing:-.5px;
+    box-shadow:0 1px 1.5px rgba(0,0,0,.35); font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;}
+  /* the back of the piece — what you see across the table */
+  .pc.hidden .st{display:none;}
+  .pc.hidden::after{content:""; position:absolute; inset:16%;
+    background:repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 2px, rgba(255,255,255,.09) 2px 5px);
+    border-radius:10%;}
+  .pc.ghost{opacity:.42;}
+  .pc.known{outline:1.5px solid rgba(240,198,116,.85); outline-offset:1px;}
+  .pc.dead{filter:grayscale(.6) brightness(.72);}
+
+  /* ---- setup tray ---- */
+  .tray{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;}
+  .tp{position:relative; width:46px; height:46px; border-radius:9px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    box-shadow:0 2px 3px rgba(0,0,0,.4), inset 0 1.5px 0 rgba(255,255,255,.35);}
+  .tp.sel{outline:3px solid var(--gold); outline-offset:1px;}
+  .tp .st{width:72%; height:64%; border-radius:12%; background:var(--sticker); color:#2a2420;
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px;}
+  .tp .n{position:absolute; right:-2px; bottom:-3px; background:var(--ink); color:var(--gold);
+    border-radius:8px; font-size:10px; font-weight:800; padding:1px 5px; border:1px solid rgba(240,198,116,.5);}
+  .tp.spent{opacity:.28; pointer-events:none;}
+
+  /* ---- strike banner ---- */
+  .strike{display:none; align-items:center; gap:10px; background:rgba(0,0,0,.42);
+    border:1px solid rgba(240,198,116,.3); border-radius:13px; padding:9px 12px; margin-bottom:8px;}
+  .strike.show{display:flex;}
+  .strike .mini{position:relative; width:34px; height:34px; border-radius:8px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 3px rgba(0,0,0,.4), inset 0 1.5px 0 rgba(255,255,255,.35);}
+  .strike .mini .st{width:74%; height:74%; border-radius:12%; background:var(--sticker);
+    color:#2a2420; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px;}
+  .strike .vs{font-size:11px; opacity:.6; letter-spacing:1px;}
+  .strike .out{flex:1; font-size:12.5px; line-height:1.35; min-width:0;}
+  .strike .out b{color:var(--gold);}
+
+  /* ---- captured / log ---- */
+  .caps{display:flex; gap:10px; margin-bottom:10px;}
+  .capcol{flex:1; background:rgba(0,0,0,.2); border-radius:11px; padding:8px 9px;}
+  .capcol h3{margin:0 0 6px; font-size:10px; letter-spacing:1.2px; opacity:.6; text-transform:uppercase; font-weight:700;}
+  .capgrid{display:flex; flex-wrap:wrap; gap:3px; min-height:22px;}
+  .cap{width:21px; height:21px; border-radius:5px; display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:900; color:#2a2420; background:var(--sticker); opacity:.85;}
+  .cap.red{box-shadow:0 0 0 2px var(--red2);} .cap.blue{box-shadow:0 0 0 2px var(--blue2);}
+
+  .log{background:rgba(0,0,0,.2); border-radius:11px; padding:9px 11px; font-size:12px;
+    line-height:1.5; max-height:112px; overflow-y:auto; margin-bottom:10px;}
+  .log div{opacity:.85; padding:1px 0;}
+  .log div.k{color:var(--gold); opacity:1;}
+
+  /* ---- modal ---- */
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.86); display:none;
+    align-items:center; justify-content:center; padding:20px; z-index:50;}
+  .modal.show{display:flex;}
+  .modal .card{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.4);
+    border-radius:18px; padding:22px; max-width:400px; width:100%; text-align:center;
+    box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 8px; color:var(--gold); font-size:22px; letter-spacing:1px;}
+  .modal p{margin:0 0 16px; font-size:13.5px; line-height:1.55; opacity:.88;}
+  .modal .bigbtn{margin-bottom:8px;}
+
+  /* ---- reference table ---- */
+  .ref{font-size:12px; line-height:1.55;}
+  .ref table{width:100%; border-collapse:collapse;}
+  .ref td{padding:3px 4px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .ref td:first-child{width:30px; font-weight:900; color:var(--gold); text-align:center;}
+  .ref td:last-child{opacity:.72; font-size:11.5px;}
+  .hide{display:none !important;}
+  footer{text-align:center; font-size:10.5px; opacity:.45; margin-top:14px;
+    font-family:ui-monospace,Menlo,monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="back" href="../">‹ Games</a>
+    <h1>STRATEGO</h1>
+    <button class="iconbtn" id="helpBtn">Ranks</button>
+  </header>
+
+  <!-- ============ DEAL SCREEN ============ -->
+  <div class="panel" id="setupPanel">
+    <h2>NEW GAME</h2>
+    <p class="sub">Forty pieces a side. Lowest number wins a fight — 1 is the Marshal. Take the enemy flag, or leave them with nothing that can move.</p>
+
+    <div class="row">
+      <label>Opponent</label>
+      <div class="seg" id="oppSeg">
+        <button data-v="easy">Computer · Easy</button>
+        <button data-v="normal" class="on">Computer · Normal</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Your setup</label>
+      <div class="seg" id="setupSeg">
+        <button data-v="auto" class="on">Set up for me</button>
+        <button data-v="manual">I'll place them</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Memory aid</label>
+      <div class="seg" id="memSeg">
+        <button data-v="on" class="on">Remember for me</button>
+        <button data-v="off">Pure memory</button>
+      </div>
+    </div>
+
+    <button class="bigbtn" id="startBtn">Start the game</button>
+  </div>
+
+  <!-- ============ PLACEMENT SCREEN ============ -->
+  <div class="panel hide" id="placePanel">
+    <h2>PLACE YOUR ARMY</h2>
+    <p class="sub" id="placeHint">Tap a piece, then tap a square in your four back rows. Tap a placed piece to pick it back up.</p>
+    <div class="tray" id="tray"></div>
+    <div class="btnrow">
+      <button class="bigbtn ghost" id="fillBtn">Fill the rest</button>
+      <button class="bigbtn ghost" id="clearBtn">Clear</button>
+    </div>
+  </div>
+
+  <!-- ============ GAME ============ -->
+  <div id="gameArea" class="hide">
+    <div class="status" id="status"><span class="dot red"></span><span class="txt">Your move.</span></div>
+    <div class="strike" id="strike"></div>
+  </div>
+
+  <div class="boardwrap hide" id="boardWrap"><div class="board" id="board"></div></div>
+
+  <div id="postBoard" class="hide">
+    <div class="btnrow" style="margin-bottom:10px;">
+      <button class="bigbtn ghost" id="readyBtn">Ready — start playing</button>
+    </div>
+    <div class="caps" id="caps">
+      <div class="capcol"><h3>You lost</h3><div class="capgrid" id="capRed"></div></div>
+      <div class="capcol"><h3>They lost</h3><div class="capgrid" id="capBlue"></div></div>
+    </div>
+    <div class="log" id="log"></div>
+    <div class="btnrow">
+      <button class="bigbtn ghost" id="newBtn">New game</button>
+    </div>
+  </div>
+
+  <footer id="build"></footer>
+</div>
+
+<!-- ============ RANKS MODAL ============ -->
+<div class="modal" id="helpModal">
+  <div class="card">
+    <h2>THE ARMY</h2>
+    <div class="ref">
+      <table id="refTable"></table>
+      <p style="margin-top:12px; font-size:11.5px; opacity:.75; line-height:1.55; text-align:left;">
+        Lower number wins. Equal ranks both die. Only a <b>Miner (8)</b> survives a Bomb.
+        The <b>Spy (S)</b> kills the Marshal only when the Spy attacks — defending, it dies to anything.
+        <b>Scouts (9)</b> move any distance in a straight line and may strike at the end of the run.
+        Bombs and the Flag never move.
+      </p>
+    </div>
+    <button class="bigbtn" id="helpClose" style="margin-top:14px;">Close</button>
+  </div>
+</div>
+
+<!-- ============ GAME OVER ============ -->
+<div class="modal" id="overModal">
+  <div class="card">
+    <h2 id="overTitle">—</h2>
+    <p id="overText">—</p>
+    <button class="bigbtn" id="againBtn">Play again</button>
+    <button class="bigbtn ghost" id="reviewBtn">Look at the board</button>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     ENGINE — pure rules. No DOM, no globals beyond window.STRAT.
+     Everything below this comment could run in node, and does: the soak test
+     drives bot-vs-bot games through exactly this API.
+     ========================================================================== -->
+<script>
+(function(global){
+"use strict";
+
+/* ---------- board geometry ---------- */
+var N = 10, SIZE = 100;
+var LAKE = {42:1,43:1,46:1,47:1,52:1,53:1,56:1,57:1};
+function rowOf(i){ return (i/N)|0; }
+function colOf(i){ return i%N; }
+function isLake(i){ return !!LAKE[i]; }
+function onBoard(i){ return i>=0 && i<SIZE; }
+
+/* ---------- the army ---------- */
+/* Classic Milton Bradley numbering: 1 is the Marshal and lowest wins.
+   'S' Spy, 'B' Bomb, 'F' Flag. 40 pieces. */
+var ARMY = [
+  {rank:1,   name:"Marshal",    count:1},
+  {rank:2,   name:"General",    count:1},
+  {rank:3,   name:"Colonel",    count:2},
+  {rank:4,   name:"Major",      count:3},
+  {rank:5,   name:"Captain",    count:4},
+  {rank:6,   name:"Lieutenant", count:4},
+  {rank:7,   name:"Sergeant",   count:4},
+  {rank:8,   name:"Miner",      count:5},
+  {rank:9,   name:"Scout",      count:8},
+  {rank:"S", name:"Spy",        count:1},
+  {rank:"B", name:"Bomb",       count:6},
+  {rank:"F", name:"Flag",       count:1}
+];
+var NAME = {}; ARMY.forEach(function(a){ NAME[a.rank] = a.name; });
+
+/* Rough worth of each piece, used by the bot and by nothing else. The Miner is
+   dear because five of them are all that stand between you and six Bombs. */
+var VALUE = {1:40, 2:30, 3:18, 4:12, 5:8, 6:6, 7:4, 8:11, 9:3, S:12, B:6, F:1000};
+
+function isImmobile(r){ return r === "B" || r === "F"; }
+function isMobile(r){ return r != null && !isImmobile(r); }
+
+/* ---------- combat ----------
+   Returns 'attacker' | 'defender' | 'both' | 'flag'.
+   The three rules everyone forgets: only a Miner survives a Bomb; the Spy kills
+   the Marshal ONLY on the attack; a defending Spy dies to absolutely anything. */
+function resolve(a, d){
+  if(d === "F") return "flag";
+  if(d === "B") return a === 8 ? "attacker" : "defender";
+  if(d === "S") return "attacker";
+  if(a === "S") return d === 1 ? "attacker" : "defender";
+  if(a === d)   return "both";
+  return a < d ? "attacker" : "defender";
+}
+
+/* ---------- state ---------- */
+function newState(){
+  return {
+    b: new Array(SIZE).fill(null),   // index -> piece id
+    p: {},                           // id -> piece
+    nextId: 1,
+    turn: "red",
+    phase: "setup",
+    winner: null,
+    reason: null,
+    moveNo: 0,
+    quiet: 0,                        // moves since the last combat
+    last: null                       // last move, for board highlighting
+  };
+}
+
+function addPiece(st, side, rank, at){
+  var id = st.nextId++;
+  var pc = { id:id, side:side, rank:rank, at:at, moved:false,
+             seen:{red:false, blue:false}, sh:null };
+  st.p[id] = pc; st.b[at] = id;
+  return pc;
+}
+function pieceAt(st, i){ var id = st.b[i]; return id == null ? null : st.p[id]; }
+
+/* Home rows. Red is the near army (rows 6-9), blue the far one (rows 0-3). */
+function homeRows(side){ return side === "red" ? [6,7,8,9] : [0,1,2,3]; }
+function isHome(side, i){ var r = rowOf(i); return side === "red" ? r >= 6 : r <= 3; }
+
+/* ---------- movement ---------- */
+function stepsFrom(i){
+  var out = [], c = colOf(i);
+  if(i - N >= 0)   out.push(i - N);
+  if(i + N < SIZE) out.push(i + N);
+  if(c > 0)        out.push(i - 1);
+  if(c < N - 1)    out.push(i + 1);
+  return out;
+}
+
+/* The two-squares rule: a piece may not shuttle between the same pair of squares
+   a fourth consecutive time. Without it a losing bot just rocks back and forth
+   forever and the game never ends. */
+function shuttleBlocked(pc, from, to){
+  var s = pc.sh;
+  if(!s) return false;
+  var same = (s.a === from && s.b === to) || (s.a === to && s.b === from);
+  return same && s.n >= 3;
+}
+function noteShuttle(pc, from, to){
+  var s = pc.sh;
+  if(s && ((s.a === from && s.b === to) || (s.a === to && s.b === from))) s.n++;
+  else pc.sh = {a:from, b:to, n:1};
+}
+
+/* Legal destinations for the piece sitting on `i`. Works on a redacted view too:
+   it only ever needs the MOVER's rank, which its owner always knows. */
+function movesFrom(st, i){
+  var pc = pieceAt(st, i);
+  if(!pc || !isMobile(pc.rank)) return [];
+  var out = [], k, j;
+
+  if(pc.rank === 9){
+    // Scout: any distance down an open line, and it may strike at the end of the run.
+    var dirs = [-N, N, -1, 1];
+    for(k = 0; k < 4; k++){
+      var d = dirs[k], prev = i;
+      for(j = i + d; onBoard(j); j += d){
+        if((d === -1 || d === 1) && rowOf(j) !== rowOf(prev)) break;  // don't wrap the row
+        if(isLake(j)) break;
+        var occ = pieceAt(st, j);
+        if(occ){ if(occ.side !== pc.side && !shuttleBlocked(pc, i, j)) out.push(j); break; }
+        if(!shuttleBlocked(pc, i, j)) out.push(j);
+        prev = j;
+      }
+    }
+    return out;
+  }
+
+  var st1 = stepsFrom(i);
+  for(k = 0; k < st1.length; k++){
+    j = st1[k];
+    if(isLake(j)) continue;
+    var o = pieceAt(st, j);
+    if(o && o.side === pc.side) continue;
+    if(shuttleBlocked(pc, i, j)) continue;
+    out.push(j);
+  }
+  return out;
+}
+
+function legalMoves(st, side){
+  var out = [];
+  for(var i = 0; i < SIZE; i++){
+    var pc = pieceAt(st, i);
+    if(!pc || pc.side !== side) continue;
+    var ds = movesFrom(st, i);
+    for(var k = 0; k < ds.length; k++) out.push({from:i, to:ds[k]});
+  }
+  return out;
+}
+
+/* ---------- applying a move ---------- */
+function removePiece(st, pc){ if(st.b[pc.at] === pc.id) st.b[pc.at] = null; pc.at = -1; pc.dead = true; }
+
+function applyMove(st, mv){
+  var from = mv.from, to = mv.to;
+  var a = pieceAt(st, from);
+  if(!a) throw new Error("no piece on " + from);
+  if(a.side !== st.turn) throw new Error("not " + a.side + "'s turn");
+  if(movesFrom(st, from).indexOf(to) < 0) throw new Error("illegal move " + from + "->" + to);
+
+  var d = pieceAt(st, to);
+  var ev = { from:from, to:to, side:a.side, aRank:a.rank, attack:false,
+             dRank:null, outcome:null, dist:Math.max(Math.abs(rowOf(to)-rowOf(from)), Math.abs(colOf(to)-colOf(from))) };
+
+  noteShuttle(a, from, to);
+  a.moved = true;
+  /* A piece that travels more than one square can only be a Scout, so its rank
+     is public the moment it does it. Same information the table gets. */
+  if(ev.dist > 1){ a.seen.red = true; a.seen.blue = true; }
+
+  if(!d){
+    st.b[from] = null; st.b[to] = a.id; a.at = to;
+    st.quiet++;
+  } else {
+    ev.attack = true; ev.dRank = d.rank;
+    var r = resolve(a.rank, d.rank);
+    ev.outcome = r;
+    st.quiet = 0;
+    /* Both sides watch the fight, so both ranks are on the table afterwards. */
+    a.seen.red = a.seen.blue = true;
+    d.seen.red = d.seen.blue = true;
+
+    if(r === "flag"){
+      removePiece(st, d);
+      st.b[from] = null; st.b[to] = a.id; a.at = to;
+      st.phase = "over"; st.winner = a.side; st.reason = "flag";
+    } else if(r === "attacker"){
+      removePiece(st, d);
+      st.b[from] = null; st.b[to] = a.id; a.at = to;
+    } else if(r === "defender"){
+      removePiece(st, a);
+      st.b[from] = null;
+    } else { // both
+      removePiece(st, d); removePiece(st, a);
+      st.b[from] = null; st.b[to] = null;
+    }
+  }
+
+  st.moveNo++;
+  st.last = ev;
+
+  if(st.phase !== "over"){
+    st.turn = a.side === "red" ? "blue" : "red";
+    /* An army that cannot move has lost — this is a real Stratego win condition,
+       not a technicality: bomb yourself in and you lose. */
+    if(legalMoves(st, st.turn).length === 0){
+      st.phase = "over"; st.winner = a.side; st.reason = "immobile";
+    } else if(st.quiet > 400){
+      st.phase = "over"; st.winner = null; st.reason = "stalemate";
+    }
+  }
+  return ev;
+}
+
+/* ---------- the redacted view ----------
+   This is the seam the two-phone mode will use. What comes out is a real,
+   playable state object in which enemy ranks that `side` has not earned are
+   simply absent — not hidden behind a flag, ABSENT. Nothing downstream can
+   cheat by accident, and the soak test asserts it. */
+function redact(st, side){
+  var v = { b: st.b.slice(), p: {}, nextId: st.nextId, turn: st.turn, phase: st.phase,
+            winner: st.winner, reason: st.reason, moveNo: st.moveNo, quiet: st.quiet, last: st.last };
+  for(var id in st.p){
+    var o = st.p[id];
+    var known = (o.side === side) || o.seen[side];
+    v.p[id] = { id:o.id, side:o.side, rank: known ? o.rank : null, at:o.at,
+                moved:o.moved, dead:!!o.dead, seen:{red:o.seen.red, blue:o.seen.blue},
+                sh: o.sh ? {a:o.sh.a, b:o.sh.b, n:o.sh.n} : null, known:known };
+  }
+  return v;
+}
+
+/* ---------- setups ----------
+   Deliberately NOT the setup everyone builds. A flag jammed in a back corner
+   behind four bombs is the most-attacked square in the game, so these put it
+   in varied files, sometimes off the back row, with a modest bomb screen and
+   one or two decoy bomb clusters elsewhere. */
+function mulberry(seed){
+  var t = seed >>> 0;
+  return function(){
+    t += 0x6D2B79F5; var r = t;
+    r = Math.imul(r ^ (r >>> 15), r | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rnd){
+  for(var i = arr.length - 1; i > 0; i--){
+    var j = (rnd() * (i + 1)) | 0, t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+/* Build a 40-slot layout for `side`. Returns an index->rank map. */
+function makeSetup(side, rnd){
+  rnd = rnd || Math.random;
+  var rows = homeRows(side);                 // red: 6..9 (9 is its back row)
+  var back = side === "red" ? rows[3] : rows[0];
+  var r2   = side === "red" ? rows[2] : rows[1];
+  var r3   = side === "red" ? rows[1] : rows[2];
+  var front= side === "red" ? rows[0] : rows[3];
+
+  var cells = {}; // idx -> rank
+  var free = [];
+  rows.forEach(function(r){ for(var c = 0; c < N; c++) free.push(r * N + c); });
+  function take(i){ var k = free.indexOf(i); if(k >= 0) free.splice(k, 1); return i; }
+  function neighbours(i){
+    var out = [], c = colOf(i);
+    var cand = [i - N, i + N, c > 0 ? i - 1 : -1, c < N - 1 ? i + 1 : -1];
+    for(var k = 0; k < 4; k++){ var j = cand[k]; if(j >= 0 && free.indexOf(j) >= 0) out.push(j); }
+    return out;
+  }
+
+  // --- flag: any file, usually the back row, occasionally one row up ---
+  var flagCol = (rnd() * N) | 0;
+  var flagRow = rnd() < 0.78 ? back : r2;
+  var flagAt = flagRow * N + flagCol;
+  cells[flagAt] = "F"; take(flagAt);
+
+  // --- bomb screen: 2 or 3 bombs touching the flag, never a full box ---
+  var bombsLeft = 6;
+  var screen = shuffle(neighbours(flagAt), rnd).slice(0, rnd() < 0.5 ? 2 : 3);
+  screen.forEach(function(i){ cells[i] = "B"; take(i); bombsLeft--; });
+
+  // --- decoy bombs: somewhere else entirely, to punish a corner rush ---
+  var decoySpots = free.filter(function(i){ return rowOf(i) !== front; });
+  shuffle(decoySpots, rnd).slice(0, bombsLeft).forEach(function(i){ cells[i] = "B"; take(i); bombsLeft--; });
+
+  // --- everything that moves ---
+  var movers = [];
+  ARMY.forEach(function(a){
+    if(a.rank === "B" || a.rank === "F") return;
+    for(var k = 0; k < a.count; k++) movers.push(a.rank);
+  });
+
+  // Scouts want the front rows; the Marshal and General want to be reachable but
+  // not on the front line; the Spy likes to loiter near the Marshal.
+  var byRow = {}; rows.forEach(function(r){ byRow[r] = free.filter(function(i){ return rowOf(i) === r; }); });
+  shuffle(byRow[front], rnd); shuffle(byRow[r3], rnd); shuffle(byRow[r2], rnd); shuffle(byRow[back], rnd);
+
+  function place(rank, pool){
+    for(var k = 0; k < pool.length; k++){
+      var i = pool[k];
+      if(free.indexOf(i) >= 0){ cells[i] = rank; take(i); pool.splice(k, 1); return i; }
+    }
+    return null;
+  }
+  var scouts = movers.filter(function(r){ return r === 9; }).length;
+  var s;
+  for(s = 0; s < scouts; s++) place(9, rnd() < 0.62 ? byRow[front] : byRow[r3]);
+  var marshalAt = place(1, rnd() < 0.5 ? byRow[r3] : byRow[r2]);
+  place(2, rnd() < 0.5 ? byRow[r2] : byRow[r3]);
+  // Spy: adjacent to the Marshal if there's room, otherwise mid-board.
+  var spyPool = marshalAt == null ? byRow[r2] : shuffle(neighbours(marshalAt), rnd).concat(byRow[r2]);
+  place("S", spyPool);
+  for(s = 0; s < 5; s++) place(8, rnd() < 0.5 ? byRow[r3] : byRow[r2]);   // Miners, kept back-ish
+
+  var rest = movers.filter(function(r){ return r !== 9 && r !== 1 && r !== 2 && r !== "S" && r !== 8; });
+  shuffle(rest, rnd);
+  var remaining = shuffle(free.slice(), rnd);
+  for(s = 0; s < rest.length && s < remaining.length; s++){ cells[remaining[s]] = rest[s]; }
+  // Anything still unplaced (shouldn't happen, but never ship a setup with a hole)
+  var used = Object.keys(cells).length;
+  if(used < 40){
+    var leftover = [];
+    ARMY.forEach(function(a){
+      var have = 0;
+      for(var i in cells) if(cells[i] === a.rank) have++;
+      for(var k = have; k < a.count; k++) leftover.push(a.rank);
+    });
+    rows.forEach(function(r){ for(var c = 0; c < N; c++){ var i = r * N + c;
+      if(cells[i] === undefined && leftover.length) cells[i] = leftover.pop(); } });
+  }
+  return cells;
+}
+
+function applySetup(st, side, cells){
+  for(var i in cells) addPiece(st, side, cells[i], parseInt(i, 10));
+}
+
+/* Is a hand-built layout complete and legal? */
+function validateSetup(cells, side){
+  var counts = {}, n = 0;
+  for(var i in cells){
+    var idx = parseInt(i, 10);
+    if(!isHome(side, idx)) return "a piece is outside your rows";
+    counts[cells[i]] = (counts[cells[i]] || 0) + 1; n++;
+  }
+  if(n !== 40) return "you still have " + (40 - n) + " to place";
+  for(var k = 0; k < ARMY.length; k++){
+    var a = ARMY[k];
+    if((counts[a.rank] || 0) !== a.count) return "wrong number of " + a.name + "s";
+  }
+  return null;
+}
+
+global.STRAT = {
+  N:N, SIZE:SIZE, ARMY:ARMY, NAME:NAME, VALUE:VALUE, LAKE:LAKE,
+  isLake:isLake, rowOf:rowOf, colOf:colOf, isImmobile:isImmobile, isMobile:isMobile,
+  resolve:resolve, newState:newState, addPiece:addPiece, pieceAt:pieceAt,
+  homeRows:homeRows, isHome:isHome, movesFrom:movesFrom, legalMoves:legalMoves,
+  applyMove:applyMove, redact:redact, makeSetup:makeSetup, applySetup:applySetup,
+  validateSetup:validateSetup, mulberry:mulberry, shuffle:shuffle
+};
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+
+<!-- ==========================================================================
+     THE BOT — plays from a REDACTED view and nothing else.
+     It never receives an unseen rank, so it cannot cheat even by mistake; the
+     soak test hands it a redacted view and asserts no hidden rank is present.
+     What it does instead is what a person does: narrow down what each enemy
+     piece can still be, price every attack, and remember that a piece which has
+     never moved is probably a Bomb or the Flag.
+     ========================================================================== -->
+<script>
+(function(global){
+"use strict";
+var S = global.STRAT;
+var N = S.N, SIZE = S.SIZE, VALUE = S.VALUE;
+
+function other(side){ return side === "red" ? "blue" : "red"; }
+
+/* ---------- what can this piece still be? ----------
+   Start from the full army, subtract every enemy rank already accounted for
+   (dead pieces and survivors of fights are both public), and spread what's left
+   over the pieces we still can't name. */
+function beliefs(view, me){
+  var foe = other(me);
+  var pool = {};
+  S.ARMY.forEach(function(a){ pool[a.rank] = a.count; });
+
+  var unknown = [];
+  for(var id in view.p){
+    var p = view.p[id];
+    if(p.side !== foe) continue;
+    if(p.rank != null) pool[p.rank]--;          // dead or already shown to us
+    else if(!p.dead) unknown.push(p);
+  }
+
+  /* How much the game has run on. The longer a piece sits perfectly still while
+     everything around it moves, the louder it is saying Bomb — or Flag. */
+  var age = Math.min(view.moveNo / 40, 3);
+  var out = {};
+  unknown.forEach(function(p){
+    var w = {}, total = 0;
+    var deepRow = me === "red" ? (S.rowOf(p.at) <= 1) : (S.rowOf(p.at) >= 8);
+    for(var r in pool){
+      var n = pool[r]; if(n <= 0) continue;
+      var key = isNaN(+r) ? r : +r, k = 1;
+      if(S.isImmobile(key)){
+        /* A piece that has moved is not a Bomb and not the Flag — the single
+           most reliable read in the game, and it's free. */
+        if(p.moved) continue;
+        k = (1 + age * 1.4) * (deepRow ? 1.6 : 0.95);
+        if(key === "F") k *= deepRow ? 1.5 : 0.4;
+      } else if(!p.moved){
+        k = Math.max(0.2, 1 - view.moveNo / 90);  // it can move, so why hasn't it?
+      }
+      w[key] = n * k; total += n * k;
+    }
+    if(total <= 0){ w = {}; for(var r2 in pool) if(pool[r2] > 0){ w[isNaN(+r2)?r2:+r2] = pool[r2]; total += pool[r2]; } }
+    var dist = {};
+    for(var kk in w) dist[kk] = w[kk] / total;
+    out[p.id] = dist;
+  });
+  return {dist: out, pool: pool};
+}
+
+/* Expected value of throwing `aRank` at a defender we may or may not know. */
+function attackEV(aRank, def, bel){
+  function gain(d){
+    var r = S.resolve(aRank, d);
+    if(r === "flag")     return 100000;
+    if(r === "attacker") return (VALUE[d] || 5);
+    if(r === "defender") return -(VALUE[aRank] || 5);
+    return (VALUE[d] || 5) - (VALUE[aRank] || 5);
+  }
+  if(def.rank != null) return gain(def.rank);
+  var dist = bel.dist[def.id];
+  if(!dist) return -2;
+  var ev = 0;
+  for(var r in dist){ var key = isNaN(+r) ? r : +r; ev += dist[r] * gain(key); }
+  return ev;
+}
+
+/* Could the enemy take this square next move with something we KNOW beats us?
+   One ply, known ranks only — cheap, and it stops the bot walking its Marshal
+   onto a revealed General. */
+function capturableBy(view, sq, myRank, me){
+  var foe = other(me), worst = 0;
+  for(var i = 0; i < SIZE; i++){
+    var e = S.pieceAt(view, i);
+    if(!e || e.side !== foe || e.rank == null || !S.isMobile(e.rank)) continue;
+    if(S.movesFrom(view, i).indexOf(sq) < 0) continue;
+    var r = S.resolve(e.rank, myRank);
+    if(r === "attacker") worst = Math.max(worst, VALUE[myRank] || 5);
+    else if(r === "both") worst = Math.max(worst, (VALUE[myRank] || 5) * 0.5);
+  }
+  return worst;
+}
+
+/* A never-moved piece deep in their territory, hemmed in by other never-moved
+   pieces, is either a Bomb or the thing the Bombs are there to protect. */
+function flagSuspicion(view, p, me){
+  if(p.moved || p.rank != null) return 0;
+  var row = S.rowOf(p.at);
+  var deep = me === "red" ? (3 - row) : (row - 6);
+  if(deep < 0) return 0;
+  var s = 1 + deep * 0.8;
+  var c = S.colOf(p.at), still = 0;
+  [p.at - N, p.at + N, c > 0 ? p.at - 1 : -1, c < N - 1 ? p.at + 1 : -1].forEach(function(j){
+    if(j < 0 || j >= SIZE) return;
+    var q = S.pieceAt(view, j);
+    if(q && q.side === p.side && !q.moved) still++;
+  });
+  return s * (1 + still * 0.55);
+}
+
+function manhattan(a, b){
+  return Math.abs(S.rowOf(a) - S.rowOf(b)) + Math.abs(S.colOf(a) - S.colOf(b));
+}
+/* Where is their <rank>, if they've already shown it to us? -1 if they haven't. */
+function knownAt(view, side, rank){
+  for(var id in view.p){
+    var p = view.p[id];
+    if(p.side === side && !p.dead && p.rank === rank) return p.at;
+  }
+  return -1;
+}
+
+function create(side, level){
+  var easy = level === "easy";
+  var recent = [];   // ids we've pushed lately, so one piece doesn't do all the work
+
+  function move(view){
+    var moves = S.legalMoves(view, side);
+    if(!moves.length) return null;
+    if(easy && Math.random() < 0.35) return moves[(Math.random() * moves.length) | 0];
+
+    var bel = beliefs(view, side);
+    var forward = side === "red" ? -1 : 1;   // red marches up the board
+    var best = null, bestScore = -Infinity;
+
+    for(var k = 0; k < moves.length; k++){
+      var mv = moves[k];
+      var me = S.pieceAt(view, mv.from);
+      var target = S.pieceAt(view, mv.to);
+      var sc = 0;
+
+      if(target){
+        sc = attackEV(me.rank, target, bel);
+        /* Bombs and flags don't come to you. Cheap pieces should go knocking. */
+        var susp = flagSuspicion(view, target, side);
+        if(susp > 0){
+          if(me.rank === 8)       sc += susp * 9;    // a Miner has business here
+          else if(me.rank === 9)  sc += susp * 2.2;  // a Scout is worth spending to find out
+          else if((VALUE[me.rank] || 5) > 10) sc -= susp * 3;  // don't feed the Marshal to a Bomb
+        }
+        /* A piece that has sat perfectly still all game is a Bomb until proven
+           otherwise. Send a Miner or a Scout; do not send the Marshal. */
+        if(target.rank == null && !target.moved && me.rank !== 8 && me.rank !== 9){
+          sc -= 3 + (VALUE[me.rank] || 5) * 0.28;
+        }
+        if(!easy && me.rank === "S" && target.rank === 1) sc += 60;   // the shot you wait all game for
+      } else {
+        /* Quiet moves: press forward, keep the line broad, stay out of trouble. */
+        var dr = (S.rowOf(mv.to) - S.rowOf(mv.from)) * forward;
+        sc = dr * 1.25;
+        if(me.rank === 9) sc += Math.min(mv_dist(mv), 3) * 0.45;      // scouts should cover ground
+        if(me.rank === 1 || me.rank === 2) sc -= 0.8;                 // the big pieces wait
+        if(me.rank === "S"){
+          /* Once their Marshal has shown itself the Spy has a job: get near it
+             and wait. It is the only piece on the board that wants to. */
+          var mar = knownAt(view, other(side), 1);
+          if(mar >= 0 && !easy) sc += (manhattan(mv.from, mar) - manhattan(mv.to, mar)) * 3.4;
+          else sc -= 1.4;
+        }
+        var cols = Math.abs(S.colOf(mv.to) - 4.5);
+        sc -= cols * 0.05;
+        sc += (Math.random() - 0.5) * (easy ? 2.2 : 0.8);
+      }
+
+      /* Don't step onto a square something we've already identified can take. */
+      var risk = capturableBy(view, mv.to, me.rank, side);
+      sc -= risk * 0.75;
+      /* And unknown neighbours are a risk too, just a vaguer one. */
+      if(!target && (VALUE[me.rank] || 5) >= 12){
+        var c = S.colOf(mv.to), near = 0;
+        [mv.to - N, mv.to + N, c > 0 ? mv.to - 1 : -1, c < N - 1 ? mv.to + 1 : -1].forEach(function(j){
+          if(j < 0 || j >= SIZE) return;
+          var q = S.pieceAt(view, j);
+          if(q && q.side !== side && q.rank == null && q.moved) near++;
+        });
+        sc -= near * 2.2;
+      }
+      if(recent.indexOf(me.id) >= 0) sc -= 1.6;
+
+      if(sc > bestScore){ bestScore = sc; best = mv; }
+    }
+
+    /* Hold the line rather than throw a piece away for nothing — but never sit
+       still if sitting still is all that's left. */
+    if(best){
+      var mover = S.pieceAt(view, best.from);
+      recent.unshift(mover.id); if(recent.length > 3) recent.pop();
+    }
+    return best || moves[(Math.random() * moves.length) | 0];
+  }
+
+  function mv_dist(mv){
+    return Math.max(Math.abs(S.rowOf(mv.to) - S.rowOf(mv.from)), Math.abs(S.colOf(mv.to) - S.colOf(mv.from)));
+  }
+
+  return { side:side, level:level, move:move };
+}
+
+global.STRATAI = { create:create, beliefs:beliefs, attackEV:attackEV, flagSuspicion:flagSuspicion };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+
+<!-- ==========================================================================
+     UI — the only block that touches the DOM.
+     Nothing here knows the rules; nothing in the engine or the bot knows this
+     exists. That separation is what lets the two-phone mode drop in later as
+     just another thing that produces moves.
+     ========================================================================== -->
+<script src="../sfx.js"></script>
+<script>
+(function(){
+"use strict";
+var S = window.STRAT, AI = window.STRATAI;
+// shared sound layer; a missing SFX is a no-op so the page never depends on it
+function sfx(n){ if(window.SFX) SFX.play(n); }
+var ME = "red", FOE = "blue";
+
+var $ = function(id){ return document.getElementById(id); };
+var boardEl = $("board"), logEl = $("log"), statusEl = $("status"), strikeEl = $("strike");
+
+var G = {
+  st: null, ai: null, sel: null, opts: {opp:"normal", setup:"auto", mem:"on"},
+  phase: "deal", place: {cells:{}, pick:null}, busy: false, reveal: false
+};
+
+/* ---------- little helpers ---------- */
+function label(rank){
+  if(rank === "B") return "💣";
+  if(rank === "F") return "🚩";
+  if(rank === "S") return "S";
+  return String(rank);
+}
+function rankName(rank){ return S.NAME[rank] || String(rank); }
+function tilt(id){ return (((id * 37) % 5) - 2) * 0.9; }
+
+function setSeg(segId, val, key){
+  var seg = $(segId);
+  Array.prototype.forEach.call(seg.children, function(b){ b.classList.toggle("on", b.dataset.v === val); });
+  G.opts[key] = val;
+}
+function wireSeg(segId, key){
+  var seg = $(segId);
+  seg.addEventListener("click", function(e){
+    var b = e.target.closest("button"); if(!b) return;
+    setSeg(segId, b.dataset.v, key);
+  });
+}
+wireSeg("oppSeg", "opp"); wireSeg("setupSeg", "setup"); wireSeg("memSeg", "mem");
+
+function show(el, on){ el.classList.toggle("hide", !on); }
+function say(txt, who){
+  statusEl.innerHTML = '<span class="dot ' + (who || "red") + '"></span><span class="txt">' + txt + "</span>";
+}
+function logLine(txt, key){
+  var d = document.createElement("div");
+  if(key) d.className = "k";
+  d.textContent = txt;
+  logEl.insertBefore(d, logEl.firstChild);
+}
+
+/* ---------- the ranks card ---------- */
+(function(){
+  var rows = S.ARMY.map(function(a){
+    var note = {
+      1:"Beaten only by the Spy, and only when the Spy strikes first.",
+      8:"The only piece that survives a Bomb.",
+      9:"Moves any distance in a line. Your eyes.",
+      S:"Kills the Marshal on the attack. Dies to anything on defence.",
+      B:"Never moves. Kills all but the Miner.",
+      F:"Never moves. Lose it and you lose."
+    }[a.rank] || "";
+    return "<tr><td>" + label(a.rank) + "</td><td>" + a.name + " &times;" + a.count +
+           "</td><td>" + note + "</td></tr>";
+  }).join("");
+  $("refTable").innerHTML = rows;
+})();
+$("helpBtn").onclick = function(){ $("helpModal").classList.add("show"); };
+$("helpClose").onclick = function(){ $("helpModal").classList.remove("show"); };
+
+/* ---------- board rendering ---------- */
+var squares = [];
+(function buildBoard(){
+  for(var i = 0; i < S.SIZE; i++){
+    var d = document.createElement("div");
+    d.className = "sq" + (S.isLake(i) ? " lake" : (((S.rowOf(i) + S.colOf(i)) % 2) ? " alt" : ""));
+    d.dataset.i = i;
+    boardEl.appendChild(d); squares.push(d);
+  }
+  boardEl.addEventListener("click", onSquare);
+})();
+
+function render(){
+  var st = G.st;
+  var legal = (G.sel != null && st) ? S.movesFrom(st, G.sel) : [];
+  for(var i = 0; i < S.SIZE; i++){
+    var sq = squares[i];
+    sq.className = "sq" + (S.isLake(i) ? " lake" : (((S.rowOf(i) + S.colOf(i)) % 2) ? " alt" : ""));
+    sq.innerHTML = "";
+
+    if(G.phase === "place"){
+      var r = G.place.cells[i];
+      if(S.isHome(ME, i)) sq.classList.add("place");
+      if(r !== undefined) sq.appendChild(pieceEl({side:ME, rank:r, id:i}, true));
+      continue;
+    }
+    if(!st) continue;
+
+    var pc = S.pieceAt(st, i);
+    if(pc) sq.appendChild(pieceEl(pc, pc.side === ME || G.reveal || (G.opts.mem === "on" && pc.seen[ME])));
+    if(G.sel === i) sq.classList.add("sel");
+    if(legal.indexOf(i) >= 0) sq.classList.add(S.pieceAt(st, i) ? "hit" : "move");
+    if(st.last && !G.reveal){
+      if(st.last.from === i) sq.classList.add("from");
+      if(st.last.to === i && st.last.side === FOE) sq.classList.add("from");
+    }
+  }
+  renderCaps();
+}
+
+function pieceEl(pc, faceUp){
+  var d = document.createElement("div");
+  d.className = "pc " + pc.side + (faceUp ? "" : " hidden") +
+    (faceUp && pc.side === FOE ? " known" : "");
+  if(faceUp){
+    var s = document.createElement("div");
+    s.className = "st";
+    s.textContent = label(pc.rank);
+    s.style.transform = "rotate(" + tilt(pc.id || 1) + "deg)";
+    d.appendChild(s);
+  }
+  return d;
+}
+
+function renderCaps(){
+  if(!G.st) return;
+  var lost = {red:[], blue:[]};
+  for(var id in G.st.p){
+    var p = G.st.p[id];
+    if(p.dead) lost[p.side].push(p.rank);
+  }
+  function fill(el, side){
+    var order = {1:1,2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,S:10,B:11,F:12};
+    lost[side].sort(function(a, b){ return order[a] - order[b]; });
+    el.innerHTML = lost[side].map(function(r){
+      return '<div class="cap ' + side + '">' + label(r) + "</div>";
+    }).join("");
+  }
+  fill($("capRed"), "red"); fill($("capBlue"), "blue");
+}
+
+/* ---------- the strike banner ---------- */
+function showStrike(ev){
+  if(!ev.attack){ strikeEl.classList.remove("show"); return; }
+  var att = ev.side, def = att === "red" ? "blue" : "red";
+  var txt;
+  if(ev.outcome === "flag")          txt = "<b>The flag.</b> " + (att === ME ? "You found it." : "They found yours.");
+  else if(ev.outcome === "attacker") txt = "<b>" + rankName(ev.aRank) + "</b> takes " + rankName(ev.dRank) + ".";
+  else if(ev.outcome === "defender") txt = "<b>" + rankName(ev.dRank) + "</b> holds — " + rankName(ev.aRank) + " is lost.";
+  else                               txt = "Two " + rankName(ev.aRank) + "s. <b>Both gone.</b>";
+  strikeEl.innerHTML =
+    '<div class="mini ' + att + '"><div class="st">' + label(ev.aRank) + "</div></div>" +
+    '<div class="vs">VS</div>' +
+    '<div class="mini ' + def + '"><div class="st">' + label(ev.dRank) + "</div></div>" +
+    '<div class="out">' + txt + "</div>";
+  strikeEl.classList.add("show");
+  // A trade you won and a trade you lost should not sound the same. The flag is the
+  // end of the game, so it stays quiet here and finish() plays the result.
+  if(ev.outcome === "flag")          sfx("turn");
+  else if(ev.outcome === "both")     sfx("flip");
+  else if((ev.outcome === "attacker") === (att === ME)) sfx("good");
+  else                               sfx("bad");
+  var who = att === ME ? "You" : "They";
+  logLine(who + ": " + rankName(ev.aRank) + " → " + rankName(ev.dRank) + " · " +
+    (ev.outcome === "both" ? "both lost" :
+     ev.outcome === "flag" ? "FLAG" :
+     ev.outcome === "attacker" ? rankName(ev.dRank) + " lost" : rankName(ev.aRank) + " lost"), true);
+}
+
+/* ---------- clicks ---------- */
+function onSquare(e){
+  var t = e.target.closest(".sq"); if(!t) return;
+  var i = +t.dataset.i;
+  if(G.phase === "place") return placeClick(i);
+  if(G.phase !== "play" || G.busy) return;
+
+  var st = G.st;
+  var pc = S.pieceAt(st, i);
+  if(G.sel != null && S.movesFrom(st, G.sel).indexOf(i) >= 0) return doMove(G.sel, i);
+  if(pc && pc.side === ME && S.isMobile(pc.rank)){
+    G.sel = (G.sel === i ? null : i); if(G.sel != null) sfx("select"); render(); return;
+  }
+  if(pc && pc.side === ME){
+    sfx("illegal");
+    say(rankName(pc.rank) + " never moves.", "red");
+    G.sel = null; render(); return;
+  }
+  G.sel = null; render();
+}
+
+function doMove(from, to){
+  var ev;
+  try { ev = S.applyMove(G.st, {from:from, to:to}); }
+  catch(err){ G.sel = null; render(); return; }
+  G.sel = null;
+  if(!ev.attack) sfx("place");
+  showStrike(ev);
+  render();
+  if(G.st.phase === "over") return finish();
+  say("They're thinking…", "blue");
+  G.busy = true;
+  setTimeout(aiTurn, 520);
+}
+
+function aiTurn(){
+  if(G.st.phase === "over"){ G.busy = false; return finish(); }
+  var view = S.redact(G.st, FOE);
+  var mv = G.ai.move(view);
+  if(!mv){ G.st.phase = "over"; G.st.winner = ME; G.st.reason = "immobile"; G.busy = false; return finish(); }
+  var ev = S.applyMove(G.st, mv);
+  if(!ev.attack) sfx("place");
+  showStrike(ev);
+  render();
+  G.busy = false;
+  if(G.st.phase === "over") return finish();
+  say("Your move.", "red");
+}
+
+/* ---------- placement ---------- */
+function remaining(){
+  var left = {};
+  S.ARMY.forEach(function(a){ left[a.rank] = a.count; });
+  for(var i in G.place.cells) left[G.place.cells[i]]--;
+  return left;
+}
+function renderTray(){
+  var left = remaining(), html = "";
+  S.ARMY.forEach(function(a){
+    var n = left[a.rank];
+    html += '<div class="tp ' + ME + (n <= 0 ? " spent" : "") + (G.place.pick === String(a.rank) ? " sel" : "") +
+            '" data-r="' + a.rank + '" title="' + a.name + '">' +
+            '<div class="st">' + label(a.rank) + "</div>" +
+            '<div class="n">' + Math.max(0, n) + "</div></div>";
+  });
+  $("tray").innerHTML = html;
+  var placed = 40 - Object.keys(left).reduce(function(s, k){ return s + Math.max(0, left[k]); }, 0);
+  $("placeHint").textContent = placed < 40
+    ? "Tap a piece, then a square in your four back rows. " + (40 - placed) + " left. Tap a placed piece to pick it up."
+    : "All forty placed. Tap Ready below the board when you like it.";
+  show($("readyBtn"), placed === 40);
+}
+$("tray").addEventListener("click", function(e){
+  var t = e.target.closest(".tp"); if(!t || t.classList.contains("spent")) return;
+  G.place.pick = (G.place.pick === t.dataset.r ? null : t.dataset.r);
+  renderTray();
+});
+function placeClick(i){
+  if(!S.isHome(ME, i)) return;
+  if(G.place.cells[i] !== undefined){
+    delete G.place.cells[i]; renderTray(); render(); return;
+  }
+  if(G.place.pick == null) return;
+  var left = remaining();
+  if(left[G.place.pick] <= 0) return;
+  G.place.cells[i] = G.place.pick;
+  sfx("place");
+  if(remaining()[G.place.pick] <= 0) G.place.pick = null;
+  renderTray(); render();
+}
+$("fillBtn").onclick = function(){
+  var full = S.makeSetup(ME, Math.random);
+  var left = remaining();
+  var need = [];
+  for(var r in left) for(var k = 0; k < left[r]; k++) need.push(r === "S" || r === "B" || r === "F" ? r : +r);
+  S.shuffle(need, Math.random);
+  var open = [];
+  S.homeRows(ME).forEach(function(row){
+    for(var c = 0; c < S.N; c++){ var i = row * S.N + c; if(G.place.cells[i] === undefined) open.push(i); }
+  });
+  /* Prefer the shape the generator picked where it doesn't collide, so a
+     half-finished hand-built setup still comes out sensible. */
+  S.shuffle(open, Math.random);
+  open.forEach(function(i){
+    if(!need.length) return;
+    var want = full[i];
+    var k = want !== undefined ? need.indexOf(want) : -1;
+    G.place.cells[i] = (k >= 0 ? need.splice(k, 1)[0] : need.pop());
+  });
+  G.place.pick = null; sfx("deal"); renderTray(); render();
+};
+$("clearBtn").onclick = function(){ G.place.cells = {}; G.place.pick = null; renderTray(); render(); };
+
+/* ---------- start / finish ---------- */
+$("startBtn").onclick = function(){
+  logEl.innerHTML = ""; strikeEl.classList.remove("show");
+  G.reveal = false; G.sel = null;
+  if(G.opts.setup === "manual"){
+    G.phase = "place"; G.place = {cells:{}, pick:null};
+    show($("setupPanel"), false); show($("placePanel"), true);
+    show($("boardWrap"), true); show($("postBoard"), true); show($("caps"), false);
+    show($("gameArea"), false); show($("readyBtn"), false); show(logEl, false);
+    renderTray(); render();
+  } else {
+    G.place = {cells: S.makeSetup(ME, Math.random), pick:null};
+    beginPreview();
+  }
+};
+function beginPreview(){
+  G.phase = "place";
+  show($("setupPanel"), false); show($("placePanel"), false);
+  show($("boardWrap"), true); show($("postBoard"), true); show($("readyBtn"), true);
+  show($("caps"), false); show($("gameArea"), false); show(logEl, false);
+  render();
+  $("readyBtn").textContent = "Ready — start playing";
+}
+$("readyBtn").onclick = function(){
+  var err = S.validateSetup(G.place.cells, ME);
+  if(err){ $("placeHint").textContent = "Not yet — " + err + "."; return; }
+  startGame();
+};
+function startGame(){
+  var st = S.newState();
+  S.applySetup(st, ME, G.place.cells);
+  S.applySetup(st, FOE, S.makeSetup(FOE, Math.random));
+  st.phase = "play"; st.turn = ME;
+  G.st = st;
+  G.ai = AI.create(FOE, G.opts.opp);
+  G.phase = "play"; G.sel = null; G.busy = false; G.reveal = false;
+  sfx("shuffle");
+  show($("placePanel"), false); show($("gameArea"), true);
+  show($("readyBtn"), false); show($("caps"), true); show(logEl, true);
+  say("Your move. Tap one of yours.", "red");
+  logLine("New game — " + (G.opts.opp === "easy" ? "Easy" : "Normal") + " opponent.", true);
+  render();
+}
+function finish(){
+  G.phase = "over"; G.busy = false;
+  var st = G.st, won = st.winner === ME;
+  var title, text;
+  if(st.reason === "stalemate"){
+    title = "STALEMATE"; text = "Four hundred moves without a shot fired. Nobody's flag fell.";
+  } else if(st.reason === "immobile"){
+    title = won ? "THEY'RE STUCK" : "YOU'RE STUCK";
+    text = (won ? "They have" : "You have") + " nothing left that can move. That's a loss in Stratego — bomb yourself in and the game is over.";
+  } else {
+    title = won ? "FLAG TAKEN" : "YOUR FLAG IS GONE";
+    text = won ? "You walked into it and it was the flag. Good hunting."
+               : "They found it. Look at where it was — that's the tell for next time.";
+  }
+  $("overTitle").textContent = title;
+  $("overText").textContent = text;
+  $("overModal").classList.add("show");
+  sfx(st.reason === "stalemate" ? "turn" : (won ? "win" : "lose"));
+  say(title, won ? "red" : "blue");
+  logLine(title, true);
+}
+$("againBtn").onclick = function(){
+  $("overModal").classList.remove("show");
+  G.st = null; G.phase = "deal"; G.reveal = false;
+  show($("setupPanel"), true); show($("placePanel"), false);
+  show($("boardWrap"), false); show($("postBoard"), false);
+  show($("gameArea"), false);
+};
+$("reviewBtn").onclick = function(){
+  $("overModal").classList.remove("show");
+  G.reveal = true; render();
+  say("Everything face up. Tap New game when you're done.", "blue");
+};
+$("newBtn").onclick = function(){ $("againBtn").onclick(); };
+
+/* ---------- service worker + build stamp ---------- */
+if("serviceWorker" in navigator){
+  addEventListener("load", function(){
+    navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){});
+  });
+}
+(function(){
+  var V = "v71", d = new Date(document.lastModified);
+  var when = isNaN(d) ? "" : d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  $("build").textContent = "build " + V + (when ? " · " + when : "");
+})();
+})();
+</script>
+</body>
+</html>
