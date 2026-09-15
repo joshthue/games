@@ -138,6 +138,13 @@ values a correct evaluator must. The betting engine was soaked over tens of thou
 hands asserting chips are conserved, no stack goes negative, every hand terminates, the
 pots always equal what was committed, and side-pot eligibility is properly nested.
 
+## Sound
+
+Sound comes from `../sfx.js`, the shared Game Night sound layer — synthesized with
+WebAudio, so there are no audio files to load and it works offline. The setting is stored
+once for the whole origin, so muting in any Game Night game mutes them all. iOS won't let
+a page make noise before the first touch, so the audio context waits for a gesture.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once

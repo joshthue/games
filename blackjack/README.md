@@ -36,6 +36,13 @@ game looks identical offline — this was the only file in the repo that reached
 the network, and on a plane it used to silently fall back to a system font. Don't
 replace it with a Google Fonts `<link>`.
 
+## Sound
+
+Sound comes from `../sfx.js`, the shared Game Night sound layer — synthesized with
+WebAudio, so there are no audio files to load and it works offline. The setting is stored
+once for the whole origin, so muting in any Game Night game mutes them all. iOS won't let
+a page make noise before the first touch, so the audio context waits for a gesture.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Home button (🏠)

@@ -124,6 +124,7 @@
 <div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
+<script src="../sfx.js"></script>
 <script>
 /* ============================================================
    THREE-CARD POKER — casino style vs the dealer.
@@ -219,6 +220,7 @@ function deal(){
   if(G.phase!=="bet") return;
   if(G.ante<MINBET || 2*G.ante+G.pairplus>G.bankroll) return;
   G.bankroll -= (G.ante+G.pairplus);
+  sfx('deal');
   G.deck=shuffle(makeDeck());
   G.player=[G.deck.pop(),G.deck.pop(),G.deck.pop()].sort((a,b)=>b.r-a.r);
   G.dealer=[G.deck.pop(),G.deck.pop(),G.deck.pop()].sort((a,b)=>b.r-a.r);
@@ -227,11 +229,14 @@ function deal(){
   setStatus(`You have ${handLabel(rank3(G.player))}. Play or fold?`);
   render();
 }
-function fold(){ if(G.phase!=="decide")return; resolve(false); }
+// Sound is best-effort: no sfx.js, no noise, no error.
+function sfx(n){ if(window.SFX) SFX.play(n); }
+function fold(){ if(G.phase!=="decide")return; sfx('flip'); resolve(false); }
 function play(){
   if(G.phase!=="decide")return;
   if(G.bankroll < G.ante) return;
   G.bankroll -= G.ante; G.playBet=G.ante;
+  sfx('chip');
   resolve(true);
 }
 
@@ -280,6 +285,7 @@ function finishResolve(){
   G.bankroll += ret;
   const staked = R.played ? (G.ante+G.playBet+G.pairplus) : (G.ante+G.pairplus);
   R.delta = ret - staked;     // net change this hand
+  sfx(R.outcome==="win"?'win':R.outcome==="lose"?'lose':'bad');
   setStatus(R.outcome==="win"?"You win this hand! 🎉":R.outcome==="lose"?"Dealer takes it.":R.outcome==="push"?"Push — bets returned.":"Hand over.");
   render();
 }
@@ -492,7 +498,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v67", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

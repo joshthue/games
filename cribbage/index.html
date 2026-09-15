@@ -169,6 +169,7 @@
 
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
+<script src="../sfx.js"></script>
 <script>
 /* ============================================================
    CRIBBAGE — engine + local (vs computer) + online (two phones)
@@ -256,7 +257,10 @@ function newGame(){
       countOrder:null, countIndex:0, winner:null, msg:"", log:[] };
   buildTicks(); startHand();
 }
+// Sound is best-effort: no sfx.js, no noise, no error.
+function sfx(n){ if(window.SFX) SFX.play(n); }
 function startHand(){
+  sfx('shuffle');
   G.crib=[];G.pile=[];G.pileHistory=[];G.count=0;G.starter=null;localSel=[];
   G.discarded=[false,false];G.lastPlayer=null;G.countIndex=0;G.countOrder=null;G.winner=null;
   const deck=shuffle(makeDeck());G.hands=[[],[]];
@@ -310,6 +314,7 @@ function applyDiscard(seat,keys){
   G.crib.push(...cards);
   G.hands[seat]=hand.filter(c=>!cards.includes(c));
   G.discarded[seat]=true;
+  sfx('flip');
   if(seat===meSeat()){ const own=G.dealer===seat; glog("play","You threw "+cards.map(cardHTMLc).join(" ")+" to "+(own?"your":"the other player's")+" crib, keeping "+G.hands[seat].map(cardHTMLc).join(" ")+"."); const best=bestDiscardSuggestion(hand,own), yourEv=expectedHand(G.hands[seat]); const same=best.keep.length===G.hands[seat].length && best.keep.every(bc=>G.hands[seat].some(kc=>cardKey(kc)===cardKey(bc))); if(same) glog("good","✓ Best keep — highest-average hand."); else if(best.ev-yourEv>=1) glog("warn","⚠ Keeping "+best.keep.map(cardHTMLc).join(" ")+" averages ~"+best.ev.toFixed(1)+" vs your ~"+yourEv.toFixed(1)+"."); else glog("info","Solid keep (~"+yourEv.toFixed(1)+" avg; best ~"+best.ev.toFixed(1)+")."); }
   if(G.discarded[0]&&G.discarded[1]) finishDiscards();
   else setStatus("Waiting for the other player to discard…");
@@ -382,6 +387,7 @@ function doPlay(p,idx){
   if(p===meSeat() && isHuman(p) && !net.online){ const h=G.hands[p]; let bp=0,bc=null; h.forEach(x=>{ if(G.count+pegVal(x.r)<=31){ const sp=scorePlay([...G.pile,x]); if(sp.pts>bp){bp=sp.pts;bc=x;} } }); _pc={bp:bp,bc:bc}; }
   const c=G.hands[p].splice(idx,1)[0];
   G.pile.push(c);G.pileHistory.push({c,p});
+  sfx('place');
   const sc=scorePlay(G.pile);G.count=sc.total;
   if(sc.pts>0)addScore(p,sc.pts);
   G.lastPlayer=p;
@@ -441,7 +447,9 @@ function uiNewGame(){
 }
 
 /* ---------- scoring / win ---------- */
-function addScore(p,pts){ if(pts<=0)return; G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&G.winner===null){G.winner=p;G.phase="gameover"; glog("sum","🏆 "+((!net.online&&p===0)?"You win the game":escC(playerName(p))+" wins")+" — "+G.scores[p]+" to "+G.scores[1-p]+".");} }
+function addScore(p,pts){ if(pts<=0)return;
+  sfx(p===meSeat() ? 'good' : 'select');
+  G.prevScores[p]=G.scores[p]; G.scores[p]=Math.min(121,G.scores[p]+pts); if(G.scores[p]>=121&&G.winner===null){G.winner=p;G.phase="gameover"; sfx(p===meSeat()?'win':'lose'); glog("sum","🏆 "+((!net.online&&p===0)?"You win the game":escC(playerName(p))+" wins")+" — "+G.scores[p]+" to "+G.scores[1-p]+".");} }
 
 /* ============================================================
    RENDER
@@ -904,7 +912,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v67", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

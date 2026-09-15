@@ -31,3 +31,4 @@ American mirrors real-poker rarity; English rewards how hard each hand is to bui
 - Header has 🏠 (→ `../`), Rules, Menu. Settings default: **tips off, four-color deck on**.
 - Build stamp `build vNN · <local time>` at the bottom (`V`/`ISO` consts) — bump with the `sw.js` cache version.
 - In-game asset refs point up one level (`../manifest.webmanifest`, `../icon-180.png`, `../sw.js`).
+- Sound from the shared `../sfx.js` (synthesized, offline, one mute setting for every game).

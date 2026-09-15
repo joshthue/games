@@ -325,6 +325,13 @@ in your local time — the quickest way to confirm a refresh actually took.
 `BUILD_V` / `BUILD_ISO` sit at the top of the script and are bumped together with
 the `sw.js` cache version.
 
+## Sound
+
+Sound comes from `../sfx.js`, the shared Game Night sound layer — synthesized with
+WebAudio, so there are no audio files to load and it works offline. The setting is stored
+once for the whole origin, so muting in any Game Night game mutes them all. iOS won't let
+a page make noise before the first touch, so the audio context waits for a gesture.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once

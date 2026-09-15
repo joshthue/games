@@ -249,6 +249,7 @@
     </div>
   </div>
 
+<script src="../sfx.js"></script>
 <script>
 /* =================================================================
    ENGINE  (identical to the node-tested engine.js — 38/38)
@@ -292,7 +293,7 @@ function canDouble(hand,bank,rules){
    ================================================================= */
 const BUILD=(function(){   // Last-Modified from Pages = the deploy time
   const d=new Date(document.lastModified);
-  return 'build v66'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+  return 'build v67'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
 })();
 const mem={};
 const store={
@@ -457,8 +458,10 @@ function addBet(si){
   if(spot.bet+add>rules.tableMax) add=Math.max(0,rules.tableMax-spot.bet);
   add=Math.min(add,room);
   if(add<=0)return;
-  spot.bet+=add; render();
+  spot.bet+=add; sfx('chip'); render();
 }
+// Sound is best-effort: no sfx.js, no noise, no error.
+function sfx(n){ if(window.SFX) SFX.play(n); }
 function clearBet(si){state.spots[si].bet=0;render();}
 function clearAll(){state.spots.forEach(s=>s.bet=0);render();}
 function repeat(){
@@ -472,6 +475,7 @@ function repeat(){
    ================================================================= */
 function deal(){
   if(needShuffle())reshuffle(true);
+  sfx('deal');
   const staked=state.spots.reduce((a,s)=>a+s.bet,0);
   if(staked<=0||staked>state.bankroll)return;
   state.bankroll-=staked; saveBank();
@@ -535,8 +539,10 @@ function curHand(){return state.spots[state.active.s]?.hands[state.active.h];}
 function hit(){
   const hand=curHand(); if(!hand)return;
   hand.cards.push(draw());
+  sfx('flip');
   render(); scrollActiveIntoView();
   const v=handValue(hand.cards);
+  if(v.total>21) sfx('bad');          // bust has its own sound; 21 does not need one
   if(v.total>=21){hand.done=true; setTimeout(()=>advanceActive(false),260);}
 }
 function stand(){const hand=curHand(); if(!hand)return; hand.done=true; advanceActive(false);}
@@ -594,6 +600,12 @@ function finishRound(){
   }));
   state.bankroll+=returned; saveBank();
   state.roundNet+=returned;
+  var anyBJ=false, won=0, lost=0;
+  state.spots.forEach(s=>s.hands.forEach(h=>{
+    if(h.outcome==='bj') anyBJ=true;
+    if(h.outcome==='win'||h.outcome==='bj') won++; else if(h.outcome==='lose') lost++;
+  }));
+  sfx(anyBJ||won>lost ? 'win' : (lost>won ? 'lose' : 'bad'));
   state.phase='settle'; render(); renderBank(true);
   showToast();
   setTimeout(()=>{ // clear to betting

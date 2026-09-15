@@ -134,6 +134,7 @@
 
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
+<script src="../sfx.js"></script>
 <script>
 /* ============================================================
    POKER SQUARES (a.k.a. Poker Solitaire / Poker Patience)
@@ -211,7 +212,10 @@ function computeLines(){
 }
 
 /* ---- flow ---- */
+// Sound is best-effort: no sfx.js, no noise, no error.
+function sfx(n){ if(window.SFX) SFX.play(n); }
 function newGame(){
+  sfx('shuffle');
   grid=new Array(25).fill(null);
   queue=shuffle(makeDeck());
   current=queue.pop();
@@ -222,12 +226,14 @@ function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
   if(over||!current||grid[i]) return;
   grid[i]=current;
+  sfx('place');
   lastMove={i, card:current, was:i};
   current = queue.length ? queue.pop() : null;
   if(placed()===25){ finish(); } else { render(i); }
 }
 function undo(){
   if(!lastMove) return;
+  sfx('select');
   if(current) queue.push(current);   // send the un-placed next card back
   current=lastMove.card;
   grid[lastMove.i]=null;
@@ -238,7 +244,9 @@ function undo(){
 function finish(){
   over=true;
   const {total}=computeLines();
-  if(total>best){ best=total; }
+  var beatBest = total>best;          // a new personal best gets the bigger fanfare
+  if(beatBest){ best=total; }
+  sfx(beatBest ? 'win' : 'good');
   persist();
   render();
   openResults(total);
@@ -373,7 +381,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v67", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

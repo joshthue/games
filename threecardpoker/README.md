@@ -24,6 +24,13 @@ you against the dealer, with a chip bankroll.
 - **Four-color deck** and **Speed play** (both on by default).
 - **Learning tips** with a live Play/Fold hint using the Q-6-4 rule (off by default).
 
+## Sound
+
+Sound comes from `../sfx.js`, the shared Game Night sound layer — synthesized with
+WebAudio, so there are no audio files to load and it works offline. The setting is stored
+once for the whole origin, so muting in any Game Night game mutes them all. iOS won't let
+a page make noise before the first touch, so the audio context waits for a gesture.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once

@@ -383,6 +383,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
       <div class="ctl"><div class="switch" id="swSpeed"><i></i></div></div></div>
     <div class="row"><div class="lbl">Tips<small>Show pot odds and each opponent’s playing style</small></div>
       <div class="ctl"><div class="switch" id="swTips"><i></i></div></div></div>
+    <div class="row"><div class="lbl">Sound<small>Chips, cards and the end of a hand</small></div>
+      <div class="ctl"><div class="switch" id="swSound"><i></i></div></div></div>
     <div class="row"><div class="lbl">Text size<small>Applies straight away</small></div></div>
     <div class="seg" id="segText"></div>
     <div class="row" style="margin-top:14px"><div class="lbl">Felt logo<small>The watermark on the table</small></div></div>
@@ -408,6 +410,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
   </div>
 </div>
 
+<script src="../sfx.js"></script>
 <script>;(function(root){
 'use strict';
 // ---------- cards ----------
@@ -929,6 +932,8 @@ root.PK={LEVELS:LEVELS,newTable:newTable,startHand:startHand,legalActions:legalA
 (function(){
 'use strict';
 const {LEVELS,newTable,startHand,legalActions,applyAction,contenders,nextOccupied}=PK;
+// Sound is best-effort: no sfx.js, no noise, no error.
+function sfx(n){ if(window.SFX) SFX.play(n); }
 const {PERSONAS,personaByKey,botAction}=PK;
 const {evaluate,handName,describeHand,RANK_CH,SUIT_CH}=PK;
 
@@ -1328,7 +1333,7 @@ function onKey(e){
 async function playHand(){
   busy=true;
   T.reveal=false;
-  startHand(T);
+  startHand(T); sfx('deal');
   lastBoard=0;
   clearBubbles();
   render();
@@ -1343,12 +1348,14 @@ async function playHand(){
       $('msg').textContent='Your move';
       const a=await waitHuman();
       applyAction(T,a);
+      sfx(a.type==='fold' ? 'flip' : (a.type==='check' ? 'select' : 'chip'));
       await bubble(p.seat,p.lastAction,a.type==='fold');
     } else {
       $('msg').textContent=p.name+' is thinking…';
       await sleep(spd(280+rng()*420, 620+rng()*900));
       const a=botAction(T,rng);
       applyAction(T,a);
+      sfx(a.type==='fold' ? 'flip' : (a.type==='check' ? 'select' : 'chip'));
       render();
       await bubble(p.seat,p.lastAction,a.type==='fold');
     }
@@ -1501,6 +1508,8 @@ function boot(){
   $('resumeBtn').onclick=()=>{ closeOv('ovStart'); playHand(); };
   bindSwitch('swFour',()=>S.fourColour,v=>S.fourColour=v);
   bindSwitch('swTips',()=>S.tips,v=>S.tips=v);
+  // sound lives in sfx.js, shared by every game on this origin — not in this game's settings
+  bindSwitch('swSound',()=>!!(window.SFX&&SFX.isOn()),v=>{ if(window.SFX){ SFX.setOn(v); if(v) SFX.play('select'); } });
   bindSwitch('swSpeed',()=>S.speed,v=>S.speed=v);
   bindSeg('segBlinds',[['turbo','Turbo'],['standard','Standard'],['marathon','Marathon']],
           ()=>S.blinds,v=>S.blinds=v);
@@ -1533,7 +1542,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+(function(){ var V="v67", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
   var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));

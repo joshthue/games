@@ -597,6 +597,7 @@
 
 <div id="toast" class="toast"></div>
 
+<script src="../sfx.js"></script>
 <script>
 "use strict";
 
@@ -1028,7 +1029,7 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v66";
+const BUILD_V="v67";
 function buildLabel(){
   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build actually running
   const d=new Date(document.lastModified);
@@ -1922,6 +1923,7 @@ let markHistory=[];
 function toggle(i){
   markHistory.push(i); if(markHistory.length>60) markHistory.shift();
   MARKS[i]=!MARKS[i]; MARK_T[i]=Date.now();
+  if(window.SFX) SFX.play(MARKS[i] ? 'chip' : 'select');
   saveProgress();
   renderMine();
   schedulePublish();
@@ -2437,6 +2439,7 @@ function toggleSound(){
 }
 // two-tone wail; sweeps is how many up-down passes
 function wail(sweeps, vol){
+  if(window.SFX && !SFX.isOn()) return;   // one mute setting for every Game Night game
   const ac=audio(); if(!ac) return;
   const t0=ac.currentTime, gain=ac.createGain(), osc=ac.createOscillator();
   osc.type="sawtooth";

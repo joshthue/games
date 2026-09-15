@@ -25,6 +25,13 @@ heads-up against the dealer with shared community cards.
 - The chip bar never wraps — it shrinks instead — and the action row sticks to the bottom
   of the screen, so Deal stays reachable on a narrow phone however tall the table gets.
 
+## Sound
+
+Sound comes from `../sfx.js`, the shared Game Night sound layer — synthesized with
+WebAudio, so there are no audio files to load and it works offline. The setting is stored
+once for the whole origin, so muting in any Game Night game mutes them all. iOS won't let
+a page make noise before the first touch, so the audio context waits for a gesture.
+
 ## Running it
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once

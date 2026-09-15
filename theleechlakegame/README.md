@@ -23,6 +23,13 @@ a trick-taking elimination card game. Play against computer opponents.
   **Advanced** (strategy) detail. Off by default; the Beginner/Advanced choice is
   only active while tips are on.
 
+## Sound
+
+Sound comes from `../sfx.js`, the shared Game Night sound layer — synthesized with
+WebAudio, so there are no audio files to load and it works offline. The setting is stored
+once for the whole origin, so muting in any Game Night game mutes them all. iOS won't let
+a page make noise before the first touch, so the audio context waits for a gesture.
+
 ## Running it
 
 Just open `index.html` in a browser — no build step, no dependencies. It also works

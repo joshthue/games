@@ -137,6 +137,7 @@
 <div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
+<script src="../sfx.js"></script>
 <script>
 /* ============================================================
    ULTIMATE TEXAS HOLD'EM — heads-up vs the dealer.
@@ -229,6 +230,8 @@ function toBet(msg){
   setStatus(msg||"Place your bets, then Deal.");
   render();
 }
+// Sound is best-effort: no sfx.js, no noise, no error.
+function sfx(n){ if(window.SFX) SFX.play(n); }
 function stepAnte(d){
   const cap=Math.min(MAXBET, Math.max(MINBET, Math.floor(((U.bankroll-U.trips)/3)/MINBET)*MINBET));
   U.ante=Math.max(MINBET, Math.min(cap, U.ante+d*MINBET)); U.blind=U.ante;
@@ -242,6 +245,7 @@ function deal(){
   if(U.ante<MINBET || 3*U.ante+U.trips>U.bankroll) return;
   U.blind=U.ante;
   U.bankroll -= (U.ante+U.blind+U.trips);
+  sfx('deal');
   U.deck=shuffle(makeDeck());
   U.hole=[U.deck.pop(),U.deck.pop()];
   U.dealer=[U.deck.pop(),U.deck.pop()];
@@ -255,6 +259,7 @@ function betPlay(mult){
   const amt=mult*U.ante;
   if(amt>U.bankroll) return;
   U.bankroll-=amt; U.play=amt;
+  sfx('chip');
   resolve(false);
 }
 function checkPre(){ if(U.phase!=="preflop")return; U.boardShown=3; U.phase="flop"; setStatus("Flop. Bet 2× or check."); render(); }
@@ -305,6 +310,7 @@ function finishU(){
   U.bankroll+=ret;
   const staked=U.ante+U.blind+U.trips+(R.folded?0:U.play);
   R.delta=ret-staked;
+  sfx(R.outcome==="win"?'win':R.outcome==="lose"?'lose':'bad');
   setStatus(R.outcome==="win"?"You win the hand! 🎉":R.outcome==="lose"?"Dealer takes it.":R.outcome==="push"?"Push — bets returned.":"Hand over.");
   render();
 }
@@ -533,7 +539,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v67", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
