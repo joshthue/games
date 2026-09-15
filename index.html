@@ -78,6 +78,7 @@ const GAMES = [
   { title:"Spite & Malice",   emoji:"😈", sub:"Race to empty your goal pile · vs bot or two phones", href:"spiteandmalice/", updated:"2026-09-14" },
   { title:"Blackjack",        emoji:"🂡", sub:"You vs the dealer · splits, doubles, 3:2 · bankroll", href:"blackjack/", updated:"2026-09-12" },
   { title:"Poker Squares",    emoji:"🎴", sub:"Solitaire · build 10 poker hands in a 5×5 grid", href:"pokersquares/", updated:"2026-09-13" },
+  { title:"Links",            emoji:"⛳", sub:"Nine holes at Birch Hollow · three-tap swing", href:"golf/", updated:"2026-09-15" },
   // { title:"New Game", emoji:"🎲", sub:"make a folder with an index.html, then add one line here", href:"newgame/" },
 ];
 
@@ -137,7 +138,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v67", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v68", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

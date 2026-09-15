@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1b5e3a">
+<title>Links — Game Night</title>
+<link rel="manifest" href="../manifest.webmanifest"/>
+<link rel="apple-touch-icon" href="../icon-180.png"/>
+<meta name="apple-mobile-web-app-title" content="Links"/>
+<style>
+  :root{
+    --sky1:#7fb2e5; --sky2:#cfe4f5;
+    --turf:#2f8a4e; --turf2:#256f3f; --rough:#1f6b3c; --rough2:#17522e;
+    --sand:#e2cf9a; --water:#2a6fb5; --tree:#14502f;
+    --panel:#0e2a1c; --panel2:#123522; --line:#2a5a41;
+    --gold:#e8c66a; --gold2:#c9a44c; --cream:#f5f1e4; --ink:#16241d;
+    --dim:#9fc0ad; --red:#d4574f; --ok:#5fd08a;
+    --fs:1;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%; overflow:hidden; background:#0b1c13;
+    color:var(--cream); overscroll-behavior:none; touch-action:manipulation;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);}
+  button{font-family:inherit; cursor:pointer; border:0; color:inherit; background:none;}
+
+  /* ---------- chrome ---------- */
+  header{display:flex; align-items:center; gap:8px; padding:6px 10px; background:#0b2417;
+    border-bottom:1px solid var(--line); flex:0 0 auto;}
+  .brand{font-weight:800; letter-spacing:.14em; font-size:calc(13px * var(--fs)); color:var(--gold);}
+  .brand small{display:block; font-size:calc(8.5px * var(--fs)); letter-spacing:.2em; opacity:.7; color:var(--dim);}
+  .hbtn{padding:6px 10px; border-radius:9px; background:rgba(255,255,255,.08); font-size:calc(12px * var(--fs));
+    font-weight:600; color:var(--cream);}
+  .hbtn:active{transform:translateY(1px);}
+  .spacer{margin-left:auto;}
+  .hinfo{text-align:right; font-size:calc(11px * var(--fs)); color:var(--dim); line-height:1.25;}
+  .hinfo b{color:var(--cream); font-size:calc(13px * var(--fs));}
+
+  /* ---------- the view ---------- */
+  #stage{position:relative; flex:1 1 auto; min-height:0;}
+  canvas{display:block; width:100%; height:100%; touch-action:none;}
+  .hud{position:absolute; left:8px; top:8px; display:flex; flex-direction:column; gap:5px; pointer-events:none;}
+  .chip{background:rgba(6,26,17,.78); border:1px solid var(--line); border-radius:9px;
+    padding:4px 9px; font-size:calc(11.5px * var(--fs)); font-weight:600; letter-spacing:.02em;
+    backdrop-filter:blur(3px); white-space:nowrap;}
+  .chip b{color:var(--gold);}
+  .hud.right{left:auto; right:8px; align-items:flex-end;}
+  #windCanvas{display:block;}
+
+  /* ---------- the dock ---------- */
+  .dock{flex:0 0 auto; background:#0b2417; border-top:1px solid var(--line);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));}
+  .clubrow{display:flex; gap:6px; align-items:center; margin-bottom:8px;}
+  .clubpick{flex:1 1 auto; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:7px 12px;}
+  .clubname{font-weight:800; font-size:calc(17px * var(--fs)); letter-spacing:.02em;}
+  .clubyds{font-size:calc(11.5px * var(--fs)); color:var(--dim); font-variant-numeric:tabular-nums;}
+  .stepbtn{width:42px; height:42px; border-radius:11px; background:var(--panel2); border:1px solid var(--line);
+    font-size:calc(19px * var(--fs)); font-weight:700; display:grid; place-items:center; flex:0 0 auto;}
+  .stepbtn:active{background:#18452c;}
+
+  /* the meter */
+  #meterWrap{position:relative; height:34px; border-radius:10px; overflow:hidden;
+    background:#08231645; border:1px solid var(--line); margin-bottom:8px;}
+  #meter{display:block; width:100%; height:100%;}
+  .swingbtn{width:100%; padding:13px; border-radius:12px; font-size:calc(16px * var(--fs)); font-weight:800;
+    letter-spacing:.06em; background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#2a2008;
+    box-shadow:0 2px 0 #8a6f2c;}
+  .swingbtn:active{transform:translateY(2px); box-shadow:0 0 0 #8a6f2c;}
+  .swingbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream); box-shadow:none;}
+  .swingbtn[disabled]{opacity:.45;}
+  .msg{text-align:center; font-size:calc(12.5px * var(--fs)); color:var(--dim); min-height:17px; margin-bottom:6px;}
+  .msg b{color:var(--gold);}
+
+  /* ---------- overlays ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(4,14,9,.72); display:none; place-items:center;
+    padding:16px; z-index:30; backdrop-filter:blur(2px);}
+  .overlay.on{display:grid;}
+  .sheet{width:100%; max-width:460px; max-height:86vh; overflow:auto; background:var(--panel);
+    border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 18px 50px rgba(0,0,0,.5);}
+  .sheet h2{margin:0 0 4px; font-size:calc(19px * var(--fs)); color:var(--gold); letter-spacing:.02em;}
+  .sheet h3{margin:16px 0 6px; font-size:calc(13px * var(--fs)); color:var(--gold); letter-spacing:.08em; text-transform:uppercase;}
+  .sheet p{margin:0 0 10px; font-size:calc(13.5px * var(--fs)); line-height:1.55; color:#dbeadf;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0;
+    border-bottom:1px solid rgba(255,255,255,.07);}
+  .row:last-child{border-bottom:0;}
+  .lbl{font-size:calc(13.5px * var(--fs)); font-weight:600;}
+  .lbl small{display:block; font-weight:400; color:var(--dim); font-size:calc(11px * var(--fs)); margin-top:2px;}
+  .btn{padding:10px 15px; border-radius:11px; background:linear-gradient(180deg,var(--gold),var(--gold2));
+    color:#2a2008; font-weight:800; font-size:calc(13.5px * var(--fs));}
+  .btn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .btn.wide{width:100%; text-align:center; margin-top:10px;}
+  .seg{display:flex; gap:5px; background:#08231655; border:1px solid var(--line); border-radius:11px; padding:4px;}
+  .seg button{flex:1; padding:7px 9px; border-radius:8px; font-size:calc(12.5px * var(--fs)); font-weight:700; color:var(--dim);}
+  .seg button.on{background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#2a2008;}
+  .switch{width:48px; height:28px; border-radius:999px; background:rgba(0,0,0,.4); border:1px solid var(--line);
+    position:relative; flex:0 0 auto;}
+  .switch i{position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%;
+    background:var(--cream); transition:left .15s;}
+  .switch.on{background:linear-gradient(180deg,var(--gold),var(--gold2));}
+  .switch.on i{left:23px;}
+
+  table.card{width:100%; border-collapse:collapse; font-size:calc(12px * var(--fs)); font-variant-numeric:tabular-nums;}
+  table.card th,table.card td{padding:5px 3px; text-align:center; border-bottom:1px solid rgba(255,255,255,.08);}
+  table.card th{color:var(--dim); font-weight:700; font-size:calc(10.5px * var(--fs)); letter-spacing:.06em;}
+  table.card td.name{text-align:left; color:var(--dim);}
+  table.card tr.tot td{font-weight:800; color:var(--gold); border-bottom:0;}
+  .sc-e{color:var(--cream);} .sc-u{color:var(--ok); font-weight:800;} .sc-o{color:var(--red);}
+  .gn-build{text-align:center; font-size:10px; color:#4d7a63; padding:4px 0 2px; letter-spacing:.04em;}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="hbtn" onclick="location.href='../'">🏠</button>
+  <div class="brand">LINKS<small>GAME NIGHT GOLF</small></div>
+  <div class="spacer"></div>
+  <div class="hinfo" id="holeInfo"><b>—</b><br>—</div>
+  <button class="hbtn" id="cardBtn">Card</button>
+  <button class="hbtn" id="menuBtn">☰</button>
+</header>
+
+<div id="stage">
+  <canvas id="view"></canvas>
+  <div class="hud">
+    <div class="chip" id="lieChip">Tee</div>
+    <div class="chip" id="distChip">— yds</div>
+  </div>
+  <div class="hud right">
+    <div class="chip" id="windChip">Wind —</div>
+  </div>
+</div>
+
+<div class="dock">
+  <div class="msg" id="msg">Ready</div>
+  <div class="clubrow">
+    <button class="stepbtn" id="clubDown">−</button>
+    <div class="clubpick">
+      <div class="clubname" id="clubName">Driver</div>
+      <div class="clubyds" id="clubYds">250 yds</div>
+    </div>
+    <button class="stepbtn" id="clubUp">+</button>
+  </div>
+  <div id="meterWrap"><canvas id="meter"></canvas></div>
+  <button class="swingbtn" id="swingBtn">SWING</button>
+</div>
+<div class="gn-build" id="buildStamp"></div>
+
+<!-- ===================== overlays ===================== -->
+<div class="overlay" id="menuOv"><div class="sheet">
+  <h2>Menu</h2>
+  <div class="row"><div class="lbl">Sound<small>Strike, splash, and the drop</small></div>
+    <div class="switch" id="swSound"><i></i></div></div>
+  <div class="row"><div class="lbl">Wind<small>Off makes every shot pure</small></div>
+    <div class="switch" id="swWind"><i></i></div></div>
+  <div class="row"><div class="lbl">Aim guide<small>Show the carry arc before you swing</small></div>
+    <div class="switch" id="swGuide"><i></i></div></div>
+  <div class="row"><div class="lbl">Text size</div></div>
+  <div class="seg" id="segText"></div>
+  <button class="btn wide" id="menuRestart">Restart the round</button>
+  <button class="btn ghost wide" id="menuRules">How to play</button>
+  <button class="btn ghost wide" onclick="location.href='../'">🏠 Back to all games</button>
+  <button class="btn ghost wide" id="menuClose">Close</button>
+</div></div>
+
+<div class="overlay" id="rulesOv"><div class="sheet">
+  <h2>How to play</h2>
+  <h3>The swing</h3>
+  <p>Three taps, the way golf games have always done it. <b>Tap once</b> to start the meter moving.
+  <b>Tap again</b> at the top to set your power. <b>Tap a third time</b> as the marker comes back
+  through the centre line to set your accuracy — early pushes it right, late pulls it left.</p>
+  <p>You can swing past 100% into the red for extra yards, but the meter moves faster up there and a
+  miss costs you more.</p>
+  <h3>Clubs and lies</h3>
+  <p>Distances shown are what the club carries from a clean lie. The rough takes yards off and kills
+  your roll; sand takes more and you can't hit anything longer than a 7-iron out of it. Water and out
+  of bounds cost you a stroke and you play from where you were.</p>
+  <h3>On the green</h3>
+  <p>The meter becomes a putting stroke and the view drops to an overhead read. Watch the slope arrow:
+  the ball breaks as it rolls, and downhill putts run out.</p>
+  <button class="btn wide" id="rulesClose">Got it</button>
+</div></div>
+
+<div class="overlay" id="cardOv"><div class="sheet">
+  <h2 id="cardTitle">Scorecard</h2>
+  <div id="cardBody"></div>
+  <button class="btn wide" id="cardClose">Close</button>
+</div></div>
+
+<div class="overlay" id="holeOv"><div class="sheet" style="text-align:center">
+  <h2 id="holeTitle">Hole 1</h2>
+  <p id="holeSub">Par 4 · 385 yards</p>
+  <p id="holeNote" style="color:var(--dim)"></p>
+  <button class="btn wide" id="holeGo">Play it</button>
+</div></div>
+
+<div class="overlay" id="doneOv"><div class="sheet" style="text-align:center">
+  <h2 id="doneTitle">Round complete</h2>
+  <p id="doneSub"></p>
+  <div id="doneCard"></div>
+  <button class="btn wide" id="doneAgain">Play again</button>
+  <button class="btn ghost wide" onclick="location.href='../'">🏠 Back to all games</button>
+</div></div>
+
+<script src="../sfx.js"></script>
+
+<!-- ================================================================= -->
+<!-- BLOCK 1: the golf engine. Pure model + physics, NO DOM.           -->
+<!-- Exposed as window.GOLF so the renderer, the bots in a future      -->
+<!-- multiplayer mode, and the tests all go through the same rules.    -->
+<!-- ================================================================= -->
+<script>
+window.GOLF = (function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------
+     Units: YARDS everywhere, except putting which thinks in FEET
+     because that is how golfers think. y runs from the tee toward
+     the green; x is left (-) / right (+) of the tee-to-green axis.
+     --------------------------------------------------------------- */
+
+  // carry = clean-lie carry at 100% power. roll = extra yards on a fairway bounce.
+  // disp  = degrees of push/pull at worst timing. loft drives the flight arc and stopping.
+  var CLUBS = [
+    {k:'D',  name:'Driver',   carry:232, roll:22, disp:5.2, loft:11},
+    {k:'3W', name:'3 Wood',   carry:212, roll:18, disp:4.6, loft:15},
+    {k:'5W', name:'5 Wood',   carry:197, roll:15, disp:4.2, loft:18},
+    {k:'4H', name:'4 Hybrid', carry:184, roll:13, disp:3.9, loft:21},
+    {k:'5i', name:'5 Iron',   carry:169, roll:11, disp:3.6, loft:26},
+    {k:'6i', name:'6 Iron',   carry:159, roll:9,  disp:3.4, loft:30},
+    {k:'7i', name:'7 Iron',   carry:148, roll:8,  disp:3.2, loft:34},
+    {k:'8i', name:'8 Iron',   carry:137, roll:6,  disp:3.0, loft:38},
+    {k:'9i', name:'9 Iron',   carry:125, roll:5,  disp:2.8, loft:42},
+    {k:'PW', name:'Pitching', carry:110, roll:4,  disp:2.6, loft:46},
+    {k:'GW', name:'Gap',      carry:95, roll:3,  disp:2.4, loft:50},
+    {k:'SW', name:'Sand',     carry:78,  roll:2,  disp:2.2, loft:56},
+    {k:'LW', name:'Lob',      carry:58,  roll:1,  disp:2.0, loft:60},
+    {k:'P',  name:'Putter',   carry:0,   roll:0,  disp:0.6, loft:0}
+  ];
+  var PUTTER = CLUBS.length - 1;
+
+  // How a lie treats you: carry multiplier, roll multiplier, extra dispersion,
+  // and the longest club that is sane to swing from it.
+  var LIES = {
+    tee:     {carry:1.00, roll:1.00, disp:1.00, maxClub:0,  label:'Tee'},
+    fairway: {carry:1.00, roll:1.00, disp:1.00, maxClub:0,  label:'Fairway'},
+    green:   {carry:1.00, roll:1.00, disp:1.00, maxClub:0,  label:'Green'},
+    fringe:  {carry:0.97, roll:0.70, disp:1.15, maxClub:0,  label:'Fringe'},
+    rough:   {carry:0.85, roll:0.40, disp:1.55, maxClub:3,  label:'Rough'},
+    deep:    {carry:0.68, roll:0.25, disp:2.10, maxClub:6,  label:'Deep rough'},
+    sand:    {carry:0.62, roll:0.15, disp:1.95, maxClub:6,  label:'Bunker'},
+    trees:   {carry:0.72, roll:0.55, disp:2.40, maxClub:4,  label:'Trees'},
+    water:   {carry:1.00, roll:1.00, disp:1.00, maxClub:0,  label:'Water'},
+    ob:      {carry:1.00, roll:1.00, disp:1.00, maxClub:0,  label:'Out of bounds'}
+  };
+
+  /* ---------------- geometry helpers ---------------- */
+  function clAt(hole, y){                       // centreline x offset at distance y
+    var cl = hole.cl;
+    if(!cl || !cl.length) return 0;
+    if(y <= cl[0][0]) return cl[0][1];
+    for(var i=1;i<cl.length;i++){
+      if(y <= cl[i][0]){
+        var t = (y - cl[i-1][0]) / (cl[i][0] - cl[i-1][0] || 1);
+        var s = t*t*(3-2*t);                    // smoothstep: doglegs curve, not kink
+        return cl[i-1][1] + (cl[i][1]-cl[i-1][1]) * s;
+      }
+    }
+    return cl[cl.length-1][1];
+  }
+  function fwAt(hole, y){                       // fairway half-width at distance y
+    var w = hole.fw;
+    if(typeof w === 'number') return w;
+    if(!w || !w.length) return 18;
+    if(y <= w[0][0]) return w[0][1];
+    for(var i=1;i<w.length;i++){
+      if(y <= w[i][0]){
+        var t = (y - w[i-1][0]) / (w[i][0] - w[i-1][0] || 1);
+        return w[i-1][1] + (w[i][1]-w[i-1][1]) * t;
+      }
+    }
+    return w[w.length-1][1];
+  }
+  function inEllipse(px,py,e){
+    var dx=(px-e.x)/e.rx, dy=(py-e.y)/e.ry;
+    return dx*dx+dy*dy <= 1;
+  }
+  function dist(ax,ay,bx,by){ var dx=ax-bx, dy=ay-by; return Math.sqrt(dx*dx+dy*dy); }
+
+  // Where does a ball at (x,y) sit? Order matters: water and sand beat the
+  // fairway test, and the green beats everything except a bunker cut into it.
+  function lieAt(hole, x, y){
+    if(y < -25 || y > hole.len + 110) return 'ob';
+    var i;
+    if(hole.water) for(i=0;i<hole.water.length;i++) if(inEllipse(x,y,hole.water[i])) return 'water';
+    if(hole.sand)  for(i=0;i<hole.sand.length;i++)  if(inEllipse(x,y,hole.sand[i]))  return 'sand';
+    var g = hole.green;
+    var gd = dist(x,y,g.x,g.y);
+    var gr = (g.rx+g.ry)/2;
+    if(inEllipse(x,y,g)) return 'green';
+    if(gd < gr*1.22) return 'fringe';
+    var off = Math.abs(x - clAt(hole,y));
+    var half = fwAt(hole,y);
+    if(y < 3) return 'tee';
+    if(off > hole.ob) return 'ob';
+    if(hole.trees) for(i=0;i<hole.trees.length;i++){
+      var t=hole.trees[i];
+      if(dist(x,y,t.x,t.y) < (t.r||9)) return 'trees';
+    }
+    if(y > hole.len + 40) return 'deep';
+    if(off <= half) return 'fairway';
+    if(off <= half*1.9) return 'rough';
+    return 'deep';
+  }
+
+  /* ---------------- the swing ---------------- */
+  // power: 0..1.12 (over 1 is the red zone). accuracy: -1..1, 0 is pure.
+  // Everything here is deterministic — no hidden dice — so a good swing is
+  // always a good shot and the player can learn the game.
+  function powerCurve(p){
+    // past 100% you get real yards, but not proportionally
+    return p <= 1 ? p : 1 + (p-1) * 0.55;
+  }
+
+  function resolveShot(hole, ball, opts){
+    var club = CLUBS[opts.club];
+    var lie  = LIES[ball.lie] || LIES.fairway;
+    var power = Math.max(0, Math.min(1.12, opts.power));
+    var acc   = Math.max(-1, Math.min(1, opts.accuracy));
+    var wind  = opts.wind || {speed:0, dir:0};
+
+    // a club you have no business swinging from here loses a chunk of its carry
+    var overClub = lie.maxClub && opts.club < lie.maxClub;
+    var penaltyMul = overClub ? 0.72 : 1;
+
+    var carry = club.carry * lie.carry * powerCurve(power) * penaltyMul;
+
+    // wind: headwind eats carry, tailwind adds, crosswind drifts.
+    // dir is degrees, 0 = straight at the player (into the shot).
+    var rad = wind.dir * Math.PI/180;
+    var head = Math.cos(rad) * wind.speed;        // + = into your face
+    var cross= Math.sin(rad) * wind.speed;        // + = pushing right
+    var loftF = 0.55 + club.loft/70;              // high shots suffer more
+    carry *= (1 - (head/120) * loftF);
+    if(carry < 4) carry = 4;
+
+    // dispersion: timing, amplified by the lie and by swinging into the red
+    var over = power > 1 ? (power-1)*4.5 : 0;
+    var deg = acc * club.disp * lie.disp * (1 + over);
+    if(overClub) deg *= 1.7;
+    var driftYds = (cross/9) * (carry/150) * loftF * 3.2;
+
+    // The line you are actually aimed down. Without this every shot flies straight up
+    // the hole's y axis and a dogleg becomes unplayable — caught by the round simulation,
+    // which had holes 2/4/8 averaging 12 strokes for a scratch player.
+    var theta = (opts.aim || 0) + deg * Math.PI/180;
+    var dx = Math.sin(theta) * carry + driftYds * Math.cos(opts.aim||0);
+    var dy = Math.cos(theta) * carry - driftYds * Math.sin(opts.aim||0);
+
+    var lx = ball.x + dx, ly = ball.y + dy;       // landing point
+    var landLie = lieAt(hole, lx, ly);
+
+    // roll, decided by what it landed on and how steeply it came down
+    var rollMul = {fairway:1, tee:1, green:0.55, fringe:0.8, rough:0.4, deep:0.22,
+                   sand:0.1, trees:0.35, water:0, ob:0.5}[landLie];
+    if(rollMul == null) rollMul = 0.6;
+    var steep = 1 - Math.min(0.85, club.loft/72);
+    var roll = club.roll * rollMul * steep * (0.75 + power*0.35);
+    if(landLie === 'green') roll *= 0.8;
+
+    var len = Math.sqrt(dx*dx+dy*dy) || 1;
+    var fx = lx + (dx/len)*roll, fy = ly + (dy/len)*roll;
+    var finalLie = lieAt(hole, fx, fy);
+
+    // rolling through water or OB stops there — you don't skip across a pond
+    if(landLie === 'water' || landLie === 'ob'){ fx = lx; fy = ly; finalLie = landLie; }
+
+    var res = {
+      from:{x:ball.x, y:ball.y}, land:{x:lx, y:ly}, to:{x:fx, y:fy},
+      carry:carry, roll:Math.max(0,roll), club:opts.club,
+      landLie:landLie, lie:finalLie, penalty:0, holed:false, overClub:overClub
+    };
+
+    if(finalLie === 'water'){
+      // Real rule, and the one that keeps a hole finite: take the stroke and drop at the
+      // margin of the hazard, on the line the ball came in on. Sending the player back to
+      // the same spot with the same aim lets them hit the same shot into the same pond
+      // forever — the round simulation sat on 8-9 strokes at the 9th until this changed.
+      res.penalty = 1;
+      res.dropped = true;
+      var ux = dx/len, uy = dy/len, drop = null;
+      for(var b=1; b<=45; b++){
+        var px = lx - ux*b*2, py = ly - uy*b*2;
+        if(dist(px,py,ball.x,ball.y) < 2) break;          // walked all the way home
+        var pl = lieAt(hole, px, py);
+        if(pl !== 'water' && pl !== 'ob'){ drop = {x:px, y:py, lie:pl}; break; }
+      }
+      if(drop){ res.to = {x:drop.x, y:drop.y}; res.lie = drop.lie === 'green' ? 'fringe' : drop.lie; }
+      else { res.to = {x:ball.x, y:ball.y}; res.lie = ball.lie; }
+    } else if(finalLie === 'ob'){
+      // out of bounds is stroke and distance — you really do play it again
+      res.penalty = 1;
+      res.to = {x:ball.x, y:ball.y};
+      res.lie = ball.lie === 'tee' ? 'tee' : ball.lie;
+      res.dropped = true;
+    } else if(dist(fx,fy,hole.green.x,hole.green.y) < 0.35){
+      res.holed = true;
+    }
+    return res;
+  }
+
+  /* ---------------- putting ----------------
+     A putt is its own little physics problem: distance in feet, a break
+     pushed by the green's slope, and a hole that only catches a ball
+     that is not running too fast when it gets there. */
+  var FT = 3;                                     // feet per yard
+
+  function resolvePutt(hole, ball, opts){
+    var g = hole.green;
+    var power = Math.max(0, Math.min(1.12, opts.power));
+    var acc   = Math.max(-1, Math.min(1, opts.accuracy));
+    var maxFt = opts.maxFt || 60;
+
+    var toHole = dist(ball.x, ball.y, g.x, g.y) * FT;     // feet
+    var hit = maxFt * powerCurve(power);
+
+    // aim is at the hole; timing pushes it off line a couple of degrees
+    var ang = Math.atan2(g.x - ball.x, g.y - ball.y);
+    var off = acc * 2.4 * Math.PI/180;
+    ang += off;
+
+    // slope: pushes the ball sideways and lengthens/shortens the roll.
+    // slope is [across, along] in "feet of break per 10 feet of roll".
+    var sl = g.slope || [0,0];
+    var rollFt = hit * (1 - sl[1]*0.06);
+    if(rollFt < 0) rollFt = 0;
+    var breakFt = sl[0] * (rollFt/10) * 0.9;
+
+    var ex = ball.x + Math.sin(ang)*(rollFt/FT) + breakFt/FT;
+    var ey = ball.y + Math.cos(ang)*(rollFt/FT);
+
+    var res = {from:{x:ball.x,y:ball.y}, to:{x:ex,y:ey}, holed:false, lie:'green',
+               putt:true, rollFt:rollFt, toHoleFt:toHole};
+
+    // Did it drop? This has to test the PATH, not the resting place. Testing only where
+    // the ball stopped means a putt that rolls straight over the cup at perfect pace is
+    // recorded as a miss — from 1.3 feet the sim putted 11 times in a row and never holed.
+    var pdx = ex - ball.x, pdy = ey - ball.y;
+    var plen2 = pdx*pdx + pdy*pdy;
+    var t = plen2 > 0 ? ((g.x-ball.x)*pdx + (g.y-ball.y)*pdy) / plen2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    var nx = ball.x + pdx*t, ny = ball.y + pdy*t;
+    var missFt = dist(nx,ny,g.x,g.y) * FT;          // closest the ball came to the cup
+    var leftFt = rollFt * (1-t);                    // roll still in it as it passed
+    // a dying ball falls in from further off line; a runner lips out
+    var capture = Math.max(0.18, 0.46 - leftFt*0.028);
+    if(missFt <= capture && leftFt <= 7){
+      res.holed = true; res.to = {x:g.x, y:g.y};
+    } else {
+      var l = lieAt(hole, ex, ey);
+      res.lie = (l === 'green' || l === 'fringe') ? l : l;   // you can putt off a green
+    }
+    return res;
+  }
+
+  /* ---------------- rounds and scoring ---------------- */
+  function newRound(course){
+    return {
+      course: course,
+      hole: 0,
+      strokes: new Array(course.holes.length).fill(0),
+      ball: null,
+      done: false
+    };
+  }
+  function startHole(R, windOn, rnd){
+    var h = R.course.holes[R.hole];
+    R.ball = {x:0, y:0, lie:'tee'};
+    R.strokes[R.hole] = 0;
+    rnd = rnd || Math.random;
+    R.wind = windOn ? {speed: Math.round(rnd()*17), dir: Math.round(rnd()*360)} : {speed:0, dir:0};
+    return h;
+  }
+  function toPin(hole, ball){ return dist(ball.x, ball.y, hole.green.x, hole.green.y); }
+
+  function scoreLabel(strokes, par){
+    var d = strokes - par;
+    if(strokes === 1) return 'Hole in one!';
+    if(d <= -3) return 'Albatross';
+    if(d === -2) return 'Eagle';
+    if(d === -1) return 'Birdie';
+    if(d === 0)  return 'Par';
+    if(d === 1)  return 'Bogey';
+    if(d === 2)  return 'Double bogey';
+    if(d === 3)  return 'Triple bogey';
+    return '+' + d;
+  }
+  function totals(R){
+    var s=0, p=0, played=0;
+    for(var i=0;i<R.course.holes.length;i++){
+      if(R.strokes[i]>0){ s+=R.strokes[i]; p+=R.course.holes[i].par; played++; }
+    }
+    return {strokes:s, par:p, toPar:s-p, played:played};
+  }
+
+  /* ---------------- course encoding ----------------
+     Courses are data, so they travel. This is what the architect will
+     write and what a share link will carry, so it is defined here in the
+     engine rather than in the UI. Compact-ish JSON -> base64url. */
+  function encodeCourse(c){
+    var json = JSON.stringify(c);
+    var b64 = btoa(unescape(encodeURIComponent(json)));
+    return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function decodeCourse(s){
+    try{
+      var b64 = s.replace(/-/g,'+').replace(/_/g,'/');
+      while(b64.length % 4) b64 += '=';
+      var c = JSON.parse(decodeURIComponent(escape(atob(b64))));
+      return validCourse(c) ? c : null;
+    }catch(e){ return null; }
+  }
+  // Never trust a course that arrived in a URL: a missing green or a
+  // negative length would take the renderer down with it.
+  function validCourse(c){
+    if(!c || !c.holes || !c.holes.length || c.holes.length > 18) return false;
+    for(var i=0;i<c.holes.length;i++){
+      var h=c.holes[i];
+      if(!h || !h.green || typeof h.len!=='number' || h.len<40 || h.len>800) return false;
+      if(typeof h.par!=='number' || h.par<3 || h.par>6) return false;
+      if(typeof h.green.x!=='number' || typeof h.green.y!=='number') return false;
+      if(!(h.green.rx>0) || !(h.green.ry>0)) return false;
+      if(typeof h.ob!=='number' || h.ob<20) h.ob = 70;
+    }
+    return true;
+  }
+
+  return {
+    CLUBS:CLUBS, PUTTER:PUTTER, LIES:LIES, FT:FT,
+    clAt:clAt, fwAt:fwAt, lieAt:lieAt, dist:dist, inEllipse:inEllipse,
+    resolveShot:resolveShot, resolvePutt:resolvePutt,
+    newRound:newRound, startHole:startHole, toPin:toPin,
+    scoreLabel:scoreLabel, totals:totals,
+    encodeCourse:encodeCourse, decodeCourse:decodeCourse, validCourse:validCourse
+  };
+})();
+</script>
+
+<!-- ================================================================= -->
+<!-- BLOCK 2: the shipped course. Plain data, the same shape the        -->
+<!-- architect will write, so the editor has nothing special to learn.  -->
+<!-- ================================================================= -->
+<script>
+window.GOLF_COURSES = {
+  birch: {
+    n:"Birch Hollow",
+    sub:"Nine holes cut through the pines",
+    holes:[
+      { name:"Opening Bell", par:4, len:372, ob:78,
+        cl:[[0,0],[200,4],[372,0]], fw:[[0,16],[150,22],[300,19],[372,16]],
+        green:{x:0, y:372, rx:11, ry:9, slope:[0.6,-0.4]},
+        sand:[{x:26,y:250,rx:11,ry:7},{x:-21,y:362,rx:8,ry:6}],
+        trees:[{x:-42,y:180,r:11},{x:46,y:120,r:10},{x:-50,y:300,r:12}],
+        note:"A friendly handshake. Anything down the middle leaves a short iron." },
+
+      { name:"Birch Run", par:5, len:512, ob:84,
+        cl:[[0,0],[240,16],[400,30],[512,26]], fw:[[0,17],[200,20],[360,15],[512,17]],
+        green:{x:26, y:512, rx:10, ry:9, slope:[-0.8,0.5]},
+        sand:[{x:6,y:300,rx:14,ry:8},{x:44,y:430,rx:10,ry:7},{x:8,y:500,rx:9,ry:6}],
+        trees:[{x:-38,y:220,r:13},{x:-44,y:330,r:12},{x:64,y:390,r:11},{x:-30,y:470,r:10}],
+        note:"Reachable in two if you carry the cross bunkers. Most days, don't." },
+
+      { name:"The Kettle", par:3, len:168, ob:70,
+        cl:[[0,0],[168,0]], fw:[[0,12],[80,9],[168,12]],
+        green:{x:0, y:168, rx:10, ry:9, slope:[0.4,0.9]},
+        water:[{x:0,y:112,rx:34,ry:34}],
+        sand:[{x:-22,y:172,rx:9,ry:7},{x:21,y:176,rx:9,ry:7}],
+        trees:[{x:-40,y:60,r:10},{x:42,y:80,r:10}],
+        note:"All carry, no bail-out. The green runs away from you." },
+
+      { name:"Gran's Elbow", par:4, len:401, ob:80,
+        cl:[[0,0],[190,-6],[300,-34],[401,-40]], fw:[[0,17],[190,20],[300,16],[401,15]],
+        green:{x:-40, y:401, rx:10, ry:9, slope:[0.9,-0.3]},
+        sand:[{x:-16,y:300,rx:12,ry:8},{x:-58,y:392,rx:9,ry:6}],
+        trees:[{x:14,y:250,r:14},{x:26,y:300,r:13},{x:20,y:350,r:12},{x:-60,y:210,r:11}],
+        note:"Bend it left or lay back. The trees on the inside are not a shortcut." },
+
+      { name:"Loon Water", par:4, len:355, ob:76,
+        cl:[[0,0],[180,-8],[355,-12]], fw:[[0,18],[180,17],[355,15]],
+        green:{x:-12, y:355, rx:10, ry:9, slope:[-0.7,-0.6]},
+        water:[{x:40,y:250,rx:26,ry:80}],
+        sand:[{x:-34,y:340,rx:9,ry:7}],
+        trees:[{x:-46,y:150,r:12},{x:-52,y:280,r:11}],
+        note:"The lake eats anything leaked right. The safe miss is left and short." },
+
+      { name:"Sawmill", par:3, len:142, ob:66,
+        cl:[[0,0],[142,6]], fw:[[0,11],[70,8],[142,11]],
+        green:{x:6, y:142, rx:10, ry:9, slope:[-0.5,0.4]},
+        sand:[{x:-14,y:138,rx:9,ry:8},{x:24,y:146,rx:9,ry:8},{x:6,y:160,rx:11,ry:6}],
+        trees:[{x:-34,y:70,r:10},{x:38,y:60,r:10}],
+        note:"A wedge and a small target. Three bunkers say be honest about it." },
+
+      { name:"Long Portage", par:5, len:545, ob:86,
+        cl:[[0,0],[250,-14],[420,-6],[545,4]], fw:[[0,18],[250,21],[420,14],[545,16]],
+        green:{x:4, y:545, rx:12, ry:11, slope:[0.5,0.7]},
+        sand:[{x:-30,y:270,rx:12,ry:8},{x:18,y:400,rx:13,ry:8},{x:-18,y:535,rx:9,ry:6},{x:26,y:540,rx:9,ry:6}],
+        trees:[{x:-52,y:180,r:12},{x:48,y:330,r:13},{x:-46,y:450,r:11}],
+        note:"The longest hole out here. Three good swings beats two great ones." },
+
+      { name:"The Pinch", par:4, len:318, ob:62,
+        cl:[[0,0],[160,10],[318,14]], fw:[[0,15],[160,11],[260,9],[318,14]],
+        green:{x:14, y:318, rx:11, ry:9, slope:[0.8,0.5]},
+        water:[{x:-28,y:270,rx:18,ry:30}],
+        sand:[{x:38,y:300,rx:10,ry:7}],
+        trees:[{x:-38,y:140,r:11},{x:44,y:190,r:12},{x:40,y:240,r:11}],
+        note:"Short enough to tempt you. Narrow enough to punish the thought." },
+
+      { name:"Homecoming", par:4, len:424, ob:82,
+        cl:[[0,0],[210,8],[424,2]], fw:[[0,17],[210,19],[424,16]],
+        green:{x:2, y:424, rx:11, ry:9, slope:[-0.6,-0.8]},
+        water:[{x:-26,y:404,rx:16,ry:20}],
+        sand:[{x:28,y:412,rx:10,ry:7},{x:-24,y:250,rx:12,ry:7}],
+        trees:[{x:-48,y:160,r:12},{x:52,y:300,r:12},{x:-44,y:350,r:11}],
+        note:"A long one home, with water guarding the left half of the green." }
+    ]
+  }
+};
+</script>
+
+<!-- ================================================================= -->
+<!-- BLOCK 3: renderer + UI. Everything that touches the DOM lives      -->
+<!-- here; the rules above never do.                                   -->
+<!-- ================================================================= -->
+<script>
+(function(){
+  "use strict";
+  var G = window.GOLF;
+  var $ = function(id){ return document.getElementById(id); };
+  function sfx(n){ if(window.SFX) SFX.play(n); }
+
+  /* ---------------- settings ---------------- */
+  var S = {wind:true, guide:true, fs:1};
+  try{ var raw=localStorage.getItem('gnGolf'); if(raw) S=Object.assign(S,JSON.parse(raw)); }catch(e){}
+  function saveS(){ try{ localStorage.setItem('gnGolf', JSON.stringify(S)); }catch(e){} }
+  function applyFs(){ document.documentElement.style.setProperty('--fs', S.fs); }
+
+  /* ---------------- course + round ---------------- */
+  var course = window.GOLF_COURSES.birch;
+  var shared = new URLSearchParams(location.search).get('c');
+  if(shared){
+    var c = G.decodeCourse(shared);
+    if(c) course = c;                       // a course someone sent us
+  }
+  var R = G.newRound(course), H = null;
+  var club = 0, aim = 0;                    // aim: radians off the line to the pin
+  var anim = null, flash = '';
+
+  /* ---------------- canvas ---------------- */
+  var cv = $('view'), ctx = cv.getContext('2d');
+  var W=0, Hh=0, DPR=1;
+  function sizeCanvas(){
+    DPR = Math.min(2, window.devicePixelRatio||1);
+    var r = cv.parentNode.getBoundingClientRect();
+    W = Math.max(280, Math.floor(r.width)); Hh = Math.max(200, Math.floor(r.height));
+    cv.width = W*DPR; cv.height = Hh*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', function(){ sizeCanvas(); draw(); });
+
+  /* ---------------- the camera ----------------
+     A pitched camera behind and above the ball. Pure eye-level projection
+     puts a 400-yard green two pixels under the horizon, which is honest and
+     useless; tilting down and rising with the distance left is what every
+     golf game since the floppy era has quietly done. */
+  var cam = {x:0,y:0,h:14,back:30,pitch:14,ang:0};
+  function setCamera(){
+    var d = G.toPin(H, R.ball);
+    cam.h     = clamp(8 + d*0.042, 9, 26);
+    cam.back  = clamp(20 + d*0.05, 22, 46);
+    cam.pitch = clamp(8 + d*0.023, 9, 21) * Math.PI/180;
+    cam.ang   = aimAngle();
+    cam.x = R.ball.x - Math.sin(cam.ang)*cam.back;
+    cam.y = R.ball.y - Math.cos(cam.ang)*cam.back;
+  }
+  function aimAngle(){
+    var dx = H.green.x - R.ball.x, dy = H.green.y - R.ball.y;
+    return Math.atan2(dx, dy) + aim;
+  }
+  function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+
+  // Focal length. Deriving this from the canvas WIDTH looks fine on a phone and breaks
+  // completely on a wide, short desktop window: the horizon lands above the top of the
+  // canvas, the sky disappears and the green is off-screen. Vertical framing is what
+  // matters here, so drive it from the height and only clamp against the width.
+  function focal(){
+    var f = Hh * 0.83;
+    return clamp(f, W*0.45, W*1.10);
+  }
+
+  // world -> screen. Returns null when the point sits behind the lens.
+  function proj(wx, wy, h){
+    h = h || 0;
+    var rx = wx - cam.x, ry = wy - cam.y;
+    var f  = Math.cos(cam.ang), s = Math.sin(cam.ang);
+    var d  = rx*s + ry*f;                    // forward
+    var u  = rx*f - ry*s;                    // right
+    var v  = h - cam.h;                      // up (negative: ground is below)
+    var cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    var z  = d*cp - v*sp;
+    if(z < 1.2) return null;
+    var yv = d*sp + v*cp;
+    var F  = focal();
+    return {x: W/2 + (u/z)*F, y: Hh/2 - (yv/z)*F, z:z, s:F/z};
+  }
+  function horizonY(){
+    return Hh/2 - Math.tan(cam.pitch)*focal();
+  }
+
+  /* ---------------- drawing helpers ---------------- */
+  function polyFrom(points, fill, stroke){
+    var started=false;
+    ctx.beginPath();
+    for(var i=0;i<points.length;i++){
+      var p=points[i]; if(!p) continue;
+      if(!started){ ctx.moveTo(p.x,p.y); started=true; } else ctx.lineTo(p.x,p.y);
+    }
+    if(!started) return;
+    ctx.closePath();
+    if(fill){ ctx.fillStyle=fill; ctx.fill(); }
+    if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=1; ctx.stroke(); }
+  }
+  function projEllipse(e, n){
+    n = n||20; var pts=[];
+    for(var i=0;i<n;i++){
+      var a = i/n*Math.PI*2;
+      pts.push(proj(e.x + Math.cos(a)*e.rx, e.y + Math.sin(a)*e.ry, 0));
+    }
+    return pts.filter(Boolean);
+  }
+
+  function drawSky(){
+    var hz = horizonY();
+    var g = ctx.createLinearGradient(0,0,0,Math.max(hz,1));
+    g.addColorStop(0,'#5d97d8'); g.addColorStop(1,'#bcd9ef');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,Math.max(hz,0));
+    // a soft ridge of trees on the skyline so the world has an edge
+    ctx.fillStyle='#16482e';
+    ctx.beginPath(); ctx.moveTo(0,hz);
+    for(var x=0;x<=W;x+=14){
+      var n = Math.sin((x+ (H?H.len:0))*0.021)*5 + Math.sin(x*0.061)*3.5;
+      ctx.lineTo(x, hz - 7 - n);
+    }
+    ctx.lineTo(W,hz); ctx.closePath(); ctx.fill();
+  }
+
+  function drawGround(){
+    var hz = horizonY();
+    var g = ctx.createLinearGradient(0,hz,0,Hh);
+    g.addColorStop(0,'#1c5c35'); g.addColorStop(1,'#2a7845');
+    ctx.fillStyle=g; ctx.fillRect(0,Math.max(hz,0),W,Hh-Math.max(hz,0));
+  }
+
+  // The fairway as one long polygon, sampled along the centreline.
+  function drawFairway(){
+    var startY = Math.max(0, cam.y + 3);
+    var endY   = H.len + 60;
+    var step   = 7;
+    var left=[], right=[];
+    for(var y=startY; y<=endY; y+=step){
+      var cx = G.clAt(H,y), w = G.fwAt(H,y);
+      var pl = proj(cx-w, y, 0), pr = proj(cx+w, y, 0);
+      if(pl) left.push(pl);
+      if(pr) right.push(pr);
+    }
+    if(left.length<2) return;
+    polyFrom(left.concat(right.reverse()), '#3c9a57');
+    // a lighter mown band up the middle, for depth
+    var mid=[], mid2=[];
+    for(var y2=startY; y2<=endY; y2+=step){
+      var cx2=G.clAt(H,y2), w2=G.fwAt(H,y2)*0.45;
+      var a=proj(cx2-w2,y2,0), b=proj(cx2+w2,y2,0);
+      if(a) mid.push(a); if(b) mid2.push(b);
+    }
+    if(mid.length>1) polyFrom(mid.concat(mid2.reverse()), 'rgba(255,255,255,.045)');
+  }
+
+  // A mown tee box under the player's feet — without it you appear to be standing in
+  // the rough hitting off nothing.
+  function drawTeeBox(){
+    if(R.ball.lie !== 'tee') return;
+    var q=[proj(-9,-7,0), proj(9,-7,0), proj(9,7,0), proj(-9,7,0)];
+    polyFrom(q.filter(Boolean), '#43a561');
+  }
+
+  function drawHazards(){
+    var i;
+    if(H.water) for(i=0;i<H.water.length;i++){
+      polyFrom(projEllipse(H.water[i]), '#2f78bd');
+      var pts = projEllipse({x:H.water[i].x, y:H.water[i].y, rx:H.water[i].rx*0.72, ry:H.water[i].ry*0.72});
+      polyFrom(pts, 'rgba(255,255,255,.09)');
+    }
+    if(H.sand) for(i=0;i<H.sand.length;i++){
+      polyFrom(projEllipse(H.sand[i]), '#e4d2a0', 'rgba(0,0,0,.15)');
+    }
+  }
+
+  function drawGreen(){
+    polyFrom(projEllipse(H.green, 26), '#57c072');
+    var ring = projEllipse({x:H.green.x,y:H.green.y,rx:H.green.rx*1.22,ry:H.green.ry*1.22}, 26);
+    ctx.save(); ctx.globalAlpha=.35; polyFrom(ring, null, '#bfe9c9'); ctx.restore();
+    // the flag
+    var base = proj(H.green.x, H.green.y, 0), top = proj(H.green.x, H.green.y, 2.6);
+    if(base && top){
+      ctx.strokeStyle='#f2f2f2'; ctx.lineWidth=Math.max(1.2, base.s*0.09);
+      ctx.beginPath(); ctx.moveTo(base.x,base.y); ctx.lineTo(top.x,top.y); ctx.stroke();
+      var fw2 = Math.max(5, base.s*0.9);
+      ctx.fillStyle='#e04a43';
+      ctx.beginPath(); ctx.moveTo(top.x,top.y);
+      ctx.lineTo(top.x+fw2, top.y+fw2*0.42); ctx.lineTo(top.x, top.y+fw2*0.84);
+      ctx.closePath(); ctx.fill();
+      // the cup
+      ctx.fillStyle='rgba(0,0,0,.55)';
+      ctx.beginPath(); ctx.ellipse(base.x, base.y, Math.max(1.4,base.s*0.12), Math.max(0.9,base.s*0.07), 0,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  function drawTrees(){
+    if(!H.trees) return;
+    var list = H.trees.map(function(t){
+      var p = proj(t.x, t.y, 0);
+      return p ? {t:t, p:p} : null;
+    }).filter(Boolean).sort(function(a,b){ return b.p.z - a.p.z; });   // far first
+    list.forEach(function(o){
+      var p=o.p, h=(o.t.h||11), r=(o.t.r||9)*0.55;
+      var top = proj(o.t.x, o.t.y, h);
+      if(!top) return;
+      var wpx = Math.max(2, r*p.s);
+      var hpx = p.y - top.y;
+      // shadow first
+      ctx.fillStyle='rgba(0,0,0,.20)';
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, wpx*0.9, Math.max(1,wpx*0.28),0,0,Math.PI*2); ctx.fill();
+      // trunk
+      ctx.fillStyle='#3d2a18';
+      ctx.fillRect(p.x - Math.max(0.8,wpx*0.11), p.y - hpx*0.22, Math.max(1.6,wpx*0.22), hpx*0.24);
+      // three stacked skirts: a spruce, not a playing-card diamond
+      var shades = ['#123f27','#15492d','#195232'];
+      for(var k=0;k<3;k++){
+        var yBase = p.y - hpx*(0.18 + k*0.26);
+        var yTip  = p.y - hpx*(0.52 + k*0.24);
+        var wk    = wpx * (1 - k*0.26);
+        ctx.fillStyle = shades[k];
+        ctx.beginPath();
+        ctx.moveTo(p.x - wk, yBase);
+        ctx.lineTo(p.x, yTip);
+        ctx.lineTo(p.x + wk, yBase);
+        ctx.closePath(); ctx.fill();
+      }
+    });
+  }
+
+  function drawAim(){
+    if(!S.guide || anim) return;
+    var a = aimAngle(), cl = G.CLUBS[club];
+    var reach = cl.carry * (G.LIES[R.ball.lie]||G.LIES.fairway).carry;
+    var pts=[];
+    for(var i=0;i<=16;i++){
+      var d = reach*(i/16);
+      var p = proj(R.ball.x + Math.sin(a)*d, R.ball.y + Math.cos(a)*d, 0);
+      if(p) pts.push(p);
+    }
+    if(pts.length<2) return;
+    ctx.save();
+    ctx.setLineDash([6,6]); ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    for(var j=1;j<pts.length;j++) ctx.lineTo(pts[j].x,pts[j].y);
+    ctx.stroke();
+    ctx.restore();
+    var last = pts[pts.length-1];
+    ctx.fillStyle='rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.ellipse(last.x,last.y, Math.max(2,last.s*0.55), Math.max(1.2,last.s*0.3),0,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawBall(x,y,h){
+    var p = proj(x,y,h||0);
+    if(!p) return;
+    var g = proj(x,y,0);
+    if(g && (h||0) > 0.4){
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath(); ctx.ellipse(g.x,g.y, Math.max(1.5,g.s*0.35), Math.max(0.8,g.s*0.18),0,0,Math.PI*2); ctx.fill();
+    }
+    var r = Math.max(2.2, p.s*0.42);
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1; ctx.stroke();
+  }
+
+  /* ---------------- the putting view ----------------
+     Overhead, because reading a putt from behind the ball at ground level
+     is exactly the thing you cannot do on a screen. */
+  function drawPuttView(){
+    var g = H.green;
+    ctx.fillStyle='#1d5c36'; ctx.fillRect(0,0,W,Hh);
+    var cx=W/2, cy=Hh/2;
+    var span = Math.max(g.rx, g.ry) * 2.5;
+    var sc = Math.min(W,Hh) / span;
+    var toScr = function(x,y){ return {x: cx + (x-g.x)*sc, y: cy - (y-g.y)*sc}; };
+
+    ctx.save();
+    ctx.translate(cx,cy); ctx.scale(1,g.ry/g.rx);
+    ctx.fillStyle='#57c072'; ctx.beginPath(); ctx.arc(0,0,g.rx*sc,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // slope arrow: which way the putt breaks
+    var sl = g.slope||[0,0];
+    if(sl[0]||sl[1]){
+      var ang = Math.atan2(-sl[1], sl[0]);
+      var L = Math.min(W,Hh)*0.17;
+      ctx.save(); ctx.translate(W-56, 52); ctx.rotate(ang);
+      ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.fillStyle='rgba(255,255,255,.8)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(-L/2,0); ctx.lineTo(L/2,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(L/2,0); ctx.lineTo(L/2-8,-6); ctx.lineTo(L/2-8,6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='11px system-ui'; ctx.textAlign='center';
+      ctx.fillText('slope', W-56, 78);
+    }
+
+    var hp = toScr(g.x,g.y);
+    ctx.fillStyle='#0c2a18'; ctx.beginPath(); ctx.arc(hp.x,hp.y,7,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#f2f2f2'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(hp.x,hp.y); ctx.lineTo(hp.x,hp.y-34); ctx.stroke();
+    ctx.fillStyle='#e04a43';
+    ctx.beginPath(); ctx.moveTo(hp.x,hp.y-34); ctx.lineTo(hp.x+16,hp.y-28); ctx.lineTo(hp.x,hp.y-22); ctx.closePath(); ctx.fill();
+
+    var b = anim && anim.putt ? anim.cur : R.ball;
+    var bp = toScr(b.x,b.y);
+    // the line
+    ctx.save(); ctx.setLineDash([5,5]); ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(bp.x,bp.y); ctx.lineTo(hp.x,hp.y); ctx.stroke(); ctx.restore();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bp.x,bp.y,6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.lineWidth=1; ctx.stroke();
+
+    var ft = Math.round(G.dist(R.ball.x,R.ball.y,g.x,g.y)*G.FT);
+    ctx.fillStyle='rgba(255,255,255,.9)'; ctx.font='600 14px system-ui'; ctx.textAlign='center';
+    ctx.fillText(ft + ' ft', W/2, Hh-14);
+  }
+
+  function isPutting(){
+    return R.ball && (R.ball.lie==='green') && club===G.PUTTER;
+  }
+
+  /* ---------------- the frame ---------------- */
+  function draw(){
+    if(!H) return;
+    ctx.clearRect(0,0,W,Hh);
+    if(isPutting() || (anim && anim.putt)){ drawPuttView(); return; }
+    setCamera();
+    drawSky(); drawGround(); drawFairway(); drawTeeBox(); drawHazards(); drawGreen(); drawTrees();
+    if(!anim) drawAim();
+    if(anim) drawBall(anim.cur.x, anim.cur.y, anim.cur.h);
+    else drawBall(R.ball.x, R.ball.y, 0);
+  }
+
+  /* ---------------- the swing meter ---------------- */
+  var mv = $('meter'), mx = mv.getContext('2d');
+  var meter = {phase:'idle', t:0, power:0, acc:0, dir:1, raf:null, last:0};
+  function sizeMeter(){
+    var r = mv.parentNode.getBoundingClientRect();
+    mv.width = Math.floor(r.width*DPR); mv.height = Math.floor(r.height*DPR);
+    mx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  function drawMeter(){
+    var w = mv.width/DPR, h = mv.height/DPR;
+    mx.clearRect(0,0,w,h);
+    var pad=6, bw=w-pad*2;
+    // the track: green to 100%, red past it
+    var fullX = pad + bw*0.89;
+    mx.fillStyle='#0d3321'; mx.fillRect(pad,pad,bw,h-pad*2);
+    mx.fillStyle='#2f8a4e'; mx.fillRect(pad,pad,fullX-pad,h-pad*2);
+    mx.fillStyle='#8e3b32'; mx.fillRect(fullX,pad,bw+pad-fullX,h-pad*2);
+    // the accuracy window at the left edge
+    mx.fillStyle='rgba(255,255,255,.85)'; mx.fillRect(pad+bw*0.055, pad, 2, h-pad*2);
+    if(meter.power>0){
+      var px = pad + bw*0.89*Math.min(meter.power,1) + (meter.power>1 ? (meter.power-1)*bw*0.11/0.12 : 0);
+      mx.fillStyle='rgba(255,255,255,.5)'; mx.fillRect(px-1,pad,2,h-pad*2);
+    }
+    var x = pad + bw*meterPos();
+    mx.fillStyle='#f5f1e4'; mx.fillRect(x-2,2,4,h-4);
+  }
+  function meterPos(){
+    return clamp(meter.t,0,1);
+  }
+  function tickMeter(ts){
+    if(!meter.last) meter.last = ts;
+    var dt = Math.min(64, ts-meter.last)/1000; meter.last=ts;
+    if(meter.phase==='power'){
+      var sp = meter.t > 0.89 ? 1.55 : 1.0;          // the red zone runs away from you
+      meter.t += dt*sp*0.95;
+      if(meter.t >= 1){ meter.t=1; setPower(); }     // ran out of meter: full send
+    } else if(meter.phase==='acc'){
+      meter.t -= dt*1.05;
+      if(meter.t <= 0){ meter.t=0; fire(-1); return; } // missed the window entirely
+    }
+    drawMeter();
+    if(meter.phase!=='idle') meter.raf = requestAnimationFrame(tickMeter);
+  }
+  function startMeter(){
+    meter.phase='power'; meter.t=0; meter.power=0; meter.acc=0; meter.last=0;
+    $('swingBtn').textContent='SET POWER';
+    meter.raf = requestAnimationFrame(tickMeter);
+  }
+  function setPower(){
+    meter.power = meter.t/0.89;                      // 0.89 of the bar == 100%
+    meter.phase='acc';
+    $('swingBtn').textContent='SET ACCURACY';
+  }
+  function fire(forced){
+    meter.phase='idle';
+    if(meter.raf) cancelAnimationFrame(meter.raf);
+    var accPos = forced!=null ? 0 : meter.t;
+    // the window sits at 0.055 of the bar; distance from it is your miss
+    var acc = (accPos - 0.055) / 0.16;
+    if(forced!=null) acc = -1;
+    acc = clamp(acc, -1, 1);
+    $('swingBtn').textContent='SWING';
+    drawMeter();
+    hit(meter.power, acc);
+  }
+
+  /* ---------------- taking the shot ---------------- */
+  function hit(power, acc){
+    var putting = isPutting();
+    var res;
+    if(putting){
+      res = G.resolvePutt(H, R.ball, {power:power, accuracy:acc, maxFt:60});
+      sfx('select');
+    } else {
+      res = G.resolveShot(H, R.ball, {club:club, power:power, accuracy:acc, wind:R.wind, aim:aimAngle()});
+      sfx(R.ball.lie==='sand' ? 'place' : 'strike');
+    }
+    R.strokes[R.hole]++;
+    animate(res, putting);
+  }
+
+  function animate(res, putting){
+    // grey the button for the whole flight — taps were already ignored, but the control
+    // stayed lit, which reads as an unresponsive game rather than a busy one
+    $('swingBtn').disabled = true;
+    var dur, apex;
+    if(putting){
+      dur = 220 + Math.min(1400, res.rollFt*26);
+      anim = {putt:true, res:res, t0:performance.now(), dur:dur, cur:{x:res.from.x,y:res.from.y,h:0}};
+    } else {
+      var carry = G.dist(res.from.x,res.from.y,res.land.x,res.land.y);
+      dur  = clamp(420 + carry*3.2, 500, 1500);   // weighty, but nobody wants a 2s wait per shot
+      apex = Math.max(4, carry * (0.10 + G.CLUBS[res.club].loft/210));
+      anim = {res:res, t0:performance.now(), dur:dur, apex:apex, phase:'air',
+              cur:{x:res.from.x,y:res.from.y,h:0}};
+    }
+    requestAnimationFrame(stepAnim);
+  }
+  function stepAnim(ts){
+    if(!anim) return;
+    var res = anim.res;
+    var t = clamp((ts-anim.t0)/anim.dur, 0, 1);
+    if(anim.putt){
+      var e = 1-Math.pow(1-t,2.1);                  // a putt slows as it runs out
+      anim.cur.x = res.from.x + (res.to.x-res.from.x)*e;
+      anim.cur.y = res.from.y + (res.to.y-res.from.y)*e;
+    } else if(anim.phase==='air'){
+      anim.cur.x = res.from.x + (res.land.x-res.from.x)*t;
+      anim.cur.y = res.from.y + (res.land.y-res.from.y)*t;
+      anim.cur.h = Math.sin(t*Math.PI) * anim.apex;
+      if(t>=1){
+        anim.phase='roll'; anim.t0=ts; anim.dur=Math.max(160, res.roll*26); anim.cur.h=0;
+        if(res.landLie==='water'){ sfx('bad'); }
+        else if(res.landLie==='sand'){ sfx('place'); }
+        requestAnimationFrame(stepAnim); return;
+      }
+    } else {
+      anim.cur.x = res.land.x + (res.to.x-res.land.x)*t;
+      anim.cur.y = res.land.y + (res.to.y-res.land.y)*t;
+      anim.cur.h = 0;
+    }
+    draw();
+    if(t<1) requestAnimationFrame(stepAnim);
+    else finishShot(res);
+  }
+
+  function finishShot(res){
+    anim = null;
+    R.ball = {x:res.to.x, y:res.to.y, lie:res.lie};
+    if(res.penalty){ R.strokes[R.hole] += res.penalty; }
+    aim = 0;
+    if(res.holed){ return holeOut(); }
+    // pick a sensible club for what's left, and put the putter in your hand on the green
+    autoClub();
+    var m = '';
+    if(res.dropped) m = res.landLie==='water' ? '<b>In the water.</b> Penalty stroke, playing again from here.'
+                                              : '<b>Out of bounds.</b> Penalty stroke, playing again from here.';
+    else if(res.lie==='sand') m = 'Bunkered.';
+    else if(res.lie==='trees') m = 'In the trees — punch out.';
+    else if(res.lie==='deep') m = 'Deep rough.';
+    else if(res.lie==='green') m = 'On the green.';
+    else if(res.overClub) m = 'Too much club from that lie.';
+    setMsg(m || okLine(res));
+    syncHud(); draw();
+  }
+  function okLine(res){
+    var d = Math.round(G.dist(res.from.x,res.from.y,res.to.x,res.to.y));
+    return d + ' yards.';
+  }
+  function holeOut(){
+    var par = H.par, n = R.strokes[R.hole];
+    sfx(n <= par ? 'win' : 'good');
+    setMsg('<b>'+G.scoreLabel(n,par)+'</b> — '+n+' on a par '+par+'.');
+    syncHud();
+    setTimeout(function(){
+      if(R.hole >= course.holes.length-1){ finishRound(); }
+      else { R.hole++; openHoleCard(); }
+    }, 900);
+  }
+
+  function autoClub(){
+    if(R.ball.lie==='green'){ club = G.PUTTER; return; }
+    var d = G.toPin(H, R.ball);
+    var lie = G.LIES[R.ball.lie] || G.LIES.fairway;
+    var best = 0, bestErr = 1e9;
+    for(var i=0;i<G.CLUBS.length-1;i++){
+      if(lie.maxClub && i < lie.maxClub) continue;
+      var reach = G.CLUBS[i].carry*lie.carry + G.CLUBS[i].roll*lie.roll;
+      var err = Math.abs(reach - d);
+      if(err < bestErr){ bestErr=err; best=i; }
+    }
+    club = best;
+  }
+
+  /* ---------------- hud + chrome ---------------- */
+  function setMsg(h){ $('msg').innerHTML = h||''; }
+  function syncHud(){
+    var cl = G.CLUBS[club];
+    $('clubName').textContent = cl.name;
+    var lie = G.LIES[R.ball.lie] || G.LIES.fairway;
+    if(club===G.PUTTER) $('clubYds').textContent = 'putter';
+    else {
+      var reach = Math.round(cl.carry*lie.carry + cl.roll*lie.roll);
+      $('clubYds').textContent = reach + ' yds' + (lie.maxClub && club<lie.maxClub ? ' · too much club' : '');
+    }
+    $('lieChip').textContent = lie.label;
+    var d = G.toPin(H,R.ball);
+    $('distChip').innerHTML = R.ball.lie==='green'
+      ? '<b>'+Math.round(d*G.FT)+'</b> ft to the pin'
+      : '<b>'+Math.round(d)+'</b> yds to the pin';
+    var w = R.wind||{speed:0,dir:0};
+    $('windChip').innerHTML = w.speed ? ('Wind <b>'+w.speed+'</b> mph '+windArrow(w.dir)) : 'No wind';
+    $('holeInfo').innerHTML = '<b>Hole '+(R.hole+1)+'</b><br>Par '+H.par+' · '+H.len+' yds';
+    $('swingBtn').disabled = !!anim;
+  }
+  function windArrow(dir){
+    var arrows=['↓','↙','←','↖','↑','↗','→','↘'];
+    var i = Math.round(((dir%360)+360)%360/45)%8;
+    return arrows[i];
+  }
+
+  /* ---------------- flow ---------------- */
+  function openHoleCard(){
+    H = G.startHole(R, S.wind);
+    autoClub(); aim=0; anim=null;
+    $('holeTitle').textContent = 'Hole '+(R.hole+1)+' — '+H.name;
+    $('holeSub').textContent = 'Par '+H.par+' · '+H.len+' yards';
+    $('holeNote').textContent = H.note||'';
+    $('holeOv').classList.add('on');
+    syncHud(); sizeCanvas(); draw();
+  }
+  function beginHole(){
+    $('holeOv').classList.remove('on');
+    setMsg('Drag the view to aim.');
+    sizeCanvas(); sizeMeter(); drawMeter(); syncHud(); draw();
+  }
+  function finishRound(){
+    R.done = true;
+    var t = G.totals(R);
+    $('doneTitle').textContent = t.toPar===0 ? 'Level par' : (t.toPar<0 ? t.toPar+' for the round' : '+'+t.toPar+' for the round');
+    $('doneSub').textContent = t.strokes+' strokes at '+course.n;
+    $('doneCard').innerHTML = cardHTML();
+    try{
+      var key='gnGolfBest_'+(course.n||'x');
+      var prev=parseInt(localStorage.getItem(key)||'0',10);
+      if(!prev || t.strokes<prev){ localStorage.setItem(key, String(t.strokes)); $('doneSub').textContent += ' — your best yet'; }
+    }catch(e){}
+    sfx('win');
+    $('doneOv').classList.add('on');
+  }
+  function cardHTML(){
+    var h='<table class="card"><tr><th class="name">Hole</th>';
+    for(var i=0;i<course.holes.length;i++) h+='<th>'+(i+1)+'</th>';
+    h+='<th>Tot</th></tr><tr><td class="name">Par</td>';
+    var pt=0;
+    for(i=0;i<course.holes.length;i++){ pt+=course.holes[i].par; h+='<td>'+course.holes[i].par+'</td>'; }
+    h+='<td>'+pt+'</td></tr><tr><td class="name">You</td>';
+    var st=0;
+    for(i=0;i<course.holes.length;i++){
+      var s=R.strokes[i], p=course.holes[i].par;
+      if(s>0){ st+=s; var cls = s<p?'sc-u':(s>p?'sc-o':'sc-e'); h+='<td class="'+cls+'">'+s+'</td>'; }
+      else h+='<td>–</td>';
+    }
+    h+='<td>'+(st||'–')+'</td></tr></table>';
+    var t=G.totals(R);
+    if(t.played) h+='<p style="text-align:center;margin-top:10px">'+(t.toPar===0?'Level par':(t.toPar>0?'+'+t.toPar:t.toPar))+' through '+t.played+'</p>';
+    return h;
+  }
+
+  /* ---------------- input ---------------- */
+  var drag=null;
+  cv.addEventListener('pointerdown', function(e){
+    if(anim || isPutting()) return;
+    drag={x:e.clientX, aim:aim}; cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(!drag) return;
+    aim = clamp(drag.aim + (e.clientX-drag.x)*-0.0016, -0.44, 0.44);
+    draw();
+  });
+  cv.addEventListener('pointerup', function(){ drag=null; });
+  cv.addEventListener('pointercancel', function(){ drag=null; });
+
+  $('swingBtn').addEventListener('click', function(){
+    if(anim) return;
+    if(meter.phase==='idle') startMeter();
+    else if(meter.phase==='power') setPower();
+    else fire();
+  });
+  $('clubUp').addEventListener('click', function(){ if(anim)return; club=clamp(club-1,0,G.CLUBS.length-1); syncHud(); draw(); });
+  $('clubDown').addEventListener('click', function(){ if(anim)return; club=clamp(club+1,0,G.CLUBS.length-1); syncHud(); draw(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key===' '){ e.preventDefault(); $('swingBtn').click(); }
+    else if(e.key==='ArrowUp'){ $('clubUp').click(); }
+    else if(e.key==='ArrowDown'){ $('clubDown').click(); }
+    else if(e.key==='ArrowLeft'){ aim=clamp(aim-0.02,-0.44,0.44); draw(); }
+    else if(e.key==='ArrowRight'){ aim=clamp(aim+0.02,-0.44,0.44); draw(); }
+  });
+
+  /* ---------------- overlays ---------------- */
+  $('holeGo').addEventListener('click', beginHole);
+  $('menuBtn').addEventListener('click', function(){ syncSwitches(); $('menuOv').classList.add('on'); });
+  $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
+  $('menuRules').addEventListener('click', function(){ $('menuOv').classList.remove('on'); $('rulesOv').classList.add('on'); });
+  $('rulesClose').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
+  $('cardBtn').addEventListener('click', function(){ $('cardTitle').textContent=course.n; $('cardBody').innerHTML=cardHTML(); $('cardOv').classList.add('on'); });
+  $('cardClose').addEventListener('click', function(){ $('cardOv').classList.remove('on'); });
+  $('menuRestart').addEventListener('click', function(){ $('menuOv').classList.remove('on'); restart(); });
+  $('doneAgain').addEventListener('click', function(){ $('doneOv').classList.remove('on'); restart(); });
+  function restart(){ R = G.newRound(course); R.hole=0; openHoleCard(); }
+
+  function bindSwitch(id, get, set){
+    var n=$(id);
+    var sync=function(){ n.classList.toggle('on', !!get()); };
+    n.onclick=function(){ set(!get()); saveS(); sync(); draw(); };
+    sync();
+  }
+  function syncSwitches(){
+    $('swSound').classList.toggle('on', !!(window.SFX && SFX.isOn()));
+    $('swWind').classList.toggle('on', S.wind);
+    $('swGuide').classList.toggle('on', S.guide);
+    Array.prototype.forEach.call($('segText').children, function(b){
+      b.classList.toggle('on', parseFloat(b.dataset.v)===S.fs);
+    });
+  }
+  bindSwitch('swSound', function(){ return !!(window.SFX&&SFX.isOn()); },
+                        function(v){ if(window.SFX){ SFX.setOn(v); if(v) SFX.play('select'); } });
+  bindSwitch('swWind',  function(){ return S.wind; },  function(v){ S.wind=v; });
+  bindSwitch('swGuide', function(){ return S.guide; }, function(v){ S.guide=v; });
+  (function(){
+    var seg=$('segText');
+    [['S',0.9],['M',1],['L',1.12],['XL',1.26]].forEach(function(o){
+      var b=document.createElement('button'); b.textContent=o[0]; b.dataset.v=o[1];
+      b.onclick=function(){ S.fs=o[1]; saveS(); applyFs(); syncSwitches(); sizeCanvas(); sizeMeter(); drawMeter(); draw(); };
+      seg.appendChild(b);
+    });
+  })();
+
+  /* ---------------- go ---------------- */
+  applyFs();
+  sizeCanvas();
+  sizeMeter();
+  drawMeter();
+  openHoleCard();
+
+  // a small door for the tests and, later, the architect's preview
+  window.__GOLFUI = {
+    state:function(){ return {R:R, H:H, club:club, aim:aim, meter:meter}; },
+    setClub:function(i){ club=i; syncHud(); draw(); },
+    swing:function(power,acc){ hit(power,acc); },
+    course:function(){ return course; },
+    begin:beginHole
+  };
+})();
+</script>
+
+<script>
+(function(){
+  var V="v68", ISO=document.lastModified;
+  var d=new Date(ISO);
+  var el=document.getElementById('buildStamp');
+  if(el) el.textContent='build '+V+(isNaN(d)?'':' · '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+})();
+</script>
+</body>
+</html>
