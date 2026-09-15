@@ -89,6 +89,48 @@ alongside the turn, and again on the river**, because every card was recreated w
 deal class on it. `render()` also paints only what has actually been revealed rather than
 the whole of `T.board`, or the turn would appear an instant before its own animation.
 
+## Playing against other people
+
+**Play with friends** on the start screen. Everyone opens the page and types the same
+room name; whoever taps **Create the room** deals. Bots can fill the empty seats, so
+three people plus two bots is a five-handed table.
+
+**The dealer's device runs the game.** There is no backend to be the house, so the
+room's creator holds the engine: it deals, validates every action and broadcasts the
+table. Everyone else renders what the dealer sends and sends back only their own
+action. That phone has to stay open — if it closes, the table goes with it.
+
+**Hole cards are encrypted to each player individually.** The relay topic is public:
+anyone who knows the room name can read every message on it, and so could everyone at
+your own table. So on joining, each device generates an ECDH P-256 key pair and
+publishes the public half; the dealer derives a shared secret per player and AES-GCM
+encrypts that player's two cards to them alone. Broadcast state carries no hole cards
+at all until a showdown, where they are public anyway. This is the part not to
+"simplify" later — without it the game is unplayable, not merely insecure.
+
+**Transport** is the same two public ntfy relays BINGO uses (`ntfy.sh`,
+`ntfy.envs.net`), a long-lived SSE stream per relay with plain-GET polling as the
+fallback. Rate limits are per IP and a cabin puts a whole table behind one, so only
+the dealer broadcasts, clients speak only when they act, and the polling fallback is
+slower here than in BINGO for the same reason.
+
+**When things go wrong.** A player who goes quiet for 45 seconds is checked if it's
+free and folded otherwise, so one asleep phone can't stall the table. Reconnecting
+with the same device id drops you back into your seat with your cards — the id is
+kept in `localStorage`, so a reload or a locked phone is survivable. Someone arriving
+mid-tournament is told to wait and is dealt in when it ends, because the table size
+is fixed when the engine is created.
+
+## Playing offline
+
+The whole game is one self-contained file and the service worker caches it, so solo
+play against the bots needs no network at all. Open the page once while online and it
+is cached; documents are fetched network-first with the fresh copy written back to the
+cache, so simply loading it online is also how you *update* the offline copy. Verified
+by loading the site, cutting the network entirely, and playing five hands.
+
+Multiplayer, of course, needs a network — the dealer has to reach the others.
+
 ## Playing on a monitor
 
 At 1024px and up the felt becomes a **wide oval** (1.58:1) sized from the window height

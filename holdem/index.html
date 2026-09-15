@@ -207,6 +207,12 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 .res .pl{width:26px;font-weight:800;color:var(--gold);flex:0 0 auto}
 .res .nm{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .res.me{color:var(--gold)}
+.inp{width:100%;height:46px;border-radius:10px;background:#0e0b0a;border:1px solid var(--line);
+  color:var(--ink);font-size:16px;padding:0 12px;font-family:inherit;margin-bottom:4px}
+.inp:focus{outline:none;border-color:var(--gold-dim)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#5a4a40;vertical-align:middle;margin-right:5px}
+.dot.on{background:var(--good)} .dot.bad{background:var(--bad)}
+#netSeats{margin:6px 0}
 .gn-build{text-align:center;font-size:10px;color:var(--ink-faint);padding:6px 0 10px}
 
 /* very narrow phones — width-based only, never viewport height */
@@ -340,6 +346,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
     <div class="seg" id="segBlinds"></div>
     <p style="font-size:11px;color:var(--ink-faint)">Turbo ≈ 20 minutes · Standard ≈ 30 · Marathon ≈ 40. A fuller table plays tighter and runs longer.</p>
     <button class="big" id="startBtn">New tournament</button>
+    <button class="big ghost" id="onlineBtn">Play with friends</button>
     <button class="big ghost" id="resumeBtn">Resume</button>
   </div>
 </div>
@@ -396,6 +403,38 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
     <button class="big" id="menuNew">New tournament</button>
     <button class="big ghost" id="menuHome">🏠 Back to all games</button>
     <button class="big ghost" data-close="ovMenu">Close</button>
+  </div>
+</div>
+
+<!-- ---------------- online ---------------- -->
+<div class="ov" id="ovOnline">
+  <div class="sheet">
+    <h2>Play with friends</h2>
+    <div id="netSetup">
+      <p>Everyone opens this page and joins the same room. Whoever creates it deals —
+         that phone runs the game, so it needs to stay open.</p>
+      <h3>Your name</h3>
+      <input class="inp" id="netName" maxlength="12" placeholder="Name" autocomplete="off">
+      <h3>Room</h3>
+      <input class="inp" id="netRoom" maxlength="24" placeholder="e.g. delta-2210" autocomplete="off" autocapitalize="off">
+      <button class="big" id="netCreate">Create the room</button>
+      <button class="big ghost" id="netJoin">Join a room</button>
+      <p style="font-size:11px;color:var(--ink-faint)">Your two cards are encrypted to you alone —
+         the room is a public channel, so nobody else at the table can read them.</p>
+    </div>
+    <div id="netLobby" style="display:none">
+      <div class="row"><div class="lbl">Room <b id="netRoomLabel"></b></div>
+        <div class="ctl"><span class="dot" id="netDot"></span><span id="netText">offline</span></div></div>
+      <div id="netSeats"></div>
+      <p id="netWaiting"></p>
+      <div id="netHostOnly" style="display:none">
+        <div class="row"><div class="lbl">Add bots<small>Fill the empty seats</small></div></div>
+        <div class="seg" id="segBots"></div>
+        <button class="big" id="netDeal">Deal</button>
+      </div>
+      <button class="big ghost" id="netLeave">Leave the room</button>
+    </div>
+    <button class="big ghost" data-close="ovOnline">Close</button>
   </div>
 </div>
 
@@ -1293,7 +1332,16 @@ function syncRaise(){
   const la=legalActions(T);
   $('raiseGo').textContent=(la.raise&&la.raise.isBet?'Bet ':'Raise to ')+fmt(raiseTo);
 }
-function submit(a){ if(!pendingResolve) return; const r=pendingResolve; pendingResolve=null; showActions(false); r(a); }
+function submit(a){
+  // online and not dealing: the dealer owns the engine, so just send the action
+  if(NET.on && !NET.host){
+    showActions(false); closeRaise(); pendingResolve=null;
+    netPost({k:'act', id:NET.me, hn:T.handNo, a});
+    $('msg').textContent='Sent\u2026';
+    return;
+  }
+  if(!pendingResolve) return; const r=pendingResolve; pendingResolve=null; showActions(false); r(a);
+}
 const waitHuman=()=>new Promise(res=>{ pendingResolve=res; buildActionBar(); });
 
 /* ---------------- keyboard ---------------- */
@@ -1411,6 +1459,7 @@ function newGame(){
   playHand();
 }
 function saveGame(){
+  if(NET.on) return;                 // an online table lives on the dealer, not in localStorage
   try{
     if(!T||T.phase==='tourney-over'){ localStorage.removeItem(LS+'.game'); return; }
     localStorage.setItem(LS+'.game',JSON.stringify({
@@ -1491,6 +1540,395 @@ function bindSeg(id,vals,get,set){
   }
 }
 
+/* ==================== online play ====================
+   There is no backend, so the room's creator DEALS: their device runs the engine,
+   validates every action and broadcasts the table. Everyone else renders what the
+   dealer sends and sends back only their own action.
+
+   The relay topic is public, so hole cards are encrypted to each player
+   individually (ECDH P-256 -> AES-GCM). Without that, anyone who knows the room
+   code — your own table included — could read every hand.
+
+   Rate limits are per IP and a plane puts everyone behind one, so only the dealer
+   broadcasts; clients speak just when they act.                                */
+
+const RELAYS = ["https://ntfy.sh", "https://ntfy.envs.net"];
+const NET = {
+  on:false, host:false, room:'', me:'', name:'', hostId:'', hostPub:'',
+  seats:[], mySeat:-1, bots:0,
+  keys:null, pub:'', peers:Object.create(null),
+  myCards:[], handNo:0, seq:0, lastSeq:-1,
+  relay:Object.create(null), polling:false, beat:null,
+  waiting:null, actTimer:null, lastSeen:Object.create(null)
+};
+const ACT_TIMEOUT = 45000;     // a player who has gone quiet gets checked or folded
+const netKey = s => String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const topic = () => 'gnholdem-v1-' + netKey(NET.room);
+
+/* ---- crypto: only the intended player can read their own two cards ---- */
+const b64  = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+async function initKeys(){
+  if(NET.keys) return;
+  NET.keys = await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'}, false, ['deriveKey']);
+  NET.pub  = b64(await crypto.subtle.exportKey('raw', NET.keys.publicKey));
+}
+async function sharedKey(theirPub){
+  const pub = await crypto.subtle.importKey('raw', unb64(theirPub), {name:'ECDH',namedCurve:'P-256'}, false, []);
+  return crypto.subtle.deriveKey({name:'ECDH', public:pub}, NET.keys.privateKey,
+                                 {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function seal(theirPub, obj){
+  const k=await sharedKey(theirPub), iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv}, k, new TextEncoder().encode(JSON.stringify(obj)));
+  return {iv:b64(iv), ct:b64(ct)};
+}
+async function unseal(theirPub, env){
+  const k=await sharedKey(theirPub);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(env.iv)}, k, unb64(env.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+/* ---- transport: two relays, SSE with a plain-GET fallback ---- */
+function rstate(h){ return NET.relay[h] || (NET.relay[h]={live:false,es:null,pollT:null,lastId:null,err:'',tries:0}); }
+const liveRelays = () => RELAYS.filter(h=>rstate(h).live).length;
+function netStatus(){
+  const d=$('netDot'), t=$('netText'); if(!d) return;
+  const n=liveRelays();
+  d.className='dot'+(n?' on':' bad');
+  t.textContent = !NET.on ? 'offline' : n===RELAYS.length ? 'connected' : n ? 'connected ('+n+'/2)' : 'no signal';
+}
+function netPost(obj){
+  obj.room=netKey(NET.room); obj.t=Date.now();
+  const body=JSON.stringify(obj);
+  RELAYS.forEach(h=>{ fetch(h+'/'+topic(), {method:'POST', body}).catch(()=>{}); });
+}
+function openRelay(h){
+  const st=rstate(h); closeRelay(h);
+  if(typeof EventSource==='undefined'){ st.err='no EventSource'; pollRelay(h); return; }
+  try{
+    const es=new EventSource(h+'/'+topic()+'/sse?since=30s'); st.es=es;
+    es.onopen=()=>{ st.live=true; st.err=''; st.tries=0; netStatus(); };
+    es.onmessage=ev=>{
+      st.live=true; netStatus();
+      let m,b; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+      if(m.event!=='message') return;
+      try{ b=JSON.parse(m.message); }catch(e){ return; }
+      handleNet(b);
+    };
+    es.onerror=()=>{
+      st.live=false; st.err='stream blocked'; netStatus();
+      try{ es.close(); }catch(e){} st.es=null;
+      pollRelay(h);
+      setTimeout(()=>{ if(NET.polling && !st.es) openRelay(h); }, Math.min(30000, 4000*Math.pow(2, st.tries++)));
+    };
+  }catch(e){ st.err='stream unavailable'; pollRelay(h); }
+}
+async function pollRelay(h){
+  const st=rstate(h); if(!NET.polling) return;
+  clearTimeout(st.pollT);
+  try{
+    const res=await fetch(h+'/'+topic()+'/json?poll=1&since='+encodeURIComponent(st.lastId||'30s'));
+    if(res.ok){
+      st.live=true; st.err='';
+      for(const line of (await res.text()).split('\n')){
+        if(!line.trim()) continue;
+        let msg,b; try{ msg=JSON.parse(line); }catch(e){ continue; }
+        if(msg.id) st.lastId=msg.id;
+        if(msg.event!=='message') continue;
+        try{ b=JSON.parse(msg.message); }catch(e){ continue; }
+        handleNet(b);
+      }
+    } else { st.live=false; st.err = res.status===429?'rate-limited':'HTTP '+res.status; }
+  }catch(e){ st.live=false; st.err='unreachable'; }
+  netStatus();
+  // slower than BINGO on purpose: a whole table behind one cabin IP shares the limit
+  if(NET.polling && !st.es) st.pollT=setTimeout(()=>pollRelay(h), st.live?7000:11000);
+}
+function closeRelay(h){ const st=rstate(h); if(st.es){ try{st.es.close();}catch(e){} st.es=null; } clearTimeout(st.pollT); st.pollT=null; }
+function netConnect(){
+  NET.polling=true;
+  RELAYS.forEach(h=>{ const st=rstate(h); st.lastId=null; st.tries=0; openRelay(h); });
+  netStatus();
+  netPost({k:'hello', id:NET.me, name:NET.name, pub:NET.pub});
+  clearInterval(NET.beat);
+  NET.beat=setInterval(()=>{
+    if(!NET.polling) return;
+    if(NET.host) broadcastState(); else netPost({k:'hello', id:NET.me, name:NET.name, pub:NET.pub});
+  }, 15000);
+}
+function netDisconnect(){
+  NET.polling=false; RELAYS.forEach(h=>{ closeRelay(h); rstate(h).live=false; });
+  clearInterval(NET.beat); clearTimeout(NET.actTimer); netStatus();
+}
+
+/* ---- the dealer's view of the table, with everyone else's cards removed ---- */
+function redactState(msg){
+  return {
+    k:'state', seq:++NET.seq, host:NET.hostId, hp:NET.pub, m:msg||'',
+    n:T.cfg.seats, hn:T.handNo, lv:T.level, sb:T.sb, bb:T.bb,
+    bd:T.board, bt:T.btnSeat, ta:T.toAct, cb:T.currentBet, mr:T.minRaise,
+    str:T.street, ph:T.phase, po:T.pots, wn:T.winners,
+    p:T.players.map(p=>({
+      i:p.id||'', nm:p.name, k:p.stack, c:p.committed, s:p.street,
+      f:p.folded?1:0, a:p.allIn?1:0, o:p.out?1:0, cr:p.canRaise?1:0,
+      la:p.lastAction||'', sd:p.showdown?1:0, pl:p.place||0,
+      cd:(p.showdown && p.cards.length)?p.cards:null, sc:p.score||0
+    }))
+  };
+}
+function broadcastState(msg){ if(NET.host && T) netPost(redactState(msg)); }
+
+// clients rebuild a table-shaped object so the existing render() just works
+function hydrate(m){
+  const seats=m.n;
+  T = {
+    cfg:{seats}, players:m.p.map((q,i)=>({
+      seat:i, id:q.i, name:q.nm, isBot:false, persona:null,
+      stack:q.k, committed:q.c, street:q.s, cards:
+        q.cd ? q.cd : (i===NET.mySeat ? NET.myCards.slice() : (q.f||q.o ? [] : [-1,-1])),
+      folded:!!q.f, allIn:!!q.a, out:!!q.o, canRaise:!!q.cr, acted:false,
+      lastAction:q.la, showdown:!!q.sd, place:q.pl, score:q.sc, won:0, startStack:q.k
+    })),
+    board:m.bd, btnSeat:m.bt, sbSeat:-1, bbSeat:-1, sb:m.sb, bb:m.bb,
+    level:m.lv, handNo:m.hn, handsThisLevel:0, deck:[], dp:0,
+    street:m.str, currentBet:m.cb, minRaise:m.mr, toAct:m.ta,
+    pots:m.po||[], winners:m.wn||[], events:[], results:[], phase:m.ph, reveal:false
+  };
+  heroSeat = NET.mySeat<0 ? 0 : NET.mySeat;
+  return T;
+}
+
+/* ---- message handling ---- */
+function handleNet(m){
+  if(!m || m.room!==netKey(NET.room)) return;
+  if(m.id) NET.lastSeen[m.id]=Date.now();
+  if(m.k==='hello' && NET.host)  return onHello(m);
+  if(m.k==='seats' && !NET.host) return onSeats(m);
+  if(m.k==='state' && !NET.host) return onState(m);
+  if(m.k==='cards')              return onCards(m);
+  if(m.k==='act'  && NET.host)   return onAct(m);
+  if(m.k==='wait' && m.to===NET.me){
+    $('netWaiting').textContent='A game is already running at this table — you’ll be dealt in when it finishes.';
+    return;
+  }
+  if(m.k==='bye'  && NET.host)   return onBye(m);
+}
+function seatOf(id){ return NET.seats.findIndex(s=>s.id===id); }
+const gameRunning = () => !!T && T.phase!=='idle' && T.phase!=='tourney-over';
+function onHello(m){
+  if(!m.id || m.id===NET.me) return;
+  NET.peers[m.id]=m.pub;
+  const at=seatOf(m.id);
+  if(at>=0){
+    // already has a seat — this is a rejoin after a sleeping phone or a reload,
+    // so put them straight back in with their cards
+    NET.seats[at].name=(m.name||NET.seats[at].name).slice(0,12);
+    if(m.pub) NET.seats[at].pub=m.pub;
+    broadcastSeats();
+    if(T && T.phase==='betting'){ sendCardsTo(m.id); broadcastState(); }
+  } else if(!gameRunning()){
+    NET.seats.push({id:m.id, name:(m.name||'Player').slice(0,12), pub:m.pub});
+    broadcastSeats();
+  } else {
+    // a tournament is already under way; the table is fixed for its duration
+    netPost({k:'wait', to:m.id});
+  }
+  renderLobby();
+}
+function onBye(m){
+  const at=seatOf(m.id);
+  if(at>=0 && (!T || T.phase!=='betting')){ NET.seats.splice(at,1); broadcastSeats(); renderLobby(); }
+}
+function broadcastSeats(){
+  netPost({k:'seats', host:NET.hostId, hp:NET.pub, bots:NET.bots,
+           s:NET.seats.map(s=>({id:s.id,name:s.name}))});
+}
+function onSeats(m){
+  NET.hostId=m.host; NET.hostPub=m.hp; NET.bots=m.bots||0;
+  NET.seats=m.s||[];
+  NET.mySeat=seatOf(NET.me);
+  renderLobby();
+}
+async function onCards(m){
+  if(m.to!==NET.me || !NET.hostPub) return;
+  try{
+    const got=await unseal(NET.hostPub, m.e);
+    NET.myCards=got.c; NET.handNo=got.h;
+    if(T && T.players[NET.mySeat]) { T.players[NET.mySeat].cards=NET.myCards.slice(); render(); }
+  }catch(e){ /* not for us, or a stale key */ }
+}
+function onState(m){
+  if(m.seq<=NET.lastSeq) return;             // relays can deliver out of order
+  NET.lastSeq=m.seq; NET.hostId=m.host; NET.hostPub=m.hp||NET.hostPub;
+  if(NET.mySeat<0) NET.mySeat=m.p.findIndex(q=>q.i===NET.me);
+  hydrate(m);
+  if($('ovOnline').classList.contains('open') && m.ph!=='idle') closeOv('ovOnline');
+  const before=lastBoard; lastBoard=T.board.length;
+  render();
+  if(m.m) $('msg').textContent=m.m;
+  const mine = T.toAct===NET.mySeat && T.phase==='betting' && !T.players[NET.mySeat].folded;
+  if(mine){ buildActionBar(); $('msg').textContent='Your move'; }
+  else { showActions(false); if(!m.m && T.phase==='betting') $('msg').textContent=(T.players[T.toAct]||{}).name+' to act'; }
+}
+async function onAct(m){
+  if(!NET.waiting || m.hn!==T.handNo) return;
+  const at=seatOf(m.id);
+  if(at<0 || at!==T.toAct || at!==NET.waiting.seat) return;
+  const a=m.a;
+  const la=legalActions(T);
+  let ok = a && ((a.type==='fold') || (a.type==='check'&&la.check) ||
+                 (a.type==='call'&&la.call!==undefined) || (a.type==='raise'&&la.raise));
+  if(!ok) return;                                   // never trust a client's action
+  const w=NET.waiting; NET.waiting=null; clearTimeout(NET.actTimer);
+  w.resolve(a);
+}
+
+/* ---- dealing: each player's two cards, encrypted to them alone ---- */
+async function sendCardsTo(id){
+  const at=seatOf(id); if(at<0 || !T || !T.players[at]) return;
+  const pub=NET.peers[id] || (NET.seats[at]||{}).pub; if(!pub) return;
+  try{
+    const e=await seal(pub, {c:T.players[at].cards, h:T.handNo});
+    netPost({k:'cards', to:id, e});
+  }catch(err){}
+}
+async function dealCardsOut(){
+  for(const s of NET.seats){ if(s.id!==NET.me) await sendCardsTo(s.id); }
+  NET.myCards = T.players[NET.mySeat] ? T.players[NET.mySeat].cards.slice() : [];
+}
+
+/* ---- the dealer waits for a remote player, or acts for them ---- */
+function waitNetAction(seat){
+  return new Promise(resolve=>{
+    NET.waiting={seat, resolve};
+    clearTimeout(NET.actTimer);
+    NET.actTimer=setTimeout(()=>{
+      if(!NET.waiting) return;
+      const la=legalActions(T);
+      NET.waiting=null;
+      resolve(la.check ? {type:'check'} : {type:'fold'});      // gone quiet: check if free, else fold
+    }, ACT_TIMEOUT);
+  });
+}
+
+/* ---- the dealer's hand loop ---- */
+async function hostHand(){
+  T.reveal=false;
+  startHand(T);
+  lastBoard=0; clearBubbles(); sfx('deal');
+  await dealCardsOut();
+  render(); broadcastState();
+  await sleep(spd(260,420));
+
+  while(T.phase==='betting'){
+    render(); broadcastState();
+    const p=T.players[T.toAct];
+    const before=T.board.length;
+    let a;
+    if(p.isBot){ $('msg').textContent=p.name+' is thinking…'; await sleep(spd(320,700)); a=botAction(T,rng); }
+    else if(T.toAct===NET.mySeat){ $('msg').textContent='Your move'; a=await waitHuman(); }
+    else { $('msg').textContent=p.name+' to act'; a=await waitNetAction(T.toAct); }
+    applyAction(T,a);
+    sfx(a.type==='fold' ? 'flip' : (a.type==='check' ? 'select' : 'chip'));
+    render();
+    await bubble(p.seat, p.lastAction, a.type==='fold');
+    if(T.board.length>before || T.phase!=='betting'){ clearBubbles(); await syncBoard(); }
+    render(); broadcastState();
+  }
+  await hostFinish();
+}
+async function hostFinish(){
+  await syncBoard();
+  let any=false;
+  for(let v=0;v<nSeats();v++){ const b=$('bet'+v); if(b&&b.style.opacity==='1'){ b.style.left='50%'; b.style.top='47%'; any=true; } }
+  if(any){ await sleep(spd(300,440)); for(let v=0;v<nSeats();v++){ const b=$('bet'+v); if(b) b.style.opacity='0'; } }
+  if(T.players.some(p=>p.showdown)){ T.reveal=true; render(); broadcastState(); await sleep(spd(700,1100)); }
+
+  const parts=[];
+  for(const w of T.winners){
+    const p=T.players[w.seat];
+    parts.push(p.name+' wins '+fmt(w.amt)+(p.showdown?' with '+describeHand(p.score).toLowerCase():''));
+  }
+  const line=[...new Set(parts)].join('  ·  ');
+  $('msg').textContent=line; sfx('win');
+  render(); broadcastState(line);
+  await sleep(spd(1800,2800));
+  clearBubbles();
+
+  if(T.phase==='tourney-over'){
+    broadcastState('Tournament over');
+    endTournament(); return;                 // anyone who arrived mid-game can be dealt in now
+  }
+  // drop anyone who busted out of the seat list so the next deal is clean
+  NET.seats = NET.seats.filter(s=>{ const at=T.players.findIndex(p=>p.id===s.id); return at<0 || !T.players[at].out; });
+  hostHand();
+}
+
+/* ---- starting an online tournament ---- */
+function startOnlineGame(){
+  const humans=NET.seats.length;
+  const total=Math.max(2, Math.min(9, humans+NET.bots));
+  T=newTable({seats:total, startStack:5000, handsPerLevel:HANDS_PER_LEVEL[S.blinds]||5, rng:rng});
+  const botPool=PERSONAS.slice().sort(()=>rng()-0.5);
+  const botNames=NAMES.slice().sort(()=>rng()-0.5);
+  T.players.forEach((p,i)=>{
+    if(i<humans){ p.isBot=false; p.persona=null; p.id=NET.seats[i].id; p.name=NET.seats[i].name; }
+    else { p.isBot=true; p.persona=botPool[(i-humans)%botPool.length].key; p.name=botNames[i]; p.id=''; }
+  });
+  NET.mySeat=seatOf(NET.me);
+  heroSeat=NET.mySeat<0?0:NET.mySeat;
+  buildTable(); render();
+  closeOv('ovOnline');
+  hostHand();
+}
+
+/* ---- lobby ---- */
+function renderLobby(){
+  const list=$('netSeats'); if(!list) return;
+  list.innerHTML='';
+  NET.seats.forEach((s,i)=>{
+    const d=el('div','res'+(s.id===NET.me?' me':''));
+    d.innerHTML='<div class="pl">'+(i+1)+'</div><div class="nm">'+
+      (s.id===NET.me?'You':s.name)+(s.id===NET.hostId?' · deals':'')+'</div>';
+    list.appendChild(d);
+  });
+  $('netRoomLabel').textContent = NET.room ? NET.room : '';
+  $('netHostOnly').style.display = NET.host ? 'block' : 'none';
+  $('netWaiting').textContent = NET.host
+    ? (NET.seats.length<2 && !NET.bots ? 'Waiting for someone to join…' : '')
+    : 'Waiting for the dealer to start…';
+  const b=$('netDeal'); if(b) b.disabled = NET.seats.length + NET.bots < 2;
+  netStatus();
+}
+async function netCreate(){ await netEnter(true); }
+async function netJoin(){ await netEnter(false); }
+async function netEnter(asHost){
+  const nm=($('netName').value||'').trim() || 'Player';
+  const rm=($('netRoom').value||'').trim();
+  if(!rm){ $('netWaiting').textContent='Give the room a name first.'; return; }
+  if(!window.crypto || !crypto.subtle){ $('netWaiting').textContent='This browser can’t encrypt cards here — open the game over https.'; return; }
+  NET.name=nm; NET.room=rm; NET.host=asHost; NET.on=true;
+  try{ localStorage.setItem(LS+'.net', JSON.stringify({name:nm, room:rm})); }catch(e){}
+  await initKeys();
+  if(asHost){
+    NET.hostId=NET.me; NET.hostPub=NET.pub;
+    NET.seats=[{id:NET.me, name:nm, pub:NET.pub}];
+    NET.mySeat=0;
+  }
+  netConnect();
+  if(asHost) broadcastSeats();
+  $('netLobby').style.display='block';
+  $('netSetup').style.display='none';
+  renderLobby();
+}
+function netLeave(){
+  if(NET.on) netPost({k:'bye', id:NET.me});
+  netDisconnect();
+  NET.on=false; NET.host=false; NET.seats=[]; NET.mySeat=-1; NET.myCards=[]; NET.lastSeq=-1;
+  $('netLobby').style.display='none'; $('netSetup').style.display='block';
+}
+
 /* ---------------- boot ---------------- */
 function boot(){
   applyTextSize();
@@ -1530,6 +1968,20 @@ function boot(){
     if(isWide()===wasWide || !T) return;      // only when the breakpoint actually flips
     wasWide=isWide(); buildTable(); render();
   });
+  // online
+  try{ NET.me = localStorage.getItem(LS+'.id') || ''; }catch(e){}
+  if(!NET.me){ NET.me='p'+Math.random().toString(36).slice(2,9); try{ localStorage.setItem(LS+'.id', NET.me); }catch(e){} }
+  try{ const n=JSON.parse(localStorage.getItem(LS+'.net')||'{}');
+       if(n.name) $('netName').value=n.name; if(n.room) $('netRoom').value=n.room; }catch(e){}
+  $('onlineBtn').onclick=()=>{ closeOv('ovStart'); openOv('ovOnline'); };
+  $('netCreate').onclick=()=>netCreate();
+  $('netJoin').onclick=()=>netJoin();
+  $('netLeave').onclick=()=>{ netLeave(); renderLobby(); };
+  $('netDeal').onclick=()=>startOnlineGame();
+  bindSeg('segBots',[[0,'No bots'],[1,'+1'],[2,'+2'],[3,'+3'],[4,'+4']],
+          ()=>NET.bots, v=>{ NET.bots=v; if(NET.host){ broadcastSeats(); renderLobby(); } });
+  window.addEventListener('beforeunload', ()=>{ if(NET.on) netPost({k:'bye', id:NET.me}); });
+
   const resumed=loadGame();
   $('resumeBtn').style.display=resumed?'block':'none';
   $('startTitle').textContent=resumed?'Welcome back':'6-Player Sit & Go';
@@ -1542,7 +1994,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v71", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+(function(){ var V="v72", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
   var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));
