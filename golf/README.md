@@ -12,7 +12,14 @@ and the ball leaks right; stop it late and you pull it left; miss the window ent
 you get the worst of it.
 
 Past 100% the bar turns red. You get real yards there, but the marker moves half again as
-fast and every mistake is amplified — the honest trade the old games made.
+fast and every mistake is amplified — the honest trade the old games made. Run clean off
+the end and it is an **overswing**: the bar flashes red, the button says so, you swing at
+106% with no say in it — and you still get your accuracy tap.
+
+The bar *decelerates* into 100% rather than accelerating through it. Accelerating at
+exactly the mark every player aims for left a 68ms window on the most wanted stop in the
+game; easing in makes it about 200ms. The red zone past full still runs away, because
+that is the point of the red.
 
 Drag the view to aim. On a desktop: space swings, arrow keys change club and aim.
 
@@ -31,7 +38,11 @@ Drag the view to aim. On a desktop: space swings, arrow keys change club and aim
   again from where you stood.
 - **Putting** on its own model: feet rather than yards, a break that scales with how far
   the ball rolls, and a cup that only catches a ball whose *path* crosses it slowly
-  enough. Ram a three-footer and it lips out.
+  enough. Ram a three-footer and it lips out. The putting meter is **scaled to the putt**
+  (roughly 1.7× its length, floor 9 feet) and runs at 62% speed, so dead weight always sits
+  near two thirds of the bar whatever the distance; the cup and the inside-two-feet band are
+  drawn on the meter. You can also drag to aim on the green, at a quarter of the sensitivity
+  of a full swing, which is how you play break.
 
 ## The course
 
@@ -60,6 +71,15 @@ The camera is pitched down and rises with the distance left, because a true eye-
 projection puts a 400-yard green two pixels below the horizon. The focal length is derived
 from the canvas **height**, not its width — deriving it from width put the horizon above
 the top of the screen on a wide desktop window and the sky vanished entirely.
+
+**The swing meter must never skip a tap.** It used to flip from the power phase to the
+accuracy phase the instant the bar ran off the end. A power tap eight milliseconds late was
+then read as the *accuracy* tap: the shot fired on the spot at 112% power with the worst
+accuracy value on the dial, and the player saw their second click do nothing and the ball
+leave for a bunker. Topping out is now a held, visible state of its own; a tap inside 150ms
+of any phase change is swallowed rather than misread; and the button listens on
+`pointerdown`, not `click` — a click fires on *release*, so every tap reached the meter one
+press-length after the player decided to stop it.
 
 Three bugs found by simulating rounds rather than by playing, all worth not reintroducing:
 shots ignored the aim angle and flew straight up the hole's axis (every dogleg averaged 12

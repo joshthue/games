@@ -73,6 +73,10 @@
     box-shadow:0 2px 0 #8a6f2c;}
   .swingbtn:active{transform:translateY(2px); box-shadow:0 0 0 #8a6f2c;}
   .swingbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream); box-shadow:none;}
+  /* The phase of the swing has to be readable at a glance. When the only signal was the
+     button's text, a player could not tell that the meter had already moved on. */
+  .swingbtn.acc{background:linear-gradient(180deg,#eae3cb,#c4b795); box-shadow:0 2px 0 #8d825f;}
+  .swingbtn.over{background:linear-gradient(180deg,#d9694f,#a8402c); color:#fff2ec; box-shadow:0 2px 0 #7a2b1c;}
   .swingbtn[disabled]{opacity:.45;}
   .msg{text-align:center; font-size:calc(12.5px * var(--fs)); color:var(--dim); min-height:17px; margin-bottom:6px;}
   .msg b{color:var(--gold);}
@@ -432,8 +436,10 @@ window.GOLF = (function(){
     var toHole = dist(ball.x, ball.y, g.x, g.y) * FT;     // feet
     var hit = maxFt * powerCurve(power);
 
-    // aim is at the hole; timing pushes it off line a couple of degrees
-    var ang = Math.atan2(g.x - ball.x, g.y - ball.y);
+    // Aim starts at the hole; the player can play break by aiming off it, and timing
+    // pushes it a couple of degrees either way on top of that. Without the aim term a
+    // breaking putt is unholeable no matter how well it is struck.
+    var ang = Math.atan2(g.x - ball.x, g.y - ball.y) + (opts.aim || 0);
     var off = acc * 2.4 * Math.PI/180;
     ang += off;
 
@@ -941,9 +947,20 @@ window.GOLF_COURSES = {
 
     var b = anim && anim.putt ? anim.cur : R.ball;
     var bp = toScr(b.x,b.y);
-    // the line
-    ctx.save(); ctx.setLineDash([5,5]); ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=1.4;
+    // faint line straight at the cup, for reference
+    ctx.save(); ctx.setLineDash([4,6]); ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1.2;
     ctx.beginPath(); ctx.moveTo(bp.x,bp.y); ctx.lineTo(hp.x,hp.y); ctx.stroke(); ctx.restore();
+    // and the line you are actually aimed down — drag to play the break
+    if(!anim){
+      var toHole = G.dist(R.ball.x,R.ball.y,g.x,g.y);
+      var ang0 = Math.atan2(g.x-R.ball.x, g.y-R.ball.y) + aim;
+      var ax = R.ball.x + Math.sin(ang0)*toHole, ay = R.ball.y + Math.cos(ang0)*toHole;
+      var ap = toScr(ax,ay);
+      ctx.strokeStyle='rgba(232,198,106,.9)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(bp.x,bp.y); ctx.lineTo(ap.x,ap.y); ctx.stroke();
+      ctx.fillStyle='rgba(232,198,106,.9)';
+      ctx.beginPath(); ctx.arc(ap.x,ap.y,3.5,0,Math.PI*2); ctx.fill();
+    }
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(bp.x,bp.y,6,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.lineWidth=1; ctx.stroke();
 
@@ -954,6 +971,19 @@ window.GOLF_COURSES = {
 
   function isPutting(){
     return R.ball && (R.ball.lie==='green') && club===G.PUTTER;
+  }
+  // A fixed 60-foot putting meter makes a 3-footer need the first 7% of the bar — about
+  // 80ms of reaction, which is not a skill test, it is a coin flip. Scale the meter to the
+  // putt instead, so dead weight always lands near two thirds of the bar whatever the
+  // length, and the whole bar is a sensible over-hit rather than a 60-foot rocket.
+  function putScale(){
+    var ft = G.dist(R.ball.x, R.ball.y, H.green.x, H.green.y) * G.FT;
+    return clamp(ft * 1.7, 9, 80);
+  }
+  // where on the bar a putt that just reaches the hole sits
+  function putTarget(){
+    var ft = G.dist(R.ball.x, R.ball.y, H.green.x, H.green.y) * G.FT;
+    return clamp(ft / putScale(), 0, 1);
   }
 
   /* ---------------- the frame ---------------- */
@@ -970,7 +1000,17 @@ window.GOLF_COURSES = {
 
   /* ---------------- the swing meter ---------------- */
   var mv = $('meter'), mx = mv.getContext('2d');
-  var meter = {phase:'idle', t:0, power:0, acc:0, dir:1, raf:null, last:0};
+  // Phases: idle -> power -> (hold, only on an overswing) -> acc -> idle.
+  // 'since' is when the current phase began; every tap is measured against it.
+  var meter = {phase:'idle', t:0, power:0, acc:0, dir:1, raf:null, last:0, since:0, over:false};
+  // Three clicks, and all three have to land. The meter used to flip straight from power
+  // to accuracy the instant the bar ran off the end, so a power tap eight milliseconds
+  // late was silently read as the accuracy tap: the swing fired on the spot at 112% power
+  // with the worst accuracy on the dial. The player saw their second click do nothing and
+  // the ball leave for the bunker. Topping out is now its own held, visible state, and a
+  // tap landing on a phase change is swallowed instead of being misread as the next click.
+  var PHASE_GUARD = 150;   // ms after a phase change during which taps are ignored
+  var HOLD_MS     = 320;   // how long the bar sits at the top saying OVERSWING
   function sizeMeter(){
     var r = mv.parentNode.getBoundingClientRect();
     mv.width = Math.floor(r.width*DPR); mv.height = Math.floor(r.height*DPR);
@@ -980,16 +1020,36 @@ window.GOLF_COURSES = {
     var w = mv.width/DPR, h = mv.height/DPR;
     mx.clearRect(0,0,w,h);
     var pad=6, bw=w-pad*2;
+    var putting = isPutting();
     // the track: green to 100%, red past it
     var fullX = pad + bw*0.89;
     mx.fillStyle='#0d3321'; mx.fillRect(pad,pad,bw,h-pad*2);
     mx.fillStyle='#2f8a4e'; mx.fillRect(pad,pad,fullX-pad,h-pad*2);
     mx.fillStyle='#8e3b32'; mx.fillRect(fullX,pad,bw+pad-fullX,h-pad*2);
-    // the accuracy window at the left edge
+    if(putting){
+      // mark the hole on the bar, plus the band that leaves it inside a couple of feet
+      var t = putTarget() * 0.89;
+      var band = (1.9 / putScale()) * 0.89;
+      mx.fillStyle='rgba(232,198,106,.30)';
+      mx.fillRect(pad + bw*t, pad, Math.max(3, bw*band), h-pad*2);
+      mx.fillStyle='rgba(255,255,255,.9)';
+      mx.fillRect(pad + bw*t - 1, pad-1, 2, h-pad*2+2);
+    }
+    // The accuracy window. A 2px hairline was not a target anybody could see coming, so
+    // once the accuracy phase starts the scoring band is drawn as a band.
+    if(meter.phase==='acc'){
+      mx.fillStyle='rgba(245,241,228,.22)';
+      mx.fillRect(pad+bw*0.015, pad, bw*0.08, h-pad*2);
+    }
     mx.fillStyle='rgba(255,255,255,.85)'; mx.fillRect(pad+bw*0.055, pad, 2, h-pad*2);
     if(meter.power>0){
       var px = pad + bw*0.89*Math.min(meter.power,1) + (meter.power>1 ? (meter.power-1)*bw*0.11/0.12 : 0);
       mx.fillStyle='rgba(255,255,255,.5)'; mx.fillRect(px-1,pad,2,h-pad*2);
+    }
+    // an overswing flashes so the state is impossible to miss
+    if(meter.over && (meter.phase==='hold' || meter.phase==='acc')){
+      var on = meter.phase!=='hold' || Math.floor((performance.now()-meter.since)/110)%2===0;
+      if(on){ mx.fillStyle='rgba(217,105,79,.34)'; mx.fillRect(pad,pad,bw,h-pad*2); }
     }
     var x = pad + bw*meterPos();
     mx.fillStyle='#f5f1e4'; mx.fillRect(x-2,2,4,h-4);
@@ -997,13 +1057,26 @@ window.GOLF_COURSES = {
   function meterPos(){
     return clamp(meter.t,0,1);
   }
+  function setSwingLabel(text, cls){
+    var b = $('swingBtn');
+    b.textContent = text;
+    b.classList.remove('acc','over');
+    if(cls) b.classList.add(cls);
+  }
   function tickMeter(ts){
     if(!meter.last) meter.last = ts;
     var dt = Math.min(64, ts-meter.last)/1000; meter.last=ts;
     if(meter.phase==='power'){
-      var sp = meter.t > 0.89 ? 1.55 : 1.0;          // the red zone runs away from you
+      // Ease into full power instead of away from it. The old curve accelerated at exactly
+      // 0.89 — the one mark every player aims for — which left a 68ms window on the most
+      // wanted stop in the game. It still runs away past full, because that is the whole
+      // point of the red.
+      var sp = meter.t > 0.89 ? 1.5 : (1.0 - 0.42*clamp((meter.t-0.52)/0.37, 0, 1));
+      if(isPutting()) sp *= 0.62;                    // a putting stroke is not a lash
       meter.t += dt*sp*0.95;
-      if(meter.t >= 1){ meter.t=1; setPower(); }     // ran out of meter: full send
+      if(meter.t >= 1){ meter.t=1; overswing(); }    // ran out of meter
+    } else if(meter.phase==='hold'){
+      if(ts - meter.since >= HOLD_MS) startAcc();
     } else if(meter.phase==='acc'){
       meter.t -= dt*1.05;
       if(meter.t <= 0){ meter.t=0; fire(-1); return; } // missed the window entirely
@@ -1013,13 +1086,31 @@ window.GOLF_COURSES = {
   }
   function startMeter(){
     meter.phase='power'; meter.t=0; meter.power=0; meter.acc=0; meter.last=0;
-    $('swingBtn').textContent='SET POWER';
+    meter.over=false; meter.since=performance.now();
+    setSwingLabel('SET POWER','');
     meter.raf = requestAnimationFrame(tickMeter);
   }
   function setPower(){
-    meter.power = meter.t/0.89;                      // 0.89 of the bar == 100%
-    meter.phase='acc';
-    $('swingBtn').textContent='SET ACCURACY';
+    meter.power = clamp(meter.t/0.89, 0, 1.12);       // 0.89 of the bar == 100%
+    meter.over = meter.t > 0.89;
+    startAcc();
+  }
+  // Ran clean off the end without a tap. That is a full-blooded swing that will cost you
+  // control — but you still get your accuracy click, and now you can see why you're in
+  // trouble instead of watching the ball leave with no explanation.
+  function overswing(){
+    meter.power = 1.06;
+    meter.over  = true;
+    meter.phase = 'hold';
+    meter.since = performance.now();
+    setSwingLabel('OVERSWING!','over');
+    setMsg('<b>Overswing</b> — full power. Your accuracy click still counts.');
+    sfx('illegal');
+  }
+  function startAcc(){
+    meter.phase = 'acc';
+    meter.since = performance.now();
+    setSwingLabel('SET ACCURACY','acc');
   }
   function fire(forced){
     meter.phase='idle';
@@ -1029,9 +1120,19 @@ window.GOLF_COURSES = {
     var acc = (accPos - 0.055) / 0.16;
     if(forced!=null) acc = -1;
     acc = clamp(acc, -1, 1);
-    $('swingBtn').textContent='SWING';
+    setSwingLabel('SWING','');
     drawMeter();
     hit(meter.power, acc);
+  }
+  // One physical tap, one phase change. A tap arriving within a breath of a phase change
+  // used to be read as the *next* click in the sequence and fired the shot on the spot.
+  function swingTap(){
+    if(anim) return;
+    if(meter.phase!=='idle' && performance.now() - meter.since < PHASE_GUARD) return;
+    if(meter.phase==='idle') startMeter();
+    else if(meter.phase==='power') setPower();
+    else if(meter.phase==='hold') return;            // a late power tap: already topped out
+    else fire();
   }
 
   /* ---------------- taking the shot ---------------- */
@@ -1039,7 +1140,7 @@ window.GOLF_COURSES = {
     var putting = isPutting();
     var res;
     if(putting){
-      res = G.resolvePutt(H, R.ball, {power:power, accuracy:acc, maxFt:60});
+      res = G.resolvePutt(H, R.ball, {power:power, accuracy:acc, maxFt:putScale(), aim:aim});
       sfx('select');
     } else {
       res = G.resolveShot(H, R.ball, {club:club, power:power, accuracy:acc, wind:R.wind, aim:aimAngle()});
@@ -1158,6 +1259,8 @@ window.GOLF_COURSES = {
     $('distChip').innerHTML = R.ball.lie==='green'
       ? '<b>'+Math.round(d*G.FT)+'</b> ft to the pin'
       : '<b>'+Math.round(d)+'</b> yds to the pin';
+    if(club===G.PUTTER && R.ball.lie==='green')
+      $('clubYds').textContent = 'meter ' + Math.round(putScale()) + ' ft';
     var w = R.wind||{speed:0,dir:0};
     $('windChip').innerHTML = w.speed ? ('Wind <b>'+w.speed+'</b> mph '+windArrow(w.dir)) : 'No wind';
     $('holeInfo').innerHTML = '<b>Hole '+(R.hole+1)+'</b><br>Par '+H.par+' · '+H.len+' yds';
@@ -1220,22 +1323,33 @@ window.GOLF_COURSES = {
   /* ---------------- input ---------------- */
   var drag=null;
   cv.addEventListener('pointerdown', function(e){
-    if(anim || isPutting()) return;
+    if(anim) return;
     drag={x:e.clientX, aim:aim}; cv.setPointerCapture(e.pointerId);
   });
   cv.addEventListener('pointermove', function(e){
     if(!drag) return;
-    aim = clamp(drag.aim + (e.clientX-drag.x)*-0.0016, -0.44, 0.44);
+    // finer control on the green: a putt is aimed in inches, not yards
+    var rate = isPutting() ? -0.0007 : -0.0016;
+    var lim  = isPutting() ? 0.30 : 0.44;
+    aim = clamp(drag.aim + (e.clientX-drag.x)*rate, -lim, lim);
     draw();
   });
   cv.addEventListener('pointerup', function(){ drag=null; });
   cv.addEventListener('pointercancel', function(){ drag=null; });
 
+  // pointerdown, not click: a click fires on *release*, so every tap reached the meter one
+  // press-length after the player decided to stop it — the bar was always further along
+  // than it looked. The click listener stays as the keyboard and fallback path, guarded so
+  // the same tap cannot count twice.
+  var lastPointerTap = -1e9;
+  $('swingBtn').addEventListener('pointerdown', function(e){
+    if(e.isPrimary === false) return;
+    lastPointerTap = performance.now();
+    swingTap();
+  });
   $('swingBtn').addEventListener('click', function(){
-    if(anim) return;
-    if(meter.phase==='idle') startMeter();
-    else if(meter.phase==='power') setPower();
-    else fire();
+    if(performance.now() - lastPointerTap < 700) return;
+    swingTap();
   });
   $('clubUp').addEventListener('click', function(){ if(anim)return; club=clamp(club-1,0,G.CLUBS.length-1); syncHud(); draw(); });
   $('clubDown').addEventListener('click', function(){ if(anim)return; club=clamp(club+1,0,G.CLUBS.length-1); syncHud(); draw(); });
@@ -1298,6 +1412,8 @@ window.GOLF_COURSES = {
     state:function(){ return {R:R, H:H, club:club, aim:aim, meter:meter}; },
     setClub:function(i){ club=i; syncHud(); draw(); },
     swing:function(power,acc){ hit(power,acc); },
+    tap:swingTap,
+    putScale:function(){ return putScale(); },
     course:function(){ return course; },
     begin:beginHole,
     // play an arbitrary course — this is how "preview this hole" works
