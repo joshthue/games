@@ -22,6 +22,8 @@ heads-up against the dealer with shared community cards.
 - Starts with a **100-chip** bankroll (re-buy when you bust). Bets can't exceed what leaves you able to make a Play bet.
 - **Four-color deck** and **Speed play** on by default.
 - **Learning tips** with a live bet/check/fold rule-of-thumb (off by default).
+- The chip bar never wraps — it shrinks instead — and the action row sticks to the bottom
+  of the screen, so Deal stays reachable on a narrow phone however tall the table gets.
 
 ## Running it
 

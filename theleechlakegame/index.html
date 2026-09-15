@@ -489,7 +489,15 @@ function render(){
     w.innerHTML=`<div class="who">${idx===0?'<span class="lead-tag">▶ </span>':''}${pname(e.p)}</div>`;
     w.appendChild(cardEl(e.card)); t.appendChild(w);
   });
-  if(R.trick.length===0 && R.phase!=="tiebreak"){ t.innerHTML=`<div class="muted">${R.phase==="call"?"Make your call to start.":"Waiting…"}</div>`; }
+  if(R.trick.length===0 && R.phase!=="tiebreak"){
+    // ONE line, derived from state. This used to hard-code "Waiting…" whenever the trick
+    // was empty, so it contradicted the status bar already saying "Your turn — play any card".
+    let wait;
+    if(R.phase==="call")      wait = (R.caller===0) ? "Make your call to start." : `Waiting for ${pnameE(R.caller)} to call…`;
+    else if(R.phase==="play") wait = (R.turn===0)   ? "Your lead — play a card."  : `Waiting for ${pnameE(R.turn)}…`;
+    else                      wait = "Waiting…";
+    t.innerHTML=`<div class="muted">${wait}</div>`;
+  }
   // your hand
   document.getElementById("youLabel").textContent = R.players[0].alive? `Your hand — ★ ${R.players[0].tricks} trick${R.players[0].tricks===1?"":"s"} this hand` : "You're out — watching";
   const yh=document.getElementById("yourhand"); yh.innerHTML="";
@@ -693,7 +701,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v65", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

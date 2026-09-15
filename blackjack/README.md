@@ -22,7 +22,9 @@ out and pays the winners. Keyboard shortcuts on desktop: `Enter` deal, `H` hit,
 
 ## Options
 
-- **Card size** (A± in the top bar) and other preferences live in **Settings** (⚙).
+- **Card size** (A± in the top bar) and other preferences live in **Settings** (⚙). Hand
+  totals, the dealer's line, the chip denominations and the bet amounts all scale with the
+  cards, so they stay readable on a desktop monitor and grow when you size the cards up.
 - The Settings footer shows the `build vNN` stamp — the quick way to confirm a
   refresh actually took.
 

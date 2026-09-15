@@ -111,6 +111,10 @@ body{
 .card.red{color:var(--red)}
 .card.wild{background:linear-gradient(135deg,#f7f1e2 0%,#ffe9b0 50%,#f7f1e2 100%);color:#7a5a12}
 .card.wild .r{font-size:.9em}
+/* "WILD" is 4 wide letters in a 34px-wide card: at 1em it ran edge to edge and spilled past
+   the rounded corners on the small cards. Size it to the card and centre it. */
+.card.wild .s{font-size:.55em;letter-spacing:.4px;align-self:center;opacity:.9}
+.card.wild.sm .s{font-size:.5em;letter-spacing:.2px}
 .card.back{background:
   repeating-linear-gradient(45deg,#1c4a33 0 6px,#153c29 6px 12px);
   border:1px solid var(--line);color:transparent;box-shadow:0 2px 5px rgba(0,0,0,.35)}
@@ -183,6 +187,9 @@ body{
       </div>
       <div class="row"><div class="lbl">Show move hints</div>
         <label class="switch"><input type="checkbox" id="optTips"><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="row"><div class="lbl">Sound</div>
+        <label class="switch"><input type="checkbox" id="optSound"><span class="track"></span><span class="knob"></span></label>
       </div>
       <div class="setup-opt">
         <div class="cap">Opponent</div>
@@ -305,6 +312,9 @@ body{
       <div class="row"><div class="lbl">Show move hints</div>
         <label class="switch"><input type="checkbox" id="menuTips"><span class="track"></span><span class="knob"></span></label>
       </div>
+      <div class="row"><div class="lbl">Sound</div>
+        <label class="switch"><input type="checkbox" id="menuSound"><span class="track"></span><span class="knob"></span></label>
+      </div>
       <div class="row"><div class="lbl">Card text size</div>
         <div class="seg" id="menuSize">
           <button data-fs="13">S</button><button data-fs="15">M</button>
@@ -339,6 +349,7 @@ body{
 <!-- ============================================================= -->
 <!-- BLOCK 1: pure rules engine + bot. No DOM. Exposed as window.SM -->
 <!-- ============================================================= -->
+<script src="../sfx.js"></script>
 <script>
 window.SM = (function(){
   var SUITS = ['\u2660','\u2665','\u2666','\u2663']; // spade heart diamond club
@@ -722,7 +733,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v65";
+  var BUILD_V = "v66";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -779,6 +790,10 @@ window.SM = (function(){
 
   $('optTips').checked = prefs.tips;
   $('optTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); });
+  $('optSound').checked = !!(window.SFX && SFX.isOn());
+  $('optSound').addEventListener('change', function(){
+    if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
+  });
 
   $('startBtn').addEventListener('click', startSolo);
   $('setupRules').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
@@ -793,6 +808,9 @@ window.SM = (function(){
   });
   // menu controls
   $('menuTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); render(); });
+  $('menuSound').addEventListener('change', function(){
+    if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
+  });
   segInit('menuSize','fs', function(v){return parseInt(v,10);});
   $('menuNew').addEventListener('click', function(){ $('menuOv').classList.remove('on'); doNewGame(); });
   $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
@@ -801,7 +819,8 @@ window.SM = (function(){
   $('winAgain').addEventListener('click', function(){ $('winOv').classList.remove('on'); doNewGame(); });
   $('winSetup').addEventListener('click', function(){ $('winOv').classList.remove('on'); toSetup(); });
 
-  function openMenu(){ $('menuTips').checked=prefs.tips; syncSeg('menuSize','fs'); $('menuOv').classList.add('on'); }
+  function openMenu(){ $('menuTips').checked=prefs.tips; $('menuSound').checked=!!(window.SFX && SFX.isOn());
+    syncSeg('menuSize','fs'); $('menuOv').classList.add('on'); }
   function syncSeg(segId,key){ var seg=$(segId); Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ var v=b.dataset[Object.keys(b.dataset)[0]]; if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on'); }); }
 
   function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; updateNetbar(); $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
@@ -812,7 +831,7 @@ window.SM = (function(){
     mode='solo'; net.online=false; net.joined=false;
     T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
     sel = null; busy=false; net.pending=false; passScheduled=false;
-    showGame(); render();
+    showGame(); render(); sfx('shuffle');
     if(T.turn===opp()) setTimeout(botTurn, 500);   // bot won the deal
   }
   function doNewGame(){
@@ -1026,9 +1045,12 @@ window.SM = (function(){
       });
       box.appendChild(b);
     });
+    sfx('select');
     $('wildOv').classList.add('on');
   }
   function closeWild(){ $('wildOv').classList.remove('on'); wildCB=null; render(); }
+  // Sound is best-effort: if sfx.js didn't load, the game plays on in silence.
+  function sfx(n){ if(window.SFX) SFX.play(n); }
   // ---- move commits: solo/host apply locally; guest sends an intent to the host ----
   function commitPlay(action){
     if(mode==='online' && net.role==='guest'){
@@ -1036,7 +1058,9 @@ window.SM = (function(){
       netSend({t:'act', kind:'play', src:action.from.kind, i:action.from.i, to:action.to, val:action.val});
       render(); return;
     }
-    SM.applyPlay(T, action); afterLocal();
+    var res = SM.applyPlay(T, action);
+    sfx(res && res.cleared ? 'good' : 'place');
+    afterLocal();
   }
   function commitDiscard(cardIndex, sideIndex){
     if(mode==='online' && net.role==='guest'){
@@ -1044,7 +1068,7 @@ window.SM = (function(){
       netSend({t:'act', kind:'discard', cardIndex:cardIndex, sideIndex:sideIndex});
       render(); return;
     }
-    SM.applyDiscard(T, {cardIndex:cardIndex, sideIndex:sideIndex}); afterLocal();
+    SM.applyDiscard(T, {cardIndex:cardIndex, sideIndex:sideIndex}); sfx('flip'); afterLocal();
   }
   function commitPass(){
     if(mode==='online' && net.role==='guest'){
@@ -1076,11 +1100,13 @@ window.SM = (function(){
     var mv = SM.botAction(T, prefs.diff);
     if(mv.kind==='play'){
       var res=SM.applyPlay(T, mv.action);
+      sfx(res && res.cleared ? 'good' : 'place');
       render();
       if(res.win){ busy=false; return finish(); }
       setTimeout(stepBot, 400);
     } else if(mv.kind==='discard'){
       SM.applyDiscard(T, mv.action);   // ends bot turn
+      sfx('flip');
       busy=false; render();
       if(T.draw) return finish();
       considerHeroPass();
@@ -1109,6 +1135,7 @@ window.SM = (function(){
   function finish(){
     busy=false; sel=null; passScheduled=false;
     lastWinner = T.draw ? null : T.winner;
+    sfx(T.draw ? 'bad' : (T.winner===me() ? 'win' : 'lose'));
     render();
     if(T.draw){
       $('winEmoji').textContent = '\uD83E\uDD1D';

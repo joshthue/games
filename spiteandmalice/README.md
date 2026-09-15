@@ -96,8 +96,17 @@ The bot's discard heuristic is direction-aware: it stacks its side piles low-car
 that wrong is not cosmetic — leaving the `A → K` ordering in place for `K → A` buried the
 cards the bot needed and pushed the draw rate from 5% to 22%.
 
+## Sound
+
+Card, scoop and win sounds come from `../sfx.js`, the shared Game Night sound layer —
+synthesized with WebAudio, so there are no audio files to load and it works offline. The
+**Sound** toggle sits on the setup screen and in the menu; the setting is stored once for
+the whole origin, so muting here mutes every Game Night game. iOS won't let a page make
+noise before the first touch, so the audio context is created on the first gesture.
+
 ## Running it
 
-Open `index.html` in a browser — no build step or dependencies. Works offline once
-loaded, as part of the Game Night home-screen app. The two-phone relay needs a network
+Open `index.html` in a browser — no build step or dependencies (it does load `../sfx.js`
+for sound, and falls silent rather than breaking if that file is missing). Works offline
+once loaded, as part of the Game Night home-screen app. The two-phone relay needs a network
 (and the live site) — it won't connect from a `file://` copy.

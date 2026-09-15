@@ -33,12 +33,16 @@
   input.txtinp{font-family:inherit; font-size:16px; width:100%; padding:10px; border-radius:10px;
     border:2px solid var(--gold); background:rgba(0,0,0,.25); color:var(--cream);}
 
-  .chipbar{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
-    background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:12px; padding:9px 12px; margin:4px 0 6px;
-    box-shadow:inset 0 2px 6px rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.4); color:#2b1a08; font-weight:800; font-size:15px;}
-  .chipbar .chips{background:var(--gold); color:#111; border-radius:20px; padding:3px 14px;}
-  .chipbar .net{font-size:16px; font-weight:800; background:rgba(0,0,0,.45); color:var(--cream);
-    border-radius:20px; padding:3px 13px; letter-spacing:.2px;}
+  /* NEVER let this bar wrap: a two-line money row pushes the Deal button off a small
+     screen entirely (real bug, 320px). It shrinks instead. */
+  .chipbar{display:flex; align-items:center; justify-content:center; gap:clamp(5px,2.2vw,14px); flex-wrap:nowrap;
+    background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:12px; padding:9px clamp(6px,2.5vw,12px); margin:4px 0 6px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.4); color:#2b1a08; font-weight:800; font-size:clamp(12px,3.5vw,15px);}
+  .chipbar .chips{background:var(--gold); color:#111; border-radius:20px; padding:3px clamp(7px,3vw,14px); white-space:nowrap;
+    font-variant-numeric:tabular-nums;}
+  .chipbar .net{font-size:clamp(12px,3.6vw,16px); font-weight:800; background:rgba(0,0,0,.45); color:var(--cream);
+    border-radius:20px; padding:3px clamp(7px,3vw,13px); letter-spacing:.2px; white-space:nowrap;
+    font-variant-numeric:tabular-nums;}
   .chipbar .net.up{color:#8ff0a8;} .chipbar .net.down{color:#ff9a9a;}
   .wagers{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; font-size:12px; margin:0 0 4px; min-height:16px;}
   .wag{background:rgba(0,0,0,.28); border-radius:10px; padding:2px 9px;} .wag b{color:var(--gold);} .wag.off{opacity:.4;}
@@ -65,6 +69,9 @@
   .betbox{max-width:360px; margin:4px auto 0;}
   .betlabel{text-align:center; font-size:13px; opacity:.85; margin-top:6px; letter-spacing:.3px;} .betlabel b{color:var(--gold);}
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  /* the primary action stays reachable no matter how tall the table gets */
+  #controls{position:sticky; bottom:0; z-index:5; padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(to top, var(--felt2) 55%, rgba(10,74,51,0));}
   .notes{max-width:470px; margin:2px auto 0;}
   .note{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:7px 11px; margin:6px 0; font-size:13px; line-height:1.45;}
   .note.win{border-left-color:var(--green);} .note.lose{border-left-color:var(--red);}
@@ -526,7 +533,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v65", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v66", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
