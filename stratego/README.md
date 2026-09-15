@@ -62,6 +62,26 @@ won and a trade you lost deliberately sound different — that read is worth hav
 before your eyes reach the strike panel. The flag stays quiet on impact so the
 win or loss lands on its own.
 
+## If you've forgotten how it works
+
+**How to play** in the header opens the rules — the point of the game, how a turn and a
+fight work, the three rules everyone forgets (Miner/Bomb, Spy-on-the-attack, equal ranks
+both die), and a short section on how to actually play rather than just move. It opens by
+itself the first time on a device. Second tab is the army table.
+
+There's also a **coach line** under the status bar:
+
+- Tap one of **your** pieces and it says what that piece is for — "the only piece that
+  survives a Bomb, save it for the wall around their flag."
+- Tap one of **theirs** and it says what can be worked out about it so far: whether it has
+  moved (so it isn't a Bomb or the Flag), whether you've already seen it in a fight, or —
+  once the game has run on — its most likely rank.
+
+That last one is not a separate guess: it asks **the bot's own belief engine**, pointed the
+other way. You get exactly the read it is making about your pieces, which is the fairest
+version of a hint. It respects the Memory aid setting — on **Pure memory** you get nothing
+for enemy pieces, because working it out is the game.
+
 ## Setups
 
 The generated setups deliberately avoid the setup everyone builds. A flag jammed

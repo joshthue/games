@@ -153,6 +153,31 @@
   .modal .bigbtn{margin-bottom:8px;}
 
   /* ---- reference table ---- */
+  /* ---- help tabs ---- */
+  .tabs{display:flex; gap:6px; margin-bottom:14px;}
+  .tabs button{flex:1; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer;
+    background:rgba(255,255,255,.07); color:var(--cream); border:1.5px solid rgba(255,255,255,.14);
+    border-radius:10px; padding:9px 6px;}
+  .tabs button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+  .howto{text-align:left; font-size:13px; line-height:1.6; max-height:56vh; overflow-y:auto;
+    padding-right:4px;}
+  .howto h3{font-size:11px; letter-spacing:1.3px; text-transform:uppercase; color:var(--gold);
+    margin:16px 0 5px; font-weight:800;}
+  .howto h3:first-child{margin-top:0;}
+  .howto p{margin:0 0 8px; opacity:.88;}
+  .howto b{color:var(--gold); font-weight:700;}
+  .howto ul{margin:0 0 8px; padding-left:17px;}
+  .howto li{margin-bottom:5px; opacity:.88;}
+  .howto .pill{display:inline-block; background:var(--sticker); color:#2a2420; font-weight:900;
+    border-radius:4px; padding:0 5px; font-size:12px; margin-right:2px;}
+
+  /* ---- the coach line under the status strip ---- */
+  .coach{display:none; font-size:12.5px; line-height:1.45; background:rgba(0,0,0,.22);
+    border-left:3px solid var(--gold); border-radius:0 9px 9px 0; padding:8px 11px; margin-bottom:8px;}
+  .coach.show{display:block;}
+  .coach b{color:var(--gold);}
+  .coach .q{opacity:.65; font-style:italic;}
+
   .ref{font-size:12px; line-height:1.55;}
   .ref table{width:100%; border-collapse:collapse;}
   .ref td{padding:3px 4px; border-bottom:1px solid rgba(255,255,255,.08);}
@@ -168,7 +193,7 @@
   <header>
     <a class="back" href="../">‹ Games</a>
     <h1>STRATEGO</h1>
-    <button class="iconbtn" id="helpBtn">Ranks</button>
+    <button class="iconbtn" id="helpBtn">How to play</button>
   </header>
 
   <!-- ============ DEAL SCREEN ============ -->
@@ -217,6 +242,7 @@
   <!-- ============ GAME ============ -->
   <div id="gameArea" class="hide">
     <div class="status" id="status"><span class="dot red"></span><span class="txt">Your move.</span></div>
+    <div class="coach" id="coach"></div>
     <div class="strike" id="strike"></div>
   </div>
 
@@ -242,16 +268,70 @@
 <!-- ============ RANKS MODAL ============ -->
 <div class="modal" id="helpModal">
   <div class="card">
-    <h2>THE ARMY</h2>
-    <div class="ref">
-      <table id="refTable"></table>
-      <p style="margin-top:12px; font-size:11.5px; opacity:.75; line-height:1.55; text-align:left;">
-        Lower number wins. Equal ranks both die. Only a <b>Miner (8)</b> survives a Bomb.
-        The <b>Spy (S)</b> kills the Marshal only when the Spy attacks — defending, it dies to anything.
-        <b>Scouts (9)</b> move any distance in a straight line and may strike at the end of the run.
-        Bombs and the Flag never move.
-      </p>
+    <h2 id="helpTitle">HOW TO PLAY</h2>
+    <div class="tabs">
+      <button data-t="how" class="on">How to play</button>
+      <button data-t="army">The army</button>
     </div>
+
+    <div class="howto" id="tabHow">
+      <h3>The point</h3>
+      <p>Find their flag before they find yours. Both armies are identical and every piece
+      faces away — you can always see <b>where</b> their pieces are, never <b>what</b> they are.</p>
+
+      <h3>A turn</h3>
+      <p>Move one piece one square up, down, left or right. Never diagonally, never into a
+      lake, never onto your own piece. Moving onto an enemy piece is an attack.</p>
+
+      <h3>A fight</h3>
+      <p>Both ranks are shown, <b>lower number wins</b>, the loser comes off the board. The
+      survivor's rank is now public — to both of you. That's the whole game in one sentence:
+      <b>every attack you make spends information to buy information.</b></p>
+
+      <h3>The three everyone forgets</h3>
+      <ul>
+        <li>Only a <span class="pill">8</span> <b>Miner</b> survives a Bomb. Everything else dies.</li>
+        <li><span class="pill">S</span> <b>Spy</b> kills the Marshal — <b>only when the Spy attacks.</b>
+        Defending, it dies to anything on the board.</li>
+        <li>Equal ranks <b>both</b> die.</li>
+      </ul>
+      <p><span class="pill">9</span> <b>Scouts</b> are the exception to movement: any distance
+      in a straight line over empty squares, and they may strike at the end of the run.</p>
+
+      <h3>How to actually play it</h3>
+      <ul>
+        <li><b>Spend your Scouts.</b> Eight of them, worth almost nothing in a fight. Run one
+        down an open file to die on purpose and you've bought a rank for free.</li>
+        <li><b>Watch what never moves.</b> A piece that has moved is not a Bomb and not the
+        Flag. That's the most reliable read in the game and it costs you nothing.</li>
+        <li><b>Don't lead with your Marshal.</b> It loses to exactly two things — a Bomb and
+        their Spy — and walking it into an unmoved piece is how most games are thrown away.</li>
+        <li><b>Send Miners at the wall.</b> The cluster of never-moved pieces in their back
+        rows is bombs, and the thing bombs are there to protect.</li>
+        <li><b>Remember the survivors.</b> The piece that killed your Sergeant twelve moves ago
+        is still out there and still at least a Lieutenant.</li>
+      </ul>
+      <p class="q">The bot does every one of these things to you.</p>
+
+      <h3>Winning</h3>
+      <p>Take the flag — or leave them with <b>no legal move at all</b>. That second one is
+      real: bomb yourself in and you lose.</p>
+
+      <h3>On this board</h3>
+      <p>Tap one of your pieces and the line under the status bar tells you what it's for.
+      Tap one of <b>theirs</b> and it tells you what can be worked out about it so far.</p>
+    </div>
+
+    <div class="howto hide" id="tabArmy">
+      <div class="ref">
+        <table id="refTable"></table>
+        <p style="margin-top:12px; font-size:11.5px; opacity:.75; line-height:1.55;">
+          Lower number wins. This is the classic Milton Bradley numbering — if you learned it
+          on a newer set where 10 is the Marshal, subtract from eleven.
+        </p>
+      </div>
+    </div>
+
     <button class="bigbtn" id="helpClose" style="margin-top:14px;">Close</button>
   </div>
 </div>
@@ -928,8 +1008,73 @@ function logLine(txt, key){
   }).join("");
   $("refTable").innerHTML = rows;
 })();
-$("helpBtn").onclick = function(){ $("helpModal").classList.add("show"); };
-$("helpClose").onclick = function(){ $("helpModal").classList.remove("show"); };
+function helpTab(which){
+  var isHow = which !== "army";
+  show($("tabHow"), isHow); show($("tabArmy"), !isHow);
+  $("helpTitle").textContent = isHow ? "HOW TO PLAY" : "THE ARMY";
+  Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function(b){
+    b.classList.toggle("on", (b.dataset.t === "army") === !isHow);
+  });
+}
+document.querySelector(".tabs").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if(b){ sfx("select"); helpTab(b.dataset.t); }
+});
+function openHelp(which){ helpTab(which || "how"); $("helpModal").classList.add("show"); }
+$("helpBtn").onclick = function(){ openHelp("how"); };
+$("helpClose").onclick = function(){
+  $("helpModal").classList.remove("show");
+  try{ localStorage.setItem("jt-stratego-seen-help", "1"); }catch(e){}
+};
+/* First time on this device, open the rules rather than making them hunt for them. */
+(function(){
+  var seen = false;
+  try{ seen = localStorage.getItem("jt-stratego-seen-help") === "1"; }catch(e){ seen = false; }
+  if(!seen) setTimeout(function(){ openHelp("how"); }, 350);
+})();
+
+/* ---------- the coach ----------
+   One line under the status strip. For your own piece: what it is for. For one of
+   theirs: what can actually be worked out about it so far — the same reasoning the
+   bot is doing to you, run in your direction. */
+var COACH = {
+  1: "Nothing beats it in a fair fight. Two things aren't fair: a Bomb, and their Spy striking first.",
+  2: "Second strongest. Worth holding back until their Marshal is accounted for.",
+  3: "Upper-mid. Good for taking ground and winning trades you have already scouted.",
+  4: "Mid-rank. Useful for pressing a file once you know what is on it.",
+  5: "Mid-rank. Cheap enough to trade, strong enough to matter.",
+  6: "Lower-mid. A decent piece to probe with once the Scouts are gone.",
+  7: "Low. Fine for taking a square, expendable for information.",
+  8: "The only piece that survives a Bomb. Save it for the wall around their flag.",
+  9: "Runs any distance down an open line and may strike at the end. Your eyes \u2014 spend it.",
+  S: "Kills their Marshal, but <b>only when it attacks</b>. Defending, it dies to anything.",
+  B: "Never moves. Kills everything that touches it except a Miner.",
+  F: "Never moves. Lose it and the game is over."
+};
+function coachOwn(pc){
+  return "<b>" + rankName(pc.rank) + " (" + label(pc.rank) + ")</b> \u00b7 " + (COACH[pc.rank] || "");
+}
+function coachEnemy(pc){
+  if(G.opts.mem !== "on") return null;              // pure memory: work it out yourself
+  if(pc.seen[ME]) return "<b>Their " + rankName(pc.rank) + ".</b> You have seen this one in a fight.";
+  var age = G.st.moveNo;
+  if(pc.moved) return "<b>It has moved</b>, so it is not a Bomb and not the Flag. Past that, anything.";
+  if(age < 24) return "<span class='q'>Hasn't moved yet \u2014 but nothing much has. Too early to read it.</span>";
+  var guess = null, best = 0;
+  try{
+    var dist = AI.beliefs(S.redact(G.st, ME), ME).dist[pc.id];
+    for(var r in dist){ if(dist[r] > best){ best = dist[r]; guess = isNaN(+r) ? r : +r; } }
+  }catch(e){}
+  var lead = "<b>Hasn't moved in " + age + " moves.</b> ";
+  if(guess == null) return lead + "Everything around it has. Draw your own conclusion.";
+  if(guess === "B") return lead + "Most likely a <b>Bomb</b> \u2014 send a Miner, not your Marshal.";
+  if(guess === "F") return lead + "Most likely the <b>Flag</b>. Worth a cheap piece to find out.";
+  return lead + "Probably just sitting tight \u2014 best guess is a " + rankName(guess) + ".";
+}
+function coach(html){
+  var el = $("coach");
+  if(!html){ el.classList.remove("show"); el.innerHTML = ""; return; }
+  el.innerHTML = html; el.classList.add("show");
+}
 
 /* ---------- board rendering ---------- */
 var squares = [];
@@ -1041,17 +1186,29 @@ function onSquare(e){
   var pc = S.pieceAt(st, i);
   if(G.sel != null && S.movesFrom(st, G.sel).indexOf(i) >= 0) return doMove(G.sel, i);
   if(pc && pc.side === ME && S.isMobile(pc.rank)){
-    G.sel = (G.sel === i ? null : i); if(G.sel != null) sfx("select"); render(); return;
+    var picked = G.sel !== i;
+    G.sel = picked ? i : null;
+    if(picked) sfx("select");
+    coach(picked ? coachOwn(pc) : null);
+    render(); return;
   }
   if(pc && pc.side === ME){
     sfx("illegal");
     say(rankName(pc.rank) + " never moves.", "red");
+    coach(coachOwn(pc));
     G.sel = null; render(); return;
   }
+  if(pc && pc.side === FOE){          // tapping one of theirs is a question, not a move
+    sfx("select");
+    coach(coachEnemy(pc));
+    G.sel = null; render(); return;
+  }
+  coach(null);
   G.sel = null; render();
 }
 
 function doMove(from, to){
+  coach(null);
   var ev;
   try { ev = S.applyMove(G.st, {from:from, to:to}); }
   catch(err){ G.sel = null; render(); return; }
@@ -1145,7 +1302,7 @@ $("clearBtn").onclick = function(){ G.place.cells = {}; G.place.pick = null; ren
 
 /* ---------- start / finish ---------- */
 $("startBtn").onclick = function(){
-  logEl.innerHTML = ""; strikeEl.classList.remove("show");
+  logEl.innerHTML = ""; strikeEl.classList.remove("show"); coach(null);
   G.reveal = false; G.sel = null;
   if(G.opts.setup === "manual"){
     G.phase = "place"; G.place = {cells:{}, pick:null};
