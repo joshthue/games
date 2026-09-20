@@ -12,6 +12,7 @@
 
 <style>
   :root{
+    --size:1;   /* card scale, shared S/M/L/XL control (../cardsize.js) */
     --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
     --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --blue:#1b6fb3;
   }
@@ -27,6 +28,10 @@
   header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;}
   h1{font-size:20px; margin:0; letter-spacing:1px; color:var(--gold); text-shadow:0 1px 2px rgba(0,0,0,.5);}
   .top-btns{display:flex; gap:6px; align-items:center;}
+  /* Four header buttons plus the title overran a 320px screen by 3px (pre-existing, not
+     the card scale - it measured the same before this control existed). Tighten the row
+     on the narrowest phones rather than letting the page scroll sideways. */
+  @media(max-width:350px){ .top-btns{gap:4px;} .top-btns .btn.sm{padding:6px 7px;} }
   button{font-family:inherit; cursor:pointer; border:none; border-radius:10px; font-weight:600;
     transition:transform .06s ease, filter .15s ease;}
   button:active{transform:translateY(1px) scale(.98);}
@@ -68,13 +73,16 @@
   .zone-label{text-align:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65; margin:6px 0 2px;}
   .row{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; min-height:64px; align-items:center;}
 
-  .card{width:44px; height:62px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:calc(44px * var(--size)); height:calc(62px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     user-select:none; border:1px solid #d8d2c0; transition:transform .12s ease, box-shadow .12s ease;}
-  .card.sm{width:34px; height:48px;}
-  .card .rank{position:absolute; top:3px; left:5px; font-size:13px; font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:13px; font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{font-size:24px;} .card.sm .pip{font-size:19px;}
+  .card.sm{width:calc(34px * var(--size)); height:calc(48px * var(--size));}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{font-size:calc(24px * var(--size));} .card.sm .pip{font-size:calc(19px * var(--size));}
+  /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
+  .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
+  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
   .card.red{color:var(--red);} .card.black{color:#1c2a24;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.playable{cursor:pointer;}
@@ -119,7 +127,7 @@
   .setup-opt.on{background:var(--gold); color:var(--ink);}
   .codebox{font-size:40px; letter-spacing:10px; font-weight:800; color:var(--gold); text-align:center; background:rgba(0,0,0,.3); border-radius:12px; padding:14px; margin:10px 0;}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:420px){ .card{width:40px;height:56px;} .card.sm{width:32px;height:46px;} .card .pip{font-size:19px;} h1{font-size:18px;} }
+  @media(max-width:420px){ .card{width:calc(40px * var(--size));height:calc(56px * var(--size));} .card.sm{width:calc(32px * var(--size));height:calc(46px * var(--size));} .card .pip{font-size:calc(19px * var(--size));} h1{font-size:18px;} }
 </style>
 </head>
 <body>
@@ -170,6 +178,7 @@
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 /* ============================================================
    CRIBBAGE — engine + local (vs computer) + online (two phones)
@@ -680,7 +689,7 @@ function openMenu(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;"><span>Speed</span><div class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></div></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
@@ -692,6 +701,8 @@ function openMenu(){
 }
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
 function menuToggleFour(){settings.fourColor=!settings.fourColor;if(G)render();openMenu();}
+// the shared size control repaints itself; the board still needs a redraw behind the panel
+window.onCardSize=function(){ try{ render(); }catch(e){} };
 function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
 function openLog(){
   const rows=(G&&G.log&&G.log.length)? G.log.map(e=>`<div class="logrow ${e.t}">${e.s}</div>`).join("") : `<p class="muted">No plays yet — deal a hand to start the log.</p>`;
@@ -841,7 +852,7 @@ function chooseMode(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="bootToggle(this)"></button><span id="bootTogTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;"><span>Speed</span><div class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></div></div>`;
   openPanel(html,"boot");
 }
@@ -912,7 +923,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v74", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v75", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

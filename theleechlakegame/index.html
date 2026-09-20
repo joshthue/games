@@ -11,7 +11,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <style>
-  :root{ --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
+  :root{ --size:1;   /* card scale, driven by the shared S/M/L/XL control (../cardsize.js) */
+    --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
     --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;}
@@ -60,13 +61,13 @@
   .trickcard .who{font-size:10px; opacity:.75;}
   .lead-tag{font-size:10px; color:var(--gold);}
 
-  .card{width:44px; height:62px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:calc(44px * var(--size)); height:calc(62px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     user-select:none; border:1px solid #d8d2c0; transition:transform .12s, box-shadow .12s;}
-  .card.sm{width:30px; height:44px;}
-  .card .rank{position:absolute; top:3px; left:5px; font-size:13px; font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:13px; font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{font-size:22px;} .card.sm .pip{font-size:15px;} .card.sm .rank,.card.sm .rankb{font-size:9px;}
+  .card.sm{width:calc(30px * var(--size)); height:calc(44px * var(--size));}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{font-size:calc(22px * var(--size));} .card.sm .pip{font-size:calc(15px * var(--size));} .card.sm .rank,.card.sm .rankb{font-size:calc(9px * var(--size));}
   .card.red{color:var(--red);} .card.black{color:#1c2a24;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.playable{cursor:pointer;} .card.playable:hover{transform:translateY(-8px); box-shadow:0 8px 14px rgba(0,0,0,.45);}
@@ -98,6 +99,9 @@
   .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s;}
   .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
   .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px 0; font-size:14px; line-height:1.5;}
+  /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
+  .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
+  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
   .mdrow{background:rgba(0,0,0,.22); border-left:3px solid var(--red); border-radius:8px; padding:9px 12px; margin:9px 0;}
   .mdrow .who{font-weight:800; font-size:14px; margin-bottom:6px;}
   /* the rank comes through as bare text and only suitHTML carries a colour, so without an
@@ -117,7 +121,7 @@
   .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
   .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:430px){ .card{width:38px;height:54px;} .card .pip{font-size:19px;} h1{font-size:17px;} }
+  @media(max-width:430px){ .card{width:calc(38px * var(--size));height:calc(54px * var(--size));} .card .pip{font-size:calc(19px * var(--size));} h1{font-size:17px;} }
   @media(max-width:360px){ h1{font-size:15px; letter-spacing:0;} h1 small{font-size:9px; letter-spacing:1px;} }
 </style>
 </head>
@@ -153,6 +157,7 @@
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 /* ============================================================
    I'M OUT, JERRY! (aka Rat / The Leech Lake Game) — trick-taking elimination
@@ -214,6 +219,19 @@ function suitHTML(s){ return `<span style="color:${suitColor(s)}">${SUITS[s]}</s
 function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function sortHand(){ const h=R&&R.players&&R.players[0]&&R.players[0].hand; if(!h)return; if(R.gameType==="suits") h.sort((a,b)=> a.s-b.s || a.r-b.r); else h.sort((a,b)=> a.r-b.r || a.s-b.s); }
 function D(ms){ return Math.round(ms*(settings.speed?0.4:1)); }   // speed play shortens delays
+
+/* ---- deferred continuations must not outlive the hand that scheduled them ----
+   Every step of a hand is a setTimeout into the next one. Start a new game mid-hand
+   (Menu > New game, or Play again) and those timers were still in flight: the pending
+   resolveTrick fired against the fresh R, where trick is [], and trickWinnerIndex
+   dereferenced trick[0].card. Nothing recovered it - the new hand was already wedged.
+   later() stamps each timer with the R it belongs to and a generation counter, so an
+   abandoned hand's timers are inert instead of destructive. GEN is bumped by startHand,
+   which covers redeals and hand-to-hand transitions; the R identity check covers a whole
+   new game. showAdvance keeps its own advSeq token on top - that one guards a different
+   race (the player tapping the button before the auto-advance fires). */
+let GEN=0;
+function later(fn,ms){ const g=GEN, r=R; return setTimeout(()=>{ if(g===GEN && r===R) fn(); }, ms); }
 let curOverlay={kind:null};
 
 function newGame(){
@@ -245,6 +263,7 @@ function hasAceOrFace(hand){ return hand.some(c=>c.r>=11); }
 function noFaceSeats(){ return aliveList().filter(p=>!hasAceOrFace(p.hand)); }
 
 function startHand(){
+  GEN++;                                   // every timer from the previous hand is now inert
   const alive=aliveList();
   if(alive.length===1){ R.champion=alive[0].seat; R.phase="gameover"; render(); openWinPanel(); return; }
   // deal
@@ -318,7 +337,7 @@ function advance(){
   if(R.phase!=="play")return;
   const p=R.players[R.turn];
   if(p.human){ setStatus(`Your turn — ${turnHint()}`, true); render(); }
-  else { setStatus(`${p.name} is thinking…`); render(); setTimeout(()=>cpuPlay(R.turn),D(650)); }
+  else { setStatus(`${p.name} is thinking…`); render(); later(()=>cpuPlay(R.turn),D(650)); }
 }
 function turnHint(){
   if(R.gameType==="suits"&&R.trick.length){ const led=R.trick[0].card.s; const has=R.players[0].hand.some(c=>c.s===led); return has?`follow ${suitHTML(led)} if you can.`:`no ${suitHTML(led)} — play anything.`; }
@@ -341,8 +360,8 @@ function doPlay(seat,i){
   sfx('place');
   R.trick.push({p:seat, card});
   const aliveCount=aliveList().length;
-  if(R.trick.length>=aliveCount){ R.phase="resolve"; render(); setTimeout(resolveTrick,D(900)); }
-  else { R.turn=nextAliveSeat(seat); R.phase="play"; render(); setTimeout(advance,D(300)); }
+  if(R.trick.length>=aliveCount){ R.phase="resolve"; render(); later(resolveTrick,D(900)); }
+  else { R.turn=nextAliveSeat(seat); R.phase="play"; render(); later(advance,D(300)); }
 }
 function resolveTrick(){
   const wi=trickWinnerIndex(R.trick, R.gameType, R.trump);
@@ -355,8 +374,8 @@ function resolveTrick(){
   setStatus(`${pname(winnerSeat)} takes the trick (${cardStr(R.trick[wi].card)}).`);
   render();
   const done = aliveList().every(p=>p.hand.length===0);
-  if(done){ R.phase="handEnd"; setTimeout(endHand,D(900)); }
-  else { setTimeout(beginTrick,D(900)); }   // stays "resolve" until beginTrick sets "play"
+  if(done){ R.phase="handEnd"; later(endHand,D(900)); }
+  else { later(beginTrick,D(900)); }   // stays "resolve" until beginTrick sets "play"
 }
 function endHand(){
   const aliveBefore=aliveList();
@@ -395,14 +414,14 @@ function proceedAfterCaller(winSeat, summary){
 function showAdvance(label, fn){
   R.advSeq=(R.advSeq||0)+1; const tok=R.advSeq;
   showControls([{label, fn, cls:"btn"}]);
-  if(settings.speed) setTimeout(()=>{ if(R.advSeq===tok && (R.phase==="handEnd"||R.phase==="reset")) fn(); }, D(1300));
+  if(settings.speed) later(()=>{ if(R.advSeq===tok && (R.phase==="handEnd"||R.phase==="reset")) fn(); }, D(1300));
 }
 function startTiebreak(seats, summary){
   R.phase="tiebreak";
   R.tie={seats, deck:shuffle(makeDeck()), flips:[], idx:0, winner:null, summary};
   setStatus(`Tie for most tricks — first Jack calls: ${seats.map(s=>pname(s)).join(" vs ")}`);
   render();
-  setTimeout(tiebreakStep, D(900));
+  later(tiebreakStep, D(900));
 }
 function tiebreakStep(){
   const t=R.tie; if(!t)return;
@@ -412,12 +431,12 @@ function tiebreakStep(){
   if(card.r===11){                       // Jack — this player calls
     t.winner=seat; render();
     setStatus(`${pname(seat)} flipped the ${cardStr(card)} — ${callsPhrase(seat)}!`);
-    setTimeout(()=>proceedAfterCaller(seat, t.summary), D(1500));
+    later(()=>proceedAfterCaller(seat, t.summary), D(1500));
     return;
   }
   render();
   t.idx++;
-  setTimeout(tiebreakStep, D(750));
+  later(tiebreakStep, D(750));
 }
 
 /* ============================================================ CPU */
@@ -654,7 +673,7 @@ function openMenu(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
     <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Game</h3>
     <a class="setup-opt" href="../" style="display:block;text-decoration:none;">🏠 Back to all games</a>
@@ -665,6 +684,8 @@ function openMenu(){
 function onNameInput(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; if(R&&R.players[0]){R.players[0].name=settings.playerName; R.roster[0].name=settings.playerName; render();} }
 function menuToggleTips(){settings.tipsOn=!settings.tipsOn;updateTipVisibility();openMenu();}
 function menuToggleFour(){settings.fourColor=!settings.fourColor;if(R)render();openMenu();}
+// the shared size control repaints itself; the board still needs a redraw behind the panel
+window.onCardSize=function(){ if(R) render(); };
 function menuToggleSpeed(){settings.speed=!settings.speed;openMenu();}
 function openLog(){
   const rows=(R&&R.log&&R.log.length)? R.log.map(e=>`<div class="logrow ${e.t}">${e.s}</div>`).join("") : `<p class="muted">No plays yet — deal a hand to start the log.</p>`;
@@ -714,7 +735,7 @@ function chooseSetup(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);if(R)render();"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
     <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
     <div style="text-align:center;margin-top:14px;"><button class="btn" onclick="closeOverlay();newGame();">Deal! ▶</button></div>`;
   openPanel(html,"setup");
@@ -755,7 +776,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v74", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v75", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
-  :root{ --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
+  :root{ --felt:#0d5c3f;
+    --size:1;   /* card scale, shared S/M/L/XL control (../cardsize.js) */ --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
     --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --green:#178a3a; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;}
@@ -53,11 +54,14 @@
   .status{min-height:36px; text-align:center; font-size:14px; margin:6px 0; color:var(--gold); font-weight:600;
     display:flex; align-items:center; justify-content:center; padding:0 6px;}
 
-  .card{width:46px; height:66px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:calc(46px * var(--size)); height:calc(66px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0;}
-  .card .rank{position:absolute; top:3px; left:5px; font-size:14px; font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:14px; font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:23px;}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(14px * var(--size)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(14px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(23px * var(--size));}
+  /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
+  .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
+  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.win{box-shadow:0 0 0 2px var(--gold), 0 0 12px rgba(240,198,116,.6), 0 3px 8px rgba(0,0,0,.4);}
   .card.slot{background:rgba(0,0,0,.15); border:1px dashed rgba(255,255,255,.18); box-shadow:none;}
@@ -100,7 +104,7 @@
   .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
   .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:430px){ .card{width:40px;height:58px;} .card .pip{font-size:20px;} .card .rank,.card .rankb{font-size:12px;} h1{font-size:16px;} }
+  @media(max-width:430px){ .card{width:calc(40px * var(--size));height:calc(58px * var(--size));} .card .pip{font-size:calc(20px * var(--size));} .card .rank,.card .rankb{font-size:calc(12px * var(--size));} h1{font-size:16px;} }
 </style>
 </head>
 <body>
@@ -138,6 +142,7 @@
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 /* ============================================================
    ULTIMATE TEXAS HOLD'EM — heads-up vs the dealer.
@@ -474,7 +479,7 @@ function openMenu(){
     <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div></div>
     <h3>Deck</h3>
-    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
     <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Table</h3>
     <a class="setup-opt" href="../">🏠 Back to all games</a>
@@ -486,6 +491,8 @@ function openMenu(){
 function onNameInput(v){ settings.playerName=(v||"").trim().slice(0,16)||"You"; }
 function menuToggleTips(){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); openMenu(); }
 function menuToggleFour(){ settings.fourColor=!settings.fourColor; if(U)render(); openMenu(); }
+// the shared size control repaints itself; the board still needs a redraw behind the panel
+window.onCardSize=function(){ try{ render(); }catch(e){} };
 function menuToggleSpeed(){ settings.speed=!settings.speed; openMenu(); }
 
 /* ============================================================ SETUP */
@@ -500,7 +507,7 @@ function chooseSetup(){
     <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
     <div class="seg" id="setupSeg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div></div>
     <h3>Deck</h3>
-    <div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
     <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
     <p class="muted" style="margin-top:12px;">You'll start with ${START_BANK} chips.</p>
     <div style="text-align:center;margin-top:10px;"><button class="btn" onclick="closeOverlay();newSession();">Sit down ▶</button></div>`;
@@ -539,7 +546,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v74", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v75", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

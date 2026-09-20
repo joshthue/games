@@ -10,7 +10,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
-  :root{ --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
+  :root{ --felt:#0d5c3f;
+    --size:1;   /* card scale, shared S/M/L/XL control (../cardsize.js) */ --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
     --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --green:#178a3a; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;height:100%;}
@@ -42,11 +43,14 @@
   .pstray-score .best{font-size:11px; opacity:.85; margin-top:2px; white-space:nowrap;}
 
   /* ---- cards ---- */
-  .card{width:52px; height:74px; border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:calc(52px * var(--size)); height:calc(74px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0;}
-  .card .rank{position:absolute; top:4px; left:6px; font-size:15px; font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:4px; right:6px; font-size:15px; font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:26px;}
+  .card .rank{position:absolute; top:4px; left:6px; font-size:calc(15px * var(--size)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:4px; right:6px; font-size:calc(15px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(26px * var(--size));}
+  /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
+  .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
+  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 7px,#155a94 7px,#155a94 14px); border:2px solid #0e3f6b;}
 
   /* ---- 5x5 board + row/col score chips ---- */
@@ -135,6 +139,7 @@
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 /* ============================================================
    POKER SQUARES (a.k.a. Poker Solitaire / Poker Patience)
@@ -322,7 +327,7 @@ function openRules(){
 function openMenu(){
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>'
     +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.tipsOn?'on':'')+'" onclick="menuToggleTips()"></button><span>Tips '+(settings.tipsOn?'ON':'OFF')+'</span></div>'
-    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.fourColor?'on':'')+'" onclick="menuToggleFour()"></button><span>Four-color deck (♠ black · ♥ red · ♦ blue · ♣ green)</span></div>'
+    +'<div class="optrow"><div class="switch" style="display:flex;"><button class="toggle '+(settings.fourColor?'on':'')+'" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>'+CARDSIZE.controlHTML()+'</div>'
     +'<div style="margin:12px 0 4px;font-size:13px;">Scoring system</div>'
     +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
     +'<div style="height:6px"></div>'
@@ -350,6 +355,8 @@ function openResults(total){
 /* ---- toggles ---- */
 function menuToggleTips(){ settings.tipsOn=!settings.tipsOn; persist(); render(); openMenu(); }
 function menuToggleFour(){ settings.fourColor=!settings.fourColor; persist(); render(); openMenu(); }
+// the shared size control repaints itself; the board still needs a redraw behind the panel
+window.onCardSize=function(){ try{ render(); }catch(e){} };
 function setScoring(s){ settings.scoring=s; persist(); render(); openMenu(); }
 
 /* ---- wire up ---- */
@@ -381,7 +388,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v74", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v75", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

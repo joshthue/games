@@ -250,6 +250,7 @@
   </div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 /* =================================================================
    ENGINE  (identical to the node-tested engine.js — 38/38)
@@ -293,7 +294,7 @@ function canDouble(hand,bank,rules){
    ================================================================= */
 const BUILD=(function(){   // Last-Modified from Pages = the deploy time
   const d=new Date(document.lastModified);
-  return 'build v74'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+  return 'build v75'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
 })();
 const mem={};
 const store={
@@ -684,11 +685,13 @@ function updateArc(){
 /* =================================================================
    SIZE TOGGLE
    ================================================================= */
-const SIZES=[{k:'S',v:.86},{k:'M',v:1},{k:'L',v:1.2}];
-let sizeIdx=parseInt(store.get('bj_size'),10); if(!Number.isFinite(sizeIdx))sizeIdx=1;
-function applySize(){document.documentElement.style.setProperty('--size',SIZES[sizeIdx].v);
-  $('sizeBtn').textContent=SIZES[sizeIdx].k;store.set('bj_size',String(sizeIdx));}
-$('sizeBtn').onclick=()=>{sizeIdx=(sizeIdx+1)%SIZES.length;applySize();};
+/* Card size now comes from ../cardsize.js: the same scale and the same origin-wide key
+   as every other card game, so a size chosen here is the size in all of them. This used
+   to be a private S/M/L on a bj_size key; the shared module adds XL and drops the drift.
+   The A+- button stays - Blackjack has no settings sheet row to put a segmented control in. */
+const SIZES=CARDSIZE.STEPS;
+function applySize(){CARDSIZE.apply();$('sizeBtn').textContent=SIZES[CARDSIZE.idx()].k;}
+$('sizeBtn').onclick=()=>{CARDSIZE.choose((CARDSIZE.idx()+1)%SIZES.length);applySize();};
 
 /* =================================================================
    EVENTS

@@ -32,3 +32,15 @@ American mirrors real-poker rarity; English rewards how hard each hand is to bui
 - Build stamp `build vNN · <local time>` at the bottom (`V`/`ISO` consts) — bump with the `sw.js` cache version.
 - In-game asset refs point up one level (`../manifest.webmanifest`, `../icon-180.png`, `../sw.js`).
 - Sound from the shared `../sfx.js` (synthesized, offline, one mute setting for every game).
+
+## Card size
+
+Cards scale with the shared **S / M / L / XL** control (`../cardsize.js`), which sits
+next to the four-color deck toggle. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
+rather than pixel sizes, because the games don't share a base card size — a multiplier
+scales each game from its own design. The choice is stored once for the whole origin,
+like the mute key, so the size you pick here is the size in every Game Night card game.
+
+XL is deliberately larger than a 7-card hand fits on one row on a small phone: past
+about 390px wide the hand wraps to two rows instead of overflowing, which is the
+trade-off XL is for.

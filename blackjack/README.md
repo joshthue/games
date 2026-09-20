@@ -22,9 +22,13 @@ out and pays the winners. Keyboard shortcuts on desktop: `Enter` deal, `H` hit,
 
 ## Options
 
-- **Card size** (A± in the top bar) and other preferences live in **Settings** (⚙). Hand
-  totals, the dealer's line, the chip denominations and the bet amounts all scale with the
-  cards, so they stay readable on a desktop monitor and grow when you size the cards up.
+- **Card size** (A± in the top bar) cycles **S / M / L / XL**. It now comes from the shared
+  `../cardsize.js`, on the same scale and the same origin-wide key as every other Game Night
+  card game — a size picked here is the size in all of them. It used to be a private S/M/L on
+  its own key, which meant Blackjack drifted out of step with the rest. Other preferences live
+  in **Settings** (⚙). Hand totals, the dealer's line, the chip denominations and the bet
+  amounts all scale with the cards, so they stay readable on a desktop monitor and grow when
+  you size the cards up.
 - The Settings footer shows the `build vNN` stamp — the quick way to confirm a
   refresh actually took.
 
