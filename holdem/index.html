@@ -1093,8 +1093,16 @@ function applyFeltMark(){
   }
 }
 
-const NAMES=['Tuck','Marge','Bishop','Dolores','Rerun','Ozzie','Peaches','Hollis','Ruby','Gus',
-             'Winnie','Cricket','Bo','Delia','Mack','June','Pip','Sarge','Nova','Clem'];
+/* The regular line-up, shuffled per game. A 9-seat table needs 8 bots and there are
+   only 7 regulars, so RESERVE tops the pool up rather than leaving a seat named
+   undefined - the old 20-name list hid that the pools are indexed, not cycled. */
+const NAMES=['DripLine','DaveKim','Snippy','Vince','Hoff','BS','Skidz'];
+const RESERVE=['Tuck','Marge','Bishop','Dolores','Rerun','Ozzie','Peaches','Hollis','Ruby','Gus',
+               'Winnie','Cricket','Bo','Delia','Mack','June','Pip','Sarge','Nova','Clem'];
+/* Fisher-Yates. `sort(()=>rng()-0.5)` is not a uniform shuffle - with a 7-name pool
+   feeding 5 seats that bias is visible as the same faces turning up too often. */
+function shuffled(a,rng){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function namePool(need,rng){ const p=shuffled(NAMES,rng); return p.length>=need ? p : p.concat(shuffled(RESERVE,rng)).slice(0,need); }
 
 /* ---------------- state ---------------- */
 let T=null, heroSeat=0, busy=false, pendingResolve=null, raiseTo=0, lastBoard=0;
@@ -1447,8 +1455,8 @@ async function finishUp(){
 /* ---------------- tournament ---------------- */
 function newGame(){
   const pool=PERSONAS.slice().sort(()=>rng()-0.5);
-  const names=NAMES.slice().sort(()=>rng()-0.5);
   const n=SEAT_COUNTS.indexOf(S.seats)>=0?S.seats:6;
+  const names=namePool(n-1,rng);                 // n-1 bots: you take seat 0
   T=newTable({seats:n,startStack:5000,handsPerLevel:HANDS_PER_LEVEL[S.blinds]||5,rng:rng});
   T.players.forEach((p,i)=>{
     if(i===0){ p.isBot=false; p.name='You'; p.persona=null; }
@@ -1890,10 +1898,10 @@ function startOnlineGame(){
   const total=Math.max(2, Math.min(9, humans+NET.bots));
   T=newTable({seats:total, startStack:5000, handsPerLevel:HANDS_PER_LEVEL[S.blinds]||5, rng:rng});
   const botPool=PERSONAS.slice().sort(()=>rng()-0.5);
-  const botNames=NAMES.slice().sort(()=>rng()-0.5);
+  const botNames=namePool(total-humans,rng);
   T.players.forEach((p,i)=>{
     if(i<humans){ p.isBot=false; p.persona=null; p.id=NET.seats[i].id; p.name=NET.seats[i].name; }
-    else { p.isBot=true; p.persona=botPool[(i-humans)%botPool.length].key; p.name=botNames[i]; p.id=''; }
+    else { p.isBot=true; p.persona=botPool[(i-humans)%botPool.length].key; p.name=botNames[i-humans]; p.id=''; }
   });
   NET.mySeat=seatOf(NET.me);
   heroSeat=NET.mySeat<0?0:NET.mySeat;
@@ -2014,7 +2022,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v75", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+(function(){ var V="v76", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
   var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));

@@ -166,7 +166,10 @@ const SUITS=["♠","♥","♦","♣"], SUIT_RED=[false,true,true,false];
 const RSTR={11:"J",12:"Q",13:"K",14:"A"};
 const rankStr=r=>RSTR[r]||String(r);
 const cardStr=c=>rankStr(c.r)+SUITS[c.s];
-const CPU_NAMES=["Rocky","Duke","Gus","Marge","Hazel","Bo"];
+/* The bot pool. Seven names, at most six bots at a full seven-player table, so the
+   line-up is drawn at random each game rather than taken in order - which means you
+   get a different six of the seven every time instead of always the same first six. */
+const CPU_NAMES=["DripLine","DaveKim","Snippy","Vince","Hoff","BS","Skidz"];
 
 function makeDeck(){const d=[];for(let s=0;s<4;s++)for(let r=2;r<=14;r++)d.push({r,s});return d;}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -236,7 +239,8 @@ let curOverlay={kind:null};
 
 function newGame(){
   const roster=[{name:settings.playerName||"You", human:true}];
-  for(let i=0;i<settings.numPlayers-1;i++) roster.push({name:CPU_NAMES[i], human:false});
+  const pool=CPU_NAMES.slice(); shuffle(pool);
+  for(let i=0;i<settings.numPlayers-1;i++) roster.push({name:pool[i%pool.length], human:false});
   R={ roster, players:[], handSize:7, seriesFirstHand:true, log:[], dealerBase:Math.floor(Math.random()*roster.length),
       trump:null, gameType:null, caller:null, leader:0, turn:0, trick:[], phase:"init",
       prevWinner:null, champion:null, misdeals:0, msg:"", lastResult:"" };
@@ -776,7 +780,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v75", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v76", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
