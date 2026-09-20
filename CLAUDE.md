@@ -56,6 +56,26 @@ What that means in practice:
 
   `_to_delete/` is gitignored. Tell Josh what you parked there; he deletes it.
 
+- **You cannot force-push from a Cowork session, so never rewrite a pushed commit.**
+  `device_bash` has no credential helper (`credential-osxkeychain is not a git
+  command`), and the GitKraken `git_push` tool takes a directory and nothing else —
+  no `--force`, no `--force-with-lease`. A rewritten commit that is already on
+  origin leaves the clone stuck on `! [rejected] (non-fast-forward)` with no way
+  out from here except `git reset --hard origin/main` and cherry-picking the good
+  work back on top. Decide about a message before you push, not after.
+
+- **`git commit --amend --no-edit -m "..."` is not "keep the message, change the
+  subject" — `-m` replaces the WHOLE message and `--no-edit` does not stop it.**
+  A v74→v78 subject correction on 2026-09-20 silently threw away five paragraphs
+  of a Stratego commit body. To change only the subject, rebuild the full text:
+
+  ```
+  git log -1 --format='%B' | sed '1s/old/new/' > /tmp/msg && git commit --amend -F /tmp/msg
+  ```
+
+  And check `git log -1 --format='%B'` after any amend, not `--oneline`, which
+  shows the subject and would have looked perfect.
+
 ---
 
 ## Layout
