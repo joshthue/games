@@ -68,6 +68,47 @@ a bigger centre put the numeral's ink underneath the top-left pip on 10/Q/K/A at
 widths. If you change either number, check the wide ranks at 320px - single digits clear
 easily and hide the problem.
 
+## The bots
+
+`cpuPlay()` splits into two decisions, and they are not the same decision.
+
+**Following** is unchanged and deliberately greedy: if the bot can win the trick and it
+hasn't won one yet this hand, it takes it with its cheapest winning card. Ducking a
+winnable trick early is how a bot gets shut out, and being shut out is elimination.
+
+**Leading** goes through `chooseLead()`, which was split out in v79 because the old code
+led the top trump on essentially every opening hand. Two things caused that. The urgency
+test was `p.tricks===0`, which is true for *every* seat on trick 1 of *every* hand, so the
+leader always took the "play my very best card" branch and never the middling one. And
+`strength()` adds **+100** for a trump — a bonus written to rank cards *inside* a trick,
+where trumps really do beat everything — so "best card" meant "highest trump" in the 86.7%
+of opening 7-card hands that hold one. Measured over 20k deals: it led a trump in 100% of
+the hands that held one.
+
+What replaced it:
+
+- `leadPressure()` scales with the hand: no tricks yet **and** `hand.length <= max(2,
+  ceil(handSize/3))`. Needing a trick isn't urgent with seven still to come; it is with
+  two. When it does fire the bot plays its outright best card, trump included — that is
+  what the +100 is for, and now it only applies when it's true.
+- Otherwise in Suits, leading trump is its own judgement: **two trump honours (Q/K/A), or
+  one plus three-card length**. That is the strip-trumps play the in-game tips describe,
+  and it fires on about 14% of opening hands.
+- Failing that it leads the top of its longest side suit, picking at random between that
+  card, the next one down, and the top of its second suit — so the same hand doesn't open
+  the same way twice.
+
+Opening trump leads went **86.7% → 13.3%**. Strength is unchanged: at a mixed table over
+40k hands each policy averages 1.75 tricks of a 1.750 fair share, and a table of new bots
+shuts out 10.8–12.1% of seats against the old code's 12.7–13.9% — tricks spread a little
+more evenly, so fewer players go out early.
+
+`lead.test.js` and `headtohead.js` sit beside `index.html` and are not served — they pull the
+functions straight out of the shipped `index.html` with a brace-matching `grab()` rather than
+keeping a second copy, so they can't drift. Run them with `node theleechlakegame/lead.test.js`.
+`lead.test.js` measures the trump-lead rate at each hand size, `headtohead.js` seats the
+two policies at one table with rotating positions.
+
 ## Running it
 
 Just open `index.html` in a browser — no build step, no dependencies. It also works

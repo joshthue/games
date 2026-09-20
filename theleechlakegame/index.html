@@ -482,21 +482,59 @@ function cardBeatsCurrent(card, gameType, trump, trick){
   const tmp=trick.concat([{p:-1,card}]);
   return trickWinnerIndex(tmp,gameType,trump)===tmp.length-1;
 }
+// value of a card for "strength" by gameType (higher = stronger/more likely to win)
+function strength(c){
+  return R.gameType==="low" ? (16-c.r) : R.gameType==="closest8" ? (8-dist8(c.r)) : c.r + (R.gameType==="suits"&&c.s===R.trump?100:0);
+}
+/* How hard a seat is pressing to win a trick WHEN IT LEADS. "no tricks yet" on
+   its own is true for every seat on trick 1 of every hand, so it can't be the
+   test for leading - it sent the leader down the "play my very best card" path
+   every single time. Needing a trick isn't urgent with seven still to come; it
+   is with two. The follow-suit logic below still uses the plain p.tricks===0,
+   deliberately: ducking a winnable trick early is how a bot gets eliminated. */
+function leadPressure(p){
+  return p.tricks===0 && p.hand.length <= Math.max(2, Math.ceil(R.handSize/3));
+}
+/* Choosing a LEAD is its own decision. strength() adds +100 for a trump so that
+   trumps outrank the led suit INSIDE a trick - it was never meant to rank an
+   opening lead, and letting it do so made "lead the top trump" automatic in the
+   87% of opening 7-card hands that hold one. Lead trump to strip it only when
+   holding the top of the suit; otherwise lead a long side suit. */
+function chooseLead(p, legalIdx){
+  const h=p.hand;
+  const byStrength=[...legalIdx].sort((a,b)=>strength(h[b])-strength(h[a]));
+  // running out of hand with no trick yet: play the best card there is, trump
+  // included. This is the branch the old code took on EVERY lead; now it's rare
+  // and it's real, so the +100 trump bonus is doing the job it was written for.
+  if(leadPressure(p)) return byStrength[0];
+  if(R.gameType!=="suits") return byStrength[Math.floor(Math.random()*Math.min(2,byStrength.length))];
+  const trumps=legalIdx.filter(i=>h[i].s===R.trump).sort((a,b)=>h[b].r-h[a].r);
+  const side  =legalIdx.filter(i=>h[i].s!==R.trump);
+  if(!side.length) return trumps[0];                              // trump is all we hold
+  const topTrumps=trumps.filter(i=>h[i].r>=12).length;            // Q K A
+  // strip trumps only with the top of the suit behind it - two honours, or an
+  // honour and length. Fires on ~14% of opening hands, so it still shows up.
+  if(topTrumps>=2 || (trumps.length>=3 && topTrumps>=1)) return trumps[0];
+  const bySuit={};
+  side.forEach(i=>{ (bySuit[h[i].s]=bySuit[h[i].s]||[]).push(i); });
+  const groups=Object.keys(bySuit).map(k=>bySuit[k].sort((a,b)=>h[b].r-h[a].r))
+                    .sort((A,B)=>(B.length-A.length)||(h[B[0]].r-h[A[0]].r));
+  const cands=[groups[0][0]];                                     // top of the longest side suit
+  if(groups[0].length>1) cands.push(groups[0][1]);
+  if(groups.length>1)    cands.push(groups[1][0]);
+  return cands[Math.floor(Math.random()*cands.length)];
+}
 function cpuPlay(seat){
   if(R.phase!=="play"||R.turn!==seat)return;   // ignore stale timers
   const p=R.players[seat];
   if(!p||p.hand.length===0){ return; }
   const legalIdx=legalCards(p.hand,R.gameType,R.trick);
-  // value of a card for "strength" by gameType (higher = stronger/more likely to win)
-  const strength=c=> R.gameType==="low" ? (16-c.r) : R.gameType==="closest8" ? (8-dist8(c.r)) : c.r + (R.gameType==="suits"&&c.s===R.trump?100:0);
   const needTrick = p.tricks===0;               // must win at least one to survive
   const cardsLeft = p.hand.length;
   const winners=legalIdx.filter(i=>cardBeatsCurrent(p.hand[i],R.gameType,R.trump,R.trick));
   let choice;
   if(R.trick.length===0){
-    // leading: lead the strongest card if we still need a trick or few cards left, else a middling card
-    const sorted=[...legalIdx].sort((a,b)=>strength(p.hand[b])-strength(p.hand[a]));
-    choice = (needTrick||cardsLeft<=2)? sorted[0] : sorted[Math.min(sorted.length-1,1)];
+    choice = chooseLead(p, legalIdx);
   } else if(winners.length){
     // win with the cheapest winning card if we need it or it's cheap; else maybe duck
     const cheapWin=winners.sort((a,b)=>strength(p.hand[a])-strength(p.hand[b]))[0];
@@ -826,7 +864,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v78", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v79", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
