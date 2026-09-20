@@ -62,6 +62,12 @@ and the corner pips only confirm it. Below XL the suit keeps the middle - a big 
 small card is all number and no card. The swap doesn't apply to the tiny cards in the
 opponents' pills, where a centred number that size would be the whole card.
 
+The centred rank is 24px rather than the 27px it looks like it could be, and `10` is
+smaller again at 19px, because the corner pips are deliberately large: at a 38px base card
+a bigger centre put the numeral's ink underneath the top-left pip on 10/Q/K/A at phone
+widths. If you change either number, check the wide ranks at 320px - single digits clear
+easily and hide the problem.
+
 ## Running it
 
 Just open `index.html` in a browser — no build step, no dependencies. It also works

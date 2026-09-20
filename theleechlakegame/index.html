@@ -74,11 +74,16 @@
      XL the centre stays the pip - a big number on a small card is all number and no card.
      Scoped away from .sm: those are the 30px cards in the opponents' pills, where a
      centred 27px number would be the whole card. */
-  [data-cardsize="XL"] .card:not(.sm) .rank{position:static; font-size:calc(27px * var(--size)); line-height:1;}
+  /* 24px, not 27: the corner pips are 17px and the card is only 38px wide at the base
+     size, so a 27px centre put the numeral's ink under the top-left pip on 10/Q/K/A at
+     phone widths. Clearance comes out of the number rather than the suit - the suit was
+     the thing asked to be bigger. .r10 is smaller again: "10" is two characters wide. */
+  [data-cardsize="XL"] .card:not(.sm) .rank{position:static; font-size:calc(24px * var(--size)); line-height:1;}
+  [data-cardsize="XL"] .card:not(.sm).r10 .rank{font-size:calc(19px * var(--size)); letter-spacing:-.05em;}
   [data-cardsize="XL"] .card:not(.sm) .rankb{display:none;}
-  [data-cardsize="XL"] .card:not(.sm) .pip{position:absolute; top:2px; left:5px; font-size:calc(13px * var(--size));}
-  [data-cardsize="XL"] .card:not(.sm) .pipb{display:block; position:absolute; bottom:2px; right:5px;
-     font-size:calc(13px * var(--size)); transform:rotate(180deg);}
+  [data-cardsize="XL"] .card:not(.sm) .pip{position:absolute; top:1px; left:4px; font-size:calc(17px * var(--size));}
+  [data-cardsize="XL"] .card:not(.sm) .pipb{display:block; position:absolute; bottom:1px; right:4px;
+     font-size:calc(17px * var(--size)); transform:rotate(180deg);}
   .card.red{color:var(--red);} .card.black{color:#1c2a24;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.playable{cursor:pointer;} .card.playable:hover{transform:translateY(-8px); box-shadow:0 8px 14px rgba(0,0,0,.45);}
@@ -521,6 +526,7 @@ function cardEl(c,opts={}){
   const isTrump = R && R.gameType==="suits" && R.trump!=null && c.s===R.trump;
   d.className="card "+(opts.sm?"sm ":"")+(isTrump?"trump ":"")+(opts.cls?(" "+opts.cls):"");
   d.style.color=suitColor(c.s);
+  if(c.r===10) d.classList.add("r10");   // the only two-character rank; it needs a smaller centre at XL
   d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span><span class="pipb">${SUITS[c.s]}</span>`;
   return d;
 }
@@ -820,7 +826,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v77", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v78", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
