@@ -31,8 +31,13 @@
   function idx(){ var i=parseInt(read(),10); return (i>=0 && i<STEPS.length) ? i : 1; }   // default M
   function apply(){
     var el=document.documentElement;
-    if(el) el.style.setProperty("--size", STEPS[idx()].v);
+    if(!el) return;
+    el.style.setProperty("--size", STEPS[idx()].v);
+    // data-cardsize lets a game restyle at a particular step - I'm out, Jerry! swaps the
+    // rank and the suit at XL - without any game needing to subscribe to changes.
+    el.setAttribute("data-cardsize", STEPS[idx()].k);
   }
+  function value(){ return STEPS[idx()].v; }
   function choose(i,btn){
     write(String(i)); apply();
     var seg = btn && btn.parentNode;
@@ -48,6 +53,6 @@
     }).join("")+'</span>';
   }
 
-  window.CARDSIZE={ STEPS:STEPS, idx:idx, apply:apply, choose:choose, controlHTML:controlHTML };
+  window.CARDSIZE={ STEPS:STEPS, idx:idx, value:value, apply:apply, choose:choose, controlHTML:controlHTML };
   apply();
 })();

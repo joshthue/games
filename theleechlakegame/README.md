@@ -48,9 +48,19 @@ rather than pixel sizes, because the games don't share a base card size — a mu
 scales each game from its own design. The choice is stored once for the whole origin,
 like the mute key, so the size you pick here is the size in every Game Night card game.
 
-XL is deliberately larger than a 7-card hand fits on one row on a small phone: past
-about 390px wide the hand wraps to two rows instead of overflowing, which is the
-trade-off XL is for.
+The hand never wraps. The chosen size is a **maximum**: `fitHand()` measures what one
+row of that many cards actually needs and scales the hand down if it doesn't fit, so XL
+means "as large as fits on one row" rather than "large enough to wrap". Only the hand is
+clamped - the trick area and the opponents' pills never hold seven cards, so they stay
+at the size you picked.
+
+At **XL the rank and the suit swap places**: the number moves to the middle of the card
+and grows, and the suit moves out to *both* corners - top-left and bottom-right, mirrored,
+the way the rank sits in both corners at the smaller sizes. The card is already tinted with
+the suit's colour, so a big colour-coded number reads as a suit across the table on its own
+and the corner pips only confirm it. Below XL the suit keeps the middle - a big number on a
+small card is all number and no card. The swap doesn't apply to the tiny cards in the
+opponents' pills, where a centred number that size would be the whole card.
 
 ## Running it
 

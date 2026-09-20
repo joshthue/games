@@ -65,9 +65,20 @@
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     user-select:none; border:1px solid #d8d2c0; transition:transform .12s, box-shadow .12s;}
   .card.sm{width:calc(30px * var(--size)); height:calc(44px * var(--size));}
-  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{font-size:calc(22px * var(--size));} .card.sm .pip{font-size:calc(15px * var(--size));} .card.sm .rank,.card.sm .rankb{font-size:calc(9px * var(--size));}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(16px * var(--size)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(16px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{font-size:calc(19px * var(--size));} .card.sm .pip{font-size:calc(13px * var(--size));} .card.sm .rank,.card.sm .rankb{font-size:calc(11px * var(--size));}
+  .card .pipb{display:none;}
+  /* XL swaps rank and suit: the number takes the middle of the card and the suit moves
+     to BOTH corners, the way the rank sits in both corners at the smaller sizes. Below
+     XL the centre stays the pip - a big number on a small card is all number and no card.
+     Scoped away from .sm: those are the 30px cards in the opponents' pills, where a
+     centred 27px number would be the whole card. */
+  [data-cardsize="XL"] .card:not(.sm) .rank{position:static; font-size:calc(27px * var(--size)); line-height:1;}
+  [data-cardsize="XL"] .card:not(.sm) .rankb{display:none;}
+  [data-cardsize="XL"] .card:not(.sm) .pip{position:absolute; top:2px; left:5px; font-size:calc(13px * var(--size));}
+  [data-cardsize="XL"] .card:not(.sm) .pipb{display:block; position:absolute; bottom:2px; right:5px;
+     font-size:calc(13px * var(--size)); transform:rotate(180deg);}
   .card.red{color:var(--red);} .card.black{color:#1c2a24;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.playable{cursor:pointer;} .card.playable:hover{transform:translateY(-8px); box-shadow:0 8px 14px rgba(0,0,0,.45);}
@@ -75,7 +86,10 @@
   .card.trump{background:linear-gradient(180deg,#fff8e6,#ffedbf); box-shadow:0 0 0 2px var(--gold), 0 0 10px rgba(240,198,116,.55), 0 3px 8px rgba(0,0,0,.4);}
   .card.trump::after{content:"♛"; position:absolute; top:2px; right:4px; font-size:10px; color:#b8860b; text-shadow:0 1px 1px rgba(255,255,255,.45);}
   .card.sm.trump::after{font-size:8px; top:1px; right:3px;}
-  .yourhand{display:flex; flex-wrap:wrap; gap:4px; justify-content:center; min-height:64px; align-items:center;}
+  /* nowrap is the point: the hand is one row at every size. fitHand() shrinks --size on
+     this element just enough that seven cards fit, so XL means "as big as fits" rather
+     than "big enough to wrap onto a second row". */
+  .yourhand{display:flex; flex-wrap:nowrap; gap:4px; justify-content:center; min-height:64px; align-items:center;}
   .status{min-height:38px; text-align:center; font-size:14px; margin:6px 0; color:var(--gold); font-weight:600;
     display:flex; align-items:center; justify-content:center; padding:0 6px;}
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;}
@@ -507,7 +521,7 @@ function cardEl(c,opts={}){
   const isTrump = R && R.gameType==="suits" && R.trump!=null && c.s===R.trump;
   d.className="card "+(opts.sm?"sm ":"")+(isTrump?"trump ":"")+(opts.cls?(" "+opts.cls):"");
   d.style.color=suitColor(c.s);
-  d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span>`;
+  d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span><span class="pipb">${SUITS[c.s]}</span>`;
   return d;
 }
 function render(){
@@ -570,9 +584,29 @@ function render(){
     yh.appendChild(el);
   });
   if(me.hand.length===0 && me.alive) yh.innerHTML=`<div class="muted">— no cards —</div>`;
+  fitHand();
   buildControls();
   updateTipVisibility();
 }
+/* The size control sets a MAXIMUM, not a fixed width: a seven-card hand at XL is wider
+   than a phone, and wrapping it to a second row looks worse than a slightly smaller card.
+   So measure what one row actually needs and scale --size down on the hand element only
+   (the trick area and the opponents' pills keep the chosen size - they never hold seven
+   cards). Measured rather than derived from constants because the base card width changes
+   at the 430px breakpoint, so the arithmetic would have to know about the media query. */
+function fitHand(){
+  const yh=document.getElementById("yourhand"); if(!yh) return;
+  yh.style.removeProperty("--size");                    // measure at the chosen size first
+  const first=yh.querySelector(".card"); const n=yh.querySelectorAll(".card").length;
+  if(!first || !n) return;
+  const avail=yh.clientWidth; if(avail<=0) return;      // hidden: nothing meaningful to measure
+  const gap=parseFloat(getComputedStyle(yh).gap)||0;
+  const need=n*first.getBoundingClientRect().width + (n-1)*gap;
+  if(need>avail) yh.style.setProperty("--size", ((window.CARDSIZE?CARDSIZE.value():1)*(avail/need)).toFixed(3));
+}
+// rotating the phone changes the width the hand has to fit into
+window.addEventListener("resize", ()=>{ if(R) fitHand(); });
+
 let extraControls=[];
 function showControls(arr){ extraControls=arr; render(); }
 function buildControls(){
@@ -697,6 +731,12 @@ function openLog(){
   const pnl=document.getElementById("panel"); if(pnl) pnl.scrollTop=pnl.scrollHeight;
 }
 function openRules(back){
+  /* `back` is interpolated straight into an onclick, so it has to be a function NAME.
+     rulesBtn was bound as `.onclick=openRules`, which handed it the click Event: truthy,
+     so the panel rendered a back button whose handler was the literal string
+     "[object PointerEvent]()". Tapping it threw and the panel just sat there. Ignore
+     anything that is not a string so a stray argument can never do that again. */
+  if(typeof back!=="string") back=null;
   const closeBtn = back ? `<button class="btn sec sm close" onclick="${back}()">‹ Back</button>` : `<button class="btn sec sm close" onclick="closeOverlay()">✕</button>`;
   const html=`${closeBtn}
     <h2>How to Play Rat</h2>
@@ -752,7 +792,7 @@ function refreshLvl(){ document.getElementById("s-b").classList.toggle("on",sett
 /* wire up */
 document.getElementById("tipBtn").onclick=openTips;
 document.getElementById("menuBtn").onclick=openMenu;
-document.getElementById("rulesBtn").onclick=openRules;
+document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand openRules the click Event
 document.getElementById("logBtn").onclick=openLog;
 document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules"||curOverlay.kind==="log") closeOverlay(); else if(curOverlay.kind==="setup" && R) closeOverlay(); };
 function exitSetup(){ if(R) closeOverlay(); else location.href="../"; }
@@ -780,7 +820,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v76", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v77", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
