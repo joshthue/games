@@ -50,7 +50,6 @@
   .pill.out{opacity:.4; filter:grayscale(.8);}
   .pill .nm{font-size:12px; font-weight:700; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92px;}
   .pill .tr{font-size:11px; color:var(--gold); margin-top:2px;}
-  .pill .played{margin-top:4px; min-height:calc(var(--cardh) * var(--size)); display:flex; justify-content:center;}
   .pill .badge{position:absolute; top:-8px; right:-6px; background:var(--gold); color:var(--ink);
     font-size:9px; font-weight:800; border-radius:8px; padding:1px 5px;}
   .pill .outlbl{position:absolute; top:-8px; left:-6px; background:var(--red); color:#fff; font-size:9px; font-weight:800; border-radius:8px; padding:1px 5px;}
@@ -581,13 +580,13 @@ function render(){
     if(pl.seat===0) return;
     const d=document.createElement("div");
     d.className="pill"+(R.turn===pl.seat&&R.phase==="play"?" turn":"")+(R.caller===pl.seat?" caller":"")+(pl.alive?"":" out");
-    let inner=`<div class="nm">${pl.name}</div><div class="tr">🂠 ${pl.alive?pl.hand.length:0} · ★ ${pl.tricks}</div>`;
-    const played=R.trick.find(t=>t.p===pl.seat);
-    inner+=`<div class="played">`+(played?"":"" )+`</div>`;
-    d.innerHTML=inner;
+    // The pill used to repeat the card this player just put down. The Table row below
+    // already shows every played card, labelled with the same name, so the pill was a
+    // second copy of the same information - and once every card on the board became one
+    // size (v80) the duplicate cost 137px of height on a phone. Name, cards left, tricks.
+    d.innerHTML=`<div class="nm">${pl.name}</div><div class="tr">🂠 ${pl.alive?pl.hand.length:0} · ★ ${pl.tricks}</div>`;
     if(R.caller===pl.seat) d.insertAdjacentHTML("beforeend",`<span class="badge">CALLER</span>`);
     if(!pl.alive) d.insertAdjacentHTML("beforeend",`<span class="outlbl">OUT</span>`);
-    const slot=d.querySelector(".played"); if(played) slot.appendChild(cardEl(played.card));
     opps.appendChild(d);
   });
   // trick area (in play order, labeled) — or the tie-break flips
@@ -878,7 +877,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v80", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v81", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

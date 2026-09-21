@@ -54,6 +54,13 @@ the hand at whatever was left after fitting seven across. The card you were abou
 was smaller than the card it would land next to, and the copy of it in the pill was smaller
 again. There is now a single `--cardw`/`--cardh` pair and no `.card.sm`.
 
+**The pills no longer show a card at all** (v81). Making them full size proved the point
+the small card had been hiding: it was always a second copy of a card the Table row below
+already shows, labelled with the same player's name. A pill is now just name, cards left
+and tricks. At 390px with six players that took the board from 684px to **547px** - it
+fits one phone screen instead of scrolling, and it is 108px shorter than the three-size
+layout it replaced.
+
 The hand never wraps. The chosen size is a **maximum**: `fitBoard()` measures what one row
 of that many cards needs and, if it doesn't fit, scales `--size` down **on `.wrap`** - so
 the pills and the table come down with the hand instead of towering over it. The hand is
@@ -70,8 +77,8 @@ sub-pixel rounding across seven cards:
 const target = (avail - (n-1)*gap - 1) / n;
 ```
 
-Measured at 320 / 390 / 430px x S / M / L / XL with a 7-card hand and a full table: pill,
-table and hand widths identical in all twelve, hand inside its box in all twelve, no page
+Measured at 320 / 390 / 430px x S / M / L / XL with a 7-card hand and a full table: table
+and hand widths identical in all twelve, hand inside its box in all twelve, no page
 overflow. XL clamps to 1.019 at 320px and 1.282 at 390px; below that the chosen step is
 what you get.
 
@@ -80,8 +87,8 @@ and grows, and the suit moves out to *both* corners - top-left and bottom-right,
 the way the rank sits in both corners at the smaller sizes. The card is already tinted with
 the suit's colour, so a big colour-coded number reads as a suit across the table on its own
 and the corner pips only confirm it. Below XL the suit keeps the middle - a big number on a
-small card is all number and no card. It applies to every card on the board, the pills
-included - since v80 there is only one card size, so there is nothing to exclude.
+small card is all number and no card. It applies to every card on the board - since v80
+there is only one card size, so there is nothing to exclude.
 
 The centred rank is 24px rather than the 27px it looks like it could be, and `10` is
 smaller again at 19px, because the corner pips are deliberately large: at a 38px base card
