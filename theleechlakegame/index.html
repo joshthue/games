@@ -12,6 +12,7 @@
 
 <style>
   :root{ --size:1;   /* card scale, driven by the shared S/M/L/XL control (../cardsize.js) */
+    --cardw:44px; --cardh:62px;   /* ONE card size for the whole board - hand, table and pills alike */
     --felt:#0d5c3f; --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
     --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -49,40 +50,38 @@
   .pill.out{opacity:.4; filter:grayscale(.8);}
   .pill .nm{font-size:12px; font-weight:700; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92px;}
   .pill .tr{font-size:11px; color:var(--gold); margin-top:2px;}
-  .pill .played{margin-top:4px; min-height:44px; display:flex; justify-content:center;}
+  .pill .played{margin-top:4px; min-height:calc(var(--cardh) * var(--size)); display:flex; justify-content:center;}
   .pill .badge{position:absolute; top:-8px; right:-6px; background:var(--gold); color:var(--ink);
     font-size:9px; font-weight:800; border-radius:8px; padding:1px 5px;}
   .pill .outlbl{position:absolute; top:-8px; left:-6px; background:var(--red); color:#fff; font-size:9px; font-weight:800; border-radius:8px; padding:1px 5px;}
 
   .center{text-align:center; margin:6px 0;}
   .zone-label{text-align:center; font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65; margin:8px 0 2px;}
-  .trick{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; min-height:78px; align-items:flex-end;}
+  .trick{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; min-height:calc(var(--cardh) * var(--size) + 16px); align-items:flex-end;}
   .trickcard{display:flex; flex-direction:column; align-items:center; gap:2px;}
   .trickcard .who{font-size:10px; opacity:.75;}
   .lead-tag{font-size:10px; color:var(--gold);}
 
-  .card{width:calc(44px * var(--size)); height:calc(62px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+  .card{width:calc(var(--cardw) * var(--size)); height:calc(var(--cardh) * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     user-select:none; border:1px solid #d8d2c0; transition:transform .12s, box-shadow .12s;}
-  .card.sm{width:calc(30px * var(--size)); height:calc(44px * var(--size));}
   .card .rank{position:absolute; top:3px; left:5px; font-size:calc(16px * var(--size)); font-weight:800; line-height:1;}
   .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(16px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{font-size:calc(19px * var(--size));} .card.sm .pip{font-size:calc(13px * var(--size));} .card.sm .rank,.card.sm .rankb{font-size:calc(11px * var(--size));}
+  .card .pip{font-size:calc(19px * var(--size));}
   .card .pipb{display:none;}
   /* XL swaps rank and suit: the number takes the middle of the card and the suit moves
      to BOTH corners, the way the rank sits in both corners at the smaller sizes. Below
      XL the centre stays the pip - a big number on a small card is all number and no card.
-     Scoped away from .sm: those are the 30px cards in the opponents' pills, where a
-     centred 27px number would be the whole card. */
+     Applies to every card, pills included - there is only one card size now. */
   /* 24px, not 27: the corner pips are 17px and the card is only 38px wide at the base
      size, so a 27px centre put the numeral's ink under the top-left pip on 10/Q/K/A at
      phone widths. Clearance comes out of the number rather than the suit - the suit was
      the thing asked to be bigger. .r10 is smaller again: "10" is two characters wide. */
-  [data-cardsize="XL"] .card:not(.sm) .rank{position:static; font-size:calc(24px * var(--size)); line-height:1;}
-  [data-cardsize="XL"] .card:not(.sm).r10 .rank{font-size:calc(19px * var(--size)); letter-spacing:-.05em;}
-  [data-cardsize="XL"] .card:not(.sm) .rankb{display:none;}
-  [data-cardsize="XL"] .card:not(.sm) .pip{position:absolute; top:1px; left:4px; font-size:calc(17px * var(--size));}
-  [data-cardsize="XL"] .card:not(.sm) .pipb{display:block; position:absolute; bottom:1px; right:4px;
+  [data-cardsize="XL"] .card .rank{position:static; font-size:calc(24px * var(--size)); line-height:1;}
+  [data-cardsize="XL"] .card.r10 .rank{font-size:calc(19px * var(--size)); letter-spacing:-.05em;}
+  [data-cardsize="XL"] .card .rankb{display:none;}
+  [data-cardsize="XL"] .card .pip{position:absolute; top:1px; left:4px; font-size:calc(17px * var(--size));}
+  [data-cardsize="XL"] .card .pipb{display:block; position:absolute; bottom:1px; right:4px;
      font-size:calc(17px * var(--size)); transform:rotate(180deg);}
   .card.red{color:var(--red);} .card.black{color:#1c2a24;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
@@ -90,11 +89,11 @@
   .card.illegal{opacity:.32;}
   .card.trump{background:linear-gradient(180deg,#fff8e6,#ffedbf); box-shadow:0 0 0 2px var(--gold), 0 0 10px rgba(240,198,116,.55), 0 3px 8px rgba(0,0,0,.4);}
   .card.trump::after{content:"♛"; position:absolute; top:2px; right:4px; font-size:10px; color:#b8860b; text-shadow:0 1px 1px rgba(255,255,255,.45);}
-  .card.sm.trump::after{font-size:8px; top:1px; right:3px;}
-  /* nowrap is the point: the hand is one row at every size. fitHand() shrinks --size on
-     this element just enough that seven cards fit, so XL means "as big as fits" rather
-     than "big enough to wrap onto a second row". */
-  .yourhand{display:flex; flex-wrap:nowrap; gap:4px; justify-content:center; min-height:64px; align-items:center;}
+  /* nowrap is the point: the hand is one row at every size. fitBoard() shrinks --size on
+     .wrap just enough that seven cards fit, so XL means "as big as fits" rather than "big
+     enough to wrap onto a second row" - and because the scale lands on .wrap, the table
+     and the pills come down with it instead of towering over the hand. */
+  .yourhand{display:flex; flex-wrap:nowrap; gap:4px; justify-content:center; min-height:calc(var(--cardh) * var(--size) + 2px); align-items:center;}
   .status{min-height:38px; text-align:center; font-size:14px; margin:6px 0; color:var(--gold); font-weight:600;
     display:flex; align-items:center; justify-content:center; padding:0 6px;}
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:8px;}
@@ -140,7 +139,7 @@
   .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
   .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:430px){ .card{width:calc(38px * var(--size));height:calc(54px * var(--size));} .card .pip{font-size:calc(19px * var(--size));} h1{font-size:17px;} }
+  @media(max-width:430px){ :root{--cardw:38px; --cardh:54px;} .card .pip{font-size:calc(19px * var(--size));} h1{font-size:17px;} }
   @media(max-width:360px){ h1{font-size:15px; letter-spacing:0;} h1 small{font-size:9px; letter-spacing:1px;} }
 </style>
 </head>
@@ -560,9 +559,9 @@ function poss(seat){ return seat===0 ? "Your" : R.players[seat].name+"'s"; }
 function setStatus(m,html){ if(R)R.msg=m; const s=document.getElementById("status"); if(s)s.innerHTML=html?m:esc(m); }
 function cardEl(c,opts={}){
   const d=document.createElement("div");
-  if(opts.back||!c){ d.className="card "+(opts.sm?"sm ":"")+"back"; return d; }
+  if(opts.back||!c){ d.className="card back"; return d; }
   const isTrump = R && R.gameType==="suits" && R.trump!=null && c.s===R.trump;
-  d.className="card "+(opts.sm?"sm ":"")+(isTrump?"trump ":"")+(opts.cls?(" "+opts.cls):"");
+  d.className="card "+(isTrump?"trump ":"")+(opts.cls?(" "+opts.cls):"");
   d.style.color=suitColor(c.s);
   if(c.r===10) d.classList.add("r10");   // the only two-character rank; it needs a smaller centre at XL
   d.innerHTML=`<span class="rank">${rankStr(c.r)}</span><span class="pip">${SUITS[c.s]}</span><span class="rankb">${rankStr(c.r)}</span><span class="pipb">${SUITS[c.s]}</span>`;
@@ -588,7 +587,7 @@ function render(){
     d.innerHTML=inner;
     if(R.caller===pl.seat) d.insertAdjacentHTML("beforeend",`<span class="badge">CALLER</span>`);
     if(!pl.alive) d.insertAdjacentHTML("beforeend",`<span class="outlbl">OUT</span>`);
-    const slot=d.querySelector(".played"); if(played) slot.appendChild(cardEl(played.card,{sm:true}));
+    const slot=d.querySelector(".played"); if(played) slot.appendChild(cardEl(played.card));
     opps.appendChild(d);
   });
   // trick area (in play order, labeled) — or the tie-break flips
@@ -628,28 +627,43 @@ function render(){
     yh.appendChild(el);
   });
   if(me.hand.length===0 && me.alive) yh.innerHTML=`<div class="muted">— no cards —</div>`;
-  fitHand();
+  fitBoard();
   buildControls();
   updateTipVisibility();
 }
 /* The size control sets a MAXIMUM, not a fixed width: a seven-card hand at XL is wider
    than a phone, and wrapping it to a second row looks worse than a slightly smaller card.
-   So measure what one row actually needs and scale --size down on the hand element only
-   (the trick area and the opponents' pills keep the chosen size - they never hold seven
-   cards). Measured rather than derived from constants because the base card width changes
-   at the 430px breakpoint, so the arithmetic would have to know about the media query. */
-function fitHand(){
-  const yh=document.getElementById("yourhand"); if(!yh) return;
-  yh.style.removeProperty("--size");                    // measure at the chosen size first
+   So measure what one row actually needs and scale --size down to fit.
+
+   The scale goes on .wrap, not on the hand. Putting it on the hand alone left three card
+   sizes on one screen - the pills at 30x44, the table at the chosen size, and the hand at
+   whatever was left after fitting seven across - which is exactly what it looked like.
+   One scale on the board means the card you are about to play is the same size as the card
+   it lands next to. The hand is the only row that can't wrap, so it is the only row that
+   needs measuring; .opps and .trick wrap and can never be the binding constraint.
+
+   Measured rather than derived from constants because the base card width changes at the
+   430px breakpoint, so the arithmetic would have to know about the media query. */
+function fitBoard(){
+  const wrap=document.querySelector(".wrap"), yh=document.getElementById("yourhand");
+  if(!wrap || !yh) return;
+  wrap.style.removeProperty("--size");                  // measure at the chosen size first
   const first=yh.querySelector(".card"); const n=yh.querySelectorAll(".card").length;
   if(!first || !n) return;
   const avail=yh.clientWidth; if(avail<=0) return;      // hidden: nothing meaningful to measure
   const gap=parseFloat(getComputedStyle(yh).gap)||0;
-  const need=n*first.getBoundingClientRect().width + (n-1)*gap;
-  if(need>avail) yh.style.setProperty("--size", ((window.CARDSIZE?CARDSIZE.value():1)*(avail/need)).toFixed(3));
+  const cw=first.getBoundingClientRect().width;
+  const need=n*cw + (n-1)*gap;
+  if(need<=avail) return;
+  // Solve for the CARD width, not for the row. Scaling by avail/need shrinks the gaps
+  // along with the cards, but the 4px gap is fixed - so the row stayed a few pixels wide
+  // at 320px and the hand quietly scrolled inside its own box. Take the gaps out first,
+  // then divide. The -1 is a rounding margin: n sub-pixel widths round up.
+  const target=(avail - (n-1)*gap - 1)/n;
+  wrap.style.setProperty("--size", ((window.CARDSIZE?CARDSIZE.value():1)*(target/cw)).toFixed(3));
 }
 // rotating the phone changes the width the hand has to fit into
-window.addEventListener("resize", ()=>{ if(R) fitHand(); });
+window.addEventListener("resize", ()=>{ if(R) fitBoard(); });
 
 let extraControls=[];
 function showControls(arr){ extraControls=arr; render(); }
@@ -864,7 +878,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v79", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v80", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

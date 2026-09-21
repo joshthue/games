@@ -48,19 +48,40 @@ rather than pixel sizes, because the games don't share a base card size — a mu
 scales each game from its own design. The choice is stored once for the whole origin,
 like the mute key, so the size you pick here is the size in every Game Night card game.
 
-The hand never wraps. The chosen size is a **maximum**: `fitHand()` measures what one
-row of that many cards actually needs and scales the hand down if it doesn't fit, so XL
-means "as large as fits on one row" rather than "large enough to wrap". Only the hand is
-clamped - the trick area and the opponents' pills never hold seven cards, so they stay
-at the size you picked.
+**One size for the whole board** (v80). There used to be three on screen at once: the
+opponents' pills at a hard-coded 30x44, the table at whatever the size control said, and
+the hand at whatever was left after fitting seven across. The card you were about to play
+was smaller than the card it would land next to, and the copy of it in the pill was smaller
+again. There is now a single `--cardw`/`--cardh` pair and no `.card.sm`.
+
+The hand never wraps. The chosen size is a **maximum**: `fitBoard()` measures what one row
+of that many cards needs and, if it doesn't fit, scales `--size` down **on `.wrap`** - so
+the pills and the table come down with the hand instead of towering over it. The hand is
+the only row that can't wrap, so it's the only row worth measuring; `.opps` and `.trick`
+both wrap and can never be the binding constraint.
+
+`fitBoard()` solves for the **card** width, not the row width. Scaling by `avail/need`
+shrinks the 4px gaps along with the cards, but the gaps are fixed - so the row came out a
+couple of pixels over at 320px and the hand quietly scrolled inside its own box while the
+page itself looked fine. Take the gaps out first, then divide, and keep a 1px margin for
+sub-pixel rounding across seven cards:
+
+```js
+const target = (avail - (n-1)*gap - 1) / n;
+```
+
+Measured at 320 / 390 / 430px x S / M / L / XL with a 7-card hand and a full table: pill,
+table and hand widths identical in all twelve, hand inside its box in all twelve, no page
+overflow. XL clamps to 1.019 at 320px and 1.282 at 390px; below that the chosen step is
+what you get.
 
 At **XL the rank and the suit swap places**: the number moves to the middle of the card
 and grows, and the suit moves out to *both* corners - top-left and bottom-right, mirrored,
 the way the rank sits in both corners at the smaller sizes. The card is already tinted with
 the suit's colour, so a big colour-coded number reads as a suit across the table on its own
 and the corner pips only confirm it. Below XL the suit keeps the middle - a big number on a
-small card is all number and no card. The swap doesn't apply to the tiny cards in the
-opponents' pills, where a centred number that size would be the whole card.
+small card is all number and no card. It applies to every card on the board, the pills
+included - since v80 there is only one card size, so there is nothing to exclude.
 
 The centred rank is 24px rather than the 27px it looks like it could be, and `10` is
 smaller again at 19px, because the corner pips are deliberately large: at a 38px base card
