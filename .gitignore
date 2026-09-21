@@ -1,3 +1,5 @@
 .DS_Store
 _to_delete/
 .vscode/
+# the desktop app drops a copy of every file Claude sends to the chat in here
+Claude outputs/
