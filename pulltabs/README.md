@@ -7,14 +7,20 @@ peel back five windows, check the flare, sign the seal. Darlene runs the booth.
 - **Solo** — your own private box per deal, saved between visits. Fully offline.
 - **Shared box** — one phone starts a box and reads out a 4-letter code; everyone joins
   and buys from the *same* box. When somebody hits big it pops up on every phone.
-- **Opening** — tap a tab, or slide it right past a third of its width. "Pull all five" opens the rest.
+- **Opening** — tap a tab, or slide it right: it follows your finger and peels open past a third of its width (less snaps back). "Pull all five" opens the rest.
 - **The flare** — the prize sheet: every rung of the ladder with a dot per prize (red = pulled,
   green = still in the box), the seal board, and the winners board. Beside the ticket on an
   iPad in landscape, under it in portrait, behind the 📋 Flare button on a phone.
 
 ## Deals
-Four deals, 400 tickets each: **Walleye Wishes**, **Hotdish Heaven**, **State Fair Fortune**
-($1) and **Uff Da 7s** ($2, everything doubled). Per $1 of price the box holds
+Five deals, 400 tickets each: **Walleye Wishes**, **Hotdish Heaven**, **State Fair Fortune**,
+**Loonatic Lake** ($1) and **Uff Da 7s** ($2, everything doubled).
+
+**Loonatic Lake** (v84) is the Loonatic Cannabis box: the top symbol is the brand's own loon
+roundel (cropped from the brand sheet in `~/Developer/loonaticCannabis/brand`, cream keyed to
+transparent, a 9KB WebP data URI inside `PT.DEALS.loon`), a night-lake ticket in the brand's
+black-to-forest green, and the spaced serif wordmark. A symbol may be an emoji string or
+`{img, alt}`; the UI draws every symbol through `sym()`/`sym3()`, never `d.syms[i]` directly. Per $1 of price the box holds
 $100×1, $50×1, $20×2, $10×3, $5×8, $2×10, $1×16 plus 8 seal cards and a $50 seal —
 86.5% back over the whole box, ~1 ticket in 8 does something.
 
