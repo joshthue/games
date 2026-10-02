@@ -1,13 +1,19 @@
 # Pull Tabs
 
 Minnesota bar pull tabs at the Lake Uffda VFW Post 10,000. Buy tabs from a finite box,
-peel back five windows, check the flare, sign the seal. Darlene runs the booth.
+peel back three windows (3 tabs × 3 symbols — how Josh's crowd plays), check the flare, sign the seal. Darlene runs the booth.
 
 ## Play
 - **Solo** — your own private box per deal, saved between visits. Fully offline.
 - **Shared box** — one phone starts a box and reads out a 4-letter code; everyone joins
   and buys from the *same* box. When somebody hits big it pops up on every phone.
-- **Opening** — tap a tab, or slide it right: it follows your finger and peels open past a third of its width (less snaps back). "Pull all five" opens the rest.
+- **Opening** — tap a tab to rip it open. Or slide it: it follows your finger, and if you let
+  go part way it **stays peeked** right where you left it (saved with the ticket). Slide past
+  85% and it peels off. A peeked tab can be picked up from where it sits.
+- **Set aside** — puts the ticket (peeks and all) in a tray under the stage and moves on.
+  Tap it in the tray to bring it back to the front. The tray survives a reload (`pt_aside_v1`).
+- **Toss it** — on an unfinished ticket, Darlene checks it first: a winner or seal card is
+  opened and paid instead of thrown out; a loser goes straight in the bucket. "Pull all five" opens the rest.
 - **The flare** — the prize sheet: every rung of the ladder with a dot per prize (red = pulled,
   green = still in the box), the seal board, and the winners board. Beside the ticket on an
   iPad in landscape, under it in portrait, behind the 📋 Flare button on a phone.
@@ -39,7 +45,7 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
 
 - **Block 1 — `window.PT`, the engine. No DOM.** A box is decided when it's made: every
   outcome is shuffled into `box.order` from a seed, so the odds are real and finite.
-  `ticketFor(box, n)` derives a ticket's five rows deterministically from the seed and the
+  `ticketFor(box, n)` derives a ticket's `ROWS` (3) rows deterministically from the seed and the
   ticket number, so a lost ticket can be resent identically. Losing rows never show three
   of a kind (a third of them tease two of the top symbol). `sell`, `claim`, `openSeal`,
   `view` — and `view()` never contains `order` or the seal number until it's opened.
