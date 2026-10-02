@@ -17,7 +17,12 @@
   --card-bg:#f7f1e2; --card-ink:#1c2620; --red:#b23b34;
   --ok:#3f9d6a; --warn:#d9b45b; --bad:#b23b34;
   --shadow:0 4px 14px rgba(0,0,0,.35);
-  --cellfs:15px; /* text size (S/M/L/XL) */
+  /* Card size. --fit is the largest card width the board can take on this screen, set by
+     fitBoard() (measured, width AND height). The shared S/M/L/XL multiplier (cardsize.js
+     --size: .86/1/1.2/1.4) scales from fit/1.4, so XL fills the screen and M is ~70% of it.
+     Everything on a card - corner text, badges, padding - is a fraction of --cw. */
+  --fit:69px;
+  --cw:calc(var(--fit) * var(--size,1) / 1.4);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
@@ -30,7 +35,7 @@ body{
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   overflow-x:hidden;
 }
-.wrap{max-width:560px;margin:0 auto;padding:8px 8px 14px;min-height:100vh;display:flex;flex-direction:column}
+.wrap{max-width:1100px;margin:0 auto;padding:8px 8px 14px;min-height:100vh;display:flex;flex-direction:column}
 
 /* Header */
 .hdr{display:flex;align-items:center;gap:8px;padding:2px 2px 8px}
@@ -96,16 +101,17 @@ body{
 .stockrow{display:flex;align-items:center;justify-content:center;gap:14px;font-size:12px;color:var(--cream);opacity:.85;padding:2px 0}
 .stockrow b{color:var(--gold)}
 
-.hand{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;padding-top:2px;min-height:64px}
+.hand{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;padding-top:2px;min-height:calc(var(--cw) * 1.4)}
 
 /* Cards */
 .card{
-  width:44px;height:62px;border-radius:8px;background:var(--card-bg);color:var(--card-ink);
+  width:var(--cw);height:calc(var(--cw) * 1.4);border-radius:calc(var(--cw) * .14);background:var(--card-bg);color:var(--card-ink);
   border:1px solid rgba(0,0,0,.25);box-shadow:0 2px 5px rgba(0,0,0,.3);
-  display:flex;flex-direction:column;justify-content:space-between;padding:3px 4px;position:relative;
-  font-weight:800;font-size:var(--cellfs);user-select:none;flex:0 0 auto;line-height:1;
+  display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--cw) * .07) calc(var(--cw) * .09);position:relative;
+  font-weight:800;font-size:calc(var(--cw) * .36);user-select:none;flex:0 0 auto;line-height:1;
 }
-.card.sm{width:38px;height:52px;font-size:calc(var(--cellfs) - 2px);padding:2px 3px}
+/* the opponent's cards are 85% of yours; --cw is inherited by the card inside */
+.stack.sm,.card.sm{--cw:calc(var(--fit) * var(--size,1) / 1.4 * .85)}
 .card .r{font-size:1em}
 .card .s{align-self:flex-end;font-size:1em}
 .card.red{color:var(--red)}
@@ -122,10 +128,9 @@ body{
 .card.selectable{cursor:pointer}
 .card.selected{outline:3px solid var(--gold);outline-offset:1px;transform:translateY(-4px)}
 .card.target{outline:3px dashed var(--ok);outline-offset:1px;cursor:pointer}
-.stack{position:relative;width:44px}
+.stack{position:relative;width:var(--cw)}
 .stack .count{position:absolute;top:-7px;right:-6px;background:var(--gold);color:#22180a;border-radius:999px;
-  font-size:10px;font-weight:800;padding:1px 5px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-.stack.sm{width:38px}
+  font-size:max(10px, calc(var(--cw) * .17));font-weight:800;padding:1px 5px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 
 /* Turn banner + tips */
 .turnbar{display:flex;align-items:center;gap:8px;justify-content:center;font-size:13px;font-weight:700;
@@ -138,7 +143,31 @@ body{
 .gn-build{position:fixed;left:0;right:0;bottom:2px;text-align:center;font-size:10px;color:var(--gold);opacity:.5;pointer-events:none}
 .hidden{display:none !important}
 .win-emoji{font-size:44px;text-align:center}
-@media (min-width:480px){ .card{width:50px;height:70px} .card.sm{width:44px;height:60px} .stack{width:50px} .stack.sm{width:44px} }
+/* The game fills the screen top to bottom: leftover height is shared out between the rows
+   instead of pooling under the buttons. fitBoard() switches this off while it measures. */
+#game{flex:1;display:flex;flex-direction:column}
+.board{justify-content:space-evenly}
+.board.measuring{justify-content:flex-start;flex:0 0 auto}
+#game.measuring{flex:0 0 auto}
+/* Landscape tablet / desktop: your hand moves up beside your piles, so the board is three
+   card-rows tall instead of four and the cards can be a third bigger. */
+@media (min-width:900px) and (orientation:landscape){
+  .side-area.you{flex-direction:row;align-items:flex-end;justify-content:center;gap:4vw}
+  .side-area.you .hand{flex-wrap:nowrap}
+  .oppline{justify-content:center} .oppline .sides{flex:0 0 auto}
+}
+/* Tablet (iPad mini is 744 wide in portrait). The cards already grow to fill the screen via
+   --fit; this lifts the labels, buttons and banners so they don't look like a phone's. */
+@media (min-width:700px){
+  .hdr .title{font-size:20px} .iconbtn{font-size:17px;padding:9px 14px}
+  .btn{font-size:19px;padding:14px 22px} .seg button{font-size:17px;padding:10px 16px}
+  .zonecap{font-size:14px} .payoff-lbl,.hand-count,.center-need{font-size:14px} .center-need{min-height:17px}
+  .stockrow{font-size:16px} .turnbar{font-size:17px;padding:9px 10px} .tip-block{font-size:15px}
+  .board{gap:12px} .sides,.hand{gap:8px} .centers{gap:12px} .oppline,.youline{gap:12px}
+  .sheet h2{font-size:24px} .sheet h3{font-size:18px} .sheet p,.sheet li,.row .lbl{font-size:16px}
+  #setup .logo{font-size:44px} #setup .sub{font-size:17px} .setup-opt .cap{font-size:15px} .dirnote{font-size:14px}
+  .gn-build{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -177,13 +206,8 @@ body{
         </div>
       </div>
       <div class="setup-opt">
-        <div class="cap">Card text size</div>
-        <div class="seg" id="segSize">
-          <button data-fs="13">S</button>
-          <button data-fs="15" class="on">M</button>
-          <button data-fs="17">L</button>
-          <button data-fs="19">XL</button>
-        </div>
+        <div class="cap">Card size</div>
+        <div id="segSize"></div>
       </div>
       <div class="row"><div class="lbl">Show move hints</div>
         <label class="switch"><input type="checkbox" id="optTips"><span class="track"></span><span class="knob"></span></label>
@@ -243,7 +267,7 @@ body{
       <div class="tip-block" id="tip"></div>
 
       <!-- you -->
-      <div class="side-area">
+      <div class="side-area you">
         <div class="youline">
           <div class="payoff-col">
             <div class="stack" id="youPayoff"></div>
@@ -251,8 +275,10 @@ body{
           </div>
           <div class="sides" id="youSides"></div>
         </div>
-        <div class="zonecap" style="text-align:center;margin-top:4px">Your hand</div>
-        <div class="hand" id="hand"></div>
+        <div class="handblock">
+          <div class="zonecap" style="text-align:center;margin-top:4px">Your hand</div>
+          <div class="hand" id="hand"></div>
+        </div>
       </div>
 
       <div class="actions">
@@ -315,11 +341,8 @@ body{
       <div class="row"><div class="lbl">Sound</div>
         <label class="switch"><input type="checkbox" id="menuSound"><span class="track"></span><span class="knob"></span></label>
       </div>
-      <div class="row"><div class="lbl">Card text size</div>
-        <div class="seg" id="menuSize">
-          <button data-fs="13">S</button><button data-fs="15">M</button>
-          <button data-fs="17">L</button><button data-fs="19">XL</button>
-        </div>
+      <div class="row"><div class="lbl">Card size</div>
+        <div id="menuSize"></div>
       </div>
       <div class="row" style="margin-top:14px"><button class="btn" id="menuNew" style="flex:1">New game</button></div>
       <div class="row"><a class="btn ghost" href="../" style="flex:1;text-align:center;text-decoration:none">🏠 Back to all games</a></div>
@@ -350,6 +373,7 @@ body{
 <!-- BLOCK 1: pure rules engine + bot. No DOM. Exposed as window.SM -->
 <!-- ============================================================= -->
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 window.SM = (function(){
   var SUITS = ['\u2660','\u2665','\u2666','\u2663']; // spade heart diamond club
@@ -733,7 +757,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v78";
+  var BUILD_V = "v82";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -744,8 +768,13 @@ window.SM = (function(){
   var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false };
   try{ var raw=localStorage.getItem(LSK); if(raw) Object.assign(prefs, JSON.parse(raw)); }catch(e){}
   function savePrefs(){ try{ localStorage.setItem(LSK, JSON.stringify(prefs)); }catch(e){} }
-  function applyFs(){ document.documentElement.style.setProperty('--cellfs', prefs.fs+'px'); }
-  applyFs();
+  // v82: the old "Card text size" (prefs.fs 13/15/17/19) only changed the font inside a fixed
+  // 44px card, so the steps were barely visible. Card size is now the shared origin-wide
+  // cardsize.js setting. Carry an old pick across once, if no other game has set one yet.
+  try{ if(window.CARDSIZE && localStorage.getItem('gn_cardsize')===null && prefs.fs && prefs.fs!==15){
+    var _i={13:0,15:1,17:2,19:3}[prefs.fs]; if(_i!=null){ localStorage.setItem('gn_cardsize',String(_i)); CARDSIZE.apply(); } } }catch(e){}
+  function paintSize(){ if(!window.CARDSIZE) return; ['segSize','menuSize'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=CARDSIZE.controlHTML(); }); }
+  window.onCardSize=function(){ fitBoard(); };
 
   var $ = function(id){ return document.getElementById(id); };
   var T = null;            // game state
@@ -765,14 +794,14 @@ window.SM = (function(){
     Array.prototype.forEach.call(seg.querySelectorAll('button'), function(b){
       var v = cast ? cast(b.dataset[Object.keys(b.dataset)[0]]) : b.dataset[Object.keys(b.dataset)[0]];
       if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on');
-      b.addEventListener('click', function(){ prefs[key]=v; savePrefs(); setOn(seg,b); if(key==='fs') applyFs(); });
+      b.addEventListener('click', function(){ prefs[key]=v; savePrefs(); setOn(seg,b); });
     });
   }
   function setOn(seg,btn){ Array.prototype.forEach.call(seg.querySelectorAll('button'),function(x){x.classList.remove('on');}); btn.classList.add('on'); }
   segInit('segGoal','goal', function(v){return parseInt(v,10);});
   segInit('segDir','dir', null);
   segInit('segDiff','diff', null);
-  segInit('segSize','fs', function(v){return parseInt(v,10);});
+  paintSize();
   var DIR_SUB = { up:'Ace \u2192 King', down:'King \u2192 Ace', either:'either direction' };
   var DIR_NOTE = {
     up:   'The standard game — every stack starts at an Ace and climbs to King.',
@@ -811,7 +840,6 @@ window.SM = (function(){
   $('menuSound').addEventListener('change', function(){
     if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
   });
-  segInit('menuSize','fs', function(v){return parseInt(v,10);});
   $('menuNew').addEventListener('click', function(){ $('menuOv').classList.remove('on'); doNewGame(); });
   $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
   $('undoSel').addEventListener('click', function(){ sel=null; render(); });
@@ -820,13 +848,13 @@ window.SM = (function(){
   $('winSetup').addEventListener('click', function(){ $('winOv').classList.remove('on'); toSetup(); });
 
   function openMenu(){ $('menuTips').checked=prefs.tips; $('menuSound').checked=!!(window.SFX && SFX.isOn());
-    syncSeg('menuSize','fs'); $('menuOv').classList.add('on'); }
+    paintSize(); $('menuOv').classList.add('on'); }
   function syncSeg(segId,key){ var seg=$(segId); Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ var v=b.dataset[Object.keys(b.dataset)[0]]; if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on'); }); }
 
   function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; updateNetbar(); $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
 
   // ---------- start ----------
-  function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); }
+  function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); fitted=false; fitBoard(); }
   function startSolo(){
     mode='solo'; net.online=false; net.joined=false;
     T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
@@ -840,6 +868,46 @@ window.SM = (function(){
       else { net.pending=true; netSend({t:'act', kind:'newGame'}); render(); }
     } else { startSolo(); }
   }
+
+  // ---------- board fit ----------
+  // The largest card that fits this screen, written to --fit. The board is five cards wide at
+  // its widest (goal pile + four side piles, and the opponent's row plus its hand count), and
+  // four card-rows tall. Width is solved directly; height is measured at two trial sizes and
+  // solved as a line, because the labels and banners between the rows don't scale with the
+  // card. The smaller of the two wins, so XL is the whole screen in portrait OR landscape.
+  var lastFit = 0, fitted = false;
+  function fitBoard(){
+    var game=$('game'); if(!game || game.classList.contains('hidden')) return;
+    var root=document.documentElement, wrap=document.querySelector('.wrap');
+    var cs=getComputedStyle(wrap), availW=wrap.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+    var gapS=parseFloat(getComputedStyle($('youSides')).columnGap)||5;
+    var gapL=parseFloat(getComputedStyle(document.querySelector('.youline')).columnGap)||8;
+    var hc=document.querySelector('.hand-count'), hcw=hc?hc.offsetWidth:50;
+    // you:  5w + 3 side gaps + 1 line gap;  opp: 5(.85w) + same gaps + hand count + its gap
+    var you=document.querySelector('.side-area.you');
+    var side=getComputedStyle(you).flexDirection==='row';      // landscape: hand beside the piles
+    var gapA=parseFloat(getComputedStyle(you).columnGap)||0;
+    var wYou= side ? (availW - 3*gapS - gapL - 4*gapS - gapA - 2)/10 : (availW - 3*gapS - gapL - 2)/5;
+    var wOpp=(availW - 3*gapS - 2*gapL - hcw - 2)/(5*.85);
+    var byW=Math.min(wYou,wOpp);
+    // height: bottom of the actions row at two trial fits
+    var size=(window.CARDSIZE?CARDSIZE.value():1), act=document.querySelector('#game .actions');
+    var board=document.querySelector('#game .board'); board.classList.add('measuring'); game.classList.add('measuring');
+    function bottom(f){ root.style.setProperty('--fit', f+'px'); return act.getBoundingClientRect().bottom + window.scrollY; }
+    var a=60, b=120, ha=bottom(a), hb=bottom(b), slope=(hb-ha)/(b-a);
+    var availH=window.innerHeight - 24;           // the build stamp floats at the bottom
+    var byH = slope>0 ? a + (availH-ha)/slope : byW;
+    // byH is the fit at which the board's height at THIS size fills the screen; normalise to XL
+    byH = byH * size / 1.4;
+    board.classList.remove('measuring'); game.classList.remove('measuring');
+    // On a short phone (SE, 320x568) honouring the height would shrink cards below what they
+    // were before v82; there a little scrolling is the better trade, so height can't take
+    // the card below ~62px wide or below what the width allows, whichever is smaller.
+    var fit=Math.floor(Math.max(Math.min(byW, byH), Math.min(byW, 62)));
+    lastFit=fit; root.style.setProperty('--fit', fit+'px');
+  }
+  window.addEventListener('resize', function(){ fitBoard(); });
+  window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
 
   // ---------- card rendering ----------
   function cardEl(card, opts){
@@ -986,6 +1054,7 @@ window.SM = (function(){
     else if(isHeroTurn()){ tb.className='turnbar'; $('turntext').textContent='Your turn'; }
     else { tb.className='turnbar opp'; $('turntext').textContent = (mode==='online') ? 'Opponent\u2019s turn' : 'Bot thinking\u2026'; }
     renderTip(selCard);
+    if(!fitted){ fitted=true; fitBoard(); }   // once per game screen, after the first real deal is on the board
     considerHeroPass();
   }
 

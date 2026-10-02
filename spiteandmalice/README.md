@@ -27,7 +27,14 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
 - **Goal pile**: Short (13) or Standard (20).
 - **Centre stacks build**: `A → K` (standard), `K → A` (the mirror), or `Either way`.
 - **Bot**: Easy or Normal (solo only).
-- **Text size**: S / M / L / XL, applied immediately — handy on a tablet.
+- **Card size**: S / M / L / XL — the shared Game Night card size (`cardsize.js`), so a size
+  picked here is the size in every card game. Cards scale to the screen: `fitBoard()` measures
+  the largest card the board can take (width *and* height) and **XL fills the screen**, M is
+  ~70% of it. On an iPad mini, XL fills the whole display. Before v82 this was a text-only
+  setting inside a fixed 44px card, so the steps were barely visible.
+- **Tablet / landscape**: labels and buttons step up from 700px wide; in landscape (900px+)
+  your hand moves up beside your piles so the board is three card-rows tall, not four.
+  Leftover height is spread between the rows rather than pooling under the buttons.
 - **Move hints** off by default.
 
 ### Either way
