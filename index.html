@@ -80,7 +80,7 @@ const GAMES = [
   { title:"Poker Squares",    emoji:"🎴", sub:"Solitaire · build 10 poker hands in a 5×5 grid", href:"pokersquares/", updated:"2026-09-13" },
   { title:"Stratego",         emoji:"🎖️", sub:"Take the flag · 40 pieces a side vs a bot that remembers", href:"stratego/", updated:"2026-09-15" },
   { title:"Links",            emoji:"⛳", sub:"Nine holes at Birch Hollow · three-tap swing", href:"golf/", updated:"2026-09-15" },
-  { title:"Pull Tabs",        emoji:"🎟️", sub:"Lake Uffda VFW · six boxes on the counter · peel 'em, follow the arrow · solo or a shared booth", href:"pulltabs/", updated:"2026-10-02" },
+  { title:"Pull Tabs",        emoji:"🎟️", sub:"Lake Uffda VFW · one live booth for everybody · six boxes · big winners on the ticker", href:"pulltabs/", updated:"2026-10-02" },
   // { title:"New Game", emoji:"🎲", sub:"make a folder with an index.html, then add one line here", href:"newgame/" },
 ];
 
@@ -140,7 +140,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v96", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v97", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

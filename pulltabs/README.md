@@ -52,19 +52,12 @@ load, and any unopened winner among them is paid out first.
   empty and stamped SOLD OUT, until somebody buys that deal again — then a fresh box is cracked.
 - **Buying goes by the 20** (20 / 40 / 60 tabs). You walk in with **$100** (counted as money you
   brought, so Net starts even); the ATM gives $100 for $103.
-- **Solo** — your own booth, all five boxes saved between visits. Fully offline.
-- **Shared booth** — one phone starts it and reads out a 4-letter code; everyone joins and buys
-  from the *same* six boxes, watching them go down together. Big hits pop up on every phone.
-- **Opening** — tap a tab to rip it open. Or slide it: it follows your finger, and if you let
-  go part way it **stays peeked** right where you left it (saved with the ticket). Slide past
-  85% and it peels off. A peeked tab can be picked up from where it sits.
-- **Set aside** — puts the ticket (peeks and all) in a tray under the stage and moves on.
-  Tap it in the tray to bring it back to the front. The tray survives a reload (`pt_aside_v1`).
-- **Toss it** — on an unfinished ticket, Darlene checks it first: a winner is
-  opened and paid instead of thrown out; a loser goes straight in the bucket. "Pull all five" opens the rest.
-- **The flare** — laid out like the chart on a ticket back: each combo with its arrow (or bar),
-  the prize, "N Winners", a dot per prize (red = pulled, green = still in the box), and the winners board. Beside the ticket on an
-  iPad in landscape, under it in portrait, behind the 📋 Flare button on a phone.
+- **Live (v97)** — no rooms, no codes: there is ONE booth and everybody who opens Pull Tabs is
+  in it, buying from the same six boxes in real time. A **BIG WINNERS ticker** scrolls across the
+  top (wins of 10× the tab price and up, fresh boxes, sell-outs, "🔥 down to 50 tabs — the $200
+  is still in!"), flashing gold on a big one; the roombar shows LIVE and who's at the booth
+  (anyone seen in the last 10 minutes). `?booth=<name>` opens a private booth for testing.
+- **Solo** — your own booth, all six boxes saved between visits. Fully offline.
 
 ## Deals
 Six deals, 400 tickets each. Tabs are **$2** like at the bar — **Cherry Poppers** (v96, the
@@ -94,17 +87,21 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
   and `view()` never contains `order`.
 - **Claims tell the board, not sales.** A winner bought but not yet opened still shows green
   on the flare — exactly how the wall at the VFW works.
-- **Block 2 — the booth and the network.** Host-authoritative over the two ntfy relays
-  (`jtpt-v1-<code>`), same model as Hold'em: the host's phone holds all five boxes
-  (`S.boxes`, saved to `pt_host_v2` with the last few sold-out boxes in `S.old` so their tickets
-  can still be claimed; "Reopen booth" survives a reload and upgrades a v1 single-box save).
-  Guests send `hello` / `buy` (with the deal) / `claim`; the host answers `tix` to the buyer
-  only — **in parts of 12** (`TIX_PART`), because 60 tickets don't fit one ~4KB relay message —
-  and broadcasts a debounced `board`: a summary of every box plus the newest 12 winners across
-  all of them (each phone keeps its own full history per box). Only the host broadcasts — ntfy
-  rate-limits per IP and a bar is one IP.
-- A `buy` carries a request id; a retry with the same id gets the **same** tickets back
-  instead of selling more (`S.rids`, last 200). A guest re-asks if any part of its tickets is missing. A claim is honoured only from the ticket's buyer, once.
+- **Block 2 — the booth and the network (v97: no host).** Every phone posts its buys and claims
+  to ONE ntfy.sh topic (`jtpt-v2-lakeuffda`) and applies that feed **in the relay's order** with the
+  same `apply()`. Boxes are seeded from `(epoch, deal, generation)` (`seedOf`), so every phone
+  builds the identical box, allocates the identical tabs to each buyer, and cracks the identical
+  fresh box when one sells out — no phone holds the boxes and nobody has to stay open.
+  Verified against the real relay: the cached replay (`poll=1&since=all`) and the live stream
+  deliver messages in the same order, and repeated polls are identical. Only ntfy.sh is used
+  (not the second relay), because two relays could order messages differently and **the order
+  is the game**. Claims are batched (one message per ~1.5s) for the per-IP rate limit.
+  The relay keeps ~12h, so every 20th buy its buyer posts a **snapshot** (gen/sold/claimed per
+  box + recent winners, ~2KB). A phone walking in starts from the first snapshot it can see, or
+  cold-starts at today's epoch; tickets sold before that snapshot have no known owner and are
+  accepted on first claim. Trade-off, stated plainly: with no server, anyone reading the source
+  can work out upcoming tickets — fine for play money; a Cloudflare Durable Object would close it.
+- A `buy` carries a request id; a retried buy is applied once (`S.rids`). A claim is honoured only from the ticket's buyer, once.
 - Streams start at `since=<now-20s>`, not `since=all` — an all-night box would otherwise
   replay every old buy at a newcomer.
 - The board carries only the last 15 log entries (ntfy caps ~4KB); each phone merges them

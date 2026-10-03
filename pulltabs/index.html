@@ -115,6 +115,21 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .bxleft{font-size:11px;font-weight:800;color:var(--gold)}
 .bxtop{font-size:9.5px;font-weight:700;color:#9ff0b9;line-height:1.1;text-align:center}
 .bxtop.gone{color:#ffb0a6;text-decoration:line-through}
+.ticker{display:flex;align-items:center;gap:0;margin:0 0 8px;border-radius:10px;overflow:hidden;
+  background:#1a0d05;border:1px solid var(--line);box-shadow:inset 0 0 12px rgba(0,0,0,.6)}
+.ticker .tklbl{flex:0 0 auto;background:linear-gradient(180deg,#e2574a,#b23b2f);color:#fff;font-weight:900;font-size:11px;letter-spacing:1px;
+  padding:8px 9px;white-space:nowrap}
+.tkwin{flex:1;overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent)}
+.tktrack{display:inline-flex;white-space:nowrap;animation:tkscroll 30s linear infinite;will-change:transform}
+.tkrun{display:inline-flex;align-items:center;padding-right:0}
+.tk{font-size:13px;font-weight:700;color:#ffe9a8;padding:0 6px;font-family:"Courier New",monospace;letter-spacing:.3px}
+.tk b{color:#fff}
+.tk.big{color:#ffd23f;text-shadow:0 0 6px rgba(255,210,63,.8)}
+.tkdot{color:var(--neon);padding:0 6px;font-size:11px}
+@keyframes tkscroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker.flash{animation:tkflash 1.6s ease-out}
+@keyframes tkflash{0%,40%{background:#7a4a00;box-shadow:0 0 18px #ffd23f}100%{background:#1a0d05}}
+.roombar .who{opacity:.75}
 .roombar{font-size:13px;opacity:.9;margin:0 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .roombar .code{font-weight:900;letter-spacing:3px;color:var(--gold)}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block}
@@ -294,6 +309,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   .dealpick{grid-template-columns:repeat(3,1fr)}
   .booth{grid-template-columns:repeat(6,minmax(0,1fr))}
   .roombar{font-size:15px}
+  .tk{font-size:16px} .ticker .tklbl{font-size:13px;padding:10px 12px}
   .booth{gap:10px} .bxn{font-size:13px} .bx{height:96px} .bxleft{font-size:15px} .bxtop{font-size:12px} .bxlbl{font-size:13px} .bxout{font-size:13px}
   .tixact .btn{font-size:18px;padding:12px 18px} .asidechip{font-size:16px}
   #setup .panel{max-width:640px;margin:0 auto}
@@ -328,14 +344,8 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
       <div class="cap" style="margin-top:14px">Start at · all six boxes are on the counter</div>
       <div class="dealpick" id="dealPick"></div>
       <div class="setbtns">
-        <button class="btn" id="soloBtn">🎟️ Play solo · your own booth</button>
-        <button class="btn ghost" id="hostBtn">👥 Start a shared booth</button>
-        <button class="btn ghost hidden" id="resumeBtn"></button>
-      </div>
-      <div class="cap" style="margin-top:14px">Or join a box someone started</div>
-      <div class="joinrow">
-        <input class="txt" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off"/>
-        <button class="btn" id="joinBtn" style="flex:0 0 auto">Join</button>
+        <button class="btn" id="liveBtn">🎟️ Walk up to the booth · live with everybody</button>
+        <button class="btn ghost" id="soloBtn">🏠 Play solo · your own booth, works offline</button>
       </div>
       <div class="darlene"><div class="face">👵</div><div class="bubble" id="setupSay"></div></div>
     </div>
@@ -349,6 +359,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
       <div class="spacer"></div>
       <button class="btn ghost" id="atmBtn" style="padding:9px 12px">🏧 ATM · $100</button>
     </div>
+    <div class="ticker hidden" id="ticker"><span class="tklbl">BIG WINNERS</span><div class="tkwin"><div class="tktrack"></div></div></div>
     <div class="roombar hidden" id="roombar"></div>
     <div class="booth" id="booth"></div>
     <div class="cols">
@@ -378,8 +389,8 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   <p>It's play money, but it sticks around between visits. You walk in with <b>$100</b>, and tabs go by the 20 — nobody buys one tab. The ATM gives you another $100 and charges a $3 fee, because it's a VFW. <b>Net</b> is your cash minus everything you brought and pulled out of the ATM — how far ahead (or behind) you really are.</p>
   <h3>The booth</h3>
   <p>All six boxes sit on the counter at once. Each one shows its stack of tabs going down as people buy, and whether its top prize is still in there. Tap a box to buy from it and see its flare. A sold-out box sits there empty until somebody wants that deal again — then Darlene cracks a fresh one.</p>
-  <h3>Shared booth</h3>
-  <p>One phone starts the booth and reads out the 4-letter code; everybody else joins with it. Everyone buys from the same six boxes and watches them go down together. The phone that started it holds the boxes — keep it open. When somebody hits big, it pops up on everyone's phone.</p>
+  <h3>Live</h3>
+  <p>There's one booth and everybody's in it — no rooms, no codes. Walk up and you're buying from the same six boxes as everyone else who has Pull Tabs open, watching them go down together in real time. Big winners scroll across the ticker up top (and pop up when they happen), and you'll hear about it when a box gets down to its last fifty with the top prize still in.</p>
   <p style="opacity:.75">Pays back about 83% across the whole box — one ticket in eight is a winner. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
   <button class="btn" style="width:100%" data-close="rulesOv">Okie dokie</button>
 </div></div>
@@ -598,7 +609,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v96";
+var BUILD_V="v97";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -634,7 +645,11 @@ var pickDeal = lsGet('pt_deal','walleye'); if(!D[pickDeal]) pickDeal='walleye';
 // The booth: every deal has a box on the counter at once. boxes = {deal: box} on the device
 // that holds them (solo: you, shared: the host); a guest sees booth = {deal: summary}.
 // old = sold-out boxes that were replaced, kept so their tickets can still be claimed.
-var S = { mode:null, deal:null, boxes:null, old:{}, booth:null, players:{}, code:null, logAll:{}, lastSeq:{}, pendingBuy:null };
+// The booth: every deal has a box on the counter. boxes = {deal: box}; old = sold-out boxes
+// kept so their tickets can still be claimed. In LIVE mode every phone holds the same boxes,
+// rebuilt from one shared, ordered feed of buys and claims (see the network section).
+var S = { mode:null, deal:null, boxes:null, old:{}, players:{}, logAll:{}, lastSeq:{}, pendingBuy:null,
+  epoch:null, gen:{}, applied:0, buys:0, rids:{}, seen:{}, ready:false, replaying:false, seenAt:{}, feed:[] };
 
 // ---------- Darlene ----------
 function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
@@ -680,74 +695,46 @@ $('nameIn').value = myName;
 $('nameIn').addEventListener('input', function(){ myName=this.value.trim().slice(0,16); lsSet('pt_name', myName); });
 $('setupSay').textContent = pick(SAY.hello);
 function needName(){ if(myName) return true; $('nameIn').focus(); $('setupSay').innerHTML='What do I put on the winners board, hon? <b>Type your name up top.</b>'; return false; }
-function syncResume(){
-  var h=lsGet('pt_host_v2',null)||lsGet('pt_host_v1',null), b=$('resumeBtn');
-  if(h && (h.boxes || h.box)){ b.classList.remove('hidden'); b.textContent='↩️ Reopen booth '+h.code; }
-  else b.classList.add('hidden');
-  var g=lsGet('pt_guest_v1',null); if(g && g.code && !$('codeIn').value) $('codeIn').value=g.code;
-}
-
 // ---------- modes ----------
-function freshBooth(){ var b={}; PT.DEAL_ORDER.forEach(function(k){ b[k]=PT.newBox(k); }); return b; }
 function soloBooth(){
   var all=lsGet('pt_solo_v1',{}), b={};
   PT.DEAL_ORDER.forEach(function(k){ b[k] = (all[k] && all[k].order) ? all[k] : PT.newBox(k); });
   return b;
 }
-function saveBox(){
-  if(S.mode==='solo') lsSet('pt_solo_v1', S.boxes);
-  else if(S.mode==='host'){ var old={}, ids=Object.keys(S.old).slice(-4); ids.forEach(function(i){ old[i]=S.old[i]; });
-    lsSet('pt_host_v2',{code:S.code, boxes:S.boxes, old:old, players:S.players}); }
-}
+function saveBox(){ if(S.mode==='solo') lsSet('pt_solo_v1', S.boxes); }
 function startSolo(){
   if(!needName()) return;
-  S.mode='solo'; S.code=null; S.boxes=soloBooth(); S.old={}; S.deal=pickDeal; S.players={}; S.players[myId]=myName;
+  S.mode='solo'; S.boxes=soloBooth(); S.old={}; S.deal=pickDeal; S.players={}; S.players[myId]=myName; S.ready=true;
   saveBox(); enterGame(); say('hello');
 }
-function startHost(resume){
+// Live: no rooms, no codes - everybody who opens Pull Tabs is at the same booth.
+function startLive(){
   if(!needName()) return;
-  S.mode='host'; S.old={}; S.players={};
-  var h=resume?lsGet('pt_host_v2',null):null, h1=resume&&!h?lsGet('pt_host_v1',null):null;
-  if(h && h.boxes){ S.boxes=h.boxes; S.old=h.old||{}; S.code=h.code; S.players=h.players||{}; }
-  else { S.boxes=freshBooth(); S.code=(h1&&h1.code)||randCode(); if(h1&&h1.box&&D[h1.box.deal]) S.boxes[h1.box.deal]=h1.box; }
-  PT.DEAL_ORDER.forEach(function(k){ if(!S.boxes[k]) S.boxes[k]=PT.newBox(k); });
-  S.deal=pickDeal; S.players[myId]=myName; saveBox();
-  enterGame(); netStart();
-  say('Booth <b>'+S.code+'</b> is open — all six boxes on the counter! Read that code out; everybody joins with it. Keep this phone open, hon, the boxes live here.');
-  publishBoard();
-}
-function startGuest(){
-  if(!needName()) return;
-  var c=$('codeIn').value.trim().toUpperCase(); if(c.length!==4){ $('setupSay').textContent='Codes are four letters, hon.'; return; }
-  S.mode='guest'; S.code=c; S.booth=null; S.deal=pickDeal; lsSet('pt_guest_v1',{code:c});
-  enterGame(); netStart(); say('Lookin’ for booth <b>'+c+'</b>… hang on a sec.');
-  sayHello();
+  S.mode='live'; S.boxes=null; S.old={}; S.gen={}; S.epoch=null; S.applied=0; S.buys=0; S.rids={}; S.seen={}; S.seenAt={};
+  S.players={}; S.ready=false; S.deal=pickDeal; S.feed=[];
+  enterGame(); say('Walkin\u2019 you up to the booth, hon\u2026');
+  netStart();
 }
 function enterGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); ingestAll(true); render(); }
-function leave(){
-  netStop(); S.mode=null; S.boxes=null; S.booth=null;
-  $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); syncResume();
-}
+function leave(){ netStop(); S.mode=null; S.boxes=null; $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
 $('soloBtn').addEventListener('click', startSolo);
-$('hostBtn').addEventListener('click', function(){ startHost(false); });
-$('resumeBtn').addEventListener('click', function(){ startHost(true); });
-$('joinBtn').addEventListener('click', startGuest);
-$('codeIn').addEventListener('keydown', function(e){ if(e.key==='Enter') startGuest(); });
+$('liveBtn').addEventListener('click', startLive);
 
 // a box's public face: what a guest gets for it, and what the booth tiles and flare draw from
 function summary(b){ return { id:b.id, deal:b.deal, count:b.order.length, left:PT.left(b), tiers:b.tierClaimed.slice(), seq:b.seq }; }
-function viewOf(k){
-  if(S.mode==='guest') return S.booth ? S.booth[k] : null;
-  return S.boxes && S.boxes[k] ? summary(S.boxes[k]) : null;
-}
+function viewOf(k){ return S.boxes && S.boxes[k] ? summary(S.boxes[k]) : null; }
 function curView(){ return viewOf(S.deal); }
 function curDeal(){ return D[S.deal] || D[pickDeal]; }
-function playerNames(){ return S.mode==='guest' ? ((S.boardPlayers)||[]) : Object.keys(S.players).map(function(k){ return S.players[k]; }); }
+// who's at the booth: anybody seen buying, claiming or checking in over the last 10 minutes
+function playerNames(){ var now=Date.now(); return Object.keys(S.players).filter(function(k){ return S.mode==='solo' || k===myId || now-(S.seenAt[k]||0)<600000; }).map(function(k){ return S.players[k]; }); }
 // a box that has sold out stays on the counter, empty, until somebody wants that deal again
 function boxForBuy(k){
   var b=S.boxes[k];
-  if(PT.left(b)===0){ S.old[b.id]=b; b=S.boxes[k]=PT.newBox(k);
-    if(S.mode!=='guest') toast('📦 Darlene cracks a fresh box of <b>'+esc(D[k].name)+'</b>!'); }
+  if(PT.left(b)===0){ S.old[b.id]=b;
+    if(S.mode==='live'){ S.gen[k]=(S.gen[k]||0)+1; b=S.boxes[k]=PT.newBox(k, seedOf(S.epoch,k,S.gen[k])); }
+    else b=S.boxes[k]=PT.newBox(k);
+    feed('📦 Fresh box of <b>'+esc(D[k].name)+'</b> on the counter!');
+    if(!S.replaying) toast('📦 Darlene cracks a fresh box of <b>'+esc(D[k].name)+'</b>!'); }
   return b;
 }
 function findBox(bid){
@@ -765,20 +752,20 @@ function buy(q){
   var v=curView(); if(!v) return;
   var d=D[S.deal], cost=d.price*q;
   if(bank.cash<cost){ say('broke'); sfx('illegal'); flashAtm(); return; }
-  if(S.mode==='guest'){
-    if(S.pendingBuy) return;
-    S.pendingBuy={rid:shortId(), q:q, deal:S.deal, tries:0, got:{}}; sendBuy(); render(); return;
+  if(S.mode==='live'){
+    if(S.pendingBuy || !S.ready) return;
+    S.pendingBuy={rid:shortId(), q:q, deal:S.deal, tries:0}; sendBuy(); render(); return;
   }
   var b=boxForBuy(S.deal);
   receiveTix(PT.sell(b, myId, myName, q));
-  saveBox(); if(S.mode==='host') publishBoard();
+  saveBox();
 }
 function flashAtm(){ var a=$('atmBtn'); a.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:500,iterations:2}); }
 function receiveTix(tix){
   if(!tix.length){ say('soldout'); render(); return; }
   var cost=tix.reduce(function(a,t){return a+t.price;},0);
   bank.cash-=cost; bank.bought+=tix.length; saveBank();
-  tix.forEach(function(t){ t.room=S.code||'solo'; t.open=[0,0,0]; t.peek=[0,0,0]; pile.push(t); });
+  tix.forEach(function(t){ t.room=S.mode; t.open=[0,0,0]; t.peek=[0,0,0]; pile.push(t); });
   savePile(); sfx('deal');
   if(tix.length && pile.length===tix.length) say('There’s '+tix.length+' for ya, hon. '+pick(SAY.pile));
   render();
@@ -834,10 +821,16 @@ function renderAside(){
     var peeks=t.open.map(function(o,i){ return o?'●':(t.peek&&t.peek[i]>0?'◐':'○'); }).join('');
     return '<button class="asidechip" data-j="'+j+'" style="--tc:'+d.color+'">'+esc(d.name)+'<small>No. '+String(t.n+1).padStart(4,'0')+' · '+peeks+'</small></button>'; }).join('')+'</div>';
 }
+// Claims (opening a winner) tell the board. Live: batched into one message every couple of
+// seconds, because the relay rate-limits per IP and a whole bar shares one IP.
+var claimQ=[], claimT=null;
 function sendClaim(t){
-  if(S.mode==='guest'){ netPublish({t:'claim', id:myId, n:t.n, bid:t.bid}); return; }
+  if(!t.amt) return;
+  if(S.mode==='live'){ claimQ.push({bid:t.bid, n:t.n, deal:t.deal});
+    if(!claimT) claimT=setTimeout(function(){ claimT=null; var l=claimQ.splice(0); if(l.length) netPublish({t:'claims', id:myId, name:myName, list:l}); }, 1500);
+    return; }
   var b=S.boxes && findBox(t.bid);
-  if(b){ PT.claim(b, myId, t.n); saveBox(); if(S.mode==='host') publishBoard(); ingestAll(); }
+  if(b){ PT.claim(b, myId, t.n); saveBox(); ingestAll(); }
 }
 
 // ---------- the ticket ----------
@@ -999,8 +992,24 @@ function ingest(entries, prime){
     var d=D[e.deal]; if(prime || !d || S.lastSeq[bid]==null){ S.lastSeq[bid]=Math.max(S.lastSeq[bid]||0,e.seq); return; }
     if(e.seq<=S.lastSeq[bid]) return;
     S.lastSeq[bid]=e.seq;
-    if(e.kind==='win' && e.id!==myId && e.amt>=10*d.price){ toast('🎉 '+esc(e.who)+' just pulled '+money(e.amt)+' on '+esc(d.name)+'!'); if(e.amt>=50*d.price) confetti(14); sfx('good'); }
+    if(e.kind==='win' && e.amt>=10*d.price){
+      feed('🎉 <b>'+esc(e.who)+'</b> pulled <b>'+money(e.amt)+'</b> on '+esc(d.name)+(e.amt>=50*d.price?' \u2014 HOLY BUCKETS!':''), e.amt>=50*d.price);
+      if(e.id!==myId){ toast('🎉 '+esc(e.who)+' just pulled '+money(e.amt)+' on '+esc(d.name)+'!'); if(e.amt>=50*d.price) confetti(14); sfx('good'); } }
   });
+}
+// The ticker: the newest big hits and booth news, scrolling across the top.
+function feed(html, big){
+  S.feed.push({html:html, big:!!big, t:Date.now()}); if(S.feed.length>12) S.feed.shift();
+  if(!S.replaying) renderTicker(big);
+}
+function renderTicker(flash){
+  var el=$('ticker'); if(!el) return;
+  var items = S.feed.length ? S.feed.slice().reverse() : [{html:'🎟️ Booth\u2019s open \u2014 six boxes on the counter. Somebody\u2019s gotta hit first!'}];
+  var row=items.map(function(f){ return '<span class="tk'+(f.big?' big':'')+'">'+f.html+'</span>'; }).join('<span class="tkdot">\u2605</span>');
+  var tr=el.querySelector('.tktrack');
+  tr.innerHTML='<span class="tkrun">'+row+'<span class="tkdot">\u2605</span></span><span class="tkrun" aria-hidden="true">'+row+'<span class="tkdot">\u2605</span></span>';
+  tr.style.animationDuration=Math.max(14, items.length*7)+'s';
+  if(flash){ el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
 }
 function ingestAll(prime){
   if(!S.boxes) return;
@@ -1030,28 +1039,29 @@ function render(){
   n.textContent = net===0 ? 'even' : (net>0?'up ':'down ')+money(Math.abs(net)); n.className='net '+(net>0?'up':net<0?'down':'');
   $('dealName').textContent=d.name;
   var left=v?v.left:0, count=v?v.count:400;
-  $('leftTxt').innerHTML = v ? (left ? '<b>'+left+'</b> of '+count+' left' : '<b>sold out</b> · buy to crack a fresh box') : 'connecting…';
+  $('leftTxt').innerHTML = v ? (left ? '<b>'+left+'</b> of '+count+' left' : '<b>sold out</b> \u00b7 buy to crack a fresh box') : 'walkin\u2019 up to the booth\u2026';
   $('meterFill').style.width=(100*left/count)+'%';
-  var busy=!!S.pendingBuy || !v;
+  var busy=!!S.pendingBuy || !v || !S.ready;
   $('buyRow').innerHTML=BUY_STEPS.map(function(q){ return '<button class="btn" data-q="'+q+'"'+(busy?' disabled':'')+'>Buy '+q+'<small>'+money(q*d.price)+'</small></button>'; }).join('');
   var rb=$('roombar');
-  if(S.mode==='host' || S.mode==='guest'){
+  if(S.mode==='live'){
     rb.classList.remove('hidden');
-    rb.innerHTML='<span class="dot'+(net_ok()?'':' off')+'"></span> Shared booth <span class="code">'+S.code+'</span> · '
-      +(S.mode==='host'?'you’re holding the boxes':'held by the host')+' · '+playerNames().length+' at the booth'
-      +(S.mode==='guest' && S.booth && Date.now()-S.lastBoardAt>60000 ? ' · <b style="color:#ffb0a6">host’s gone quiet</b>' : '');
+    var nn=playerNames();
+    rb.innerHTML='<span class="dot'+(net_ok()?'':' off')+'"></span> <b>'+(net_ok()?'LIVE':'reconnecting\u2026')+'</b> \u00b7 '+nn.length+' at the booth'
+      +(nn.length>1?' \u00b7 <span class="who">'+nn.slice(0,6).map(esc).join(', ')+(nn.length>6?'\u2026':'')+'</span>':'');
   } else rb.classList.add('hidden');
+  $('ticker').classList.toggle('hidden', S.mode!=='live');
   renderStage(); renderFlare();
 }
 
 // ---------- menu ----------
 function renderMenuBox(){
   var el=$('menuBox');
-  if(S.mode==='solo' || S.mode==='host'){
+  if(S.mode==='solo'){
     var d=D[S.deal];
-    el.innerHTML='<h3>Crack a fresh box</h3><p style="font-size:13px;opacity:.85">Pull the <b>'+esc(d.name)+'</b> box off the counter and put out a full one'+(S.mode==='host'?' for everybody':'')+'. Tickets already bought still pay.</p>'
+    el.innerHTML='<h3>Crack a fresh box</h3><p style="font-size:13px;opacity:.85">Pull the <b>'+esc(d.name)+'</b> box off the counter and put out a full one'+'. Tickets already bought still pay.</p>'
       +'<button class="btn ghost" id="crackBtn">📦 Fresh box of '+esc(d.name)+'</button>';
-    $('crackBtn').onclick=function(){ var b=S.boxes[S.deal]; S.old[b.id]=b; S.boxes[S.deal]=PT.newBox(S.deal); saveBox(); if(S.mode==='host') publishBoard();
+    $('crackBtn').onclick=function(){ var b=S.boxes[S.deal]; S.old[b.id]=b; S.boxes[S.deal]=PT.newBox(S.deal); saveBox();
       $('menuOv').classList.remove('on'); say('Fresh box of <b>'+esc(d.name)+'</b>! Four hundred tabs, all the winners still in there.'); render(); };
   } else el.innerHTML='';
 }
@@ -1063,125 +1073,154 @@ $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function(b){ b.addEventListener('click', function(){ $(b.dataset.close).classList.remove('on'); }); });
 ['rulesOv','menuOv'].forEach(function(id){ $(id).addEventListener('click', function(e){ if(e.target===this) this.classList.remove('on'); }); });
 
-// ================= NETWORK (ntfy relays, host-authoritative) =================
-// The host's phone holds the box. Guests send hello / buy / claim and receive their own
-// tickets plus the public board. Same two relays as BINGO and Hold'em; only the host
-// broadcasts, guests speak only when they act - ntfy rate-limits per IP and a bar is one IP.
-var RELAYS=['https://ntfy.sh/','https://ntfy.envs.net/'];
-var NET={on:false, ctrls:[], seen:null, since:{}, ok:false};
-function randCode(){ var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s=''; for(var i=0;i<4;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
-function topic(){ return 'jtpt-v1-'+String(S.code).toLowerCase(); }
+// ================= NETWORK: one live booth, no host =================
+// Every phone posts its buys and claims to ONE shared topic on ntfy.sh and replays that feed in
+// the relay's order. Because everybody applies the same messages in the same order to boxes
+// built from the same seeds, every phone agrees on who got which tabs, what's left, and when a
+// box sells out - with nobody holding the boxes. A box's seed comes from (epoch, deal,
+// generation), so a fresh box is the same box on every phone.
+//
+// The relay keeps ~12 hours of messages, so every 20th buy its buyer also posts a SNAPSHOT of
+// the booth. A phone walking in replays from the first snapshot it can see (or from a cold
+// start if there is none) and lands on exactly the state everyone else has.
+//
+// Only ntfy.sh is used here (not the second relay): two relays could order messages
+// differently, and the order IS the game.
+var RELAY='https://ntfy.sh/';
+var BOOTH=(function(){ try{ var b=new URLSearchParams(location.search).get('booth'); if(b) return b.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24); }catch(e){} return 'lakeuffda'; })();
+var NET={on:false, ctrls:[], ok:false, last:null};
+function topic(){ return 'jtpt-v2-'+BOOTH; }
 function tx(){ return window.__PT_TX || null; }
 function net_ok(){ return NET.ok; }
+function seedOf(e,k,g){ var str=e+':'+k+':'+g, h=2166136261; for(var i=0;i<str.length;i++) h=Math.imul(h^str.charCodeAt(i),16777619)>>>0; return h||1; }
+function today(){ return Math.floor(Date.now()/86400000); }
 function netPublish(obj){
   obj.from=myId; obj.mid=shortId();
   var body=JSON.stringify(obj), t=tx();
   if(t){ try{ t.publish(topic(), body); }catch(e){} return; }
-  RELAYS.forEach(function(base){ try{ fetch(base+topic(),{method:'POST', body:body}).catch(function(){}); }catch(e){} });
+  try{ fetch(RELAY+topic(),{method:'POST', body:body}).catch(function(){}); }catch(e){}
 }
-var pubT=null, hb=null;
-// the board: a summary of every box on the counter plus the newest winners across all of them
-// (ntfy caps a message near 4KB, so the log is the last 12 entries; each phone keeps its own history)
-function publishBoard(){
-  if(S.mode!=='host') return;
-  if(pubT) return;
-  pubT=setTimeout(function(){ pubT=null;
-    var booth={}; PT.DEAL_ORDER.forEach(function(k){ booth[k]=summary(S.boxes[k]); });
-    var log=[]; Object.keys(S.boxes).forEach(function(k){ var b=S.boxes[k]; (b.log||[]).forEach(function(e){ log.push(Object.assign({bid:b.id, deal:b.deal}, e)); }); });
-    log.sort(function(a,b){ return (a.t||0)-(b.t||0); }); log=log.slice(-12);
-    netPublish({t:'board', booth:booth, log:log, players:playerNames()}); }, 600);
+// the booth from nothing: a fresh box of every deal for this epoch
+function coldStart(e){
+  S.epoch=e; S.boxes={}; S.gen={};
+  PT.DEAL_ORDER.forEach(function(k){ S.gen[k]=0; S.boxes[k]=PT.newBox(k, seedOf(e,k,0)); });
 }
-var helloT=null;
-function sayHello(){
-  clearInterval(helloT);
-  netPublish({t:'hello', id:myId, name:myName});
-  helloT=setInterval(function(){ if(S.mode!=='guest' || S.booth){ clearInterval(helloT); return; } netPublish({t:'hello', id:myId, name:myName}); }, 4000);
+function snapshot(){
+  var b={}, w=[];
+  PT.DEAL_ORDER.forEach(function(k){ var x=S.boxes[k], cl=[];
+    Object.keys(x.claimed).forEach(function(n){ cl.push(+n); });
+    b[k]={g:S.gen[k]||0, s:x.sold, tc:x.tierClaimed, cl:cl, q:x.seq};
+    (x.log||[]).slice(-3).forEach(function(e){ w.push({who:e.who, amt:e.amt, tier:e.tier, tiers:e.tiers, seq:e.seq, bid:x.id, deal:k, t:e.t, kind:'win', id:e.id}); }); });
+  return {t:'snap', e:S.epoch, b:b, w:w, n:S.buys};
 }
-function sendBuy(){
-  var p=S.pendingBuy; if(!p) return;
-  netPublish({t:'buy', id:myId, name:myName, q:p.q, deal:p.deal, rid:p.rid});
-  clearTimeout(p.timer);
-  p.timer=setTimeout(function(){ if(S.pendingBuy!==p) return;
-    if(++p.tries>=3){ S.pendingBuy=null; say('Can’t reach the host, hon. Is their phone still open?'); render(); return; }
-    sendBuy(); }, 8000);
+function restore(o){
+  coldStart(o.e);
+  PT.DEAL_ORDER.forEach(function(k){ var x=o.b && o.b[k]; if(!x) return;
+    S.gen[k]=x.g|0; var bx=S.boxes[k]=PT.newBox(k, seedOf(o.e,k,S.gen[k]));
+    bx.sold=Math.min(x.s|0, bx.order.length); bx.snapSold=bx.sold;            // tickets sold before the snapshot: owner unknown
+    if(x.tc && x.tc.length===bx.tierClaimed.length) bx.tierClaimed=x.tc.slice();
+    (x.cl||[]).forEach(function(n){ bx.claimed[n]=true; });
+    bx.seq=x.q|0; bx.log=(o.w||[]).filter(function(e){ return e.bid===bx.id; }).map(function(e){ return {seq:e.seq, kind:'win', id:e.id, who:e.who, tier:e.tier, tiers:e.tiers, amt:e.amt, t:e.t}; }); });
+  S.buys=o.n|0;
 }
-// 20-60 tickets don't fit one relay message, so they travel in parts of TIX_PART
-var TIX_PART=12;
-S.rids={};
-function handleNet(o){
-  if(S.mode==='host'){
-    if(o.t==='hello'){ S.players[o.id]=String(o.name||'Somebody').slice(0,16); saveBox(); publishBoard(); render(); }
-    else if(o.t==='buy'){
-      var tix, prev=S.rids[o.rid];
-      if(prev){ var pb=findBox(prev.bid); tix=pb ? prev.ns.map(function(n){ return PT.ticketFor(pb,n); }) : []; }   // a retry: the same tickets again
-      else {
-        var k=D[o.deal]?o.deal:S.deal, b=boxForBuy(k), q=Math.max(1,Math.min(60,o.q|0));
-        S.players[o.id]=String(o.name||'Somebody').slice(0,16);
-        tix=PT.sell(b, o.id, S.players[o.id], q);
-        S.rids[o.rid]={bid:b.id, ns:tix.map(function(t){return t.n;})};
-        var ks=Object.keys(S.rids); if(ks.length>200) delete S.rids[ks[0]];
-      }
-      saveBox();
-      var parts=Math.max(1,Math.ceil(tix.length/TIX_PART));
-      for(var i=0;i<parts;i++) netPublish({t:'tix', to:o.id, rid:o.rid, part:i, parts:parts, tickets:tix.slice(i*TIX_PART,(i+1)*TIX_PART)});
-      publishBoard(); render();
+// apply one message from the feed - the same function, in the same order, on every phone
+function apply(o){
+  if(!o || !o.t) return;
+  if(o.from){ S.seenAt[o.from]=Date.now(); if(o.name) S.players[o.from]=String(o.name).slice(0,16); }
+  if(o.t==='snap'){ if(!S.applied && o.e) restore(o); return; }            // only a phone walking in uses one
+  if(o.t==='here') return;
+  if(!S.boxes) coldStart(o.e||today());
+  S.applied++;
+  if(o.t==='buy'){
+    if(!D[o.deal] || S.rids[o.rid]) return;                                   // a retried buy is applied once
+    var b=boxForBuy(o.deal), q=Math.max(1,Math.min(60,o.q|0));
+    var before=PT.left(b);
+    var tix=PT.sell(b, o.from, String(o.name||'Somebody').slice(0,16), q);
+    S.rids[o.rid]=1; S.buys++;
+    var after=PT.left(b), d=D[o.deal];
+    if(before>50 && after<=50){ var top=d.tiers[0].n-b.tierClaimed[0];
+      feed('🔥 <b>'+esc(d.short)+'</b> is down to '+after+' tabs'+(top?' \u2014 the '+money(d.tiers[0].amt)+' is still in!':'')); }
+    if(after===0) feed('🚫 <b>'+esc(d.name)+'</b> just sold out!');
+    if(o.from===myId){
+      var p=S.pendingBuy; if(p && p.rid===o.rid){ clearTimeout(p.timer); S.pendingBuy=null; }
+      if(!S.replaying || (p && p.rid===o.rid)) receiveTix(tix);
+      if(!S.replaying && S.buys%20===0) setTimeout(function(){ netPublish(snapshot()); }, 300);   // keep the booth alive past the relay's memory
     }
-    else if(o.t==='claim'){ var cb=findBox(o.bid); if(cb){ var r=PT.claim(cb, o.id, o.n); if(r.ok){ saveBox(); publishBoard(); ingestAll(); render(); } } }
-  } else if(S.mode==='guest'){
-    if(o.t==='board'){
-      var first=!S.booth; S.booth=o.booth; S.boardPlayers=o.players||[]; S.lastBoardAt=Date.now();
-      ingest(o.log, first);
-      if(first) say('You’re in! Booth <b>'+S.code+'</b> — six boxes on the counter. Pick one and buy a few, hon.');
-      render();
-    } else if(o.t==='tix' && o.to===myId){
-      var p=S.pendingBuy; if(!p || p.rid!==o.rid) return;
-      p.got[o.part|0]=o.tickets||[]; p.parts=o.parts||1;
-      if(Object.keys(p.got).length<p.parts){ clearTimeout(p.timer); p.timer=setTimeout(function(){ if(S.pendingBuy===p){ p.got={}; sendBuy(); } }, 8000); return; }
-      clearTimeout(p.timer); S.pendingBuy=null;
-      var all=[]; for(var i2=0;i2<p.parts;i2++) all=all.concat(p.got[i2]||[]);
-      receiveTix(all);
-    }
+  } else if(o.t==='claims'){
+    (o.list||[]).forEach(function(c){ var bx=findBox(c.bid); if(!bx) return;
+      if(!bx.owner[c.n] && c.n<(bx.snapSold||0)) bx.owner[c.n]=o.from;     // bought before the snapshot this phone started from
+      if(!bx.players[o.from]) bx.players[o.from]=S.players[o.from]||'Somebody';
+      PT.claim(bx, o.from, c.n); });
+    ingestAll(S.replaying);
   }
 }
-function netStart(){
-  netStop(); NET.on=true; NET.seen=new Set(); NET.since={}; NET.ctrls=[]; NET.ok=false;
-  var t=tx(); if(t){ NET.ok=true; pollLoop(t); }
-  else RELAYS.forEach(streamLoop);
-  clearInterval(hb); hb=setInterval(function(){ if(S.mode==='host') publishBoard(); else if(S.mode==='guest') render(); }, 20000);
+var hb=null;
+function sendBuy(){
+  var p=S.pendingBuy; if(!p) return;
+  netPublish({t:'buy', name:myName, q:p.q, deal:p.deal, rid:p.rid, e:S.epoch||today()});
+  clearTimeout(p.timer);
+  p.timer=setTimeout(function(){ if(S.pendingBuy!==p) return;
+    if(++p.tries>=3){ S.pendingBuy=null; say('Can\u2019t reach the booth right now, hon. Check your signal.'); render(); return; }
+    sendBuy(); }, 9000);
 }
-function netStop(){ NET.on=false; NET.ctrls.forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); NET.ctrls=[]; clearInterval(hb); clearInterval(helloT);
-  if(pubT){ clearTimeout(pubT); pubT=null; } if(S.pendingBuy){ clearTimeout(S.pendingBuy.timer); S.pendingBuy=null; } }
-function deliver(raw){
+function becameReady(){
+  S.replaying=false;
+  if(!S.boxes) coldStart(today());
+  S.ready=true; ingestAll(true);
+  say(playerNames().length>1 ? 'You\u2019re at the booth with '+(playerNames().length-1)+' other'+(playerNames().length>2?'s':'')+'. Pick a box, hon.' : 'Booth\u2019s all yours right now \u2014 pick a box, hon. Folks\u2019ll wander in.');
+  renderTicker(); render();
+  netPublish({t:'here', name:myName});
+}
+function deliver(raw, id){
+  if(id){ if(S.seen[id]) return; S.seen[id]=1; }
   var o; try{ o=JSON.parse(raw); }catch(e){ return; }
-  if(o.from===myId) return;
-  if(o.mid){ if(NET.seen.has(o.mid)) return; NET.seen.add(o.mid); }
-  handleNet(o);
+  if(!o.mid || S.seen['m'+o.mid]) return; S.seen['m'+o.mid]=1;
+  apply(o);
+  if(!S.replaying) render();
 }
-function pollLoop(t){ (async function(){ var cur=0;
-  while(NET.on){ try{ var m=await t.poll(topic(),cur); for(var i=0;i<m.length;i++){ cur=Math.max(cur,m[i].idx+1); deliver(m[i].body); } }catch(e){}
+function netStart(){
+  netStop(); NET.on=true; NET.ctrls=[]; NET.ok=false; S.replaying=true;
+  var t=tx();
+  if(t){ testLoop(t); }
+  else liveLoop();
+  clearInterval(hb); hb=setInterval(function(){ if(S.ready) netPublish({t:'here', name:myName}); render(); }, 120000);
+}
+function netStop(){ NET.on=false; NET.ctrls.forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); NET.ctrls=[]; clearInterval(hb);
+  if(S.pendingBuy){ clearTimeout(S.pendingBuy.timer); S.pendingBuy=null; } }
+// test transport: an in-memory relay with the same "everything, in order" semantics
+function testLoop(t){ (async function(){ var cur=0, first=true;
+  while(NET.on){ try{ var m=await t.poll(topic(),cur); NET.ok=true;
+      for(var i=0;i<m.length;i++){ cur=Math.max(cur,m[i].idx+1); deliver(m[i].body, 'i'+m[i].idx); }
+      if(first){ first=false; becameReady(); } }catch(e){}
     await new Promise(function(r){ setTimeout(r,60); }); } })(); }
-function streamLoop(base){ (async function(){
-  var start=Math.floor(Date.now()/1000)-20;     // only what's new - an all-night box would otherwise replay every old buy
+// real relay: replay the cached feed (poll), then stream from the last message seen
+function handleLine(line){
+  var ev; try{ ev=JSON.parse(line); }catch(e){ return; }
+  if(ev.id) NET.last=ev.id;
+  if(ev.event==='message' && ev.message) deliver(ev.message, ev.id);
+}
+function liveLoop(){ (async function(){
+  try{
+    var res=await fetch(RELAY+topic()+'/json?poll=1&since=all');
+    if(res.ok){ var txt=await res.text(); txt.split('\n').forEach(function(l){ if(l.trim()) handleLine(l); }); NET.ok=true; }
+  }catch(e){}
+  becameReady();
   while(NET.on){
     var ctrl=(typeof AbortController!=='undefined')?new AbortController():null; NET.ctrls.push(ctrl);
     try{
-      var since=NET.since[base]?encodeURIComponent(NET.since[base]):String(start);
-      var res=await fetch(base+topic()+'/json?since='+since, ctrl?{signal:ctrl.signal}:{});
-      if(!res.ok||!res.body) throw new Error('stream '+res.status);
-      var rd=res.body.getReader(), dec=new TextDecoder(), buf='';
+      var res2=await fetch(RELAY+topic()+'/json?since='+(NET.last?encodeURIComponent(NET.last):String(Math.floor(Date.now()/1000)-5)), ctrl?{signal:ctrl.signal}:{});
+      if(!res2.ok||!res2.body) throw new Error('stream '+res2.status);
+      var rd=res2.body.getReader(), dec=new TextDecoder(), buf='';
       NET.ok=true; render();
       while(NET.on){ var x=await rd.read(); if(x.done) break; buf+=dec.decode(x.value,{stream:true}); var nl;
-        while((nl=buf.indexOf('\n'))>=0){ var line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(!line) continue;
-          var ev; try{ ev=JSON.parse(line); }catch(e){ continue; }
-          if(ev.id) NET.since[base]=ev.id;
-          if(ev.event==='message' && ev.message) deliver(ev.message); } }
+        while((nl=buf.indexOf('\n'))>=0){ var line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(line) handleLine(line); } }
     }catch(e){ NET.ok=false; if(S.mode) render(); }
     if(!NET.on) break;
     await new Promise(function(r){ setTimeout(r,1500); });
   } })(); }
 
 // ---------- boot ----------
-renderDealPick(); syncResume();
+renderDealPick();
 if(legacyPaid) $('setupSay').innerHTML='New tickets came in, hon \u2014 the ones with the arrows. I cashed your old winners: <b>'+money(legacyPaid)+'</b>.';
 (function(){ var d=new Date(document.lastModified), w=isNaN(d)?'':d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
   $('gnBuild').textContent='build '+BUILD_V+(w?' · '+w:''); })();
