@@ -609,7 +609,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v101";
+var BUILD_V="v102";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -649,7 +649,7 @@ var pickDeal = lsGet('pt_deal','walleye'); if(!D[pickDeal]) pickDeal='walleye';
 // kept so their tickets can still be claimed. In LIVE mode every phone holds the same boxes,
 // rebuilt from one shared, ordered feed of buys and claims (see the network section).
 var S = { mode:null, deal:null, boxes:null, old:{}, players:{}, logAll:{}, lastSeq:{}, pendingBuy:null,
-  epoch:null, gen:{}, applied:0, buys:0, rids:{}, seen:{}, ready:false, replaying:false, seenAt:{}, feed:[] };
+  epoch:null, gen:{}, applied:0, buys:0, rids:{}, seen:{}, ready:false, replaying:false, seenAt:{}, outAt:{}, buyAt:{}, feed:[] };
 
 // ---------- Darlene ----------
 function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
@@ -710,7 +710,7 @@ function startSolo(){
 // Live: no rooms, no codes - everybody who opens Pull Tabs is at the same booth.
 function startLive(){
   if(!needName()) return;
-  S.mode='live'; S.boxes=null; S.old={}; S.gen={}; S.epoch=null; S.applied=0; S.buys=0; S.rids={}; S.seen={}; S.seenAt={};
+  S.mode='live'; S.boxes=null; S.old={}; S.gen={}; S.epoch=null; S.applied=0; S.buys=0; S.rids={}; S.seen={}; S.seenAt={}; S.outAt={}; S.buyAt={};
   S.players={}; S.players[myId]=myName; S.seenAt[myId]=Date.now(); S.ready=false; S.deal=pickDeal; S.feed=[]; NET.last=null; NET.lastTime=0;
   enterGame(); say('Walkin\u2019 you up to the booth, hon\u2026');
   netStart();
@@ -725,8 +725,15 @@ function summary(b){ return { id:b.id, deal:b.deal, count:b.order.length, left:P
 function viewOf(k){ return S.boxes && S.boxes[k] ? summary(S.boxes[k]) : null; }
 function curView(){ return viewOf(S.deal); }
 function curDeal(){ return D[S.deal] || D[pickDeal]; }
-// who's at the booth: anybody seen walking up, buying or claiming in the last 20 minutes
-function playerNames(){ var now=Date.now(); return Object.keys(S.players).filter(function(k){ return S.mode==='solo' || k===myId || now-(S.seenAt[k]||0)<1200000; }).map(function(k){ return S.players[k]; }); }
+// Who's at the booth. A player who has burned through their tabs (their phone says "out") and
+// hasn't done anything for an hour is done and drops off. One who still has tabs stays listed for
+// up to 3 hours of quiet, in case they're just slow. Times are the relay's, so a phone replaying
+// last night's feed doesn't think everyone in it is here now.
+var DONE_IDLE=3600000, MAX_IDLE=3*3600000;
+function playerNames(){ var now=Date.now(); return Object.keys(S.players).filter(function(k){
+    if(S.mode==='solo' || k===myId) return true;
+    var idle=now-(S.seenAt[k]||0), done=(S.outAt[k]||0)>=(S.buyAt[k]||0) && S.outAt[k];
+    return idle < (done ? DONE_IDLE : MAX_IDLE); }).map(function(k){ return S.players[k]; }); }
 // a box that has sold out stays on the counter, empty, until somebody wants that deal again
 function boxForBuy(k){
   var b=S.boxes[k];
@@ -765,6 +772,7 @@ function receiveTix(tix){
   if(!tix.length){ say('soldout'); render(); return; }
   var cost=tix.reduce(function(a,t){return a+t.price;},0);
   bank.cash-=cost; bank.bought+=tix.length; saveBank();
+  outSent=false;
   tix.forEach(function(t){ t.room=S.mode; t.open=[0,0,0]; t.peek=[0,0,0]; pile.push(t); });
   savePile(); sfx('deal');
   if(tix.length && pile.length===tix.length) say('There’s '+tix.length+' for ya, hon. '+pick(SAY.pile));
@@ -796,7 +804,10 @@ function resolve(t){
   sendClaim(t);
   render();
 }
-function nextTicket(){ if(pile[0] && pile[0].done){ pile.shift(); savePile(); sfx('place'); render(); } }
+function nextTicket(){ if(pile[0] && pile[0].done){ pile.shift(); savePile(); sfx('place'); pileCheck(); render(); } }
+// burned through every tab (pile and set-aside): say so once, so the booth can let you go after an hour
+var outSent=false;
+function pileCheck(){ if(S.mode==='live' && S.ready && !pile.length && !aside.length && !outSent && !S.pendingBuy){ outSent=true; netPublish({t:'out', name:myName}); } }
 // Toss a ticket you've only peeked at. Darlene won't let a winner go in the bucket.
 function tossTicket(){
   var t=pile[0]; if(!t) return;
@@ -804,7 +815,7 @@ function tossTicket(){
   t.open=t.open.map(function(){return 1;}); if(t.peek) t.peek=t.peek.map(function(){return 0;});
   drawnKey=null;
   if(t.amt>0){ resolve(t); $('say').innerHTML='Whoa whoa \u2014 hold on, hon! That one\u2019s a <b>'+money(t.amt)+' winner</b>! Good thing I looked.'; return; }
-  resolve(t); pile.shift(); savePile(); render();
+  resolve(t); pile.shift(); savePile(); pileCheck(); render();
 }
 // Set the ticket in front of you aside, peeks and all, and move on. Tap it in the tray to bring it back.
 function setAside(){
@@ -1103,7 +1114,15 @@ function netPublish(obj){
   obj.from=myId; obj.mid=shortId();
   var body=JSON.stringify(obj), t=tx();
   if(t){ try{ t.publish(topic(), body); }catch(e){} return; }
-  try{ fetch(RELAY+topic(),{method:'POST', body:body}).catch(function(){}); }catch(e){}
+  try{ fetch(RELAY+topic(),{method:'POST', body:body}).then(function(r){ if(!r.ok) sendFailed(r.status, obj); }).catch(function(){ sendFailed(0, obj); }); }catch(e){}
+}
+// say it out loud when the relay refuses a message, instead of leaving a buy hanging
+function sendFailed(status, obj){
+  if(obj.t!=='buy') return;
+  var p=S.pendingBuy; if(p && p.rid===obj.rid){ clearTimeout(p.timer); S.pendingBuy=null; }
+  say(status===429 ? 'The booth\u2019s message line is full up for this connection today, hon (the relay says <b>429</b>). Try cell data instead of Wi-Fi, or play solo.'
+                   : 'Couldn\u2019t get your order to the booth'+(status?' (relay said '+status+')':'')+' \u2014 check your signal and try again.');
+  render();
 }
 // the booth from nothing: a fresh box of every deal for this epoch
 function coldStart(e){
@@ -1129,11 +1148,13 @@ function restore(o){
   S.buys=o.n|0;
 }
 // apply one message from the feed - the same function, in the same order, on every phone
-function apply(o){
+function apply(o, ev){
   if(!o || !o.t) return;
-  if(o.from){ S.seenAt[o.from]=Date.now(); if(o.name) S.players[o.from]=String(o.name).slice(0,16); }
+  var at = ev && ev.time ? ev.time*1000 : Date.now();
+  if(o.from){ S.seenAt[o.from]=Math.max(S.seenAt[o.from]||0, at); if(o.name) S.players[o.from]=String(o.name).slice(0,16);
+    if(o.t==='buy') S.buyAt[o.from]=at; if(o.t==='out') S.outAt[o.from]=at; }
   if(o.t==='snap') return;                                                  // only replayBatch() uses snapshots
-  if(o.t==='here') return;
+  if(o.t==='here' || o.t==='out') return;
   if(!S.boxes) coldStart(o.e||today());
   S.applied++;
   if(o.t==='buy'){
@@ -1164,9 +1185,12 @@ function sendBuy(){
   var p=S.pendingBuy; if(!p) return;
   netPublish({t:'buy', name:myName, q:p.q, deal:p.deal, rid:p.rid, e:S.epoch||today()});
   clearTimeout(p.timer);
-  p.timer=setTimeout(function(){ if(S.pendingBuy!==p) return;
+  p.timer=setTimeout(async function(){ if(S.pendingBuy!==p) return;
+    // the live stream may have gone quiet (phones do that): read the feed directly before re-posting
+    try{ if(!tx()) await catchUp(); }catch(e){}     // anything found goes through the normal ordered buffer
+    if(S.pendingBuy!==p) return;
     if(++p.tries>=3){ S.pendingBuy=null; say('Can\u2019t reach the booth right now, hon. Check your signal.'); render(); return; }
-    sendBuy(); }, 9000);
+    sendBuy(); openStream(); }, 6000);
 }
 function becameReady(){
   S.replaying=false;
@@ -1215,7 +1239,7 @@ function deliver(raw, id, ev){
   if(ev) S.lastKey={time:ev.time, id:ev.id};
   var o; try{ o=JSON.parse(raw); }catch(e){ return; }
   if(!o.mid || S.seen['m'+o.mid]) return; S.seen['m'+o.mid]=1;
-  apply(o);
+  apply(o, ev);
   if(!S.replaying) render();
 }
 function netStart(){

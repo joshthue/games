@@ -106,6 +106,13 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
   walking in uses the earliest snapshot whose `up` the relay still reaches back to and applies only
   what sorts after it. Tested with a relay that hands every phone the messages in random order and
   forgets old ones: four phones agree in every run.
+  **v102 — who's at the booth.** A player whose phone has reported "out" (their pile and set-aside
+  tray are empty; one tiny `out` message per pile) and who hasn't bought or claimed for **an hour**
+  drops off the list; one who still has tabs stays up to 3 hours. Activity uses the relay's
+  timestamps, so replaying last night's feed doesn't make everyone in it look present.
+  A buy the relay refuses (e.g. **429** — a used-up daily quota) now says so instead of leaving
+  Darlene "countin'" forever, and a buy that doesn't echo back reads the feed directly before
+  re-posting (a quiet phone stream can't strand it).
   **Phones (v100):** the live part is an `EventSource` on ntfy's `/sse` (what BINGO uses — a long
   `fetch()` stream could stall silently on iOS and dies when the app is backgrounded), restarted
   from the last message id on any error and whenever the app comes back to the foreground, after
