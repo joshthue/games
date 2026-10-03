@@ -146,14 +146,16 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .band.fine{font-weight:600;font-size:2.9cqw;font-style:italic}
 .band .pr{background:var(--tc);color:#fff;border-radius:3px;padding:0 1.2cqw;margin-left:1.2cqw;font-style:normal}
 .si{width:1.15em;height:1.15em;vertical-align:-.2em;object-fit:contain}
+/* a slot-machine 7 drawn in type (the 7\uFE0F\u20E3 emoji renders as a grey keycap) */
+.s7{font-family:Impact,"Arial Black",sans-serif;font-style:italic;font-weight:900;color:#d4202a;-webkit-text-stroke:.03em #7a0f14;text-shadow:.04em .04em 0 #ffcc00;line-height:1;display:inline-block;width:1em;text-align:center}
 .win3{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);font-size:17cqw;line-height:1}
 .cell{position:relative;display:flex;align-items:center;justify-content:center}
 .cell .si{width:1.25em;height:1.25em}
 .cell .sy{position:relative;z-index:1}
 .cell svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
 .cell.on{background:radial-gradient(circle,#fff6c4 0 45%,#ffe066 100%);animation:glow 1s ease-in-out infinite alternate}
-.serial{position:absolute;left:9%;top:38%;z-index:3;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
-  font-weight:900;font-size:7.5cqw;letter-spacing:.06em;padding:0 2cqw;line-height:1.25;pointer-events:none;opacity:.95}
+.serial{position:absolute;left:9%;top:38%;z-index:0;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
+  font-weight:900;font-size:6.5cqw;letter-spacing:.06em;padding:0 2cqw;line-height:1.25;pointer-events:none;opacity:.9}
 /* the printed prize box: arrow deals use the "$100 TOTAL" splash, bar deals a plain square */
 .tot{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:.9;
   width:84%;height:62%;border-radius:46% 54% 40% 60%/55% 45% 55% 45%;background:radial-gradient(circle at 40% 40%,#fff27a,#ffd400 70%);
@@ -161,7 +163,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .tot b{font-size:.5em;letter-spacing:-.5px} .tot small{font-size:.2em;letter-spacing:1px;font-weight:900}
 .tot.sq{border-radius:0;transform:none;background:#f9ee4d;width:78%;height:70%} .tot.sq b{font-size:.46em}
 @keyframes glow{from{box-shadow:inset 0 0 0 3px #e0a400}to{box-shadow:inset 0 0 0 5px #ff7a00}}
-.flap{position:absolute;inset:0;z-index:5;cursor:grab;touch-action:pan-y;display:flex;align-items:center;justify-content:space-between;
+.flap{position:absolute;inset:0;z-index:5;user-select:none;-webkit-user-select:none;cursor:grab;touch-action:pan-y;display:flex;align-items:center;justify-content:space-between;
   padding:0 5cqw;color:#fff;font-weight:900;letter-spacing:2px;font-size:5cqw;
   background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(0,0,0,.08)),var(--tc);
   background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 6px,transparent 6px 12px);
@@ -169,7 +171,8 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   transform-origin:left center;transition:transform .32s cubic-bezier(.3,.7,.3,1),opacity .32s}
 .flap:after{content:"";position:absolute;right:0;top:0;bottom:0;width:10px;border-right:2px dotted rgba(255,255,255,.6)}
 .flap.dragging{transition:none}
-.tabrow.open .flap{transform:perspective(500px) translateX(92%) rotateY(-70deg);opacity:0;pointer-events:none}
+.tabrow.open .flap{transform:perspective(900px) rotateY(-90deg);opacity:0;pointer-events:none}
+.flap span:last-child{font-size:.78em;letter-spacing:1px}
 .ticket .tf{display:flex;justify-content:space-between;font-size:min(calc(var(--rh)*.19),15px);color:#666;margin-top:4%;font-weight:600}
 .ticket.done{cursor:pointer}
 .ticket.loser .win3{filter:grayscale(.35)}
@@ -191,10 +194,21 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .ftab{width:100%;border-collapse:collapse;font-size:14px}
 .ftab td{padding:5px 3px;border-bottom:1px dashed rgba(0,0,0,.18);vertical-align:middle}
 .ftab .sy{font-size:26px;white-space:nowrap;width:2.6em}
+/* chart rows, like the back of a real ticket: KEY KEY PRIZE tiles with the arrow on them */
+.multi{writing-mode:horizontal-tb;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--tc2);opacity:.7;margin:-2px 0 6px}
+.combo{position:relative;display:inline-flex;gap:3px;align-items:center;padding-right:16px}
+.combo i{font-style:normal;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;
+  background:color-mix(in srgb,var(--tc) 22%,#fff);border-radius:4px}
+.combo i .si{width:1.2em;height:1.2em}
+.combo .carrow{position:absolute;left:6px;right:0;top:50%;height:4px;margin-top:-2px;opacity:.9;background:#ff8a1a;border-radius:3px;box-shadow:0 0 0 1px #7a3300}
+.combo .carrow:after{content:"";position:absolute;right:-4px;top:50%;margin-top:-9px;border:9px solid transparent;border-left:14px solid #ff8a1a;border-right:0}
+.combo.bar:after{content:"";position:absolute;left:4px;right:20px;top:50%;height:9px;margin-top:-4.5px;background:#e0503a;box-shadow:0 0 0 1px #9b2a1c}
+.ftab .am small{display:block;font-size:11px;font-weight:700;opacity:.7;font-family:inherit}
+.ftab .lf .pips{white-space:normal;max-width:96px;margin:0 0 2px auto}
 .ftab .sy .tot{width:78px;height:46px;font-size:44px}
 .ftab .lb2{font-weight:800;font-size:14px}
 .ftab .lb{font-size:12px;opacity:.75}
-.ftab .am{font-weight:900;font-size:17px;text-align:right;white-space:nowrap}
+.ftab .am{font-weight:900;font-size:24px;text-align:right;white-space:nowrap;font-family:Impact,"Arial Black",sans-serif;line-height:1}
 .ftab .pips{font-size:0;line-height:0;max-width:110px}
 .ftab .pips i{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2a9d55;margin:1px}
 .ftab .pips i.x{background:#d24b3c;opacity:.85}
@@ -250,6 +264,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   .darlene .bubble{font-size:18px} .darlene .face{font-size:44px}
   .ftab{font-size:16px} .ftab .sy{font-size:26px} .ftab .lb{font-size:14px} .ftab .am{font-size:21px} .ftab .lf{font-size:14px}
   .ftab .pips{max-width:180px} .ftab .pips i{width:12px;height:12px}
+  .combo i{width:46px;height:46px;font-size:32px} .ftab .am{font-size:30px} .ftab .am small{font-size:13px} .multi{font-size:13px}
   .flare h2{font-size:28px} .flare .fsub{font-size:15px}
   .winners h3{font-size:19px} .winners ul{font-size:16px;max-height:none}
   .neon{font-size:64px} .neon small{font-size:18px} .sub{font-size:16px}
@@ -330,8 +345,8 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 <div class="overlay" id="rulesOv"><div class="sheet">
   <h2>How pull tabs work</h2>
   <p>Every deal is a box of <b>400 tickets</b>. The winners are already in there — a fixed number of each prize, printed on the <b>flare</b> (the prize sheet on the wall).</p>
-  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> printed through three squares in a line — across, down, or corner to corner — and a yellow <b>$ TOTAL</b> box somewhere else on the ticket that says what it pays. The pictures under the arrow don't have to match. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
-  <p>Tap a tab to rip it open, or slide it: let go part way and it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
+  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> (or on some deals a red <b>bar</b>) printed through three squares in a line — across, down, or corner to corner — over one of the combos on the flare: two of the deal's key picture and a prize picture, with the arrowhead on the prize. A yellow <b>$ TOTAL</b> box says what the ticket pays. <b>Multiple winners:</b> some tickets have two lines, and the TOTAL adds them up. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
+  <p>Tap a tab to rip it open, or grab its right edge (OPEN HERE) and slide it left — it peels back from the right like the real ones, and if you let go part way it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
   <p>The flare keeps score: a red dot is a prize somebody has already pulled, a green one is still in the box. When the box is down to its last hundred and the big one is still green — that's when folks start buying.</p>
   <h3>The money</h3>
   <p>It's play money, but it sticks around between visits. The ATM gives you $20 and charges a $3 fee, because it's a VFW. <b>Net</b> is your cash minus everything you've pulled out of the ATM — how far ahead (or behind) you really are.</p>
@@ -364,9 +379,9 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
    the public board (flare tallies and the winners board).
 
    Tickets are a 3x3 grid under three tabs, like the ones at the bar: a winner has an
-   ARROW printed through three squares - across, down, or corner to corner - and a
-   "$X TOTAL" box in one of the other six squares. The symbols under the arrow don't
-   have to match; the arrow is the win.
+   ARROW (or bar) printed through three squares - across, down, or corner to corner -
+   over a combo from the chart on the ticket's back: KEY, KEY, PRIZE, the arrowhead on
+   the prize symbol. A "$X TOTAL" box elsewhere adds up every line on the ticket.
    ============================================================ */
 (function(){
 'use strict';
@@ -382,7 +397,8 @@ var LADDER=[[100,1],[50,1],[30,1],[20,2],[10,3],[4,10],[2,12],[1,20]];
 // the eight lines an arrow can run, as cell indexes (row*3+col), in the order it's drawn
 var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-// syms: nine decorations per deal (an emoji string or {img}); they carry no meaning.
+// syms: nine per deal (an emoji string or {img}): syms[0] is the key symbol, syms[1..8]
+// the prize symbol of each rung, top prize first.
 function mk(key,name,price,color,ink,syms,labels,tag){
   return { key:key, name:name, price:price, color:color, ink:ink, tag:tag, syms:syms, count:BOX_SIZE,
     tiers:LADDER.map(function(t,i){ return {amt:t[0]*price, n:t[1], label:labels[i]}; }) };
@@ -390,25 +406,25 @@ function mk(key,name,price,color,ink,syms,labels,tag){
 var DEALS={
   walleye: mk('walleye','Walleye Wishes',1,'#1f7a8c','#0b2e36',
     ['🐟','🎣','🛶','🦆','🌲','🪱','❄️','🏕️','🦟'],
-    ['Lunker!','Limit out','Trophy wall','Canoe cash','Duck, duck, bucks','Up north','Night crawlers','Ice-out'],
+    ['Lunker!','Canoe cash','Duck, duck, bucks','Up north','Night crawlers','Ice-out','Cabin weekend','State bird'],
     'Opener special · catch-and-release your dollars'),
   hotdish: mk('hotdish','Hotdish Heaven',1,'#d9772b','#3d1d06',
     ['🍲','🥔','🥫','🌽','🥧','☕','🧈','🧀','🍞'],
-    ['Tater tot jackpot','Seconds, please','Tots on top','Cream of mushroom','Corn, of course','Bars after','Church coffee','Butter it'],
+    ['Tater tot jackpot','Cream of mushroom','Corn, of course','Bars after','Church coffee','Butter it','Wisconsin import','Dinner rolls'],
     'From the church-basement kitchen · bring a 9×13'),
   fair: mk('fair','State Fair Fortune',1,'#c2366b','#3b0a1f',
     ['🌭','🍪','🧈','🎡','🐄','🍟','🥤','🎠','🎈'],
-    ['Pronto pup','Bucket o\u2019 cookies','Butter Queen','Sky Ride','Big wheel','Barn cats \u2019n cows','Cheese curds','Milk stand'],
+    ['Bucket o\u2019 cookies','Butter Queen','Big wheel','Barn cats \u2019n cows','Curds \u2019n fries','Milk stand','Merry-go-round','Balloon pop'],
     'Twelve days of fun · everything on a stick'),
   uffda: mk('uffda','Uff Da 7s',2,'#2b5fb0','#0b1d3d',
-    ['7️⃣','🦟','🏒','🦌','🪓','🐂','🧊','☃️','🌨️'],
-    ['Uff da!','State bird','Hockey night','Deer opener','Big lumberjack','Big blue ox','Polar plunge','On the lake'],
+    [{txt:'7', cls:'s7'},'🦟','🏒','🦌','🪓','🐂','🧊','☃️','🌨️'],
+    ['State bird','Hockey night','Deer opener','Big lumberjack','Big blue ox','Polar plunge','Snow day','Lake effect'],
     'Two-dollar tabs · double the uff, double the da'),
   // Josh's own brand. The Loonatic roundel is one of its symbols (cropped from the brand
   // sheet, cream keyed out so it sits on any window); a symbol may be a string or {img}.
   loon: mk('loon','Loonatic Lake',1,'#2f5233','#141414',
     [{img:LOON_IMG, alt:'Loonatic loon'},'\uD83C\uDF19','\uD83C\uDF32','\uD83C\uDF43','\u2728','\uD83C\uDF0A','\uD83C\uDF6A','\uD83D\uDD25','\uD83C\uDF0C'],
-    ['Full Loonatic!','Once in a blue moon','Northern lights','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish'],
+    ['Once in a blue moon','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish','Campfire','Northern lights'],
     'Loonatic Cannabis \u00b7 powered by Birch & Gran \u00b7 call of the wild'),
 };
 // How a winning line is marked. Both styles come from real tickets Josh brought back:
@@ -426,28 +442,77 @@ var DEAL_ORDER=['walleye','hotdish','fair','uffda','loon'];
 
 function payout(d){ return d.tiers.reduce(function(a,t){return a+t.amt*t.n;},0)/(d.count*d.price); }
 
+// A ticket's outcome: -1 (loser), a tier index, or (v88+) an array of tier indexes - a ticket
+// with more than one winning line, "MULTIPLE WINNERS" like the No Dice backs. Older saved
+// boxes only hold numbers, so everything reads outcomes through tiersOf().
+function tiersOf(o){ return Array.isArray(o) ? o : (o>=0 ? [o] : []); }
+var MULTI_PAIRS=6;     // per box: this many cheap winners ride along on another winner's ticket
+
 function newBox(key, seed){
   var d=DEALS[key]; if(!d) throw new Error('no deal '+key);
   seed = (seed>>>0) || ((Math.random()*4294967296)>>>0);
-  var r=rng(seed), order=[];
-  d.tiers.forEach(function(t,i){ for(var k=0;k<t.n;k++) order.push(i); });
+  var r=rng(seed), wins=[];
+  d.tiers.forEach(function(t,i){ for(var k=0;k<t.n;k++) wins.push([i]); });
+  // fold a few of the bottom-rung winners into other winning tickets, so the box still holds
+  // exactly the flare's prizes but some tickets carry two lines and a bigger TOTAL
+  for(var p=0;p<MULTI_PAIRS;p++){
+    var cheap=[]; wins.forEach(function(w,i){ if(w.length===1 && w[0]>=d.tiers.length-3) cheap.push(i); });
+    if(cheap.length<2) break;
+    var ai=cheap[Math.floor(r()*cheap.length)], bi; do{ bi=Math.floor(r()*wins.length); }while(bi===ai || wins[bi].length>1);
+    wins[bi]=wins[bi].concat(wins[ai]); wins.splice(ai,1);
+  }
+  var order=wins.map(function(w){ return w.length===1 ? w[0] : w; });
   while(order.length<d.count) order.push(-1);
   shuffle(order,r);
-  return { v:2, id:seed.toString(36), deal:key, seed:seed, order:order, sold:0,
+  return { v:3, id:seed.toString(36), deal:key, seed:seed, order:order, sold:0,
     owner:{}, claimed:{}, tierClaimed:d.tiers.map(function(){return 0;}),
     log:[], seq:0, players:{}, rids:{} };
 }
 
+// A winning line reads KEY, KEY, PRIZE from the tail to the arrowhead, like the chart on the
+// back of a real ticket: syms[0] is the deal's key symbol, tier i's prize symbol is syms[i+1].
+var KEY=0;
+function prizeSym(i){ return i+1; }
+// does this line, read either way, spell a combo? (used to keep losers' cells honest)
+function comboOn(cells, L){
+  var a=cells[L[0]], b=cells[L[1]], c=cells[L[2]];
+  if(a===KEY && b===KEY && c!==KEY) return c-1;
+  if(c===KEY && b===KEY && a!==KEY) return a-1;
+  return -1;
+}
+// two winning lines on one ticket never cross, so each square belongs to at most one line
+var PARALLEL=[[0,2],[3,5]];     // top+bottom rows or outer columns: adjacent pairs can force a third combo
+
 // Deterministic per ticket number, so the host can resend a lost ticket identically.
-// cells: nine symbol indexes. A winner also gets line (index into LINES), rev (which end
-// the arrowhead is on) and badge (the cell holding "$X TOTAL", never on the line).
+// cells: nine symbol indexes. lines: [{line, rev, tier}] - rev puts the arrowhead at the
+// first cell of LINES[line]. badge: the cell holding "$X TOTAL", never on a line.
 function ticketFor(box, n){
-  var d=DEALS[box.deal], o=box.order[n], r=rng((box.seed ^ Math.imul(n+1,2654435761))>>>0);
-  var cells=[]; for(var i=0;i<9;i++) cells.push(Math.floor(r()*d.syms.length));
-  var t={ bid:box.id, deal:box.deal, price:d.price, n:n, o:o, cells:cells, line:-1, rev:false, badge:-1, amt:0 };
-  if(o>=0){
-    t.amt=d.tiers[o].amt; t.line=Math.floor(r()*LINES.length); t.rev=r()<0.5;
-    var off=[0,1,2,3,4,5,6,7,8].filter(function(c){ return LINES[t.line].indexOf(c)<0; });
+  var d=DEALS[box.deal], o=box.order[n], tiers=tiersOf(o), r=rng((box.seed ^ Math.imul(n+1,2654435761))>>>0);
+  var t={ bid:box.id, deal:box.deal, price:d.price, n:n, o:o, cells:[], lines:[], badge:-1, amt:0 };
+  var lineIdx = tiers.length>1 ? PARALLEL[Math.floor(r()*PARALLEL.length)] : (tiers.length ? [Math.floor(r()*LINES.length)] : []);
+  var fixed={};
+  tiers.forEach(function(ti,j){
+    var li=lineIdx[j], rev=r()<0.5, L=LINES[li].slice(); if(rev) L.reverse();
+    fixed[L[0]]=KEY; fixed[L[1]]=KEY; fixed[L[2]]=prizeSym(ti);
+    t.lines.push({line:li, rev:rev, tier:ti}); t.amt+=d.tiers[ti].amt;
+  });
+  for(var i=0;i<9;i++) t.cells.push(i in fixed ? fixed[i] : Math.floor(r()*d.syms.length));
+  // no accidental combos anywhere else: re-roll free squares until only the printed lines read
+  var onLine=function(li){ return t.lines.some(function(x){return x.line===li;}); };
+  for(var guard=0; guard<60; guard++){
+    var bad=-1;
+    for(var li=0; li<LINES.length && bad<0; li++){ if(onLine(li)) continue;
+      if(comboOn(t.cells, LINES[li])>=0){
+        // break it: a free KEY becomes something else, or failing that the free prize end
+        // becomes a KEY (KEY,KEY,KEY spells nothing)
+        var free=LINES[li].filter(function(c){return !(c in fixed);});
+        var fk=free.filter(function(c){return t.cells[c]===KEY;});
+        if(fk.length){ bad=fk[Math.floor(r()*fk.length)]; t.cells[bad]=1+Math.floor(r()*(d.syms.length-1)); }
+        else if(free.length){ bad=free[0]; t.cells[bad]=KEY; } } }
+    if(bad<0) break;
+  }
+  if(tiers.length){
+    var off=[0,1,2,3,4,5,6,7,8].filter(function(c){ return !(c in fixed); });
     t.badge=off[Math.floor(r()*off.length)];
   }
   return t;
@@ -467,10 +532,10 @@ function sell(box, id, name, q){
 function claim(box, id, n){
   if(box.owner[n]!==id || box.claimed[n]) return {ok:false};
   box.claimed[n]=true;
-  var d=DEALS[box.deal], o=box.order[n], who=box.players[id]||'Somebody', res={ok:true, o:o, amt:0};
-  if(o>=0){
-    box.tierClaimed[o]++; res.amt=d.tiers[o].amt;
-    box.log.push({seq:++box.seq, kind:'win', id:id, who:who, tier:o, amt:res.amt, t:Date.now()});
+  var d=DEALS[box.deal], tiers=tiersOf(box.order[n]), who=box.players[id]||'Somebody', res={ok:true, o:box.order[n], amt:0};
+  if(tiers.length){
+    tiers.forEach(function(ti){ box.tierClaimed[ti]++; res.amt+=d.tiers[ti].amt; });
+    box.log.push({seq:++box.seq, kind:'win', id:id, who:who, tier:tiers[0], tiers:tiers, amt:res.amt, t:Date.now()});
   }
   return res;
 }
@@ -482,7 +547,7 @@ function view(box){
     players:Object.keys(box.players).map(function(k){return box.players[k];}) };
 }
 
-window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, rng:rng, payout:payout, newBox:newBox,
+window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:prizeSym, comboOn:comboOn, tiersOf:tiersOf, rng:rng, payout:payout, newBox:newBox,
   ticketFor:ticketFor, sell:sell, claim:claim, left:left, view:view };
 })();
 </script>
@@ -492,7 +557,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, rng:rng, payout:pay
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v87";
+var BUILD_V="v88";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -510,7 +575,9 @@ function saveAside(){ lsSet('pt_aside_v1', aside); }
 // v86 changed the ticket (matching rows -> a 3x3 grid with an arrow). Older tickets still
 // sitting in a pile can't be drawn any more: pay out any unopened winner, then clear them.
 var legacyPaid=0;
-[pile,aside].forEach(function(list){ for(var i=list.length-1;i>=0;i--){ var t=list[i]; if(t.cells) continue;
+[pile,aside].forEach(function(list){ for(var i=list.length-1;i>=0;i--){ var t=list[i];
+  if(t.cells && !t.lines){ t.lines = t.line>=0 ? [{line:t.line, rev:t.rev, tier:t.o}] : []; }   // v86-87: one line per ticket
+  if(t.cells) continue;
   if(!t.done && t.amt>0){ bank.cash+=t.amt; bank.won+=t.amt; legacyPaid+=t.amt; }
   list.splice(i,1); } });
 if(legacyPaid) lsSet('pt_bank_v1', bank);
@@ -547,7 +614,7 @@ function confetti(n){ var E=['🎉','💵','🐟','⭐','🎊','💰']; for(var 
   c.style.animationDelay=(Math.random()*0.5)+'s'; document.body.appendChild(c); setTimeout(function(){ this.remove(); }.bind(c), 3800); } }
 
 // a symbol is an emoji string or {img} (the Loonatic roundel)
-function sym(d,i){ var x=d.syms[i]; return typeof x==='string' ? x : '<img class="si" src="'+x.img+'" alt="'+esc(x.alt||'')+'">'; }
+function sym(d,i){ var x=d.syms[i]; if(typeof x==='string') return x; if(x.txt) return '<span class="'+x.cls+'">'+esc(x.txt)+'</span>'; return '<img class="si" src="'+x.img+'" alt="'+esc(x.alt||'')+'">'; }
 function sym3(d,i){ var x=sym(d,i); return x+x+x; }
 function money(n){ return '$'+n.toLocaleString(); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -661,7 +728,8 @@ function resolve(t){
   var d=D[t.deal];
   if(t.amt>0){
     bank.cash+=t.amt; bank.won+=t.amt; if(t.amt>bank.best) bank.best=t.amt; saveBank();
-    if(t.amt>=20*t.price){ say(t.deal==='loon'?'loon':'big', ' <b>'+money(t.amt)+'!</b>'); sfx('win'); confetti(28); }
+    if(t.lines.length>1){ say('Two lines on one ticket, hon! Read \u2019em both \u2014', ' <b>'+money(t.amt)+' TOTAL!</b>'); sfx('win'); confetti(20); }
+    else if(t.amt>=20*t.price){ say(t.deal==='loon'?'loon':'big', ' <b>'+money(t.amt)+'!</b>'); sfx('win'); confetti(28); }
     else { say('small', ' <b>'+money(t.amt)+'</b>'); sfx('good'); if(t.amt>=5*t.price) confetti(8); }
   } else { say('lose'); }
   savePile();
@@ -707,9 +775,9 @@ function renderStage(){
   var k=ticketKey(t);
   if(drawnKey!==k){ drawnKey=k; st.innerHTML=ticketHTML(t)+'<div class="tixact" id="tixAct"></div><div class="pileinfo" id="pileInfo"></div>'; wireTicket(); }
   var tk=st.querySelector('.ticket');
-  tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && t.line<0);
+  tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && !t.lines.length);
   t.open.forEach(function(o,i){ var r=st.querySelector('.tabrow[data-i="'+i+'"]'); r.classList.toggle('open',!!o); });
-  if(t.done && t.line>=0) PT.LINES[t.line].forEach(function(k){ var c=st.querySelector('.cell[data-k="'+k+'"]'); if(c) c.classList.add('on'); });
+  if(t.done) t.lines.forEach(function(x){ PT.LINES[x.line].forEach(function(k){ var c=st.querySelector('.cell[data-k="'+k+'"]'); if(c) c.classList.add('on'); }); });
   var old=tk.querySelector('.stamp'); if(t.done && !old && t.amt>0){ var s=document.createElement('div'); s.className='stamp';
     s.textContent = 'WINNER '+money(t.amt); tk.appendChild(s); }
   $('tixAct').innerHTML = t.done
@@ -727,8 +795,8 @@ function renderStage(){
 // the line carries its own stretch of shaft, and the far end carries the head. So a peek
 // at one tab shows exactly the part of the arrow that's under it.
 function arrowSVG(t,k){
-  if(t.line<0) return '';
-  var L=PT.LINES[t.line].slice(); if(t.rev) L.reverse();
+  var x=t.lines.filter(function(z){ return PT.LINES[z.line].indexOf(k)>=0; })[0]; if(!x) return '';
+  var L=PT.LINES[x.line].slice(); if(x.rev) L.reverse();
   var pos=L.indexOf(k); if(pos<0) return '';
   var a=L[0], b=L[2], dx=(b%3-a%3)/2, dy=(Math.floor(b/3)-Math.floor(a/3))/2;   // unit step along the line
   var ext=50;                                                                   // centre to edge (corner on a diagonal)
@@ -736,8 +804,8 @@ function arrowSVG(t,k){
     var bx1=50-dx*(pos===0?40:ext), by1=50-dy*(pos===0?40:ext), bx2=50+dx*(pos===2?40:ext), by2=50+dy*(pos===2?40:ext);
     var bs='x1="'+bx1+'" y1="'+by1+'" x2="'+bx2+'" y2="'+by2+'"';
     return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
-      +'<line '+bs+' stroke="#9b2a1c" stroke-width="22" stroke-linecap="butt"/>'
-      +'<line '+bs+' stroke="#e0503a" stroke-width="18" stroke-linecap="butt"/></svg>';
+      +'<g opacity=".82"><line '+bs+' stroke="#9b2a1c" stroke-width="15" stroke-linecap="butt"/>'
+      +'<line '+bs+' stroke="#e0503a" stroke-width="12" stroke-linecap="butt"/></g></svg>';
   }
   var x1=50-dx*ext, y1=50-dy*ext, x2=50+dx*ext, y2=50+dy*ext;
   if(pos===0){ x1=50-dx*8; y1=50-dy*8; }                                        // tail starts just behind centre
@@ -765,7 +833,7 @@ function ticketHTML(t){
       return '<div class="cell" data-k="'+k+'">'+inner+arrowSVG(t,k)+'</div>'; }).join('');
     return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
       +(i===0?'<div class="serial">'+serialOf(t)+'</div>':'')
-      +'<div class="flap" data-i="'+i+'"><span>PULL ▸</span><span>'+(i+1)+'</span></div></div>';
+      +'<div class="flap" data-i="'+i+'"><span>'+(i+1)+'</span><span>\u25C2 OPEN HERE</span></div></div>';
   });
   var star=new Array(40).join('\u2605');
   return '<div class="ticket" data-deal="'+t.deal+'" style="--tc:'+d.color+';--tink:'+d.ink+'"><div class="card">'
@@ -774,19 +842,21 @@ function ticketHTML(t){
     +rows[1]+'<div class="band fine">'+esc(d.fine||'')+'</div>'+rows[2]+'</div>'
     +'<div class="tf"><span>No. '+String(t.n+1).padStart(4,'0')+' of 400</span><span>Lake Uffda Lions</span></div></div></div>';
 }
-// A tab opens on a tap. Slide it and it follows your finger: let go and it STAYS where you
-// left it (a peek), slide it most of the way and it peels right off.
-function flapXf(px,w){ return 'perspective(600px) translateX('+px+'px) rotateY('+(-Math.min(30,px/w*40))+'deg)'; }
+// A tab opens on a tap. Or grab it by its right edge ("OPEN HERE") and slide LEFT: it hinges
+// on its left edge like the real ones, so a peek shows the right-hand square first. Let go
+// and it STAYS where you left it; pull it most of the way and it comes right off.
+// px is how far the right edge has travelled; the angle is chosen so that much shows.
+function flapXf(px,w){ var p=Math.max(0,Math.min(1,px/w)); return 'perspective(900px) rotateY('+(-Math.acos(1-p)*180/Math.PI).toFixed(1)+'deg)'; }
 function wireTicket(){
   var tk=document.querySelector('#stage .ticket');
   tk.addEventListener('click', function(e){ if(pile[0] && pile[0].done && !e.target.closest('.flap')) nextTicket(); });
   Array.prototype.forEach.call(tk.querySelectorAll('.flap'), function(f){
     var i=+f.dataset.i, x0=null, sx=0, dx=0, w=1, travel=0;
     f.addEventListener('pointerdown', function(e){ var t=pile[0]; if(!t||t.done) return; w=f.offsetWidth;
-      dx=((t.peek&&t.peek[i])||0)*w; x0=e.clientX-dx; sx=e.clientX; travel=0;
+      dx=((t.peek&&t.peek[i])||0)*w; x0=e.clientX+dx; sx=e.clientX; travel=0;
       f.classList.add('dragging'); try{ f.setPointerCapture(e.pointerId); }catch(_){} });
     f.addEventListener('pointermove', function(e){ if(x0===null) return; travel=Math.max(travel,Math.abs(e.clientX-sx));
-      dx=Math.max(0,Math.min(w,e.clientX-x0)); f.style.transform=flapXf(dx,w); });
+      dx=Math.max(0,Math.min(w,x0-e.clientX)); f.style.transform=flapXf(dx,w); });
     function up(){ if(x0===null) return; x0=null; f.classList.remove('dragging'); var t=pile[0]; if(!t) return;
       if(travel<6 || dx>w*0.85){ openTab(i); return; }                  // a tap, or pulled nearly off
       if(!t.peek) t.peek=t.open.map(function(){return 0;});
@@ -806,16 +876,19 @@ function renderFlare(){
   var rows=d.tiers.map(function(t,i){
     var c=v.tiers[i], lf=t.n-c, pips='';
     for(var k=0;k<t.n;k++) pips+='<i class="'+(k<c?'x':'')+'"></i>';
-    return '<tr class="'+(lf===0?'gone':'')+'"><td class="sy">'+prizeBox(d,t.amt)+'</td>'
-      +'<td><div class="lb2">'+esc(t.label)+'</div><div class="pips">'+pips+'</div></td><td class="lf">'+lf+' of '+t.n+'<br>left</td></tr>';
+    // the chart on the back of a real ticket: KEY KEY PRIZE with the arrow (or bar) on it
+    var combo='<div class="combo'+(d.marker==='bar'?' bar':'')+'"><i>'+sym(d,PT.KEY)+'</i><i>'+sym(d,PT.KEY)+'</i><i>'+sym(d,PT.prizeSym(i))+'</i>'+(d.marker==='bar'?'':'<b class="carrow"></b>')+'</div>';
+    return '<tr class="'+(lf===0?'gone':'')+'"><td>'+combo+'<div class="lb">'+esc(t.label)+'</div></td>'
+      +'<td class="am">'+money(t.amt)+'<small>'+t.n+' Winner'+(t.n>1?'s':'')+'</small></td>'
+      +'<td class="lf"><div class="pips">'+pips+'</div>'+lf+' left</td></tr>';
   }).join('');
   var log=(S.logAll[v.id]||v.log).slice().reverse();
   var wl = log.length ? log.map(function(e){
-    if(e.kind==='win' && d.tiers[e.tier]) return '<li><b>'+esc(e.who)+'</b> pulled '+money(e.amt)+' · '+esc(d.tiers[e.tier].label)+'</li>';
+    if(e.kind==='win' && d.tiers[e.tier]) return '<li><b>'+esc(e.who)+'</b> pulled '+money(e.amt)+' · '+(e.tiers||[e.tier]).map(function(ti){ return d.tiers[ti]?esc(d.tiers[ti].label):''; }).join(' + ')+'</li>';
     return ''; }).join('') : '<li class="none">Nobody’s hit yet. Somebody’s gotta be first!</li>';
   el.innerHTML='<button class="iconbtn close" id="flareClose" style="color:#fff;background:#3b2414">✕</button>'
     +'<h2>'+esc(d.name)+'</h2><div class="fsub">$'+d.price+' a tab · '+v.count+' tickets · <b>'+v.left+'</b> still in the box</div>'
-    +'<table class="ftab">'+rows+'</table>'
+    +'<div class="multi">Multiple winners · a ticket can hold two lines — the TOTAL adds them up</div><table class="ftab">'+rows+'</table>'
     +'<div class="winners"><h3>🏆 Winners board</h3><ul>'+wl+'</ul></div>'
     +'<div class="charity">Proceeds benefit the Lake Uffda Lions · new dock at the public access · Lic. #10000</div>';
   var c=$('flareClose'); if(c) c.onclick=function(){ document.body.classList.remove('flare-open'); };

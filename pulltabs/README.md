@@ -5,9 +5,16 @@ peel back three tabs over a square 3×3 grid, look for the arrow, check the flar
 
 ## The ticket (v86, modelled on real tickets Josh photographed at the bar)
 A winner has an **arrow** printed through three squares in a line — across, down, or corner
-to corner (8 possible lines) — and a yellow **"$X TOTAL"** splash in one of the other six
-squares saying what it pays. The pictures under the arrow don't have to match; the arrow is
-the win. The arrow is drawn a piece per square (`arrowSVG`), the way it's printed, so a peek
+to corner (8 possible lines) — over a **combo from the chart** (v88, from the back of a real
+"No Dice" ticket): KEY, KEY, PRIZE read from the tail to the arrowhead. `syms[0]` is the deal's
+key symbol and tier *i*'s prize symbol is `syms[i+1]`. A yellow **"$X TOTAL"** in another square
+adds up every line. **Multiple winners:** `MULTI_PAIRS` (6) cheap winners per box are folded
+onto other winning tickets, so a box still holds exactly the flare's prizes but some tickets
+carry two lines — always non-crossing (top+bottom rows or outer columns). An outcome is
+`-1`, a tier, or an array of tiers; read it through `tiersOf()`. Losers' squares are re-rolled
+until no line spells a combo in either direction (`comboOn`; checked over 120,000 tickets).
+**Tabs hinge on the left** like the real ones: grab the right edge (OPEN HERE) and peel left,
+so a peek shows the right-hand square first. The arrow is drawn a piece per square (`arrowSVG`), the way it's printed, so a peek
 at one tab shows exactly the part of the arrow under it, and a down or slantwise arrow needs
 all three tabs. Each window is three square cells (`aspect-ratio:3/1`, symbols sized in `cqw`).
 
@@ -33,8 +40,8 @@ load, and any unopened winner among them is paid out first.
   Tap it in the tray to bring it back to the front. The tray survives a reload (`pt_aside_v1`).
 - **Toss it** — on an unfinished ticket, Darlene checks it first: a winner is
   opened and paid instead of thrown out; a loser goes straight in the bucket. "Pull all five" opens the rest.
-- **The flare** — the prize sheet: every rung of the ladder as its $ TOTAL splash with a dot per
-  prize (red = pulled, green = still in the box), and the winners board. Beside the ticket on an
+- **The flare** — laid out like the chart on a ticket back: each combo with its arrow (or bar),
+  the prize, "N Winners", a dot per prize (red = pulled, green = still in the box), and the winners board. Beside the ticket on an
   iPad in landscape, under it in portrait, behind the 📋 Flare button on a phone.
 
 ## Deals
