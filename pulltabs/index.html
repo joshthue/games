@@ -16,8 +16,8 @@
   --neon:#ff5fa2; --neon2:#7fe3ff; --ok:#4fbf7a; --bad:#d24b3c;
   --booth:rgba(28,16,8,.82); --line:rgba(243,201,76,.35);
   --shadow:0 6px 18px rgba(0,0,0,.45);
-  --rh:64px;                 /* height of one tab row on the ticket */
-  --tw:360px;                /* ticket width */
+  --rh:64px;                 /* type scale on the ticket (header, flap lettering) */
+  --tw:360px;                /* ticket width; the 3x3 grid inside it is square */
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;min-height:100%}
@@ -79,7 +79,6 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .dealbtn .sy{font-size:22px;margin:4px 0}
 .dealbtn .pr{font-size:12px;font-weight:700;opacity:.9}
 .dealbtn[data-deal="loon"]{grid-column:1/-1}
-.win3 .si{width:1.5em;height:1.5em}
 .dealbtn .si,.ftab .si,.winners .si,.seg .si{background:#fbf1d9;border-radius:50%;width:1.3em;height:1.3em}
 /* the Loonatic box wears the brand: night-lake ground, the spaced serif wordmark */
 .ticket[data-deal="loon"]{background:linear-gradient(170deg,#141414 0%,#1d2b20 45%,#2f5233 100%);
@@ -115,7 +114,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .buyrow .btn{flex:1;padding:12px 6px}
 .buyrow .btn small{display:block;font-size:11px;font-weight:700;opacity:.8}
 
-.stage{display:flex;flex-direction:column;align-items:center;min-height:calc(var(--rh)*3 + 150px)}
+.stage{display:flex;flex-direction:column;align-items:center;min-height:calc(min(100vw,var(--tw)) + 150px)}
 .aside{margin-top:10px}
 .asidelist{display:flex;gap:8px;flex-wrap:wrap}
 .asidechip{background:var(--tc);color:#fff;border:2px solid rgba(255,255,255,.35);border-radius:10px;padding:7px 10px;
@@ -139,13 +138,24 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .ticket .tp{background:#fff;color:var(--tink);font-weight:900;border-radius:8px;padding:3px 8px;font-size:calc(var(--rh)*.36)}
 .ticket .tg{font-size:min(calc(var(--rh)*.21),17px);opacity:.9;margin:2px 0 8px;font-weight:600}
 .tabs{display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.18);border-radius:8px;padding:6px}
-.tabrow{position:relative;height:var(--rh);border-radius:6px;overflow:hidden;background:var(--cream)}
+/* the grid is square: three tab rows share its height, each row is three square cells */
+.tabs{aspect-ratio:1/1;display:grid;grid-template-rows:repeat(3,1fr);container-type:inline-size}
+.tabrow{position:relative;border-radius:6px;overflow:hidden;background:var(--cream);min-height:0}
 .si{width:1.15em;height:1.15em;vertical-align:-.2em;object-fit:contain}
-.win3{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-around;font-size:calc(var(--rh)*.6);line-height:1}
-.tabrow.win .win3{background:linear-gradient(90deg,#fff3b0,#ffe066,#fff3b0);animation:glow 1s ease-in-out infinite alternate}
+.win3{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);font-size:17cqw;line-height:1}
+.cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:2px dashed rgba(0,0,0,.12)}
+.cell:last-child{border-right:0}
+.cell .si{width:1.25em;height:1.25em}
+.cell .sy{position:relative;z-index:1}
+.cell svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
+.cell.on{background:radial-gradient(circle,#fff3b0 0 45%,#ffe066 100%);animation:glow 1s ease-in-out infinite alternate}
+/* the printed "$100 TOTAL" box, a yellow splash like the real ones */
+.tot{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:.9;
+  width:84%;height:62%;border-radius:46% 54% 40% 60%/55% 45% 55% 45%;background:radial-gradient(circle at 40% 40%,#fff27a,#ffd400 70%);
+  color:#1b1b1b;transform:rotate(-8deg);font-family:Impact,"Arial Black",sans-serif}
+.tot b{font-size:.5em;letter-spacing:-.5px} .tot small{font-size:.2em;letter-spacing:1px;font-weight:900}
 @keyframes glow{from{box-shadow:inset 0 0 0 3px #e0a400}to{box-shadow:inset 0 0 0 5px #ff7a00}}
-.tabrow.win .amt{position:absolute;right:6px;bottom:3px;font-size:calc(var(--rh)*.24);font-weight:900;color:#8a2b1c}
-.flap{position:absolute;inset:0;cursor:grab;touch-action:pan-y;display:flex;align-items:center;justify-content:space-between;
+.flap{position:absolute;inset:0;z-index:5;cursor:grab;touch-action:pan-y;display:flex;align-items:center;justify-content:space-between;
   padding:0 12px;color:#fff;font-weight:900;letter-spacing:2px;font-size:calc(var(--rh)*.27);
   background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(0,0,0,.08)),var(--tc);
   background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 6px,transparent 6px 12px);
@@ -174,7 +184,9 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .flare .close{position:absolute;right:8px;top:8px}
 .ftab{width:100%;border-collapse:collapse;font-size:14px}
 .ftab td{padding:5px 3px;border-bottom:1px dashed rgba(0,0,0,.18);vertical-align:middle}
-.ftab .sy{font-size:20px;white-space:nowrap}
+.ftab .sy{font-size:26px;white-space:nowrap;width:2.6em}
+.ftab .sy .tot{width:78px;height:46px;font-size:44px}
+.ftab .lb2{font-weight:800;font-size:14px}
 .ftab .lb{font-size:12px;opacity:.75}
 .ftab .am{font-weight:900;font-size:17px;text-align:right;white-space:nowrap}
 .ftab .pips{font-size:0;line-height:0;max-width:110px}
@@ -183,12 +195,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .ftab .lf{font-size:12px;font-weight:800;white-space:nowrap;text-align:right}
 .ftab tr.gone{opacity:.45}
 .ftab tr.gone .am{text-decoration:line-through}
-.seal{margin-top:12px;border:2px solid var(--tc);border-radius:8px;padding:8px}
-.seal h3,.winners h3{margin:0 0 6px;font-size:15px;font-family:Georgia,serif;font-style:italic}
-.seal .lines{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:13px}
-.seal .lines div{border-bottom:1px solid rgba(0,0,0,.25);padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive}
-.seal .lines div.hit{background:#ffe066;font-weight:900}
-.sealtag{display:inline-block;background:var(--tc);color:#fff;font-weight:900;border-radius:999px;padding:2px 9px;font-size:12px;margin-left:4px}
+.winners h3{margin:0 0 6px;font-size:15px;font-family:Georgia,serif;font-style:italic}
 .winners{margin-top:12px}
 .winners ul{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;font-size:13px}
 .winners li{padding:4px 0;border-bottom:1px dotted rgba(0,0,0,.2)}
@@ -227,7 +234,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 /* iPad and up (an iPad mini is 744 wide in portrait): a big ticket, and the flare sits
    right on the page under it instead of in a pop-up */
 @media (min-width:700px){
-  :root{--rh:112px;--tw:600px}
+  :root{--rh:100px;--tw:560px}
   .flarecol,.flare-open .flarecol{display:block;position:static;background:none;padding:0;overflow:visible}
   .flare .close,#flareBtn{display:none}
   .flare{max-width:none}
@@ -238,7 +245,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   .ftab{font-size:16px} .ftab .sy{font-size:26px} .ftab .lb{font-size:14px} .ftab .am{font-size:21px} .ftab .lf{font-size:14px}
   .ftab .pips{max-width:180px} .ftab .pips i{width:12px;height:12px}
   .flare h2{font-size:28px} .flare .fsub{font-size:15px}
-  .seal h3,.winners h3{font-size:19px} .seal .lines{font-size:17px} .winners ul{font-size:16px;max-height:none}
+  .winners h3{font-size:19px} .winners ul{font-size:16px;max-height:none}
   .neon{font-size:64px} .neon small{font-size:18px} .sub{font-size:16px}
   .dealpick{grid-template-columns:repeat(3,1fr)}
   .roombar{font-size:15px}
@@ -247,11 +254,11 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 }
 /* landscape tablet / desktop: ticket on the left, the flare beside it */
 @media (min-width:1000px) and (orientation:landscape), (min-width:1200px){
-  :root{--rh:96px;--tw:540px}
+  :root{--rh:84px;--tw:470px}
   .cols{grid-template-columns:minmax(0,1fr) minmax(0,460px);align-items:start}
   .flare{position:sticky;top:8px;max-height:calc(100vh - 16px);overflow:auto}
 }
-@media (min-width:1000px) and (orientation:landscape) and (max-height:820px){ :root{--rh:80px;--tw:480px} .buyrow .btn{padding:9px 6px} }
+@media (min-width:1000px) and (orientation:landscape) and (max-height:820px){ :root{--rh:66px;--tw:400px} .buyrow .btn{padding:9px 6px} }
 </style>
 </head>
 <body>
@@ -316,15 +323,15 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 
 <div class="overlay" id="rulesOv"><div class="sheet">
   <h2>How pull tabs work</h2>
-  <p>Every deal is a box of <b>400 tickets</b>. The winners are already in there — a fixed number of each prize, printed on the <b>flare</b> (the prize sheet on the wall). Buy a ticket and pull back its three tabs — three matching symbols across a row wins what the flare says for that row. Tap a tab to rip it open, or slide it: let go part way and it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
+  <p>Every deal is a box of <b>400 tickets</b>. The winners are already in there — a fixed number of each prize, printed on the <b>flare</b> (the prize sheet on the wall).</p>
+  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> printed through three squares in a line — across, down, or corner to corner — and a yellow <b>$ TOTAL</b> box somewhere else on the ticket that says what it pays. The pictures under the arrow don't have to match. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
+  <p>Tap a tab to rip it open, or slide it: let go part way and it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
   <p>The flare keeps score: a red dot is a prize somebody has already pulled, a green one is still in the box. When the box is down to its last hundred and the big one is still green — that's when folks start buying.</p>
-  <h3>The seal</h3>
-  <p>Some tickets have <b>✍️✍️✍️</b>. That one doesn't pay cash — it puts your name on the next line of the seal board. When all eight lines are signed, Darlene peels the seal and the hidden line number wins the seal prize ($50 on a $1 deal, $100 on the Uff Da 7s).</p>
   <h3>The money</h3>
   <p>It's play money, but it sticks around between visits. The ATM gives you $20 and charges a $3 fee, because it's a VFW. <b>Net</b> is your cash minus everything you've pulled out of the ATM — how far ahead (or behind) you really are.</p>
   <h3>Shared box</h3>
   <p>One phone starts the box and reads out the 4-letter code; everybody else joins with it and buys from the same box. The phone that started it holds the box — keep it open. When somebody hits big, it pops up on everyone's phone.</p>
-  <p style="opacity:.75">Pays back about 86% across the whole box, seal included. The odds are the same whether a ticket has three tabs or five. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
+  <p style="opacity:.75">Pays back about 83% across the whole box — one ticket in eight is a winner. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
   <button class="btn" style="width:100%" data-close="rulesOv">Okie dokie</button>
 </div></div>
 
@@ -334,7 +341,6 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
     <label class="switch"><input type="checkbox" id="menuSound"><span class="track"></span><span class="knob"></span></label></div>
   <div id="menuBox"></div>
   <div class="menubtns">
-    <button class="btn ghost hidden" id="sealBtn">🔓 Open the seal now</button>
     <button class="btn ghost" id="leaveBtn">🚪 Leave the booth</button>
     <button class="btn ghost" id="resetBank">🧾 Start over — reset my bankroll</button>
     <a class="btn ghost" href="../" style="text-align:center;text-decoration:none">🏠 Back to all games</a>
@@ -349,7 +355,12 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
    outcome is shuffled into box.order, so the odds are real and the box is finite.
    The device that holds the box (solo: you; shared: the host) is the only one that
    ever sees box.order - everyone else only ever sees the tickets they bought and
-   the public board (flare tallies, winners, seal lines).
+   the public board (flare tallies and the winners board).
+
+   Tickets are a 3x3 grid under three tabs, like the ones at the bar: a winner has an
+   ARROW printed through three squares - across, down, or corner to corner - and a
+   "$X TOTAL" box in one of the other six squares. The symbols under the arrow don't
+   have to match; the arrow is the win.
    ============================================================ */
 (function(){
 'use strict';
@@ -358,81 +369,71 @@ function rng(seed){ var a=seed>>>0; return function(){ a=(a+0x6D2B79F5)>>>0; var
 function shuffle(arr,r){ for(var i=arr.length-1;i>0;i--){ var j=Math.floor(r()*(i+1)); var t=arr[i]; arr[i]=arr[j]; arr[j]=t; } return arr; }
 
 var LOON_IMG='data:image/webp;base64,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';
-var ROWS=3;           // tabs per ticket
-var SEAL=9;            // outcome code (and symbol index) for a seal card
+var ROWS=3;            // tabs per ticket, three squares under each
 var BOX_SIZE=400;
-// prize ladder per $1 of ticket price: [amount, how many in the box]
-var LADDER=[[100,1],[50,1],[20,2],[10,3],[5,8],[2,10],[1,16]];
-var SEAL_LINES=8, SEAL_PRIZE=50;
+// prize ladder per $1 of ticket price: [amount, how many in the box]. 83.5% back.
+var LADDER=[[100,1],[50,1],[30,1],[20,2],[10,3],[4,10],[2,12],[1,20]];
+// the eight lines an arrow can run, as cell indexes (row*3+col), in the order it's drawn
+var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-// syms[0..6] = the winning symbol for each rung of the ladder, top prize first;
-// syms[7..8] = filler that only ever shows up on losing rows; syms[9] = the seal pen.
+// syms: nine decorations per deal (an emoji string or {img}); they carry no meaning.
 function mk(key,name,price,color,ink,syms,labels,tag){
-  return { key:key, name:name, price:price, color:color, ink:ink, tag:tag,
-    syms:syms.concat(['✍️']), count:BOX_SIZE,
-    tiers:LADDER.map(function(t,i){ return {amt:t[0]*price, n:t[1], sym:i, label:labels[i]}; }),
-    seal:{lines:SEAL_LINES, prize:SEAL_PRIZE*price} };
+  return { key:key, name:name, price:price, color:color, ink:ink, tag:tag, syms:syms, count:BOX_SIZE,
+    tiers:LADDER.map(function(t,i){ return {amt:t[0]*price, n:t[1], label:labels[i]}; }) };
 }
 var DEALS={
   walleye: mk('walleye','Walleye Wishes',1,'#1f7a8c','#0b2e36',
     ['🐟','🎣','🛶','🦆','🌲','🪱','❄️','🏕️','🦟'],
-    ['Lunker!','Limit out','Canoe cash','Duck, duck, bucks','Up north','Night crawlers','Ice-out'],
+    ['Lunker!','Limit out','Trophy wall','Canoe cash','Duck, duck, bucks','Up north','Night crawlers','Ice-out'],
     'Opener special · catch-and-release your dollars'),
   hotdish: mk('hotdish','Hotdish Heaven',1,'#d9772b','#3d1d06',
     ['🍲','🥔','🥫','🌽','🥧','☕','🧈','🧀','🍞'],
-    ['Tater tot jackpot','Tots on top','Cream of mushroom','Corn, of course','Bars after','Church coffee','Butter it'],
+    ['Tater tot jackpot','Seconds, please','Tots on top','Cream of mushroom','Corn, of course','Bars after','Church coffee','Butter it'],
     'From the church-basement kitchen · bring a 9×13'),
   fair: mk('fair','State Fair Fortune',1,'#c2366b','#3b0a1f',
     ['🌭','🍪','🧈','🎡','🐄','🍟','🥤','🎠','🎈'],
-    ['Pronto pup','Bucket o’ cookies','Butter Queen','Big wheel','Barn cats ’n cows','Cheese curds','Milk stand'],
+    ['Pronto pup','Bucket o\u2019 cookies','Butter Queen','Sky Ride','Big wheel','Barn cats \u2019n cows','Cheese curds','Milk stand'],
     'Twelve days of fun · everything on a stick'),
   uffda: mk('uffda','Uff Da 7s',2,'#2b5fb0','#0b1d3d',
     ['7️⃣','🦟','🏒','🦌','🪓','🐂','🧊','☃️','🌨️'],
-    ['Uff da!','State bird','Hockey night','Deer opener','Big lumberjack','Big blue ox','On the lake'],
+    ['Uff da!','State bird','Hockey night','Deer opener','Big lumberjack','Big blue ox','Polar plunge','On the lake'],
     'Two-dollar tabs · double the uff, double the da'),
-  // Josh's own brand. The top symbol is the Loonatic roundel itself (cropped from the brand
+  // Josh's own brand. The Loonatic roundel is one of its symbols (cropped from the brand
   // sheet, cream keyed out so it sits on any window); a symbol may be a string or {img}.
   loon: mk('loon','Loonatic Lake',1,'#2f5233','#141414',
     [{img:LOON_IMG, alt:'Loonatic loon'},'\uD83C\uDF19','\uD83C\uDF32','\uD83C\uDF43','\u2728','\uD83C\uDF0A','\uD83C\uDF6A','\uD83D\uDD25','\uD83C\uDF0C'],
-    ['Full Loonatic!','Once in a blue moon','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish'],
+    ['Full Loonatic!','Once in a blue moon','Northern lights','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish'],
     'Loonatic Cannabis \u00b7 powered by Birch & Gran \u00b7 call of the wild'),
 };
 var DEAL_ORDER=['walleye','hotdish','fair','uffda','loon'];
 
-function payout(d){ var s=d.tiers.reduce(function(a,t){return a+t.amt*t.n;},0)+d.seal.prize; return s/(d.count*d.price); }
+function payout(d){ return d.tiers.reduce(function(a,t){return a+t.amt*t.n;},0)/(d.count*d.price); }
 
 function newBox(key, seed){
   var d=DEALS[key]; if(!d) throw new Error('no deal '+key);
   seed = (seed>>>0) || ((Math.random()*4294967296)>>>0);
   var r=rng(seed), order=[];
   d.tiers.forEach(function(t,i){ for(var k=0;k<t.n;k++) order.push(i); });
-  for(var k=0;k<d.seal.lines;k++) order.push(SEAL);
   while(order.length<d.count) order.push(-1);
   shuffle(order,r);
-  var lines=[]; for(var j=0;j<d.seal.lines;j++) lines.push(null);
-  return { v:1, id:seed.toString(36), deal:key, seed:seed, order:order, sold:0,
+  return { v:2, id:seed.toString(36), deal:key, seed:seed, order:order, sold:0,
     owner:{}, claimed:{}, tierClaimed:d.tiers.map(function(){return 0;}),
-    log:[], seq:0, players:{}, rids:{},
-    seal:{ lines:lines, winNo:1+Math.floor(r()*d.seal.lines), opened:false, winner:null } };
+    log:[], seq:0, players:{}, rids:{} };
 }
 
-// The three windows (3 tabs x 3 symbols, the way they play it at the bar). Deterministic per ticket number so the host can resend a lost
-// ticket identically. Losing rows never show three of a kind, and a third of them
-// tease two of the top symbol, like the real thing.
+// Deterministic per ticket number, so the host can resend a lost ticket identically.
+// cells: nine symbol indexes. A winner also gets line (index into LINES), rev (which end
+// the arrowhead is on) and badge (the cell holding "$X TOTAL", never on the line).
 function ticketFor(box, n){
   var d=DEALS[box.deal], o=box.order[n], r=rng((box.seed ^ Math.imul(n+1,2654435761))>>>0);
-  var rows=[], winRow = o===-1 ? -1 : Math.floor(r()*ROWS);
-  for(var i=0;i<ROWS;i++){
-    if(i===winRow){ var s=(o===SEAL)?SEAL:o; rows.push([s,s,s]); continue; }
-    var row;
-    do{
-      if(r()<0.33){ row=[0,0,1+Math.floor(r()*8)]; shuffle(row,r); }
-      else row=[Math.floor(r()*9),Math.floor(r()*9),Math.floor(r()*9)];
-    } while(row[0]===row[1] && row[1]===row[2]);
-    rows.push(row);
+  var cells=[]; for(var i=0;i<9;i++) cells.push(Math.floor(r()*d.syms.length));
+  var t={ bid:box.id, deal:box.deal, price:d.price, n:n, o:o, cells:cells, line:-1, rev:false, badge:-1, amt:0 };
+  if(o>=0){
+    t.amt=d.tiers[o].amt; t.line=Math.floor(r()*LINES.length); t.rev=r()<0.5;
+    var off=[0,1,2,3,4,5,6,7,8].filter(function(c){ return LINES[t.line].indexOf(c)<0; });
+    t.badge=off[Math.floor(r()*off.length)];
   }
-  var amt = (o>=0 && o<SEAL) ? d.tiers[o].amt : 0;
-  return { bid:box.id, deal:box.deal, price:d.price, n:n, o:o, rows:rows, win:winRow, amt:amt };
+  return t;
 }
 
 function left(box){ return box.order.length - box.sold; }
@@ -450,39 +451,22 @@ function claim(box, id, n){
   if(box.owner[n]!==id || box.claimed[n]) return {ok:false};
   box.claimed[n]=true;
   var d=DEALS[box.deal], o=box.order[n], who=box.players[id]||'Somebody', res={ok:true, o:o, amt:0};
-  if(o>=0 && o<SEAL){
+  if(o>=0){
     box.tierClaimed[o]++; res.amt=d.tiers[o].amt;
     box.log.push({seq:++box.seq, kind:'win', id:id, who:who, tier:o, amt:res.amt, t:Date.now()});
-  } else if(o===SEAL){
-    var L=box.seal.lines, i=L.indexOf(null);
-    if(i>=0){ L[i]={id:id, who:who}; res.line=i+1;
-      box.log.push({seq:++box.seq, kind:'line', id:id, who:who, line:i+1, t:Date.now()}); }
-    if(L.indexOf(null)<0) openSeal(box);
   }
   return res;
 }
 
-function openSeal(box){
-  if(box.seal.opened) return null;
-  var d=DEALS[box.deal], w=box.seal.lines[box.seal.winNo-1];
-  box.seal.opened=true; box.seal.winner = w ? {id:w.id, who:w.who} : null;
-  box.log.push({seq:++box.seq, kind:'seal', id:w?w.id:null, who:w?w.who:null, line:box.seal.winNo, amt:w?d.seal.prize:0, t:Date.now()});
-  return box.seal.winner;
-}
-function canOpenSeal(box){ return !box.seal.opened && box.sold>=box.order.length; }
-
-// what everyone may see. No order, no seal number until it's opened.
+// what everyone may see. Never the order.
 function view(box){
-  var d=DEALS[box.deal];
   return { id:box.id, deal:box.deal, count:box.order.length, left:left(box),
-    tiers:box.tierClaimed.slice(),
-    seal:{ lines:box.seal.lines.map(function(x){return x?x.who:null;}), ids:box.seal.lines.map(function(x){return x?x.id:null;}),
-           opened:box.seal.opened, winNo:box.seal.opened?box.seal.winNo:null, winner:box.seal.winner, prize:d.seal.prize },
-    log:box.log.slice(-15), seq:box.seq, players:Object.keys(box.players).map(function(k){return box.players[k];}) };
+    tiers:box.tierClaimed.slice(), log:box.log.slice(-15), seq:box.seq,
+    players:Object.keys(box.players).map(function(k){return box.players[k];}) };
 }
 
-window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, SEAL:SEAL, rng:rng, payout:payout, newBox:newBox,
-  ticketFor:ticketFor, sell:sell, claim:claim, openSeal:openSeal, canOpenSeal:canOpenSeal, left:left, view:view };
+window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, rng:rng, payout:payout, newBox:newBox,
+  ticketFor:ticketFor, sell:sell, claim:claim, left:left, view:view };
 })();
 </script>
 <script>
@@ -491,7 +475,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, SEAL:SEAL, rng:rng, payout:payou
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v85";
+var BUILD_V="v86";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -501,11 +485,19 @@ function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){
 function shortId(){ return Math.random().toString(36).slice(2,10); }
 
 var myId = lsGet('pt_id',null); if(!myId){ myId=shortId(); lsSet('pt_id',myId); }
-var bank = Object.assign({cash:0, atm:0, bought:0, won:0, best:0, seals:{}}, lsGet('pt_bank_v1',{}));
+var bank = Object.assign({cash:0, atm:0, bought:0, won:0, best:0}, lsGet('pt_bank_v1',{}));
 function saveBank(){ lsSet('pt_bank_v1', bank); }
 var pile = lsGet('pt_pile_v1', []);          // tickets you've bought and not tossed yet
 var aside = lsGet('pt_aside_v1', []);        // tickets set aside to finish later
 function saveAside(){ lsSet('pt_aside_v1', aside); }
+// v86 changed the ticket (matching rows -> a 3x3 grid with an arrow). Older tickets still
+// sitting in a pile can't be drawn any more: pay out any unopened winner, then clear them.
+var legacyPaid=0;
+[pile,aside].forEach(function(list){ for(var i=list.length-1;i>=0;i--){ var t=list[i]; if(t.cells) continue;
+  if(!t.done && t.amt>0){ bank.cash+=t.amt; bank.won+=t.amt; legacyPaid+=t.amt; }
+  list.splice(i,1); } });
+if(legacyPaid) lsSet('pt_bank_v1', bank);
+lsSet('pt_pile_v1', pile); lsSet('pt_aside_v1', aside);
 function savePile(){ lsSet('pt_pile_v1', pile); }
 var myName = lsGet('pt_name','');
 var pickDeal = lsGet('pt_deal','walleye'); if(!D[pickDeal]) pickDeal='walleye';
@@ -521,8 +513,6 @@ var SAY = {
   lose:["Ope, not this one.","Well, that's different.","Could be worse — could be January.","Oh fer cryin' out loud.","Jeez Louise.","Nope. Not even close, dontcha know.","Toss it in the bucket, hon.","Uff. Next one's the one."],
   small:["Well there ya go!","Oh, for fun!","You betcha, that's a winner!","Ope — a winner! Look at you.","That'll buy a bar or two."],
   big:["UFF DA! Somebody call the church basement!","HOLY BUCKETS! Ring the bell!","Oh my gosh — you're buyin' the next round of bars!","Well I'll be! Wait'll I tell my sister in Brainerd!"],
-  seal:["Sign your name on the seal, hon! ✍️","Ooh, a seal card! Put yer John Hancock on line ","Seal card! Write nice, the Lions frame these."],
-  sealwin:["THE SEAL! I peeled it and it's YOU, hon!","Seal's open — and it's your line! Uff da!"],
   soldout:["That box is sold out. I'll crack a fresh one.","All gone! Every last tab. Fresh box?"],
   loon:["Whoa — far out, hon! Full Loonatic!","Ope! That loon's callin' your name!","Well I'll be. Once in a blue moon, that is."],
   pile:["Pull 'em back slow, it's more fun.","Tap a tab or slide it open.","Go on, pull it!"]
@@ -631,7 +621,7 @@ function receiveTix(tix){
   if(!tix.length){ say('soldout'); render(); return; }
   var cost=tix.reduce(function(a,t){return a+t.price;},0);
   bank.cash-=cost; bank.bought+=tix.length; saveBank();
-  tix.forEach(function(t){ t.room=S.code||'solo'; t.open=t.rows.map(function(){return 0;}); t.peek=t.rows.map(function(){return 0;}); pile.push(t); });
+  tix.forEach(function(t){ t.room=S.code||'solo'; t.open=[0,0,0]; t.peek=[0,0,0]; pile.push(t); });
   savePile(); sfx('deal');
   if(pile.length===tix.length) say('pile');
   render();
@@ -656,8 +646,7 @@ function resolve(t){
     bank.cash+=t.amt; bank.won+=t.amt; if(t.amt>bank.best) bank.best=t.amt; saveBank();
     if(t.amt>=20*t.price){ say(t.deal==='loon'?'loon':'big', ' <b>'+money(t.amt)+'!</b>'); sfx('win'); confetti(28); }
     else { say('small', ' <b>'+money(t.amt)+'</b>'); sfx('good'); if(t.amt>=5*t.price) confetti(8); }
-  } else if(t.o===PT.SEAL){ say('Seal card! Your name goes on the next open line of the seal board. ✍️'); sfx('good'); }
-  else { say('lose'); }
+  } else { say('lose'); }
   savePile();
   sendClaim(t);
   render();
@@ -669,7 +658,7 @@ function tossTicket(){
   if(t.done){ nextTicket(); return; }
   t.open=t.open.map(function(){return 1;}); if(t.peek) t.peek=t.peek.map(function(){return 0;});
   drawnKey=null;
-  if(t.amt>0 || t.o===PT.SEAL){ resolve(t); $('say').innerHTML='Whoa whoa \u2014 hold on, hon! That one\u2019s a <b>'+(t.amt>0?money(t.amt)+' winner':'seal card')+'</b>! Good thing I looked.'; return; }
+  if(t.amt>0){ resolve(t); $('say').innerHTML='Whoa whoa \u2014 hold on, hon! That one\u2019s a <b>'+money(t.amt)+' winner</b>! Good thing I looked.'; return; }
   resolve(t); pile.shift(); savePile(); render();
 }
 // Set the ticket in front of you aside, peeks and all, and move on. Tap it in the tray to bring it back.
@@ -701,10 +690,11 @@ function renderStage(){
   var k=ticketKey(t);
   if(drawnKey!==k){ drawnKey=k; st.innerHTML=ticketHTML(t)+'<div class="tixact" id="tixAct"></div><div class="pileinfo" id="pileInfo"></div>'; wireTicket(); }
   var tk=st.querySelector('.ticket');
-  tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && t.win<0);
-  t.open.forEach(function(o,i){ var r=st.querySelector('.tabrow[data-i="'+i+'"]'); r.classList.toggle('open',!!o); if(t.done && i===t.win) r.classList.add('win'); });
-  var old=tk.querySelector('.stamp'); if(t.done && !old && (t.amt>0 || t.o===PT.SEAL)){ var s=document.createElement('div'); s.className='stamp';
-    s.textContent = t.amt>0 ? 'WINNER '+money(t.amt) : 'SIGN THE SEAL'; tk.appendChild(s); }
+  tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && t.line<0);
+  t.open.forEach(function(o,i){ var r=st.querySelector('.tabrow[data-i="'+i+'"]'); r.classList.toggle('open',!!o); });
+  if(t.done && t.line>=0) PT.LINES[t.line].forEach(function(k){ var c=st.querySelector('.cell[data-k="'+k+'"]'); if(c) c.classList.add('on'); });
+  var old=tk.querySelector('.stamp'); if(t.done && !old && t.amt>0){ var s=document.createElement('div'); s.className='stamp';
+    s.textContent = 'WINNER '+money(t.amt); tk.appendChild(s); }
   $('tixAct').innerHTML = t.done
     ? '<button class="btn" id="nextBtn">'+(pile.length>1?'Toss it · next tab ▸':'Toss it in the bucket')+'</button>'
     : '<button class="btn ghost" id="openAllBtn">Pull \u2019em all</button><button class="btn ghost" id="asideBtn">🗂️ Set aside</button><button class="btn ghost" id="tossBtn">🪣 Toss it</button>';
@@ -716,11 +706,35 @@ function renderStage(){
   var ab=$('asideBtn'); if(ab) ab.onclick=setAside;
   var tb=$('tossBtn'); if(tb) tb.onclick=tossTicket;
 }
+// The arrow is printed a piece per square, the way the real tickets are: each square on
+// the line carries its own stretch of shaft, and the far end carries the head. So a peek
+// at one tab shows exactly the part of the arrow that's under it.
+function arrowSVG(t,k){
+  if(t.line<0) return '';
+  var L=PT.LINES[t.line].slice(); if(t.rev) L.reverse();
+  var pos=L.indexOf(k); if(pos<0) return '';
+  var a=L[0], b=L[2], dx=(b%3-a%3)/2, dy=(Math.floor(b/3)-Math.floor(a/3))/2;   // unit step along the line
+  var ext=50;                                                                   // centre to edge (corner on a diagonal)
+  var x1=50-dx*ext, y1=50-dy*ext, x2=50+dx*ext, y2=50+dy*ext;
+  if(pos===0){ x1=50-dx*8; y1=50-dy*8; }                                        // tail starts just behind centre
+  var head='';
+  if(pos===2){ var m=Math.hypot(dx,dy), ux=dx/m, uy=dy/m, px=-uy, py=ux;
+    var tipx=50+ux*40, tipy=50+uy*40, bx=50+ux*6, by=50+uy*6;
+    x2=bx; y2=by;
+    head='<polygon points="'+[tipx,tipy, bx+px*22,by+py*22, bx-px*22,by-py*22].map(function(v){return v.toFixed(1);}).join(',')+'" fill="#ff7a00" stroke="#7a3300" stroke-width="3" stroke-linejoin="round"/>'; }
+  var seg='x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"';
+  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+    +'<line '+seg+' stroke="#ffd23f" stroke-opacity=".55" stroke-width="30" stroke-linecap="round"/>'
+    +'<line '+seg+' stroke="#7a3300" stroke-width="16" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'
+    +'<line '+seg+' stroke="#ff8a1a" stroke-width="10" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'+head+'</svg>';
+}
 function ticketHTML(t){
   var d=D[t.deal];
-  var rows=t.rows.map(function(r,i){
-    var amt = (i===t.win && t.amt>0) ? '<span class="amt">'+money(t.amt)+'</span>' : (i===t.win && t.o===PT.SEAL ? '<span class="amt">SEAL</span>' : '');
-    return '<div class="tabrow" data-i="'+i+'"><div class="win3"><span>'+sym(d,r[0])+'</span><span>'+sym(d,r[1])+'</span><span>'+sym(d,r[2])+'</span>'+amt+'</div>'
+  var rows=[0,1,2].map(function(i){
+    var cells=[0,1,2].map(function(c){ var k=i*3+c;
+      var inner = k===t.badge ? '<div class="tot"><b>'+money(t.amt)+'</b><small>TOTAL</small></div>' : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
+      return '<div class="cell" data-k="'+k+'">'+inner+arrowSVG(t,k)+'</div>'; }).join('');
+    return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
       +'<div class="flap" data-i="'+i+'"><span>PULL ▸</span><span>'+(i+1)+'</span></div></div>';
   }).join('');
   return '<div class="ticket" data-deal="'+t.deal+'" style="--tc:'+d.color+';--tink:'+d.ink+'">'
@@ -760,25 +774,16 @@ function renderFlare(){
   var rows=d.tiers.map(function(t,i){
     var c=v.tiers[i], lf=t.n-c, pips='';
     for(var k=0;k<t.n;k++) pips+='<i class="'+(k<c?'x':'')+'"></i>';
-    return '<tr class="'+(lf===0?'gone':'')+'"><td class="sy">'+sym3(d,i)+'<div class="lb">'+esc(t.label)+'</div></td>'
-      +'<td class="pips">'+pips+'</td><td class="lf">'+lf+' of '+t.n+'<br>left</td><td class="am">'+money(t.amt)+'</td></tr>';
+    return '<tr class="'+(lf===0?'gone':'')+'"><td class="sy"><div class="tot"><b>'+money(t.amt)+'</b><small>TOTAL</small></div></td>'
+      +'<td><div class="lb2">'+esc(t.label)+'</div><div class="pips">'+pips+'</div></td><td class="lf">'+lf+' of '+t.n+'<br>left</td></tr>';
   }).join('');
-  var sl=v.seal, lines=sl.lines.map(function(nm,i){
-    var hit=sl.opened && sl.winNo===i+1;
-    return '<div class="'+(hit?'hit':'')+'">'+(i+1)+'. '+(nm?esc(nm):'')+(hit?' 🏆':'')+'</div>'; }).join('');
-  var sealHead = sl.opened
-    ? 'Seal opened: line <b>#'+sl.winNo+'</b> — '+(sl.winner?('<b>'+esc(sl.winner.who)+'</b> wins '+money(sl.prize)):'nobody signed it! Darlene keeps it for the dock fund.')
-    : 'Seal prize <span class="sealtag">'+money(sl.prize)+'</span> · peeled when all '+sl.lines.length+' lines are signed';
   var log=(S.logAll[v.id]||v.log).slice().reverse();
   var wl = log.length ? log.map(function(e){
-    if(e.kind==='win') return '<li><b>'+esc(e.who)+'</b> pulled '+money(e.amt)+' · '+sym3(d,e.tier)+' '+esc(d.tiers[e.tier].label)+'</li>';
-    if(e.kind==='line') return '<li>✍️ <b>'+esc(e.who)+'</b> signed seal line '+e.line+'</li>';
-    if(e.kind==='seal') return '<li>🔓 Seal peeled — line #'+e.line+(e.who?(': <b>'+esc(e.who)+'</b> wins '+money(e.amt)):' was blank')+'</li>';
+    if(e.kind==='win' && d.tiers[e.tier]) return '<li><b>'+esc(e.who)+'</b> pulled '+money(e.amt)+' · '+esc(d.tiers[e.tier].label)+'</li>';
     return ''; }).join('') : '<li class="none">Nobody’s hit yet. Somebody’s gotta be first!</li>';
   el.innerHTML='<button class="iconbtn close" id="flareClose" style="color:#fff;background:#3b2414">✕</button>'
     +'<h2>'+esc(d.name)+'</h2><div class="fsub">$'+d.price+' a tab · '+v.count+' tickets · <b>'+v.left+'</b> still in the box</div>'
     +'<table class="ftab">'+rows+'</table>'
-    +'<div class="seal"><h3>✍️ The Seal</h3><div style="font-size:13px;margin-bottom:6px">'+sealHead+'</div><div class="lines">'+lines+'</div></div>'
     +'<div class="winners"><h3>🏆 Winners board</h3><ul>'+wl+'</ul></div>'
     +'<div class="charity">Proceeds benefit the Lake Uffda Lions · new dock at the public access · Lic. #10000</div>';
   var c=$('flareClose'); if(c) c.onclick=function(){ document.body.classList.remove('flare-open'); };
@@ -786,7 +791,7 @@ function renderFlare(){
 $('flareBtn').addEventListener('click', function(){ document.body.classList.add('flare-open'); renderFlare(); });
 $('flareCol').addEventListener('click', function(e){ if(e.target===this) document.body.classList.remove('flare-open'); });
 
-// things that follow a new view: merge the log, toast other people's big hits, pay a seal
+// things that follow a new view: merge the log, toast other people's big hits
 function afterView(){
   var v=curView(); if(!v) return;
   var all=S.logAll[v.id]||[], seen={}; all.forEach(function(e){ seen[e.seq]=1; });
@@ -794,13 +799,8 @@ function afterView(){
   var d=D[v.deal], last=S.lastSeq[v.id];
   if(last!=null) v.log.forEach(function(e){ if(e.seq<=last) return;
     if(e.kind==='win' && e.id!==myId && e.amt>=10*d.price){ toast('🎉 '+esc(e.who)+' just pulled '+money(e.amt)+' on '+esc(d.name)+'!'); if(e.amt>=50*d.price) confetti(14); sfx('good'); }
-    if(e.kind==='seal' && e.id!==myId){ toast('🔓 Seal’s open! '+(e.who?esc(e.who)+' takes '+money(e.amt):'Nobody had line #'+e.line)); }
   });
   S.lastSeq[v.id]=v.seq;
-  if(v.seal.opened && v.seal.winner && v.seal.winner.id===myId && !bank.seals[v.id]){
-    bank.seals[v.id]=1; bank.cash+=v.seal.prize; bank.won+=v.seal.prize; if(v.seal.prize>bank.best) bank.best=v.seal.prize; saveBank();
-    say('sealwin', ' <b>'+money(v.seal.prize)+'!</b>'); sfx('win'); confetti(30);
-  }
 }
 
 // ---------- render ----------
@@ -843,13 +843,11 @@ function renderMenuBox(){
       else { S.box=PT.newBox(k); S.box.players[myId]=myName; saveBox(); publishBoard(); }
       $('menuOv').classList.remove('on'); say('Fresh box of <b>'+esc(D[k].name)+'</b>! Four hundred tabs, all the winners still in there.'); render(); });
   } else el.innerHTML='';
-  var sb=$('sealBtn'); sb.classList.toggle('hidden', !(S.box && (S.mode==='solo'||S.mode==='host') && PT.canOpenSeal(S.box)));
 }
 $('menuBtn').addEventListener('click', function(){ $('menuSound').checked=!!(window.SFX && SFX.isOn()); renderMenuBox(); $('menuOv').classList.add('on'); });
 $('menuSound').addEventListener('change', function(){ if(window.SFX){ SFX.setOn(this.checked); if(this.checked) sfx('select'); } });
-$('sealBtn').addEventListener('click', function(){ PT.openSeal(S.box); saveBox(); if(S.mode==='host') publishBoard(); afterView(); $('menuOv').classList.remove('on'); render(); });
 $('leaveBtn').addEventListener('click', function(){ $('menuOv').classList.remove('on'); leave(); });
-$('resetBank').addEventListener('click', function(){ bank={cash:0, atm:0, bought:0, won:0, best:0, seals:{}}; saveBank(); pile=[]; savePile(); $('menuOv').classList.remove('on'); say('Clean slate, hon. Fresh start.'); render(); });
+$('resetBank').addEventListener('click', function(){ bank={cash:0, atm:0, bought:0, won:0, best:0}; saveBank(); pile=[]; savePile(); $('menuOv').classList.remove('on'); say('Clean slate, hon. Fresh start.'); render(); });
 $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function(b){ b.addEventListener('click', function(){ $(b.dataset.close).classList.remove('on'); }); });
 ['rulesOv','menuOv'].forEach(function(id){ $(id).addEventListener('click', function(e){ if(e.target===this) this.classList.remove('on'); }); });
@@ -950,6 +948,7 @@ function streamLoop(base){ (async function(){
 
 // ---------- boot ----------
 renderDealPick(); syncResume();
+if(legacyPaid) $('setupSay').innerHTML='New tickets came in, hon \u2014 the ones with the arrows. I cashed your old winners: <b>'+money(legacyPaid)+'</b>.';
 (function(){ var d=new Date(document.lastModified), w=isNaN(d)?'':d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
   $('gnBuild').textContent='build '+BUILD_V+(w?' · '+w:''); })();
 
