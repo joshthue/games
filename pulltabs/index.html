@@ -141,7 +141,10 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .tabs{display:flex;flex-direction:column;container-type:inline-size;position:relative}
 .tabrow{position:relative;aspect-ratio:3/1;border-radius:6px 16px 16px 6px;overflow:hidden;background:#fff;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);outline:2px dotted rgba(0,0,0,.22);outline-offset:2px}
-.band{text-align:center;color:var(--tc);font-weight:900;font-size:4.3cqw;line-height:1.15;margin:3.2cqw -2cqw;padding:1cqw 2cqw;
+/* both strips are the same height, so the three windows are evenly spaced and a slanted line
+   through their centres is straight */
+.band{height:9cqw;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  text-align:center;color:var(--tc);font-weight:900;font-size:4.3cqw;line-height:1.15;margin:3.2cqw -2cqw;padding:0 2cqw;
   background:color-mix(in srgb,var(--tc) 16%,#fff);letter-spacing:.3px}
 .band.fine{font-weight:600;font-size:2.9cqw;font-style:italic}
 .band .pr{background:var(--tc);color:#fff;border-radius:3px;padding:0 1.2cqw;margin-left:1.2cqw;font-style:normal}
@@ -393,6 +396,7 @@ var LOON_IMG='data:image/webp;base64,UklGRqQiAABXRUJQVlA4WAoAAAAQAAAAfwAAfwAAQUx
 var ROWS=3;            // tabs per ticket, three squares under each
 var BOX_SIZE=400;
 // prize ladder per $1 of ticket price: [amount, how many in the box]. 83.5% back.
+// Tabs are $2 at the bar, with the odd $5 box (Uff Da 7s), so a $2 box tops out at $200.
 var LADDER=[[100,1],[50,1],[30,1],[20,2],[10,3],[4,10],[2,12],[1,20]];
 // the eight lines an arrow can run, as cell indexes (row*3+col), in the order it's drawn
 var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -404,25 +408,25 @@ function mk(key,name,price,color,ink,syms,labels,tag){
     tiers:LADDER.map(function(t,i){ return {amt:t[0]*price, n:t[1], label:labels[i]}; }) };
 }
 var DEALS={
-  walleye: mk('walleye','Walleye Wishes',1,'#1f7a8c','#0b2e36',
+  walleye: mk('walleye','Walleye Wishes',2,'#1f7a8c','#0b2e36',
     ['🐟','🎣','🛶','🦆','🌲','🪱','❄️','🏕️','🦟'],
     ['Lunker!','Canoe cash','Duck, duck, bucks','Up north','Night crawlers','Ice-out','Cabin weekend','State bird'],
     'Opener special · catch-and-release your dollars'),
-  hotdish: mk('hotdish','Hotdish Heaven',1,'#d9772b','#3d1d06',
+  hotdish: mk('hotdish','Hotdish Heaven',2,'#d9772b','#3d1d06',
     ['🍲','🥔','🥫','🌽','🥧','☕','🧈','🧀','🍞'],
     ['Tater tot jackpot','Cream of mushroom','Corn, of course','Bars after','Church coffee','Butter it','Wisconsin import','Dinner rolls'],
     'From the church-basement kitchen · bring a 9×13'),
-  fair: mk('fair','State Fair Fortune',1,'#c2366b','#3b0a1f',
+  fair: mk('fair','State Fair Fortune',2,'#c2366b','#3b0a1f',
     ['🌭','🍪','🧈','🎡','🐄','🍟','🥤','🎠','🎈'],
     ['Bucket o\u2019 cookies','Butter Queen','Big wheel','Barn cats \u2019n cows','Curds \u2019n fries','Milk stand','Merry-go-round','Balloon pop'],
     'Twelve days of fun · everything on a stick'),
-  uffda: mk('uffda','Uff Da 7s',2,'#2b5fb0','#0b1d3d',
+  uffda: mk('uffda','Uff Da 7s',5,'#2b5fb0','#0b1d3d',
     [{txt:'7', cls:'s7'},'🦟','🏒','🦌','🪓','🐂','🧊','☃️','🌨️'],
     ['State bird','Hockey night','Deer opener','Big lumberjack','Big blue ox','Polar plunge','Snow day','Lake effect'],
-    'Two-dollar tabs · double the uff, double the da'),
+    'The five-dollar box · for high rollers and Lutherans with a coupon'),
   // Josh's own brand. The Loonatic roundel is one of its symbols (cropped from the brand
   // sheet, cream keyed out so it sits on any window); a symbol may be a string or {img}.
-  loon: mk('loon','Loonatic Lake',1,'#2f5233','#141414',
+  loon: mk('loon','Loonatic Lake',2,'#2f5233','#141414',
     [{img:LOON_IMG, alt:'Loonatic loon'},'\uD83C\uDF19','\uD83C\uDF32','\uD83C\uDF43','\u2728','\uD83C\uDF0A','\uD83C\uDF6A','\uD83D\uDD25','\uD83C\uDF0C'],
     ['Once in a blue moon','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish','Campfire','Northern lights'],
     'Loonatic Cannabis \u00b7 powered by Birch & Gran \u00b7 call of the wild'),
@@ -557,7 +561,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v88";
+var BUILD_V="v89";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -773,7 +777,7 @@ function renderStage(){
   if(!t){ drawnKey=null;
     st.innerHTML='<div class="empty">'+(S.pendingBuy?'Darlene’s countin’ out your tabs…':'No tabs in front of you.<br>Buy a few, hon — they’re '+money(curDeal().price)+' apiece.')+'</div>'; return; }
   var k=ticketKey(t);
-  if(drawnKey!==k){ drawnKey=k; st.innerHTML=ticketHTML(t)+'<div class="tixact" id="tixAct"></div><div class="pileinfo" id="pileInfo"></div>'; wireTicket(); }
+  if(drawnKey!==k){ drawnKey=k; st.innerHTML=ticketHTML(t)+'<div class="tixact" id="tixAct"></div><div class="pileinfo" id="pileInfo"></div>'; wireTicket(); paintArrows(); }
   var tk=st.querySelector('.ticket');
   tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && !t.lines.length);
   t.open.forEach(function(o,i){ var r=st.querySelector('.tabrow[data-i="'+i+'"]'); r.classList.toggle('open',!!o); });
@@ -794,32 +798,47 @@ function renderStage(){
 // The arrow is printed a piece per square, the way the real tickets are: each square on
 // the line carries its own stretch of shaft, and the far end carries the head. So a peek
 // at one tab shows exactly the part of the arrow that's under it.
-function arrowSVG(t,k){
+// The windows are separated by the printed strips, so rows sit further apart than the squares
+// are wide. A slanted line has to use the REAL slope - rowPitch / cellWidth - or its pieces
+// don't meet. paintArrows() measures that once the ticket is on screen and redraws.
+var lineSlope=1.4;
+function arrowSVG(t,k,s){
+  s=s||lineSlope;
   var x=t.lines.filter(function(z){ return PT.LINES[z.line].indexOf(k)>=0; })[0]; if(!x) return '';
   var L=PT.LINES[x.line].slice(); if(x.rev) L.reverse();
   var pos=L.indexOf(k); if(pos<0) return '';
-  var a=L[0], b=L[2], dx=(b%3-a%3)/2, dy=(Math.floor(b/3)-Math.floor(a/3))/2;   // unit step along the line
-  var ext=50;                                                                   // centre to edge (corner on a diagonal)
+  var a=L[0], b=L[2], dx=(b%3-a%3)/2, dy=(Math.floor(b/3)-Math.floor(a/3))/2;   // step along the line, in cells
+  // unit vector in this square's own 0..100 units (squares are square, rows are s cells apart)
+  var vx=dx, vy=dy*s, m=Math.hypot(vx,vy), ux=vx/m, uy=vy/m;
+  var E=Math.min(ux?50/Math.abs(ux):1e9, uy?50/Math.abs(uy):1e9);               // centre to the square's edge along the line
+  function P(d){ return [(50+ux*d).toFixed(2),(50+uy*d).toFixed(2)]; }
+  function seg(d1,d2){ var p=P(d1), q=P(d2); return 'x1="'+p[0]+'" y1="'+p[1]+'" x2="'+q[0]+'" y2="'+q[1]+'"'; }
   if(D[t.deal].marker==='bar'){                                                 // the red bar: flat, square-ended, no head
-    var bx1=50-dx*(pos===0?40:ext), by1=50-dy*(pos===0?40:ext), bx2=50+dx*(pos===2?40:ext), by2=50+dy*(pos===2?40:ext);
-    var bs='x1="'+bx1+'" y1="'+by1+'" x2="'+bx2+'" y2="'+by2+'"';
+    var bs=seg(pos===0?-Math.min(40,E):-E, pos===2?Math.min(40,E):E);
     return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
       +'<g opacity=".82"><line '+bs+' stroke="#9b2a1c" stroke-width="15" stroke-linecap="butt"/>'
       +'<line '+bs+' stroke="#e0503a" stroke-width="12" stroke-linecap="butt"/></g></svg>';
   }
-  var x1=50-dx*ext, y1=50-dy*ext, x2=50+dx*ext, y2=50+dy*ext;
-  if(pos===0){ x1=50-dx*8; y1=50-dy*8; }                                        // tail starts just behind centre
-  var head='';
-  if(pos===2){ var m=Math.hypot(dx,dy), ux=dx/m, uy=dy/m, px=-uy, py=ux;
-    var tipx=50+ux*40, tipy=50+uy*40, bx=50+ux*6, by=50+uy*6;
-    x2=bx; y2=by;
-    head='<polygon points="'+[tipx,tipy, bx+px*22,by+py*22, bx-px*22,by-py*22].map(function(v){return v.toFixed(1);}).join(',')+'" fill="#ff7a00" stroke="#7a3300" stroke-width="3" stroke-linejoin="round"/>'; }
-  var seg='x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"';
+  var d1 = pos===0 ? -8 : -E, d2 = pos===2 ? 6 : E, head='';
+  if(pos===2){ var px=-uy, py=ux, tip=P(Math.min(40,E-2)), bp=P(6);
+    head='<polygon points="'+[tip[0],tip[1], (+bp[0]+px*22).toFixed(1),(+bp[1]+py*22).toFixed(1), (+bp[0]-px*22).toFixed(1),(+bp[1]-py*22).toFixed(1)].join(',')
+      +'" fill="#ff7a00" stroke="#7a3300" stroke-width="3" stroke-linejoin="round"/>'; }
+  var sg=seg(d1,d2);
   return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
-    +'<line '+seg+' stroke="#ffd23f" stroke-opacity=".55" stroke-width="30" stroke-linecap="round"/>'
-    +'<line '+seg+' stroke="#7a3300" stroke-width="16" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'
-    +'<line '+seg+' stroke="#ff8a1a" stroke-width="10" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'+head+'</svg>';
+    +'<line '+sg+' stroke="#ffd23f" stroke-opacity=".55" stroke-width="30" stroke-linecap="round"/>'
+    +'<line '+sg+' stroke="#7a3300" stroke-width="16" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'
+    +'<line '+sg+' stroke="#ff8a1a" stroke-width="10" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'+head+'</svg>';
 }
+function paintArrows(){
+  var t=pile[0], st=$('stage'); if(!t || !st) return;
+  var r0=st.querySelector('.tabrow[data-i="0"]'), r1=st.querySelector('.tabrow[data-i="1"]'); if(!r0||!r1) return;
+  var a=r0.getBoundingClientRect(), b=r1.getBoundingClientRect(); if(!a.width) return;
+  var s=(b.top-a.top)/(a.width/3);
+  if(!(s>0.5 && s<4)) return;
+  lineSlope=s;
+  Array.prototype.forEach.call(st.querySelectorAll('.cell .arr'), function(sp){ sp.innerHTML=arrowSVG(t,+sp.parentNode.dataset.k,s); });
+}
+window.addEventListener('resize', function(){ paintArrows(); });
 // the printed prize box: a "$X TOTAL" splash on arrow deals, a plain yellow "$X" square on bar deals
 function prizeBox(d,amt){ return d.marker==='bar' ? '<div class="tot sq"><b>'+money(amt)+'</b></div>' : '<div class="tot"><b>'+money(amt)+'</b><small>TOTAL</small></div>'; }
 // the yellow serial sticker: one letter + five digits for the box, the same on every ticket in it
@@ -830,7 +849,7 @@ function ticketHTML(t){
   var rows=[0,1,2].map(function(i){
     var cells=[0,1,2].map(function(c){ var k=i*3+c;
       var inner = k===t.badge ? prizeBox(d,t.amt) : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
-      return '<div class="cell" data-k="'+k+'">'+inner+arrowSVG(t,k)+'</div>'; }).join('');
+      return '<div class="cell" data-k="'+k+'">'+inner+'<span class="arr">'+arrowSVG(t,k)+'</span></div>'; }).join('');
     return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
       +(i===0?'<div class="serial">'+serialOf(t)+'</div>':'')
       +'<div class="flap" data-i="'+i+'"><span>'+(i+1)+'</span><span>\u25C2 OPEN HERE</span></div></div>';

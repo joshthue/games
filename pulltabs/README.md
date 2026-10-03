@@ -17,6 +17,11 @@ until no line spells a combo in either direction (`comboOn`; checked over 120,00
 so a peek shows the right-hand square first. The arrow is drawn a piece per square (`arrowSVG`), the way it's printed, so a peek
 at one tab shows exactly the part of the arrow under it, and a down or slantwise arrow needs
 all three tabs. Each window is three square cells (`aspect-ratio:3/1`, symbols sized in `cqw`).
+**Slanted lines (v89):** the printed strips push the rows further apart than a square is wide,
+so a diagonal can't run corner to corner in each square. `paintArrows()` measures the real
+slope (row pitch / square width) once the ticket is on screen — and on resize — and draws each
+square's piece along it; both strips are a fixed height so the three windows are evenly spaced.
+The pieces sit within ~1px of one straight line at every tested size.
 
 **Two marker styles (v87)**, both from real tickets: arrow deals (Walleye, Hotdish, Loonatic)
 print an orange arrow with a "$X TOTAL" splash; bar deals (State Fair, Uff Da 7s) print a flat
@@ -45,8 +50,9 @@ load, and any unopened winner among them is paid out first.
   iPad in landscape, under it in portrait, behind the 📋 Flare button on a phone.
 
 ## Deals
-Five deals, 400 tickets each: **Walleye Wishes**, **Hotdish Heaven**, **State Fair Fortune**,
-**Loonatic Lake** ($1) and **Uff Da 7s** ($2, everything doubled).
+Five deals, 400 tickets each. Tabs are **$2** like at the bar — **Walleye Wishes**, **Hotdish
+Heaven**, **State Fair Fortune**, **Loonatic Lake** — with **Uff Da 7s** as the occasional **$5**
+box (v89). Prizes scale with the price, so a $2 box tops out at $200 and the $5 box at $500.
 
 **Loonatic Lake** (v84) is the Loonatic Cannabis box: the top symbol is the brand's own loon
 roundel (cropped from the brand sheet in `~/Developer/loonaticCannabis/brand`, cream keyed to
