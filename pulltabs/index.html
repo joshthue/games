@@ -1201,9 +1201,12 @@ function flushBuf(all){
 // buy can arrive just before a snapshot yet sort just after the point it was taken.
 function replayBatch(){
   BUF.sort(function(x,y){ return orderKey(x.ev,y.ev); });
-  var snapAt=-1, snap=null;
-  for(var i=0;i<BUF.length;i++){ var o=null; try{ o=JSON.parse(BUF[i].ev.message); }catch(e){} if(o && o.t==='snap' && o.e){ snapAt=i; snap=o; break; } }
-  if(!snap) return;                                  // no snapshot: everything applies from the start, in order
+  var snapAt=-1, snap=null, first=BUF.length?BUF[0].ev:null;
+  // a snapshot is only usable if the relay still holds everything after the point it covers -
+  // i.e. the oldest message we got is at or before its "up". Otherwise try the next one.
+  for(var i=0;i<BUF.length;i++){ var o=null; try{ o=JSON.parse(BUF[i].ev.message); }catch(e){}
+    if(o && o.t==='snap' && o.e && (!o.up || orderKey(first, o.up)<=0)){ snapAt=i; snap=o; break; } }
+  if(!snap) return;                                  // no usable snapshot: everything applies from the start, in order
   restore(snap); S.applied=1; S.lastKey=snap.up||BUF[snapAt].ev;
   BUF=BUF.filter(function(x,i){ return i!==snapAt && (!snap.up || orderKey(x.ev, snap.up)>0); });
 }
