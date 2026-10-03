@@ -22,6 +22,8 @@ so a diagonal can't run corner to corner in each square. `paintArrows()` measure
 slope (row pitch / square width) once the ticket is on screen — and on resize — and draws each
 square's piece along it; both strips are a fixed height so the three windows are evenly spaced.
 The pieces sit within ~1px of one straight line at every tested size.
+**Thin lines (v90):** arrows and bars are drawn thin and slightly see-through (shaft ~4.5% of a
+square, ~88% opacity) so the picture under the line still shows — you have to read the combo.
 
 **Two marker styles (v87)**, both from real tickets: arrow deals (Walleye, Hotdish, Loonatic)
 print an orange arrow with a "$X TOTAL" splash; bar deals (State Fair, Uff Da 7s) print a flat

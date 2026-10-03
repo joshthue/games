@@ -561,7 +561,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v89";
+var BUILD_V="v90";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -816,18 +816,18 @@ function arrowSVG(t,k,s){
   if(D[t.deal].marker==='bar'){                                                 // the red bar: flat, square-ended, no head
     var bs=seg(pos===0?-Math.min(40,E):-E, pos===2?Math.min(40,E):E);
     return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
-      +'<g opacity=".82"><line '+bs+' stroke="#9b2a1c" stroke-width="15" stroke-linecap="butt"/>'
-      +'<line '+bs+' stroke="#e0503a" stroke-width="12" stroke-linecap="butt"/></g></svg>';
+      +'<g opacity=".8"><line '+bs+' stroke="#9b2a1c" stroke-width="7" stroke-linecap="butt"/>'
+      +'<line '+bs+' stroke="#e0503a" stroke-width="4.5" stroke-linecap="butt"/></g></svg>';
   }
-  var d1 = pos===0 ? -8 : -E, d2 = pos===2 ? 6 : E, head='';
-  if(pos===2){ var px=-uy, py=ux, tip=P(Math.min(40,E-2)), bp=P(6);
-    head='<polygon points="'+[tip[0],tip[1], (+bp[0]+px*22).toFixed(1),(+bp[1]+py*22).toFixed(1), (+bp[0]-px*22).toFixed(1),(+bp[1]-py*22).toFixed(1)].join(',')
-      +'" fill="#ff7a00" stroke="#7a3300" stroke-width="3" stroke-linejoin="round"/>'; }
+  var d1 = pos===0 ? -8 : -E, d2 = pos===2 ? 14 : E, head='';
+  if(pos===2){ var px=-uy, py=ux, tip=P(Math.min(40,E-2)), bp=P(16);
+    head='<polygon points="'+[tip[0],tip[1], (+bp[0]+px*13).toFixed(1),(+bp[1]+py*13).toFixed(1), (+bp[0]-px*13).toFixed(1),(+bp[1]-py*13).toFixed(1)].join(',')
+      +'" fill="#ff7a00" fill-opacity=".9" stroke="#7a3300" stroke-width="2" stroke-linejoin="round"/>'; }
   var sg=seg(d1,d2);
-  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
-    +'<line '+sg+' stroke="#ffd23f" stroke-opacity=".55" stroke-width="30" stroke-linecap="round"/>'
-    +'<line '+sg+' stroke="#7a3300" stroke-width="16" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'
-    +'<line '+sg+' stroke="#ff8a1a" stroke-width="10" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'+head+'</svg>';
+  // thin and a little see-through, so the picture under the line still shows
+  return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g opacity=".88">'
+    +'<line '+sg+' stroke="#7a3300" stroke-width="7" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'
+    +'<line '+sg+' stroke="#ff8a1a" stroke-width="4.5" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'+head+'</g></svg>';
 }
 function paintArrows(){
   var t=pile[0], st=$('stage'); if(!t || !st) return;
