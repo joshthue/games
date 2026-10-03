@@ -24,9 +24,10 @@ square's piece along it; both strips are a fixed height so the three windows are
 The pieces sit within ~1px of one straight line at every tested size.
 **Thin lines (v90):** arrows and bars are drawn thin and slightly see-through (shaft ~4.5% of a
 square, ~88% opacity) so the picture under the line still shows — you have to read the combo.
-**No highlight (v92):** winning squares look like any other square, as on the real tickets.
-About one winner in six (picked by ticket number, so it's stable) prints a thin box around its
-line squares instead.
+**The line is the tell (v92-v93):** winning squares look like any other square, and most
+winners print **no $ box** — you spot the line and read what the combo pays off the flare.
+`t.box` (drawn last in `ticketFor`, so older tickets' squares don't shift) prints the $ box on
+about one winner in four, and always on a two-line ticket, where the TOTAL adds them up.
 
 **Two marker styles (v87)**, both from real tickets: arrow deals (Walleye, Hotdish, Loonatic)
 print an orange arrow with a "$X TOTAL" splash; bar deals (State Fair, Uff Da 7s) print a flat

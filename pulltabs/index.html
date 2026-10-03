@@ -156,9 +156,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .cell .si{width:1.25em;height:1.25em}
 .cell .sy{position:relative;z-index:1}
 .cell svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
-/* winning squares look like any other square, as on the real tickets; about one winner in six
-   has a plain printed box around its line squares instead */
-.cell.boxed{box-shadow:inset 0 0 0 2px #ff8a1a}
+/* winning squares look like any other square, as on the real tickets - the line is the tell */
 /* printed over the pictures (and the line), like the real sticker; only the $ box sits above it,
    and the sticker moves to the right when the $ box is in the top-left square */
 .serial{position:absolute;left:9%;top:38%;z-index:3;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
@@ -353,7 +351,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 <div class="overlay" id="rulesOv"><div class="sheet">
   <h2>How pull tabs work</h2>
   <p>Every deal is a box of <b>400 tickets</b>. The winners are already in there — a fixed number of each prize, printed on the <b>flare</b> (the prize sheet on the wall).</p>
-  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> (or on some deals a red <b>bar</b>) printed through three squares in a line — across, down, or corner to corner — over one of the combos on the flare: two of the deal's key picture and a prize picture, with the arrowhead on the prize. A yellow <b>$ TOTAL</b> box says what the ticket pays. <b>Multiple winners:</b> some tickets have two lines, and the TOTAL adds them up. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
+  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> (or on some deals a red <b>bar</b>) printed through three squares in a line — across, down, or corner to corner — over one of the combos on the flare: two of the deal's key picture and a prize picture, with the arrowhead on the prize. Check the flare to see what your combo pays — now and then a ticket also prints a yellow <b>$ TOTAL</b> box. <b>Multiple winners:</b> some tickets have two lines, and the TOTAL adds them up. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
   <p>Tap a tab to rip it open, or grab its right edge (OPEN HERE) and slide it left — it peels back from the right like the real ones, and if you let go part way it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
   <p>The flare keeps score: a red dot is a prize somebody has already pulled, a green one is still in the box. When the box is down to its last hundred and the big one is still green — that's when folks start buying.</p>
   <h3>The money</h3>
@@ -523,6 +521,10 @@ function ticketFor(box, n){
   if(tiers.length){
     var off=[0,1,2,3,4,5,6,7,8].filter(function(c){ return !(c in fixed); });
     t.badge=off[Math.floor(r()*off.length)];
+    // The fun is spotting the LINE, so most winners print no $ box at all - you read the combo
+    // off the flare. About one in four prints it, and a two-line ticket always does (TOTAL).
+    // Drawn last so it never shifts the squares of tickets dealt by older builds.
+    t.box = tiers.length>1 || r()<0.25;
   }
   return t;
 }
@@ -566,7 +568,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v92";
+var BUILD_V="v93";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -786,8 +788,6 @@ function renderStage(){
   var tk=st.querySelector('.ticket');
   tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && !t.lines.length);
   t.open.forEach(function(o,i){ var r=st.querySelector('.tabrow[data-i="'+i+'"]'); r.classList.toggle('open',!!o); });
-  // the occasional ticket prints a box around its winning squares (decided by the ticket number, so it never flickers)
-  if(t.done && ((Math.imul(t.n+7,2654435761)>>>0)%6===0)) t.lines.forEach(function(x){ PT.LINES[x.line].forEach(function(k){ var c=st.querySelector('.cell[data-k="'+k+'"]'); if(c) c.classList.add('boxed'); }); });
   var old=tk.querySelector('.stamp'); if(t.done && !old && t.amt>0){ var s=document.createElement('div'); s.className='stamp';
     s.textContent = 'WINNER '+money(t.amt); tk.appendChild(s); }
   $('tixAct').innerHTML = t.done
@@ -854,10 +854,10 @@ function ticketHTML(t){
   var d=D[t.deal];
   var rows=[0,1,2].map(function(i){
     var cells=[0,1,2].map(function(c){ var k=i*3+c;
-      var inner = k===t.badge ? prizeBox(d,t.amt) : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
+      var inner = (k===t.badge && t.box!==false) ? prizeBox(d,t.amt) : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
       return '<div class="cell" data-k="'+k+'">'+inner+'<span class="arr">'+arrowSVG(t,k)+'</span></div>'; }).join('');
     return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
-      +(i===0?'<div class="serial'+(t.badge===0?' r':'')+'">'+serialOf(t)+'</div>':'')
+      +(i===0?'<div class="serial'+(t.badge===0&&t.box!==false?' r':'')+'">'+serialOf(t)+'</div>':'')
       +'<div class="flap" data-i="'+i+'"><span>'+(i+1)+'</span><span>\u25C2 OPEN HERE</span></div></div>';
   });
   var star=new Array(40).join('\u2605');
