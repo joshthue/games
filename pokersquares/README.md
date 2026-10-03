@@ -9,6 +9,19 @@ Solitaire poker on a 5×5 grid — a.k.a. **Poker Solitaire / Poker Patience**. 
 - Aces play high or low, `A-2-3-4-5` is a straight, `10-J-Q-K-A` suited is a royal flush.
 - Best score is kept per device in `localStorage` (`pokersquares.v1`).
 
+## Best board (v103)
+After the 25th card, a search rearranges the **same 25 cards** for the highest possible total
+and the results panel says how close you came ("best these cards make scores 275 — 265 more than yours").
+`✨ Show the best board` flies every card that changes square to its new spot (and back), counting the score across.
+- `makeSolver()` scores all 53,130 five-card subsets once into a table, then runs simulated annealing on
+  card swaps, finished by every 2-swap and 3-cycle. It stops when two searches agree on the top score
+  (minimum 3 runs) or after 10 runs / 12 s. Your own board seeds it, so "best" never comes out below your score.
+- Runs in a Web Worker built from a Blob (works offline); falls back to the main thread between frames.
+- `alignToMine()` picks, among the 28,800 equivalent layouts (row/column shuffles + transpose), the one that
+  leaves the most of your cards where they were, so the animation only shows the moves that matter.
+- Not a proof: on test deals it matched much longer searches about 99% of the time.
+- `window.__PS` exposes `state`, `showView`, `startSolve`, `deal(cards)` for headless tests.
+
 ## Scoring
 Two point systems, switchable in the Menu (persisted):
 

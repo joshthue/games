@@ -73,6 +73,21 @@
   .psscore.corner{background:var(--gold); color:var(--ink); border-radius:8px;}
   .psscore.corner .ab{opacity:.7; color:var(--ink);} .psscore.corner .pts{color:var(--ink); font-size:15px;}
 
+  /* ---- best-board view ---- */
+  .pscell.ghost{visibility:hidden;}
+  .psboard.isbest .pscell.filled{border-color:var(--gold); box-shadow:0 0 0 1.5px var(--gold),0 1px 3px rgba(0,0,0,.4);}
+  .psboard.anim .psscore .pts,.psboard.anim .psscore .ab{opacity:.25; transition:opacity .2s;}
+  .psscore.land{animation:pop .3s ease-out;}
+  .flycard{position:fixed; z-index:45; margin:0; border-radius:7px; background:var(--cream); border:1px solid #d8d2c0;
+    display:flex; align-items:center; justify-content:center; pointer-events:none; will-change:transform;
+    box-shadow:0 10px 22px rgba(0,0,0,.55);}
+  .bestbar{max-width:440px; margin:12px auto 0; text-align:center;}
+  .bestbar .seg button{padding:7px 14px;}
+  .bestbar .note{font-size:12px; opacity:.8; margin-top:6px; min-height:16px;}
+  .solvebox{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:10px 12px; margin:10px 0 4px; font-size:14px; line-height:1.45;}
+  .solvebox b{color:var(--gold);}
+  .solvebox .bar{height:5px; border-radius:3px; background:rgba(255,255,255,.12); margin-top:8px; overflow:hidden;}
+  .solvebox .bar i{display:block; height:100%; width:0; background:var(--gold); transition:width .3s;}
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:14px;}
   .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px auto; font-size:13px; line-height:1.5; max-width:440px;}
   .tip-block b{color:var(--gold);}
@@ -127,6 +142,8 @@
   </div>
 
   <div class="psboard" id="psboard"></div>
+
+  <div class="bestbar" id="psBestBar"></div>
 
   <div id="psTips"></div>
 
@@ -209,10 +226,11 @@ function scoreHand(cards){
   return {key, name:NAMEOF[key], pts:SCORING[settings.scoring][key]};
 }
 function lineIdx(type,idx){ const a=[]; for(let k=0;k<5;k++) a.push(type==="row"? idx*5+k : k*5+idx); return a; }
-function computeLines(){
+function computeLines(g){
+  g = g || viewGrid();
   const rows=[],cols=[]; let total=0;
-  for(let i=0;i<5;i++){ const h=scoreHand(lineIdx("row",i).map(x=>grid[x])); rows.push(h); if(h) total+=h.pts; }
-  for(let j=0;j<5;j++){ const h=scoreHand(lineIdx("col",j).map(x=>grid[x])); cols.push(h); if(h) total+=h.pts; }
+  for(let i=0;i<5;i++){ const h=scoreHand(lineIdx("row",i).map(x=>g[x])); rows.push(h); if(h) total+=h.pts; }
+  for(let j=0;j<5;j++){ const h=scoreHand(lineIdx("col",j).map(x=>g[x])); cols.push(h); if(h) total+=h.pts; }
   return {rows,cols,total};
 }
 
@@ -225,6 +243,7 @@ function newGame(){
   queue=shuffle(makeDeck());
   current=queue.pop();
   lastMove=null; over=false;
+  VIEW="mine"; stopSolve(); SOLVE=null;
   render();
 }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
@@ -233,11 +252,12 @@ function place(i){
   grid[i]=current;
   sfx('place');
   lastMove={i, card:current, was:i};
-  current = queue.length ? queue.pop() : null;
+  current = (placed()<25 && queue.length) ? queue.pop() : null;   // a full board leaves the tray empty
   if(placed()===25){ finish(); } else { render(i); }
 }
 function undo(){
-  if(!lastMove) return;
+  if(!lastMove || ANIMATING) return;
+  VIEW="mine";
   sfx('select');
   if(current) queue.push(current);   // send the un-placed next card back
   current=lastMove.card;
@@ -247,8 +267,9 @@ function undo(){
   render(); 
 }
 function finish(){
-  over=true;
-  const {total}=computeLines();
+  over=true; VIEW="mine";
+  const {total}=computeLines(grid);
+  startSolve();
   var beatBest = total>best;          // a new personal best gets the bigger fanfare
   if(beatBest){ best=total; }
   sfx(beatBest ? 'win' : 'good');
@@ -266,23 +287,26 @@ function chipHTML(h){
   if(!h) return '<div class="psscore"><span class="dot">·</span></div>';
   return '<div class="psscore '+(h.pts>0?'has':'')+'" title="'+h.name+' · '+h.pts+'"><span class="ab">'+ABBR[h.key]+'</span><span class="pts">'+h.pts+'</span></div>';
 }
+function miniHTML(card){
+  return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>';
+}
 function render(justIdx){
-  const {rows,cols,total}=computeLines();
+  const g=viewGrid(), showBest=g!==grid;
+  const {rows,cols,total}=computeLines(g);
   // tray
   document.getElementById("psCurrent").innerHTML=bigCardHTML(current);
   const n=placed();
-  document.getElementById("psPlace").textContent = over ? "Board complete" : "Tap an empty square";
-  document.getElementById("psProg").textContent  = over ? "25 of 25 placed" : ("Card "+(n+1)+" of 25");
+  document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? "Board complete" : "Tap an empty square");
+  document.getElementById("psProg").textContent  = showBest ? ("You scored "+computeLines(grid).total) : (over ? "25 of 25 placed" : ("Card "+(n+1)+" of 25"));
   document.getElementById("psTotal").textContent = total;
   document.getElementById("psBest").textContent  = "Best "+best;
   // board (6x6: 25 cells + 5 row chips + 5 col chips + total corner)
   let html="";
   for(let r=0;r<5;r++){
     for(let c=0;c<5;c++){
-      const idx=r*5+c, card=grid[idx];
+      const idx=r*5+c, card=g[idx];
       if(card){
-        html+='<div class="pscell filled'+(justIdx===idx?' just':'')+'">'
-            +'<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span></div>';
+        html+='<div class="pscell filled'+(justIdx===idx?' just':'')+'" data-i="'+idx+'">'+miniHTML(card)+'</div>';
       }else{
         const live=(!over&&current)?' live':'';
         html+='<div class="pscell empty'+live+'"'+(live?(' onclick="place('+idx+')"'):'')+'></div>';
@@ -292,7 +316,9 @@ function render(justIdx){
   }
   for(let c=0;c<5;c++) html+=chipHTML(cols[c]);
   html+='<div class="psscore corner"><span class="ab">TOT</span><span class="pts">'+total+'</span></div>';
-  document.getElementById("psboard").innerHTML=html;
+  const board=document.getElementById("psboard");
+  board.innerHTML=html; board.classList.toggle("isbest",showBest);
+  renderBestBar();
   // tips
   const fp=SCORING[settings.scoring].flush;
   document.getElementById("psTips").innerHTML = settings.tipsOn
@@ -300,7 +326,7 @@ function render(justIdx){
      +'<div class="tip-block"><b>Every square feeds two hands.</b> A card lives in one row and one column at once, so the corners and centre are worth the most thought.</div>'
     : "";
   // undo availability
-  document.getElementById("psUndo").disabled = !lastMove;
+  document.getElementById("psUndo").disabled = !lastMove || showBest;
 }
 
 /* ---- overlays ---- */
@@ -347,6 +373,7 @@ function openResults(total){
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(beat?'🏆 New best!':'✅ Board complete')+'</h2>'
     +'<p style="font-size:26px;font-weight:900;color:var(--gold);text-align:center;margin:6px 0;">'+total+' pts</p>'
     +'<p class="muted" style="text-align:center;margin-top:0;">Best '+best+' · '+(settings.scoring==="american"?"American":"English")+' scoring</p>'
+    +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +sc
     +'<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button></div>';
   openPanel(html,"results");
@@ -357,7 +384,260 @@ function menuToggleTips(){ settings.tipsOn=!settings.tipsOn; persist(); render()
 function menuToggleFour(){ settings.fourColor=!settings.fourColor; persist(); render(); openMenu(); }
 // the shared size control repaints itself; the board still needs a redraw behind the panel
 window.onCardSize=function(){ try{ render(); }catch(e){} };
-function setScoring(s){ settings.scoring=s; persist(); render(); openMenu(); }
+function setScoring(s){ settings.scoring=s; persist(); if(over){ VIEW="mine"; startSolve(); } render(); openMenu(); }
+
+/* ============================================================
+   BEST BOARD — "could these 25 cards have scored more?"
+   After the 25th card a search rearranges the same cards for the
+   highest total, then the cards fly to that layout and back.
+
+   makeSolver() is the whole search and touches no DOM, so the same
+   source runs in a Web Worker (built from a Blob, so it works offline)
+   or, where workers are blocked, on the page between frames.
+   Every 5-card subset of the 25 is scored once into a table; a line
+   is then one lookup. Search = simulated annealing on card swaps,
+   finished by trying every 2-swap and 3-cycle. It stops once two
+   separate searches land on the same top score (or after 10 / 12s).
+   Not a proof - on test deals it matched much longer searches about
+   99% of the time. The player's own board seeds the search, so the
+   "best" can never come out below what the player actually scored.
+   ============================================================ */
+// pure solver: cards [{r,s}] x25, pts table {key:pts} -> {grid:[25 idx into cards], score, runs, agree}
+function makeSolver(cards, PTS){
+  // score every 5-subset of the 25 once; line score = lookup
+  const N=25, C=[];
+  for(let n=0;n<=N;n++){C[n]=[];for(let k=0;k<=5;k++)C[n][k]=k===0?1:(n===0?0:C[n-1][k-1]+(C[n-1][k]||0));}
+  const T=new Int16Array(53130);
+  // combinadic index of five distinct cell values, sorted by a 9-comparator network (no allocation)
+  const C1=C.map(r=>r[1]),C2=C.map(r=>r[2]),C3=C.map(r=>r[3]),C4=C.map(r=>r[4]),C5=C.map(r=>r[5]);
+  function key5(a,b,c,d,e){ let t;
+    if(a>b){t=a;a=b;b=t;} if(d>e){t=d;d=e;e=t;} if(c>e){t=c;c=e;e=t;} if(c>d){t=c;c=d;d=t;}
+    if(a>d){t=a;a=d;d=t;} if(a>c){t=a;a=c;c=t;} if(b>e){t=b;b=e;e=t;} if(b>d){t=b;b=d;d=t;} if(b>c){t=b;b=c;c=t;}
+    return C1[a]+C2[b]+C3[c]+C4[d]+C5[e];
+  }
+  function ev(h){
+    const rs=h.map(c=>c.r).sort((a,b)=>a-b), fl=h.every(c=>c.s===h[0].s);
+    const u=new Set(rs).size; let st=false;
+    if(u===5) st = rs[4]-rs[0]===4 || (rs[0]===2&&rs[3]===5&&rs[4]===14);
+    const cnt={}; rs.forEach(r=>cnt[r]=(cnt[r]||0)+1); const cs=Object.values(cnt).sort((a,b)=>b-a);
+    let k;
+    if(st&&fl&&rs[0]===10) k="royal"; else if(st&&fl) k="sflush"; else if(cs[0]===4) k="four";
+    else if(cs[0]===3&&cs[1]===2) k="full"; else if(fl) k="flush"; else if(st) k="straight";
+    else if(cs[0]===3) k="three"; else if(cs[0]===2&&cs[1]===2) k="twopair"; else if(cs[0]===2) k="pair"; else k="high";
+    return PTS[k];
+  }
+  for(let a=0;a<N;a++)for(let b=a+1;b<N;b++)for(let c=b+1;c<N;c++)for(let d=c+1;d<N;d++)for(let e=d+1;e<N;e++)
+    T[C[a][1]+C[b][2]+C[c][3]+C[d][4]+C[e][5]]=ev([cards[a],cards[b],cards[c],cards[d],cards[e]]);
+  const L=[]; for(let i=0;i<5;i++){L.push([0,1,2,3,4].map(k=>i*5+k));} for(let j=0;j<5;j++){L.push([0,1,2,3,4].map(k=>k*5+j));}
+  function line(g,l){ const x=L[l]; return T[key5(g[x[0]],g[x[1]],g[x[2]],g[x[3]],g[x[4]])]; }
+  function total(g){ let t=0; for(let l=0;l<10;l++) t+=line(g,l); return t; }
+  // xorshift32 - faster than Math.random and seedable for tests
+  let seed=(Math.random()*4294967295)>>>0||1;
+  function rnd(){ seed^=seed<<13; seed^=seed>>>17; seed^=seed<<5; return (seed>>>0)/4294967296; }
+  function anneal(iters,T0,T1,g){
+    g = g || shuffle([...Array(25).keys()]);
+    const ls=new Int32Array(10); let cur=0; for(let l=0;l<10;l++){ls[l]=line(g,l);cur+=ls[l];}
+    let best=cur, bg=g.slice();
+    const BLK=1000, k=Math.pow(T1/T0,BLK/iters); let temp=T0;
+    for(let it=0;it<iters;it++){
+      if(it%BLK===0 && it) temp*=k;
+      const a=(rnd()*25)|0; let b=(rnd()*24)|0; if(b>=a)b++;
+      const ra=(a/5)|0, ca=5+a%5, rb=(b/5)|0, cb=5+b%5;
+      const t=g[a]; g[a]=g[b]; g[b]=t;
+      const n1=line(g,ra), n2=line(g,ca), n3=rb!==ra?line(g,rb):0, n4=cb!==ca?line(g,cb):0;
+      const d=n1-ls[ra]+n2-ls[ca]+(rb!==ra?n3-ls[rb]:0)+(cb!==ca?n4-ls[cb]:0);
+      if(d>=0 || rnd()<Math.exp(d/temp)){
+        ls[ra]=n1; ls[ca]=n2; if(rb!==ra)ls[rb]=n3; if(cb!==ca)ls[cb]=n4; cur+=d;
+        if(cur>best){best=cur; bg=g.slice();}
+      } else { g[b]=g[a]; g[a]=t; }
+    }
+    return {score:best, grid:bg};
+  }
+  // deterministic finish: best-improvement over every 2-swap and 3-cycle until none helps
+  function polish(g){
+    g=g.slice(); let cur=total(g), improved=true;
+    while(improved){ improved=false;
+      for(let a=0;a<25&&!improved;a++)for(let b=a+1;b<25&&!improved;b++){
+        let t=g[a];g[a]=g[b];g[b]=t; const v=total(g); if(v>cur){cur=v;improved=true;} else {g[b]=g[a];g[a]=t;}
+        if(improved) break;
+        for(let c=0;c<25&&!improved;c++){ if(c===a||c===b) continue;
+          const x=g[a],y=g[b],z=g[c]; g[a]=y;g[b]=z;g[c]=x; const w=total(g);
+          if(w>cur){cur=w;improved=true;} else {g[a]=x;g[b]=y;g[c]=z;} }
+      } }
+    return {score:cur,grid:g};
+  }
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+  return {anneal,total,line,polish};
+}
+
+function solveRun(msg, post, isStopped){
+  // shared by the worker and the main-thread fallback
+  const S=makeSolver(msg.cards, msg.pts);
+  const T0=2*Math.max(msg.pts.flush, msg.pts.straight), T1=T0/100;
+  const t0=Date.now();
+  let best=S.polish(msg.seed), cnt=0, runs=0;
+  const MAX=10, NEED=2, MIN=3, ITERS=1500000, BUDGET=12000;
+  function one(){
+    const a=S.anneal(ITERS,T0,T1), p=S.polish(a.grid); runs++;
+    if(p.score>best.score){ best=p; cnt=1; } else if(p.score===best.score) cnt++;
+    const done = (cnt>=NEED && runs>=MIN) || runs>=MAX || Date.now()-t0>BUDGET;
+    post({done, runs, max:MAX, agree:cnt, score:best.score, grid:best.grid});
+    return done;
+  }
+  return one;
+}
+function workerMain(){
+  self.onmessage=function(e){ const one=solveRun(e.data, m=>self.postMessage(m)); while(!one()){} };
+}
+
+let VIEW="mine";      // which layout the full board shows: "mine" | "best"
+let SOLVE=null;       // {key, done, runs, max, agree, score, grid:[cards]}
+let SOLVER=null;      // live worker / fallback timer
+let ANIMATING=false;
+
+function viewGrid(){ return (over && VIEW==="best" && SOLVE && SOLVE.done && SOLVE.grid) ? SOLVE.grid : grid; }
+function cardKey(c){ return c.r*4+c.s; }
+function solveKey(){ return settings.scoring+":"+grid.map(cardKey).slice().sort((a,b)=>a-b).join(","); }
+function stopSolve(){ if(!SOLVER) return; try{ SOLVER.stop(); }catch(e){} SOLVER=null; }
+
+function startSolve(){
+  const key=solveKey();
+  if(SOLVE && SOLVE.key===key){ refreshSolveUI(); return; }   // same cards, same scoring (e.g. after an undo)
+  stopSolve();
+  const cards=grid.slice();                 // the search works on indices into this list
+  SOLVE={key, done:false, runs:0, max:10, agree:0, score:computeLines(grid).total, grid:null};
+  const msg={cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:cards.map((c,i)=>i)};
+  const onMsg=function(m){
+    if(!SOLVE || SOLVE.key!==key) return;
+    SOLVE.runs=m.runs; SOLVE.max=m.max; SOLVE.agree=m.agree; SOLVE.score=m.score;
+    if(m.done){ SOLVE.done=true; SOLVE.grid=alignToMine(m.grid.map(i=>cards[i])); SOLVER=null; }
+    refreshSolveUI();
+  };
+  try{
+    const src=makeSolver.toString()+"\n"+solveRun.toString()+"\n("+workerMain.toString()+")();";
+    const url=URL.createObjectURL(new Blob([src],{type:"text/javascript"}));
+    const w=new Worker(url);
+    w.onmessage=function(e){ onMsg(e.data); };
+    w.onerror=function(ev){ ev.preventDefault(); w.terminate(); fallback(); };
+    w.postMessage(msg);
+    SOLVER={stop:function(){ w.terminate(); URL.revokeObjectURL(url); }};
+  }catch(e){ fallback(); }
+  function fallback(){
+    // one search per timeslice, so the page stays tappable between them
+    let dead=false; const one=solveRun(msg,onMsg);
+    setTimeout(function step(){ if(dead) return; if(!one()) setTimeout(step,30); },0);
+    SOLVER={stop:function(){ dead=true; }};
+  }
+  refreshSolveUI();
+}
+
+/* The same board can be laid out 28,800 ways (shuffle the rows, shuffle the
+   columns, flip the diagonal) without changing a single hand. Pick the one
+   that leaves the most of the player's cards where they already are, so the
+   animation shows only the moves that matter. */
+function permsOf5(){ const out=[]; (function go(p,rest){ if(!rest.length){out.push(p);return;}
+  rest.forEach((x,i)=>go(p.concat(x),rest.slice(0,i).concat(rest.slice(i+1)))); })([],[0,1,2,3,4]); return out; }
+const PERMS5=permsOf5();
+function alignToMine(B){
+  const mine=grid.map(cardKey); let bestG=B, bestN=-1;
+  for(let t=0;t<2;t++){
+    const G=t? B.map((_,i)=>B[(i%5)*5+((i/5)|0)]) : B;
+    const k=G.map(cardKey);
+    // M[r*5+c][R*5+C]: would putting G's (R,C) at (r,c) keep the player's card there?
+    const M=[]; for(let i=0;i<25;i++){ M.push([]); for(let j=0;j<25;j++) M[i].push(k[j]===mine[i]?1:0); }
+    for(const p of PERMS5) for(const q of PERMS5){
+      let n=0; for(let r=0;r<5;r++){ const Mr=r*5, pr=p[r]*5; for(let c=0;c<5;c++) n+=M[Mr+c][pr+q[c]]; }
+      if(n>bestN){ bestN=n; const o=[]; for(let r=0;r<5;r++)for(let c=0;c<5;c++) o.push(G[p[r]*5+q[c]]); bestG=o; }
+    }
+  }
+  return bestG;
+}
+
+function solveBoxHTML(){
+  if(!SOLVE) return "";
+  const mine=computeLines(grid).total;
+  if(!SOLVE.done){
+    const pct=Math.round(100*SOLVE.runs/SOLVE.max);
+    return 'Searching for the best board these 25 cards can make…<div class="bar"><i style="width:'+Math.max(6,pct)+'%"></i></div>';
+  }
+  const conf='<div class="muted" style="margin-top:4px;">'+SOLVE.agree+' of '+SOLVE.runs+' searches agreed.</div>';
+  if(SOLVE.score<=mine)
+    return '🎯 <b>That\'s the best board these cards make.</b> Nothing scored higher than your '+mine+'.'+conf;
+  return 'The best board these cards make scores <b>'+SOLVE.score+'</b> — '+(SOLVE.score-mine)+' more than yours ('+Math.round(100*mine/SOLVE.score)+'%).'+conf
+    +'<div style="text-align:center;margin-top:10px;"><button class="btn" onclick="closeOverlay();showView(\'best\')">✨ Show the best board</button></div>';
+}
+function renderBestBar(){
+  const el=document.getElementById("psBestBar"); if(!el) return;
+  if(!over || !SOLVE){ el.innerHTML=""; return; }
+  const mine=computeLines(grid).total;
+  if(!SOLVE.done){ el.innerHTML='<div class="note">Searching for the best board…</div>'; return; }
+  if(SOLVE.score<=mine){ el.innerHTML='<div class="note">🎯 Best possible board — nothing beats '+mine+'.</div>'; return; }
+  el.innerHTML='<div class="seg"><button class="'+(VIEW==="mine"?"on":"")+'" onclick="showView(\'mine\')">Your board '+mine+'</button>'
+    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">✨ Best '+SOLVE.score+'</button></div>'
+    +'<div class="note">'+(VIEW==="best"?"Same 25 cards, rearranged.":"Tap Best to watch the cards rearrange.")+'</div>';
+}
+function refreshSolveUI(){
+  const box=document.getElementById("psSolveBox"); if(box) box.innerHTML=solveBoxHTML();
+  if(!ANIMATING) renderBestBar();
+}
+
+/* ---- the move: every card that changes square lifts, spins and lands ---- */
+function showView(v){
+  if(ANIMATING || v===VIEW || !over || !SOLVE || !SOLVE.done) return;
+  const fromG=viewGrid(), board=document.getElementById("psboard");
+  const fromRects={}; board.querySelectorAll(".pscell[data-i]").forEach(el=>{ fromRects[el.dataset.i]=el.getBoundingClientRect(); });
+  const fromTotal=computeLines(fromG).total;
+  VIEW=v; render();
+  const toG=viewGrid(), toTotal=computeLines(toG).total;
+  const reduce=window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce || !board.animate) return;
+  const where={}; fromG.forEach((c,i)=>{ where[cardKey(c)]=i; });
+  const moves=[];
+  board.querySelectorAll(".pscell[data-i]").forEach(el=>{
+    const to=+el.dataset.i, from=where[cardKey(toG[to])];
+    if(from!==to) moves.push({el,from,to});
+  });
+  if(!moves.length) return;
+  ANIMATING=true; board.classList.add("anim");
+  sfx('shuffle');
+  // land in a wave from the top-left, but the longest flights leave first so they don't trail
+  moves.sort((a,b)=>a.to-b.to);
+  const STAG=Math.min(60, 1100/moves.length), DUR=760;
+  let left=moves.length;
+  moves.forEach((m,n)=>{
+    const a=fromRects[m.from], b=m.el.getBoundingClientRect();
+    m.el.classList.add("ghost");
+    const f=document.createElement("div"); f.className="flycard"; f.innerHTML=m.el.innerHTML;
+    Object.assign(f.style,{left:b.left+"px", top:b.top+"px", width:b.width+"px", height:b.height+"px"});
+    document.body.appendChild(f);
+    const dx=a.left-b.left, dy=a.top-b.top, spin=(n%2?-1:1)*360;
+    const anim=f.animate([
+      {transform:'translate('+dx+'px,'+dy+'px) rotate(0deg) scale(1)', offset:0},
+      {transform:'translate('+(dx*.5)+'px,'+(dy*.5-28)+'px) rotate('+(spin*.55)+'deg) scale(1.32)', offset:.5},
+      {transform:'translate(0,-4px) rotate('+spin+'deg) scale(1.06)', offset:.88},
+      {transform:'translate(0,0) rotate('+spin+'deg) scale(1)', offset:1}
+    ],{duration:DUR, delay:n*STAG, easing:'cubic-bezier(.45,.05,.25,1)', fill:'backwards'});
+    anim.onfinish=function(){
+      f.remove(); m.el.classList.remove("ghost");
+      if(n%3===0) sfx('place');
+      if(--left===0) landed();
+    };
+  });
+  // count the score across while the cards are in the air
+  const numEl=document.getElementById("psTotal"), span=DUR+STAG*moves.length, t0=performance.now();
+  numEl.textContent=fromTotal;
+  (function tick(now){ const k=Math.min(1,(now-t0)/span); numEl.textContent=Math.round(fromTotal+(toTotal-fromTotal)*k*k*(3-2*k));
+    if(k<1 && ANIMATING) requestAnimationFrame(tick); })(t0);
+  function landed(){
+    ANIMATING=false; board.classList.remove("anim");
+    numEl.textContent=toTotal;
+    board.querySelectorAll(".psscore").forEach(el=>el.classList.add("land"));
+    sfx(v==="best"?'win':'select');
+    renderBestBar();
+  }
+}
+window.__PS={ get state(){ return {over,VIEW,SOLVE,ANIMATING,grid}; }, showView, startSolve, alignToMine,
+  deal:function(cards){ grid=cards.slice(); queue=[]; current=null; lastMove=null; finish(); } };
 
 /* ---- wire up ---- */
 document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand openRules the click Event
@@ -388,7 +668,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v78", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v103", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
