@@ -95,6 +95,12 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
   same `apply()`. Boxes are seeded from `(epoch, deal, generation)` (`seedOf`), so every phone
   builds the identical box, allocates the identical tabs to each buyer, and cracks the identical
   fresh box when one sells out — no phone holds the boxes and nobody has to stay open.
+  **Phones (v100):** the live part is an `EventSource` on ntfy's `/sse` (what BINGO uses — a long
+  `fetch()` stream could stall silently on iOS and dies when the app is backgrounded), restarted
+  from the last message id on any error and whenever the app comes back to the foreground, after
+  a catch-up poll. The history poll has a 12s timeout and retries with a "Play solo instead"
+  offer; the booth never goes ready without the history, since a cold start would put the phone
+  on different boxes from everyone else. No EventSource → a gentle 6s catch-up poll.
   Verified against the real relay: the cached replay (`poll=1&since=all`) and the live stream
   deliver messages in the same order, and repeated polls are identical. Only ntfy.sh is used
   (not the second relay), because two relays could order messages differently and **the order

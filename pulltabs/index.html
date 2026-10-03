@@ -609,7 +609,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v98";
+var BUILD_V="v100";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -711,7 +711,7 @@ function startSolo(){
 function startLive(){
   if(!needName()) return;
   S.mode='live'; S.boxes=null; S.old={}; S.gen={}; S.epoch=null; S.applied=0; S.buys=0; S.rids={}; S.seen={}; S.seenAt={};
-  S.players={}; S.ready=false; S.deal=pickDeal; S.feed=[];
+  S.players={}; S.players[myId]=myName; S.seenAt[myId]=Date.now(); S.ready=false; S.deal=pickDeal; S.feed=[]; NET.last=null;
   enterGame(); say('Walkin\u2019 you up to the booth, hon\u2026');
   netStart();
 }
@@ -1188,7 +1188,7 @@ function netStart(){
   else liveLoop();
   clearInterval(hb); hb=setInterval(function(){ if(S.ready) netPublish({t:'here', name:myName}); render(); }, 120000);
 }
-function netStop(){ NET.on=false; NET.ctrls.forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); NET.ctrls=[]; clearInterval(hb);
+function netStop(){ NET.on=false; NET.ctrls.forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); NET.ctrls=[]; clearInterval(hb); try{ ES&&ES.close(); }catch(e){} ES=null;
   if(S.pendingBuy){ clearTimeout(S.pendingBuy.timer); S.pendingBuy=null; } }
 // test transport: an in-memory relay with the same "everything, in order" semantics
 function testLoop(t){ (async function(){ var cur=0, first=true;
@@ -1196,31 +1196,56 @@ function testLoop(t){ (async function(){ var cur=0, first=true;
       for(var i=0;i<m.length;i++){ cur=Math.max(cur,m[i].idx+1); deliver(m[i].body, 'i'+m[i].idx); }
       if(first){ first=false; becameReady(); } }catch(e){}
     await new Promise(function(r){ setTimeout(r,60); }); } })(); }
-// real relay: replay the cached feed (poll), then stream from the last message seen
+// real relay: replay the cached feed (poll), then follow it live.
+// Phones are the hard case: a long fetch() stream can stall silently on iOS (and dies whenever the
+// app is backgrounded), so the live part uses EventSource - what BINGO uses, and what Safari keeps
+// alive best - restarted from the last message seen whenever it errors or the app comes back.
+// The history poll has a timeout and retries; the booth never goes "ready" without the history,
+// because cold-starting without it would put this phone on different boxes from everyone else.
 function handleLine(line){
-  var ev; try{ ev=JSON.parse(line); }catch(e){ return; }
+  var ev; try{ ev=(typeof line==='string')?JSON.parse(line):line; }catch(e){ return; }
   if(ev.id) NET.last=ev.id;
   if(ev.event==='message' && ev.message) deliver(ev.message, ev.id);
 }
+function withTimeout(url, ms){
+  var ctrl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){ try{ ctrl&&ctrl.abort(); }catch(e){} }, ms);
+  return fetch(url, ctrl?{signal:ctrl.signal, cache:'no-store'}:{cache:'no-store'}).finally(function(){ clearTimeout(to); });
+}
+async function catchUp(){
+  // everything since the last message seen (or the whole cache on the way in)
+  var res=await withTimeout(RELAY+topic()+'/json?poll=1&since='+(NET.last?encodeURIComponent(NET.last):'all'), 12000);
+  if(!res.ok) throw new Error('poll '+res.status);
+  var txt=await res.text(); txt.split('\n').forEach(function(l){ if(l.trim()) handleLine(l); });
+}
 function liveLoop(){ (async function(){
-  try{
-    var res=await fetch(RELAY+topic()+'/json?poll=1&since=all');
-    if(res.ok){ var txt=await res.text(); txt.split('\n').forEach(function(l){ if(l.trim()) handleLine(l); }); NET.ok=true; }
-  }catch(e){}
-  becameReady();
-  while(NET.on){
-    var ctrl=(typeof AbortController!=='undefined')?new AbortController():null; NET.ctrls.push(ctrl);
-    try{
-      var res2=await fetch(RELAY+topic()+'/json?since='+(NET.last?encodeURIComponent(NET.last):String(Math.floor(Date.now()/1000)-5)), ctrl?{signal:ctrl.signal}:{});
-      if(!res2.ok||!res2.body) throw new Error('stream '+res2.status);
-      var rd=res2.body.getReader(), dec=new TextDecoder(), buf='';
-      NET.ok=true; render();
-      while(NET.on){ var x=await rd.read(); if(x.done) break; buf+=dec.decode(x.value,{stream:true}); var nl;
-        while((nl=buf.indexOf('\n'))>=0){ var line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(line) handleLine(line); } }
-    }catch(e){ NET.ok=false; if(S.mode) render(); }
-    if(!NET.on) break;
-    await new Promise(function(r){ setTimeout(r,1500); });
-  } })(); }
+  var tries=0;
+  while(NET.on && !S.ready){
+    try{ await catchUp(); NET.ok=true; becameReady(); break; }
+    catch(e){ tries++; NET.ok=false;
+      if(tries===2) say('Havin’ trouble reachin’ the booth, hon — still tryin’. Spotty signal? <button class="btn ghost" id="soloInstead" style="padding:6px 10px;font-size:13px">Play solo instead</button>');
+      var si=document.getElementById('soloInstead'); if(si) si.onclick=function(){ leave(); startSolo(); };
+      render(); await new Promise(function(r){ setTimeout(r, Math.min(8000, 1500*tries)); }); }
+  }
+  openStream();
+})(); }
+var ES=null;
+function openStream(){
+  if(!NET.on) return;
+  try{ ES&&ES.close(); }catch(e){} ES=null;
+  if(typeof EventSource==='undefined'){ pollFallback(); return; }
+  var es=ES=new EventSource(RELAY+topic()+'/sse?since='+(NET.last?encodeURIComponent(NET.last):String(Math.floor(Date.now()/1000)-5)));
+  es.onopen=function(){ NET.ok=true; render(); };
+  es.onmessage=function(m){ handleLine(m.data); };
+  es.onerror=function(){ NET.ok=false; render(); try{ es.close(); }catch(e){} if(ES===es) ES=null;
+    setTimeout(function(){ if(NET.on && !ES) openStream(); }, 2000); };
+}
+// no EventSource at all: a gentle poll (the relay limits requests per IP, so not fast)
+function pollFallback(){ (async function(){ while(NET.on){ try{ await catchUp(); NET.ok=true; }catch(e){ NET.ok=false; } render(); await new Promise(function(r){ setTimeout(r,6000); }); } })(); }
+// a phone that was put away comes back to a dead connection: catch up and reconnect at once
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState!=='visible' || S.mode!=='live' || !NET.on) return;
+  (async function(){ try{ await catchUp(); NET.ok=true; }catch(e){} render(); openStream(); })();
+});
 
 // ---------- boot ----------
 renderDealPick();
