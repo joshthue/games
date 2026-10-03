@@ -81,10 +81,9 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .dealbtn[data-deal="loon"]{grid-column:1/-1}
 .dealbtn .si,.ftab .si,.winners .si,.seg .si{background:#fbf1d9;border-radius:50%;width:1.3em;height:1.3em}
 /* the Loonatic box wears the brand: night-lake ground, the spaced serif wordmark */
-.ticket[data-deal="loon"]{background:linear-gradient(170deg,#141414 0%,#1d2b20 45%,#2f5233 100%);
-  background-image:linear-gradient(170deg,#141414 0%,#1d2b20 45%,#2f5233 100%)}
-.ticket[data-deal="loon"] .tn{font-style:normal;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:#f6f2ea;padding-right:6px}
-.ticket[data-deal="loon"] .tg{color:#a9b88f}
+.ticket[data-deal="loon"] .band:not(.fine){font-family:Georgia,serif;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:#f6f2ea;background:#1d2b20}
+.ticket[data-deal="loon"] .band .pr{background:#f6f2ea;color:#1d2b20}
+.ticket[data-deal="loon"] .card{background-color:#f6f2ea}
 .dealbtn[data-deal="loon"]{background:linear-gradient(170deg,#141414,#2f5233) !important}
 .dealbtn[data-deal="loon"] .nm{font-style:normal;font-weight:400;letter-spacing:.18em;text-transform:uppercase}
 .dealbtn.on{border-color:var(--gold);outline:2px solid #fff;outline-offset:-6px}
@@ -126,37 +125,44 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .pileinfo{font-size:13px;opacity:.85;margin:8px 0 0;text-align:center}
 .tixact{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
 
-/* ===== the ticket ===== */
-.ticket{width:min(100%,var(--tw));border-radius:12px;padding:10px 10px 8px;position:relative;
-  background:var(--tc);color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.55);
-  background-image:radial-gradient(rgba(255,255,255,.12) 1px,transparent 1.5px);background-size:8px 8px;
-  animation:dealin .35s ease-out}
+/* ===== the ticket =====
+   Modelled on real bar tickets: white card stock with a border of stars in the deal's colour,
+   three rounded windows with perforated edges, a printed strip between each pair of tabs,
+   and a yellow serial-number sticker. Each window is three square cells. */
+.ticket{width:min(100%,var(--tw));position:relative;animation:dealin .35s ease-out}
 @keyframes dealin{from{transform:translateY(-30px) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
-.ticket .th{display:flex;align-items:center;gap:8px}
-.ticket .tn{flex:1;font-family:Georgia,serif;font-style:italic;font-weight:900;font-size:calc(var(--rh)*.42);
-  text-shadow:0 2px 0 rgba(0,0,0,.35);line-height:1.05}
-.ticket .tp{background:#fff;color:var(--tink);font-weight:900;border-radius:8px;padding:3px 8px;font-size:calc(var(--rh)*.36)}
-.ticket .tg{font-size:min(calc(var(--rh)*.21),17px);opacity:.9;margin:2px 0 8px;font-weight:600}
-.tabs{display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.18);border-radius:8px;padding:6px}
-/* the grid is square: three tab rows share its height, each row is three square cells */
-.tabs{aspect-ratio:1/1;display:grid;grid-template-rows:repeat(3,1fr);container-type:inline-size}
-.tabrow{position:relative;border-radius:6px;overflow:hidden;background:var(--cream);min-height:0}
+.card{position:relative;background:#f7f6f2;color:#333;border-radius:4px;padding:7.5% 9% 7.5% 5%;
+  box-shadow:0 10px 26px rgba(0,0,0,.55);
+  background-image:radial-gradient(rgba(0,0,0,.045) 1px,transparent 1.4px);background-size:5px 5px}
+.stars{position:absolute;color:var(--tc);overflow:hidden;white-space:nowrap;line-height:1;pointer-events:none;
+  font-size:calc(min(100vw,var(--tw))*.055);letter-spacing:.32em}
+.stars.top{left:5%;right:3%;top:1.6%} .stars.bot{left:5%;right:3%;bottom:1.6%}
+.stars.rgt{top:7%;bottom:7%;right:1.8%;width:1.1em;writing-mode:vertical-rl;letter-spacing:.42em}
+.tabs{display:flex;flex-direction:column;container-type:inline-size;position:relative}
+.tabrow{position:relative;aspect-ratio:3/1;border-radius:6px 16px 16px 6px;overflow:hidden;background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);outline:2px dotted rgba(0,0,0,.22);outline-offset:2px}
+.band{text-align:center;color:var(--tc);font-weight:900;font-size:4.3cqw;line-height:1.15;margin:3.2cqw -2cqw;padding:1cqw 2cqw;
+  background:color-mix(in srgb,var(--tc) 16%,#fff);letter-spacing:.3px}
+.band.fine{font-weight:600;font-size:2.9cqw;font-style:italic}
+.band .pr{background:var(--tc);color:#fff;border-radius:3px;padding:0 1.2cqw;margin-left:1.2cqw;font-style:normal}
 .si{width:1.15em;height:1.15em;vertical-align:-.2em;object-fit:contain}
 .win3{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);font-size:17cqw;line-height:1}
-.cell{position:relative;display:flex;align-items:center;justify-content:center;border-right:2px dashed rgba(0,0,0,.12)}
-.cell:last-child{border-right:0}
+.cell{position:relative;display:flex;align-items:center;justify-content:center}
 .cell .si{width:1.25em;height:1.25em}
 .cell .sy{position:relative;z-index:1}
 .cell svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
-.cell.on{background:radial-gradient(circle,#fff3b0 0 45%,#ffe066 100%);animation:glow 1s ease-in-out infinite alternate}
-/* the printed "$100 TOTAL" box, a yellow splash like the real ones */
-.tot{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:.9;
+.cell.on{background:radial-gradient(circle,#fff6c4 0 45%,#ffe066 100%);animation:glow 1s ease-in-out infinite alternate}
+.serial{position:absolute;left:9%;top:38%;z-index:3;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
+  font-weight:900;font-size:7.5cqw;letter-spacing:.06em;padding:0 2cqw;line-height:1.25;pointer-events:none;opacity:.95}
+/* the printed prize box: arrow deals use the "$100 TOTAL" splash, bar deals a plain square */
+.tot{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:.9;
   width:84%;height:62%;border-radius:46% 54% 40% 60%/55% 45% 55% 45%;background:radial-gradient(circle at 40% 40%,#fff27a,#ffd400 70%);
   color:#1b1b1b;transform:rotate(-8deg);font-family:Impact,"Arial Black",sans-serif}
 .tot b{font-size:.5em;letter-spacing:-.5px} .tot small{font-size:.2em;letter-spacing:1px;font-weight:900}
+.tot.sq{border-radius:0;transform:none;background:#f9ee4d;width:78%;height:70%} .tot.sq b{font-size:.46em}
 @keyframes glow{from{box-shadow:inset 0 0 0 3px #e0a400}to{box-shadow:inset 0 0 0 5px #ff7a00}}
 .flap{position:absolute;inset:0;z-index:5;cursor:grab;touch-action:pan-y;display:flex;align-items:center;justify-content:space-between;
-  padding:0 12px;color:#fff;font-weight:900;letter-spacing:2px;font-size:calc(var(--rh)*.27);
+  padding:0 5cqw;color:#fff;font-weight:900;letter-spacing:2px;font-size:5cqw;
   background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(0,0,0,.08)),var(--tc);
   background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.10) 0 6px,transparent 6px 12px);
   border-left:3px dashed rgba(255,255,255,.65);
@@ -164,10 +170,10 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .flap:after{content:"";position:absolute;right:0;top:0;bottom:0;width:10px;border-right:2px dotted rgba(255,255,255,.6)}
 .flap.dragging{transition:none}
 .tabrow.open .flap{transform:perspective(500px) translateX(92%) rotateY(-70deg);opacity:0;pointer-events:none}
-.ticket .tf{display:flex;justify-content:space-between;font-size:min(calc(var(--rh)*.19),16px);opacity:.85;margin-top:6px;font-weight:600}
+.ticket .tf{display:flex;justify-content:space-between;font-size:min(calc(var(--rh)*.19),15px);color:#666;margin-top:4%;font-weight:600}
 .ticket.done{cursor:pointer}
 .ticket.loser .win3{filter:grayscale(.35)}
-.stamp{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(-12deg);font-family:Georgia,serif;font-weight:900;
+.stamp{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) rotate(-12deg);font-family:Georgia,serif;font-weight:900;z-index:8;
   font-style:italic;font-size:calc(var(--rh)*.7);color:#ffde3b;text-shadow:0 0 6px #000,0 3px 0 #8a2b1c;pointer-events:none;
   white-space:nowrap;animation:pop .45s cubic-bezier(.2,1.6,.4,1), fade .6s 2.6s forwards}
 @keyframes fade{to{opacity:.28}}
@@ -405,6 +411,17 @@ var DEALS={
     ['Full Loonatic!','Once in a blue moon','Northern lights','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish'],
     'Loonatic Cannabis \u00b7 powered by Birch & Gran \u00b7 call of the wild'),
 };
+// How a winning line is marked. Both styles come from real tickets Josh brought back:
+// an orange ARROW with a "$X TOTAL" splash, or a plain red BAR with a square "$X" box.
+var MARKER={ walleye:'arrow', hotdish:'arrow', loon:'arrow', fair:'bar', uffda:'bar' };
+// the fine print on the strip between the 2nd and 3rd tabs
+var FINE={
+  walleye:'\u201CFor sale or use at the Lake Uffda VFW. Catch limits apply. Void in Wisconsin.\u201D',
+  hotdish:'\u201CNot valid with bars, Jell-O salad or Lutheran potlucks. Void in Wisconsin.\u201D',
+  fair:'\u201CRedeem by Labor Day. Not responsible for lost Pronto Pups. Void in Wisconsin.\u201D',
+  uffda:'\u201CVoid where prohibited, and in Iowa, dontcha know.\u201D',
+  loon:'\u201C21+. Powered by Birch & Gran. Leave no trace. Void in Wisconsin.\u201D' };
+Object.keys(DEALS).forEach(function(k){ DEALS[k].marker=MARKER[k]||'arrow'; DEALS[k].fine=FINE[k]||''; });
 var DEAL_ORDER=['walleye','hotdish','fair','uffda','loon'];
 
 function payout(d){ return d.tiers.reduce(function(a,t){return a+t.amt*t.n;},0)/(d.count*d.price); }
@@ -475,7 +492,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, rng:rng, payout:pay
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v86";
+var BUILD_V="v87";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -715,6 +732,13 @@ function arrowSVG(t,k){
   var pos=L.indexOf(k); if(pos<0) return '';
   var a=L[0], b=L[2], dx=(b%3-a%3)/2, dy=(Math.floor(b/3)-Math.floor(a/3))/2;   // unit step along the line
   var ext=50;                                                                   // centre to edge (corner on a diagonal)
+  if(D[t.deal].marker==='bar'){                                                 // the red bar: flat, square-ended, no head
+    var bx1=50-dx*(pos===0?40:ext), by1=50-dy*(pos===0?40:ext), bx2=50+dx*(pos===2?40:ext), by2=50+dy*(pos===2?40:ext);
+    var bs='x1="'+bx1+'" y1="'+by1+'" x2="'+bx2+'" y2="'+by2+'"';
+    return '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+      +'<line '+bs+' stroke="#9b2a1c" stroke-width="22" stroke-linecap="butt"/>'
+      +'<line '+bs+' stroke="#e0503a" stroke-width="18" stroke-linecap="butt"/></svg>';
+  }
   var x1=50-dx*ext, y1=50-dy*ext, x2=50+dx*ext, y2=50+dy*ext;
   if(pos===0){ x1=50-dx*8; y1=50-dy*8; }                                        // tail starts just behind centre
   var head='';
@@ -728,19 +752,27 @@ function arrowSVG(t,k){
     +'<line '+seg+' stroke="#7a3300" stroke-width="16" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'
     +'<line '+seg+' stroke="#ff8a1a" stroke-width="10" stroke-linecap="'+(pos===0?'round':'butt')+'"/>'+head+'</svg>';
 }
+// the printed prize box: a "$X TOTAL" splash on arrow deals, a plain yellow "$X" square on bar deals
+function prizeBox(d,amt){ return d.marker==='bar' ? '<div class="tot sq"><b>'+money(amt)+'</b></div>' : '<div class="tot"><b>'+money(amt)+'</b><small>TOTAL</small></div>'; }
+// the yellow serial sticker: one letter + five digits for the box, the same on every ticket in it
+function serialOf(t){ var h=0; for(var i=0;i<t.bid.length;i++) h=(h*31+t.bid.charCodeAt(i))>>>0;
+  return 'ABCDEFGHJKLMNPRSTUVWXYZ'[h%23]+String(10000+(h>>>5)%89999); }
 function ticketHTML(t){
   var d=D[t.deal];
   var rows=[0,1,2].map(function(i){
     var cells=[0,1,2].map(function(c){ var k=i*3+c;
-      var inner = k===t.badge ? '<div class="tot"><b>'+money(t.amt)+'</b><small>TOTAL</small></div>' : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
+      var inner = k===t.badge ? prizeBox(d,t.amt) : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
       return '<div class="cell" data-k="'+k+'">'+inner+arrowSVG(t,k)+'</div>'; }).join('');
     return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
+      +(i===0?'<div class="serial">'+serialOf(t)+'</div>':'')
       +'<div class="flap" data-i="'+i+'"><span>PULL ▸</span><span>'+(i+1)+'</span></div></div>';
-  }).join('');
-  return '<div class="ticket" data-deal="'+t.deal+'" style="--tc:'+d.color+';--tink:'+d.ink+'">'
-    +'<div class="th"><div class="tn">'+esc(d.name)+'</div><div class="tp">$'+d.price+'</div></div>'
-    +'<div class="tg">'+esc(d.tag)+'</div><div class="tabs">'+rows+'</div>'
-    +'<div class="tf"><span>No. '+String(t.n+1).padStart(4,'0')+' of 400</span><span>Lake Uffda Lions</span></div></div>';
+  });
+  var star=new Array(40).join('\u2605');
+  return '<div class="ticket" data-deal="'+t.deal+'" style="--tc:'+d.color+';--tink:'+d.ink+'"><div class="card">'
+    +'<i class="stars top">'+star+'</i><i class="stars rgt">'+star+'</i><i class="stars bot">'+star+'</i>'
+    +'<div class="tabs">'+rows[0]+'<div class="band">'+esc(d.name)+'<span class="pr">$'+d.price+'</span></div>'
+    +rows[1]+'<div class="band fine">'+esc(d.fine||'')+'</div>'+rows[2]+'</div>'
+    +'<div class="tf"><span>No. '+String(t.n+1).padStart(4,'0')+' of 400</span><span>Lake Uffda Lions</span></div></div></div>';
 }
 // A tab opens on a tap. Slide it and it follows your finger: let go and it STAYS where you
 // left it (a peek), slide it most of the way and it peels right off.
@@ -774,7 +806,7 @@ function renderFlare(){
   var rows=d.tiers.map(function(t,i){
     var c=v.tiers[i], lf=t.n-c, pips='';
     for(var k=0;k<t.n;k++) pips+='<i class="'+(k<c?'x':'')+'"></i>';
-    return '<tr class="'+(lf===0?'gone':'')+'"><td class="sy"><div class="tot"><b>'+money(t.amt)+'</b><small>TOTAL</small></div></td>'
+    return '<tr class="'+(lf===0?'gone':'')+'"><td class="sy">'+prizeBox(d,t.amt)+'</td>'
       +'<td><div class="lb2">'+esc(t.label)+'</div><div class="pips">'+pips+'</div></td><td class="lf">'+lf+' of '+t.n+'<br>left</td></tr>';
   }).join('');
   var log=(S.logAll[v.id]||v.log).slice().reverse();

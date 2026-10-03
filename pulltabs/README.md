@@ -9,7 +9,16 @@ to corner (8 possible lines) — and a yellow **"$X TOTAL"** splash in one of th
 squares saying what it pays. The pictures under the arrow don't have to match; the arrow is
 the win. The arrow is drawn a piece per square (`arrowSVG`), the way it's printed, so a peek
 at one tab shows exactly the part of the arrow under it, and a down or slantwise arrow needs
-all three tabs. The grid is square (`aspect-ratio:1`, symbols sized in `cqw`).
+all three tabs. Each window is three square cells (`aspect-ratio:3/1`, symbols sized in `cqw`).
+
+**Two marker styles (v87)**, both from real tickets: arrow deals (Walleye, Hotdish, Loonatic)
+print an orange arrow with a "$X TOTAL" splash; bar deals (State Fair, Uff Da 7s) print a flat
+red bar with a plain yellow "$X" square, like Josh's $200 darts ticket. `PT.DEALS[k].marker`.
+
+**The card (v87)** copies the real card stock: white with a border of stars in the deal's colour,
+rounded perforated windows, a printed strip between each pair of tabs (deal name + price, then
+cheesy fine print from `PT.DEALS[k].fine`), and a yellow serial-number sticker on the top window
+— one per box, derived from the box id. The prize box sits above the sticker.
 Tickets from before v86 (matching rows, five tabs, seal cards) are cleared from a pile on
 load, and any unopened winner among them is paid out first.
 
