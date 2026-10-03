@@ -351,7 +351,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 <div class="overlay" id="rulesOv"><div class="sheet">
   <h2>How pull tabs work</h2>
   <p>Every deal is a box of <b>400 tickets</b>. The winners are already in there — a fixed number of each prize, printed on the <b>flare</b> (the prize sheet on the wall).</p>
-  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> (or on some deals a red <b>bar</b>) printed through three squares in a line — across, down, or corner to corner — over one of the combos on the flare: two of the deal's key picture and a prize picture, with the arrowhead on the prize. Check the flare to see what your combo pays — now and then a ticket also prints a yellow <b>$ TOTAL</b> box. <b>Multiple winners:</b> some tickets have two lines, and the TOTAL adds them up. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
+  <p>Each ticket has three tabs over a square of nine pictures. A winner has an <b>arrow</b> (or on some deals a red <b>bar</b>) printed through three squares in a line — across, down, or corner to corner — over one of the combos on the flare: two of the deal's key picture and a prize picture, with the arrowhead on the prize. Check the flare to see what your combo pays — now and then a ticket also prints a yellow <b>$ TOTAL</b> box. And if you peel back the top tab and see a yellow <b>serial-number sticker</b> — hold onto your hat, hon, that’s one of the big ones. <b>Multiple winners:</b> some tickets have two lines, and the TOTAL adds them up. An arrow going down or slantwise runs under all three tabs, so you might not know till the last one.</p>
   <p>Tap a tab to rip it open, or grab its right edge (OPEN HERE) and slide it left — it peels back from the right like the real ones, and if you let go part way it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
   <p>The flare keeps score: a red dot is a prize somebody has already pulled, a green one is still in the box. When the box is down to its last hundred and the big one is still green — that's when folks start buying.</p>
   <h3>The money</h3>
@@ -568,7 +568,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v93";
+var BUILD_V="v94";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -847,6 +847,10 @@ function paintArrows(){
 window.addEventListener('resize', function(){ paintArrows(); });
 // the printed prize box: a "$X TOTAL" splash on arrow deals, a plain yellow "$X" square on bar deals
 function prizeBox(d,amt){ return d.marker==='bar' ? '<div class="tot sq"><b>'+money(amt)+'</b></div>' : '<div class="tot"><b>'+money(amt)+'</b><small>TOTAL</small></div>'; }
+// The serial sticker only goes on the BIG winners - the top three rungs of the flare - so seeing
+// it under a tab is how you know you've hit a big one before the line is even open.
+var BIG_TIERS=3;
+function bigOne(t){ return (t.lines||[]).some(function(x){ return x.tier<BIG_TIERS; }); }
 // the yellow serial sticker: one letter + five digits for the box, the same on every ticket in it
 function serialOf(t){ var h=0; for(var i=0;i<t.bid.length;i++) h=(h*31+t.bid.charCodeAt(i))>>>0;
   return 'ABCDEFGHJKLMNPRSTUVWXYZ'[h%23]+String(10000+(h>>>5)%89999); }
@@ -857,7 +861,7 @@ function ticketHTML(t){
       var inner = (k===t.badge && t.box!==false) ? prizeBox(d,t.amt) : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
       return '<div class="cell" data-k="'+k+'">'+inner+'<span class="arr">'+arrowSVG(t,k)+'</span></div>'; }).join('');
     return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
-      +(i===0?'<div class="serial'+(t.badge===0&&t.box!==false?' r':'')+'">'+serialOf(t)+'</div>':'')
+      +(i===0&&bigOne(t)?'<div class="serial'+(t.badge===0&&t.box!==false?' r':'')+'">'+serialOf(t)+'</div>':'')
       +'<div class="flap" data-i="'+i+'"><span>'+(i+1)+'</span><span>\u25C2 OPEN HERE</span></div></div>';
   });
   var star=new Array(40).join('\u2605');
