@@ -209,7 +209,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   transform-origin:left center;transition:transform .32s cubic-bezier(.3,.7,.3,1),opacity .32s}
 .flap:after{content:"";position:absolute;right:0;top:0;bottom:0;width:10px;border-right:2px dotted rgba(255,255,255,.6)}
 .flap.dragging{transition:none}
-.tabrow.open .flap{transform:perspective(900px) rotateY(-90deg);opacity:0;pointer-events:none}
+.tabrow.open .flap{transform:scaleX(0);opacity:0;pointer-events:none}
 .flap span:last-child{font-size:.78em;letter-spacing:1px}
 .ticket .tf{display:flex;justify-content:space-between;font-size:min(calc(var(--rh)*.19),15px);color:#666;margin-top:4%;font-weight:600}
 .ticket.done{cursor:pointer}
@@ -609,7 +609,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v97";
+var BUILD_V="v98";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -931,7 +931,10 @@ function ticketHTML(t){
 // on its left edge like the real ones, so a peek shows the right-hand square first. Let go
 // and it STAYS where you left it; pull it most of the way and it comes right off.
 // px is how far the right edge has travelled; the angle is chosen so that much shows.
-function flapXf(px,w){ var p=Math.max(0,Math.min(1,px/w)); return 'perspective(900px) rotateY('+(-Math.acos(1-p)*180/Math.PI).toFixed(1)+'deg)'; }
+// Fold the tab flat toward its left hinge: it only ever gets narrower from the right, never
+// bigger. (A 3D tilt toward the viewer made the right edge GROW past the window at the start of
+// a pull - not something a tab hinged on the left can do.)
+function flapXf(px,w){ var p=Math.max(0,Math.min(1,px/w)); return 'scaleX('+(1-p).toFixed(3)+')'; }
 function wireTicket(){
   var tk=document.querySelector('#stage .ticket');
   tk.addEventListener('click', function(e){ if(pile[0] && pile[0].done && !e.target.closest('.flap')) nextTicket(); });

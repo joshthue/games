@@ -14,7 +14,10 @@ carry two lines — always non-crossing (top+bottom rows or outer columns). An o
 `-1`, a tier, or an array of tiers; read it through `tiersOf()`. Losers' squares are re-rolled
 until no line spells a combo in either direction (`comboOn`; checked over 120,000 tickets).
 **Tabs hinge on the left** like the real ones: grab the right edge (OPEN HERE) and peel left,
-so a peek shows the right-hand square first. The arrow is drawn a piece per square (`arrowSVG`), the way it's printed, so a peek
+so a peek shows the right-hand square first.
+Since v98 the tab folds **flat** toward its hinge (`scaleX`), so it only ever gets narrower from
+the right. The earlier 3D tilt toward the viewer made the right edge grow past the window at the
+start of a pull — something a left-hinged tab can't do. The arrow is drawn a piece per square (`arrowSVG`), the way it's printed, so a peek
 at one tab shows exactly the part of the arrow under it, and a down or slantwise arrow needs
 all three tabs. Each window is three square cells (`aspect-ratio:3/1`, symbols sized in `cqw`).
 **Slanted lines (v89):** the printed strips push the rows further apart than a square is wide,
