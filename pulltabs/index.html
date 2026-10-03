@@ -157,8 +157,11 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .cell .sy{position:relative;z-index:1}
 .cell svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
 .cell.on{background:radial-gradient(circle,#fff6c4 0 45%,#ffe066 100%);animation:glow 1s ease-in-out infinite alternate}
-.serial{position:absolute;left:9%;top:38%;z-index:0;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
-  font-weight:900;font-size:6.5cqw;letter-spacing:.06em;padding:0 2cqw;line-height:1.25;pointer-events:none;opacity:.9}
+/* printed over the pictures (and the line), like the real sticker; only the $ box sits above it,
+   and the sticker moves to the right when the $ box is in the top-left square */
+.serial{position:absolute;left:9%;top:38%;z-index:3;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
+  font-weight:900;font-size:6.5cqw;letter-spacing:.06em;padding:0 2cqw;line-height:1.25;pointer-events:none;opacity:.95}
+.serial.r{left:auto;right:9%}
 /* the printed prize box: arrow deals use the "$100 TOTAL" splash, bar deals a plain square */
 .tot{position:relative;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:.9;
   width:84%;height:62%;border-radius:46% 54% 40% 60%/55% 45% 55% 45%;background:radial-gradient(circle at 40% 40%,#fff27a,#ffd400 70%);
@@ -561,7 +564,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v90";
+var BUILD_V="v91";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -851,7 +854,7 @@ function ticketHTML(t){
       var inner = k===t.badge ? prizeBox(d,t.amt) : '<span class="sy">'+sym(d,t.cells[k])+'</span>';
       return '<div class="cell" data-k="'+k+'">'+inner+'<span class="arr">'+arrowSVG(t,k)+'</span></div>'; }).join('');
     return '<div class="tabrow" data-i="'+i+'"><div class="win3">'+cells+'</div>'
-      +(i===0?'<div class="serial">'+serialOf(t)+'</div>':'')
+      +(i===0?'<div class="serial'+(t.badge===0?' r':'')+'">'+serialOf(t)+'</div>':'')
       +'<div class="flap" data-i="'+i+'"><span>'+(i+1)+'</span><span>\u25C2 OPEN HERE</span></div></div>';
   });
   var star=new Array(40).join('\u2605');

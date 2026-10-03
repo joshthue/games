@@ -32,7 +32,9 @@ red bar with a plain yellow "$X" square, like Josh's $200 darts ticket. `PT.DEAL
 **The card (v87)** copies the real card stock: white with a border of stars in the deal's colour,
 rounded perforated windows, a printed strip between each pair of tabs (deal name + price, then
 cheesy fine print from `PT.DEALS[k].fine`), and a yellow serial-number sticker on the top window
-— one per box, derived from the box id. The prize box sits above the sticker.
+— one per box, derived from the box id. Since v91 the sticker is printed over the pictures and
+the line (only the $ box sits above it), and it moves to the right of the top window when the
+$ box is in the top-left square, so neither ever hides the other.
 Tickets from before v86 (matching rows, five tabs, seal cards) are cleared from a pile on
 load, and any unopened winner among them is paid out first.
 
