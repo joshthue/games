@@ -44,10 +44,16 @@ $ box is in the top-left square, so neither ever hides the other.
 Tickets from before v86 (matching rows, five tabs, seal cards) are cleared from a pile on
 load, and any unopened winner among them is paid out first.
 
-## Play
-- **Solo** — your own private box per deal, saved between visits. Fully offline.
-- **Shared box** — one phone starts a box and reads out a 4-letter code; everyone joins
-  and buys from the *same* box. When somebody hits big it pops up on every phone.
+## Play (v95: the booth)
+- **The booth** — all five boxes sit on the counter at once, each drawn as an open cardboard box
+  whose stack of tabs goes down as anybody buys, with its count left and whether its top prize
+  is still in. Tap a box to buy from it and see its flare. A sold-out box stays on the counter,
+  empty and stamped SOLD OUT, until somebody buys that deal again — then a fresh box is cracked.
+- **Buying goes by the 20** (20 / 40 / 60 tabs). You walk in with **$100** (counted as money you
+  brought, so Net starts even); the ATM gives $100 for $103.
+- **Solo** — your own booth, all five boxes saved between visits. Fully offline.
+- **Shared booth** — one phone starts it and reads out a 4-letter code; everyone joins and buys
+  from the *same* five boxes, watching them go down together. Big hits pop up on every phone.
 - **Opening** — tap a tab to rip it open. Or slide it: it follows your finger, and if you let
   go part way it **stays peeked** right where you left it (saved with the ticket). Slide past
   85% and it peels off. A peeked tab can be picked up from where it sits.
@@ -87,12 +93,16 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
 - **Claims tell the board, not sales.** A winner bought but not yet opened still shows green
   on the flare — exactly how the wall at the VFW works.
 - **Block 2 — the booth and the network.** Host-authoritative over the two ntfy relays
-  (`jtpt-v1-<code>`), same model as Hold'em: the host's phone holds the box (saved to
-  `pt_host_v1`, so "Reopen box" survives a reload); guests send `hello` / `buy` / `claim`,
-  the host answers `tix` to the buyer only and broadcasts a debounced `board` (and a 20s
-  heartbeat). Only the host broadcasts — ntfy rate-limits per IP and a bar is one IP.
+  (`jtpt-v1-<code>`), same model as Hold'em: the host's phone holds all five boxes
+  (`S.boxes`, saved to `pt_host_v2` with the last few sold-out boxes in `S.old` so their tickets
+  can still be claimed; "Reopen booth" survives a reload and upgrades a v1 single-box save).
+  Guests send `hello` / `buy` (with the deal) / `claim`; the host answers `tix` to the buyer
+  only — **in parts of 12** (`TIX_PART`), because 60 tickets don't fit one ~4KB relay message —
+  and broadcasts a debounced `board`: a summary of every box plus the newest 12 winners across
+  all of them (each phone keeps its own full history per box). Only the host broadcasts — ntfy
+  rate-limits per IP and a bar is one IP.
 - A `buy` carries a request id; a retry with the same id gets the **same** tickets back
-  instead of selling more. A claim is honoured only from the ticket's buyer, once.
+  instead of selling more (`S.rids`, last 200). A guest re-asks if any part of its tickets is missing. A claim is honoured only from the ticket's buyer, once.
 - Streams start at `since=<now-20s>`, not `since=all` — an all-night box would otherwise
   replay every old buy at a newcomer.
 - The board carries only the last 15 log entries (ntfy caps ~4KB); each phone merges them

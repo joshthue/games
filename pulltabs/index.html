@@ -21,6 +21,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;min-height:100%}
+html{overflow-x:hidden}   /* a ticket's deal-in tilt and the confetti must never make the page scroll sideways */
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   color:var(--cream);
@@ -98,6 +99,23 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .bankbar .net{font-size:13px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.3)}
 .net.up{color:#9ff0b9} .net.down{color:#ffb0a6}
 .bankbar .spacer{flex:1}
+.booth{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 10px}
+/* a box on the counter: cardboard, open at the top, its tabs stacked inside going down */
+.bxtile{font:inherit;color:var(--cream);background:var(--booth);border:2px solid transparent;border-radius:10px;padding:9px 5px 6px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0}
+.bxtile.on{border-color:var(--gold);background:rgba(243,201,76,.14)}
+.bxn{font-size:11px;font-weight:800;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--cream)}
+.bx{position:relative;width:86%;height:58px;border:3px solid #7a5428;border-top:0;border-radius:0 0 6px 6px;
+  background:linear-gradient(90deg,#b98544,#d4a462 50%,#b98544);box-shadow:inset 0 -6px 10px rgba(0,0,0,.25)}
+.bx:before,.bx:after{content:"";position:absolute;top:-7px;width:44%;height:8px;background:#c4914f;border:2px solid #7a5428}
+.bx:before{left:-5px;transform:skewX(-25deg)} .bx:after{right:-5px;transform:skewX(25deg)}
+.bxfill{position:absolute;left:4px;right:4px;bottom:3px;border-radius:2px;transition:height .7s ease;
+  background:repeating-linear-gradient(180deg,var(--tc) 0 2px,#f7f6f2 2px 4px)}
+.bxlbl{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);background:#fff;color:#222;font-weight:900;font-size:10px;border-radius:3px;padding:0 4px}
+.bxout{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) rotate(-14deg);color:#d42a1a;border:2px solid #d42a1a;font-weight:900;font-size:9px;padding:1px 3px;background:rgba(255,255,255,.85);white-space:nowrap}
+.bxleft{font-size:11px;font-weight:800;color:var(--gold)}
+.bxtop{font-size:9.5px;font-weight:700;color:#9ff0b9;line-height:1.1;text-align:center}
+.bxtop.gone{color:#ffb0a6;text-decoration:line-through}
 .roombar{font-size:13px;opacity:.9;margin:0 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .roombar .code{font-weight:900;letter-spacing:3px;color:var(--gold)}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block}
@@ -276,6 +294,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   .neon{font-size:64px} .neon small{font-size:18px} .sub{font-size:16px}
   .dealpick{grid-template-columns:repeat(3,1fr)}
   .roombar{font-size:15px}
+  .booth{gap:10px} .bxn{font-size:13px} .bx{height:96px} .bxleft{font-size:15px} .bxtop{font-size:12px} .bxlbl{font-size:13px} .bxout{font-size:13px}
   .tixact .btn{font-size:18px;padding:12px 18px} .asidechip{font-size:16px}
   #setup .panel{max-width:640px;margin:0 auto}
 }
@@ -306,11 +325,11 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
     <div class="panel">
       <div class="cap">Your name (for the winners board)</div>
       <input class="txt" id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/>
-      <div class="cap" style="margin-top:14px">Pick a deal</div>
+      <div class="cap" style="margin-top:14px">Start at · all five boxes are on the counter</div>
       <div class="dealpick" id="dealPick"></div>
       <div class="setbtns">
-        <button class="btn" id="soloBtn">🎟️ Play solo · your own box</button>
-        <button class="btn ghost" id="hostBtn">👥 Start a shared box</button>
+        <button class="btn" id="soloBtn">🎟️ Play solo · your own booth</button>
+        <button class="btn ghost" id="hostBtn">👥 Start a shared booth</button>
         <button class="btn ghost hidden" id="resumeBtn"></button>
       </div>
       <div class="cap" style="margin-top:14px">Or join a box someone started</div>
@@ -328,9 +347,10 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
       <div><div class="cap" style="margin:0">Cash</div><div class="cash" id="cash">$0</div></div>
       <div class="net" id="net">even</div>
       <div class="spacer"></div>
-      <button class="btn ghost" id="atmBtn" style="padding:9px 12px">🏧 ATM · $20</button>
+      <button class="btn ghost" id="atmBtn" style="padding:9px 12px">🏧 ATM · $100</button>
     </div>
     <div class="roombar hidden" id="roombar"></div>
+    <div class="booth" id="booth"></div>
     <div class="cols">
       <div>
         <div class="dealbar"><span class="nm" id="dealName"></span><span class="left" id="leftTxt"></span></div>
@@ -355,9 +375,11 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   <p>Tap a tab to rip it open, or grab its right edge (OPEN HERE) and slide it left — it peels back from the right like the real ones, and if you let go part way it stays peeked. Not sure about one? <b>Set it aside</b> and pick it back up later. <b>Toss it</b> sends it to the bucket — Darlene checks it first, so a winner never goes in the trash.</p>
   <p>The flare keeps score: a red dot is a prize somebody has already pulled, a green one is still in the box. When the box is down to its last hundred and the big one is still green — that's when folks start buying.</p>
   <h3>The money</h3>
-  <p>It's play money, but it sticks around between visits. The ATM gives you $20 and charges a $3 fee, because it's a VFW. <b>Net</b> is your cash minus everything you've pulled out of the ATM — how far ahead (or behind) you really are.</p>
-  <h3>Shared box</h3>
-  <p>One phone starts the box and reads out the 4-letter code; everybody else joins with it and buys from the same box. The phone that started it holds the box — keep it open. When somebody hits big, it pops up on everyone's phone.</p>
+  <p>It's play money, but it sticks around between visits. You walk in with <b>$100</b>, and tabs go by the 20 — nobody buys one tab. The ATM gives you another $100 and charges a $3 fee, because it's a VFW. <b>Net</b> is your cash minus everything you brought and pulled out of the ATM — how far ahead (or behind) you really are.</p>
+  <h3>The booth</h3>
+  <p>All five boxes sit on the counter at once. Each one shows its stack of tabs going down as people buy, and whether its top prize is still in there. Tap a box to buy from it and see its flare. A sold-out box sits there empty until somebody wants that deal again — then Darlene cracks a fresh one.</p>
+  <h3>Shared booth</h3>
+  <p>One phone starts the booth and reads out the 4-letter code; everybody else joins with it. Everyone buys from the same five boxes and watches them go down together. The phone that started it holds the boxes — keep it open. When somebody hits big, it pops up on everyone's phone.</p>
   <p style="opacity:.75">Pays back about 83% across the whole box — one ticket in eight is a winner. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
   <button class="btn" style="width:100%" data-close="rulesOv">Okie dokie</button>
 </div></div>
@@ -444,7 +466,8 @@ var FINE={
   fair:'\u201CRedeem by Labor Day. Not responsible for lost Pronto Pups. Void in Wisconsin.\u201D',
   uffda:'\u201CVoid where prohibited, and in Iowa, dontcha know.\u201D',
   loon:'\u201C21+. Powered by Birch & Gran. Leave no trace. Void in Wisconsin.\u201D' };
-Object.keys(DEALS).forEach(function(k){ DEALS[k].marker=MARKER[k]||'arrow'; DEALS[k].fine=FINE[k]||''; });
+var SHORT={ walleye:'Walleye', hotdish:'Hotdish', fair:'State Fair', uffda:'Uff Da 7s', loon:'Loonatic' };   // for the booth tiles
+Object.keys(DEALS).forEach(function(k){ DEALS[k].marker=MARKER[k]||'arrow'; DEALS[k].fine=FINE[k]||''; DEALS[k].short=SHORT[k]||DEALS[k].name; });
 var DEAL_ORDER=['walleye','hotdish','fair','uffda','loon'];
 
 function payout(d){ return d.tiers.reduce(function(a,t){return a+t.amt*t.n;},0)/(d.count*d.price); }
@@ -546,7 +569,7 @@ function claim(box, id, n){
   var d=DEALS[box.deal], tiers=tiersOf(box.order[n]), who=box.players[id]||'Somebody', res={ok:true, o:box.order[n], amt:0};
   if(tiers.length){
     tiers.forEach(function(ti){ box.tierClaimed[ti]++; res.amt+=d.tiers[ti].amt; });
-    box.log.push({seq:++box.seq, kind:'win', id:id, who:who, tier:tiers[0], tiers:tiers, amt:res.amt, t:Date.now()});
+    box.log.push({seq:++box.seq, kind:'win', id:id, who:who, tier:tiers[0], tiers:tiers, amt:res.amt, bid:box.id, deal:box.deal, t:Date.now()});
   }
   return res;
 }
@@ -568,7 +591,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v94";
+var BUILD_V="v95";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -578,7 +601,11 @@ function lsSet(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){
 function shortId(){ return Math.random().toString(36).slice(2,10); }
 
 var myId = lsGet('pt_id',null); if(!myId){ myId=shortId(); lsSet('pt_id',myId); }
-var bank = Object.assign({cash:0, atm:0, bought:0, won:0, best:0}, lsGet('pt_bank_v1',{}));
+var START_CASH=100, ATM_CASH=100, ATM_FEE=3;
+// You walk in with $100. It counts as money you brought (atm), so Net starts at "even".
+// A bank from before v95 gets the same $100 added once, net unchanged.
+var bank = Object.assign({cash:START_CASH, atm:START_CASH, bought:0, won:0, best:0, v:2}, lsGet('pt_bank_v1',{}));
+if(bank.v!==2){ bank.cash+=START_CASH; bank.atm+=START_CASH; bank.v=2; lsSet('pt_bank_v1',bank); }
 function saveBank(){ lsSet('pt_bank_v1', bank); }
 var pile = lsGet('pt_pile_v1', []);          // tickets you've bought and not tossed yet
 var aside = lsGet('pt_aside_v1', []);        // tickets set aside to finish later
@@ -597,14 +624,17 @@ function savePile(){ lsSet('pt_pile_v1', pile); }
 var myName = lsGet('pt_name','');
 var pickDeal = lsGet('pt_deal','walleye'); if(!D[pickDeal]) pickDeal='walleye';
 
-var S = { mode:null, box:null, board:null, code:null, logAll:{}, lastSeq:{}, pendingBuy:null };
+// The booth: every deal has a box on the counter at once. boxes = {deal: box} on the device
+// that holds them (solo: you, shared: the host); a guest sees booth = {deal: summary}.
+// old = sold-out boxes that were replaced, kept so their tickets can still be claimed.
+var S = { mode:null, deal:null, boxes:null, old:{}, booth:null, players:{}, code:null, logAll:{}, lastSeq:{}, pendingBuy:null };
 
 // ---------- Darlene ----------
 function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
 var SAY = {
   hello:["Cash only, hon. Pick a deal and I'll get ya some tabs.","Well hi there! Grab a stool. Meat raffle's at seven.","Ope — let me just squeeze past ya. What're we playin'?","Booth's open. Don't tell Pastor Dave."],
   broke:["Cash is gone, hon. ATM's back by the meat raffle.","Ope, you're tapped out. ATM's over by the pickled eggs.","Gonna need more cash, dontcha know."],
-  atm:["There ya go. Three-dollar fee — it's a VFW, hon.","Twenty bucks! Don't spend it all in one tab. (You will.)","ATM fee's three bucks. Supports the color guard."],
+  atm:["There ya go. Three-dollar fee — it's a VFW, hon.","A hundred bucks! Don't spend it all in one box. (You will.)","ATM fee's three bucks. Supports the color guard."],
   lose:["Ope, not this one.","Well, that's different.","Could be worse — could be January.","Oh fer cryin' out loud.","Jeez Louise.","Nope. Not even close, dontcha know.","Toss it in the bucket, hon.","Uff. Next one's the one."],
   small:["Well there ya go!","Oh, for fun!","You betcha, that's a winner!","Ope — a winner! Look at you.","That'll buy a bar or two."],
   big:["UFF DA! Somebody call the church basement!","HOLY BUCKETS! Ring the bell!","Oh my gosh — you're buyin' the next round of bars!","Well I'll be! Wait'll I tell my sister in Brainerd!"],
@@ -644,47 +674,51 @@ $('nameIn').addEventListener('input', function(){ myName=this.value.trim().slice
 $('setupSay').textContent = pick(SAY.hello);
 function needName(){ if(myName) return true; $('nameIn').focus(); $('setupSay').innerHTML='What do I put on the winners board, hon? <b>Type your name up top.</b>'; return false; }
 function syncResume(){
-  var h=lsGet('pt_host_v1',null), b=$('resumeBtn');
-  if(h && h.box && D[h.box.deal]){ b.classList.remove('hidden'); b.textContent='↩️ Reopen box '+h.code+' · '+D[h.box.deal].name+' · '+PT.left(h.box)+' left'; }
+  var h=lsGet('pt_host_v2',null)||lsGet('pt_host_v1',null), b=$('resumeBtn');
+  if(h && (h.boxes || h.box)){ b.classList.remove('hidden'); b.textContent='↩️ Reopen booth '+h.code; }
   else b.classList.add('hidden');
   var g=lsGet('pt_guest_v1',null); if(g && g.code && !$('codeIn').value) $('codeIn').value=g.code;
 }
 
 // ---------- modes ----------
-function soloBox(deal){
-  var all=lsGet('pt_solo_v1',{}), b=all[deal];
-  if(!b || !b.order || PT.left(b)===0){ b=PT.newBox(deal); all[deal]=b; lsSet('pt_solo_v1',all); }
+function freshBooth(){ var b={}; PT.DEAL_ORDER.forEach(function(k){ b[k]=PT.newBox(k); }); return b; }
+function soloBooth(){
+  var all=lsGet('pt_solo_v1',{}), b={};
+  PT.DEAL_ORDER.forEach(function(k){ b[k] = (all[k] && all[k].order) ? all[k] : PT.newBox(k); });
   return b;
 }
 function saveBox(){
-  if(S.mode==='solo'){ var all=lsGet('pt_solo_v1',{}); all[S.box.deal]=S.box; lsSet('pt_solo_v1',all); }
-  else if(S.mode==='host'){ lsSet('pt_host_v1',{code:S.code, box:S.box}); }
+  if(S.mode==='solo') lsSet('pt_solo_v1', S.boxes);
+  else if(S.mode==='host'){ var old={}, ids=Object.keys(S.old).slice(-4); ids.forEach(function(i){ old[i]=S.old[i]; });
+    lsSet('pt_host_v2',{code:S.code, boxes:S.boxes, old:old, players:S.players}); }
 }
 function startSolo(){
   if(!needName()) return;
-  S.mode='solo'; S.code=null; S.box=soloBox(pickDeal); S.box.players[myId]=myName;
-  enterGame(); say('hello');
+  S.mode='solo'; S.code=null; S.boxes=soloBooth(); S.old={}; S.deal=pickDeal; S.players={}; S.players[myId]=myName;
+  saveBox(); enterGame(); say('hello');
 }
 function startHost(resume){
   if(!needName()) return;
-  var h=resume?lsGet('pt_host_v1',null):null;
-  S.mode='host';
-  if(h && h.box){ S.box=h.box; S.code=h.code; } else { S.box=PT.newBox(pickDeal); S.code=randCode(); }
-  S.box.players[myId]=myName; saveBox();
+  S.mode='host'; S.old={}; S.players={};
+  var h=resume?lsGet('pt_host_v2',null):null, h1=resume&&!h?lsGet('pt_host_v1',null):null;
+  if(h && h.boxes){ S.boxes=h.boxes; S.old=h.old||{}; S.code=h.code; S.players=h.players||{}; }
+  else { S.boxes=freshBooth(); S.code=(h1&&h1.code)||randCode(); if(h1&&h1.box&&D[h1.box.deal]) S.boxes[h1.box.deal]=h1.box; }
+  PT.DEAL_ORDER.forEach(function(k){ if(!S.boxes[k]) S.boxes[k]=PT.newBox(k); });
+  S.deal=pickDeal; S.players[myId]=myName; saveBox();
   enterGame(); netStart();
-  say('Box <b>'+S.code+'</b> is open! Read that code out — everybody joins with it. Keep this phone open, hon, the box lives here.');
+  say('Booth <b>'+S.code+'</b> is open — all five boxes on the counter! Read that code out; everybody joins with it. Keep this phone open, hon, the boxes live here.');
   publishBoard();
 }
 function startGuest(){
   if(!needName()) return;
   var c=$('codeIn').value.trim().toUpperCase(); if(c.length!==4){ $('setupSay').textContent='Codes are four letters, hon.'; return; }
-  S.mode='guest'; S.code=c; S.board=null; lsSet('pt_guest_v1',{code:c});
-  enterGame(); netStart(); say('Lookin’ for box <b>'+c+'</b>… hang on a sec.');
+  S.mode='guest'; S.code=c; S.booth=null; S.deal=pickDeal; lsSet('pt_guest_v1',{code:c});
+  enterGame(); netStart(); say('Lookin’ for booth <b>'+c+'</b>… hang on a sec.');
   sayHello();
 }
-function enterGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); render(); }
+function enterGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); ingestAll(true); render(); }
 function leave(){
-  netStop(); S.mode=null; S.box=null; S.board=null;
+  netStop(); S.mode=null; S.boxes=null; S.booth=null;
   $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); syncResume();
 }
 $('soloBtn').addEventListener('click', startSolo);
@@ -693,22 +727,43 @@ $('resumeBtn').addEventListener('click', function(){ startHost(true); });
 $('joinBtn').addEventListener('click', startGuest);
 $('codeIn').addEventListener('keydown', function(e){ if(e.key==='Enter') startGuest(); });
 
-function curView(){ return S.mode==='guest' ? S.board : (S.box ? PT.view(S.box) : null); }
-function curDeal(){ var v=curView(); return v ? D[v.deal] : D[pickDeal]; }
+// a box's public face: what a guest gets for it, and what the booth tiles and flare draw from
+function summary(b){ return { id:b.id, deal:b.deal, count:b.order.length, left:PT.left(b), tiers:b.tierClaimed.slice(), seq:b.seq }; }
+function viewOf(k){
+  if(S.mode==='guest') return S.booth ? S.booth[k] : null;
+  return S.boxes && S.boxes[k] ? summary(S.boxes[k]) : null;
+}
+function curView(){ return viewOf(S.deal); }
+function curDeal(){ return D[S.deal] || D[pickDeal]; }
+function playerNames(){ return S.mode==='guest' ? ((S.boardPlayers)||[]) : Object.keys(S.players).map(function(k){ return S.players[k]; }); }
+// a box that has sold out stays on the counter, empty, until somebody wants that deal again
+function boxForBuy(k){
+  var b=S.boxes[k];
+  if(PT.left(b)===0){ S.old[b.id]=b; b=S.boxes[k]=PT.newBox(k);
+    if(S.mode!=='guest') toast('📦 Darlene cracks a fresh box of <b>'+esc(D[k].name)+'</b>!'); }
+  return b;
+}
+function findBox(bid){
+  if(S.old[bid]) return S.old[bid];
+  for(var k in S.boxes) if(S.boxes[k].id===bid) return S.boxes[k];
+  return null;
+}
 
-// ---------- buying ----------
+// ---------- buying: by the 20, like everybody does ----------
+var BUY_STEPS=[20,40,60];
 $('aside').addEventListener('click', function(e){ var b=e.target.closest('.asidechip'); if(b) bringBack(+b.dataset.j); });
 $('buyRow').addEventListener('click', function(e){ var b=e.target.closest('button[data-q]'); if(b) buy(+b.dataset.q); });
+$('booth').addEventListener('click', function(e){ var b=e.target.closest('.bxtile'); if(!b) return; S.deal=b.dataset.deal; pickDeal=S.deal; lsSet('pt_deal',S.deal); sfx('select'); render(); });
 function buy(q){
   var v=curView(); if(!v) return;
-  var d=D[v.deal], cost=d.price*q;
-  if(v.left<=0){ say('soldout'); return; }
+  var d=D[S.deal], cost=d.price*q;
   if(bank.cash<cost){ say('broke'); sfx('illegal'); flashAtm(); return; }
   if(S.mode==='guest'){
     if(S.pendingBuy) return;
-    S.pendingBuy={rid:shortId(), q:q, tries:0}; sendBuy(); render(); return;
+    S.pendingBuy={rid:shortId(), q:q, deal:S.deal, tries:0, got:{}}; sendBuy(); render(); return;
   }
-  receiveTix(PT.sell(S.box, myId, myName, q));
+  var b=boxForBuy(S.deal);
+  receiveTix(PT.sell(b, myId, myName, q));
   saveBox(); if(S.mode==='host') publishBoard();
 }
 function flashAtm(){ var a=$('atmBtn'); a.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:500,iterations:2}); }
@@ -718,10 +773,10 @@ function receiveTix(tix){
   bank.cash-=cost; bank.bought+=tix.length; saveBank();
   tix.forEach(function(t){ t.room=S.code||'solo'; t.open=[0,0,0]; t.peek=[0,0,0]; pile.push(t); });
   savePile(); sfx('deal');
-  if(pile.length===tix.length) say('pile');
+  if(tix.length && pile.length===tix.length) say('There’s '+tix.length+' for ya, hon. '+pick(SAY.pile));
   render();
 }
-$('atmBtn').addEventListener('click', function(){ bank.cash+=20; bank.atm+=23; saveBank(); sfx('chip'); say('atm'); render(); });
+$('atmBtn').addEventListener('click', function(){ bank.cash+=ATM_CASH; bank.atm+=ATM_CASH+ATM_FEE; saveBank(); sfx('chip'); say('atm'); render(); });
 
 // ---------- opening ----------
 function ticketKey(t){ return t.bid+':'+t.n; }
@@ -773,8 +828,9 @@ function renderAside(){
     return '<button class="asidechip" data-j="'+j+'" style="--tc:'+d.color+'">'+esc(d.name)+'<small>No. '+String(t.n+1).padStart(4,'0')+' · '+peeks+'</small></button>'; }).join('')+'</div>';
 }
 function sendClaim(t){
-  if(S.mode==='guest'){ if(S.board && t.bid===S.board.id) netPublish({t:'claim', id:myId, n:t.n, bid:t.bid}); return; }
-  if(S.box && t.bid===S.box.id){ PT.claim(S.box, myId, t.n); saveBox(); if(S.mode==='host') publishBoard(); afterView(); }
+  if(S.mode==='guest'){ netPublish({t:'claim', id:myId, n:t.n, bid:t.bid}); return; }
+  var b=S.boxes && findBox(t.bid);
+  if(b){ PT.claim(b, myId, t.n); saveBox(); if(S.mode==='host') publishBoard(); ingestAll(); }
 }
 
 // ---------- the ticket ----------
@@ -911,7 +967,7 @@ function renderFlare(){
       +'<td class="am">'+money(t.amt)+'<small>'+t.n+' Winner'+(t.n>1?'s':'')+'</small></td>'
       +'<td class="lf"><div class="pips">'+pips+'</div>'+lf+' left</td></tr>';
   }).join('');
-  var log=(S.logAll[v.id]||v.log).slice().reverse();
+  var log=(S.logAll[v.id]||[]).slice().reverse();
   var wl = log.length ? log.map(function(e){
     if(e.kind==='win' && d.tiers[e.tier]) return '<li><b>'+esc(e.who)+'</b> pulled '+money(e.amt)+' · '+(e.tiers||[e.tier]).map(function(ti){ return d.tiers[ti]?esc(d.tiers[ti].label):''; }).join(' + ')+'</li>';
     return ''; }).join('') : '<li class="none">Nobody’s hit yet. Somebody’s gotta be first!</li>';
@@ -925,41 +981,59 @@ function renderFlare(){
 $('flareBtn').addEventListener('click', function(){ document.body.classList.add('flare-open'); renderFlare(); });
 $('flareCol').addEventListener('click', function(e){ if(e.target===this) document.body.classList.remove('flare-open'); });
 
-// things that follow a new view: merge the log, toast other people's big hits
-function afterView(){
-  var v=curView(); if(!v) return;
-  var all=S.logAll[v.id]||[], seen={}; all.forEach(function(e){ seen[e.seq]=1; });
-  v.log.forEach(function(e){ if(!seen[e.seq]) all.push(e); }); all.sort(function(a,b){return a.seq-b.seq;}); S.logAll[v.id]=all;
-  var d=D[v.deal], last=S.lastSeq[v.id];
-  if(last!=null) v.log.forEach(function(e){ if(e.seq<=last) return;
+// Winners logs, merged per box. Big hits by anybody else pop up as a toast - but not the
+// backlog you see the first time a box shows up (prime).
+function ingest(entries, prime){
+  (entries||[]).forEach(function(e){
+    var bid=e.bid; if(!bid) return;
+    var all=S.logAll[bid]||(S.logAll[bid]=[]);
+    if(all.some(function(x){ return x.seq===e.seq; })) return;
+    all.push(e); all.sort(function(a,b){ return a.seq-b.seq; });
+    var d=D[e.deal]; if(prime || !d || S.lastSeq[bid]==null){ S.lastSeq[bid]=Math.max(S.lastSeq[bid]||0,e.seq); return; }
+    if(e.seq<=S.lastSeq[bid]) return;
+    S.lastSeq[bid]=e.seq;
     if(e.kind==='win' && e.id!==myId && e.amt>=10*d.price){ toast('🎉 '+esc(e.who)+' just pulled '+money(e.amt)+' on '+esc(d.name)+'!'); if(e.amt>=50*d.price) confetti(14); sfx('good'); }
   });
-  S.lastSeq[v.id]=v.seq;
+}
+function ingestAll(prime){
+  if(!S.boxes) return;
+  var list=Object.keys(S.boxes).map(function(k){ return S.boxes[k]; }).concat(Object.keys(S.old).map(function(i){ return S.old[i]; }));
+  list.forEach(function(b){ ingest((b.log||[]).map(function(e){ return Object.assign({bid:b.id, deal:b.deal}, e); }), prime); });
 }
 
 // ---------- render ----------
+// The booth: every box on the counter, its stack of tabs going down as anybody buys.
+function renderBooth(){
+  $('booth').innerHTML=PT.DEAL_ORDER.map(function(k){
+    var d=D[k], v=viewOf(k), left=v?v.left:0, count=v?v.count:400, pct=v?left/count:0;
+    var top=v ? (d.tiers[0].n - v.tiers[0]) : 0;
+    return '<button class="bxtile'+(k===S.deal?' on':'')+(v&&!left?' out':'')+'" data-deal="'+k+'" style="--tc:'+d.color+'">'
+      +'<span class="bxn">'+esc(d.short)+'</span>'
+      +'<span class="bx"><span class="bxfill" style="height:'+(pct*100).toFixed(1)+'%"></span><span class="bxlbl">$'+d.price+'</span>'+(v&&!left?'<span class="bxout">SOLD OUT</span>':'')+'</span>'
+      +'<span class="bxleft">'+(v?left+' left':'…')+'</span>'
+      +'<span class="bxtop'+(top?'':' gone')+'">'+money(d.tiers[0].amt)+(top?' still in':' gone')+'</span></button>';
+  }).join('');
+}
 function render(){
   if(!S.mode) return;
-  renderAside();
+  renderAside(); renderBooth();
   var v=curView(), d=curDeal();
   $('cash').textContent=money(bank.cash);
   var net=bank.cash-bank.atm, n=$('net');
   n.textContent = net===0 ? 'even' : (net>0?'up ':'down ')+money(Math.abs(net)); n.className='net '+(net>0?'up':net<0?'down':'');
   $('dealName').textContent=d.name;
   var left=v?v.left:0, count=v?v.count:400;
-  $('leftTxt').innerHTML = v ? ('<b>'+left+'</b> of '+count+' left') : 'connecting…';
+  $('leftTxt').innerHTML = v ? (left ? '<b>'+left+'</b> of '+count+' left' : '<b>sold out</b> · buy to crack a fresh box') : 'connecting…';
   $('meterFill').style.width=(100*left/count)+'%';
-  var busy=!!S.pendingBuy || !v || left===0;
-  $('buyRow').innerHTML=[1,5,10].map(function(q){ return '<button class="btn" data-q="'+q+'"'+(busy?' disabled':'')+'>Buy '+q+'<small>'+money(q*d.price)+'</small></button>'; }).join('');
+  var busy=!!S.pendingBuy || !v;
+  $('buyRow').innerHTML=BUY_STEPS.map(function(q){ return '<button class="btn" data-q="'+q+'"'+(busy?' disabled':'')+'>Buy '+q+'<small>'+money(q*d.price)+'</small></button>'; }).join('');
   var rb=$('roombar');
   if(S.mode==='host' || S.mode==='guest'){
     rb.classList.remove('hidden');
-    var players = v ? v.players.length : 0;
-    rb.innerHTML='<span class="dot'+(net_ok()?'':' off')+'"></span> Shared box <span class="code">'+S.code+'</span> · '
-      +(S.mode==='host'?'you’re holding the box':'held by the host')+' · '+players+' at the booth'
-      +(S.mode==='guest' && S.board && Date.now()-S.lastBoardAt>60000 ? ' · <b style="color:#ffb0a6">host’s gone quiet</b>' : '');
+    rb.innerHTML='<span class="dot'+(net_ok()?'':' off')+'"></span> Shared booth <span class="code">'+S.code+'</span> · '
+      +(S.mode==='host'?'you’re holding the boxes':'held by the host')+' · '+playerNames().length+' at the booth'
+      +(S.mode==='guest' && S.booth && Date.now()-S.lastBoardAt>60000 ? ' · <b style="color:#ffb0a6">host’s gone quiet</b>' : '');
   } else rb.classList.add('hidden');
-  if(v && left===0 && !pile.length && S.soldSaid!==v.id){ S.soldSaid=v.id; say(S.mode==='guest'?'That box is sold out! Holler at the host to crack a fresh one.':'soldout'); }
   renderStage(); renderFlare();
 }
 
@@ -967,21 +1041,17 @@ function render(){
 function renderMenuBox(){
   var el=$('menuBox');
   if(S.mode==='solo' || S.mode==='host'){
-    el.innerHTML='<h3>Crack a fresh box</h3><div class="seg" id="newDeal">'+PT.DEAL_ORDER.map(function(k){ return '<button data-deal="'+k+'" class="'+(k===S.box.deal?'on':'')+'">'+sym(D[k],0)+' '+esc(D[k].name)+'</button>'; }).join('')
-      +'</div><p style="font-size:12px;opacity:.75">'+(S.mode==='host'?'Everybody at the booth switches to the new box.':'Your current box is kept — switch back to it any time.')+'</p>';
-    el.querySelector('#newDeal').style.flexWrap='wrap';
-    el.querySelector('#newDeal').addEventListener('click', function(e){ var b=e.target.closest('button'); if(!b) return;
-      var k=b.dataset.deal; pickDeal=k; lsSet('pt_deal',k);
-      // solo: the deal you're on cracks a fresh box; another deal picks up where you left that one
-      if(S.mode==='solo'){ S.box = (k===S.box.deal) ? PT.newBox(k) : soloBox(k); S.box.players[myId]=myName; saveBox(); }
-      else { S.box=PT.newBox(k); S.box.players[myId]=myName; saveBox(); publishBoard(); }
-      $('menuOv').classList.remove('on'); say('Fresh box of <b>'+esc(D[k].name)+'</b>! Four hundred tabs, all the winners still in there.'); render(); });
+    var d=D[S.deal];
+    el.innerHTML='<h3>Crack a fresh box</h3><p style="font-size:13px;opacity:.85">Pull the <b>'+esc(d.name)+'</b> box off the counter and put out a full one'+(S.mode==='host'?' for everybody':'')+'. Tickets already bought still pay.</p>'
+      +'<button class="btn ghost" id="crackBtn">📦 Fresh box of '+esc(d.name)+'</button>';
+    $('crackBtn').onclick=function(){ var b=S.boxes[S.deal]; S.old[b.id]=b; S.boxes[S.deal]=PT.newBox(S.deal); saveBox(); if(S.mode==='host') publishBoard();
+      $('menuOv').classList.remove('on'); say('Fresh box of <b>'+esc(d.name)+'</b>! Four hundred tabs, all the winners still in there.'); render(); };
   } else el.innerHTML='';
 }
 $('menuBtn').addEventListener('click', function(){ $('menuSound').checked=!!(window.SFX && SFX.isOn()); renderMenuBox(); $('menuOv').classList.add('on'); });
 $('menuSound').addEventListener('change', function(){ if(window.SFX){ SFX.setOn(this.checked); if(this.checked) sfx('select'); } });
 $('leaveBtn').addEventListener('click', function(){ $('menuOv').classList.remove('on'); leave(); });
-$('resetBank').addEventListener('click', function(){ bank={cash:0, atm:0, bought:0, won:0, best:0}; saveBank(); pile=[]; savePile(); $('menuOv').classList.remove('on'); say('Clean slate, hon. Fresh start.'); render(); });
+$('resetBank').addEventListener('click', function(){ bank={cash:START_CASH, atm:START_CASH, bought:0, won:0, best:0, v:2}; saveBank(); pile=[]; savePile(); $('menuOv').classList.remove('on'); say('Clean slate, hon. Fresh start.'); render(); });
 $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
 Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function(b){ b.addEventListener('click', function(){ $(b.dataset.close).classList.remove('on'); }); });
 ['rulesOv','menuOv'].forEach(function(id){ $(id).addEventListener('click', function(e){ if(e.target===this) this.classList.remove('on'); }); });
@@ -1003,43 +1073,66 @@ function netPublish(obj){
   RELAYS.forEach(function(base){ try{ fetch(base+topic(),{method:'POST', body:body}).catch(function(){}); }catch(e){} });
 }
 var pubT=null, hb=null;
+// the board: a summary of every box on the counter plus the newest winners across all of them
+// (ntfy caps a message near 4KB, so the log is the last 12 entries; each phone keeps its own history)
 function publishBoard(){
   if(S.mode!=='host') return;
   if(pubT) return;
-  pubT=setTimeout(function(){ pubT=null; netPublish({t:'board', view:PT.view(S.box)}); }, 600);
+  pubT=setTimeout(function(){ pubT=null;
+    var booth={}; PT.DEAL_ORDER.forEach(function(k){ booth[k]=summary(S.boxes[k]); });
+    var log=[]; Object.keys(S.boxes).forEach(function(k){ var b=S.boxes[k]; (b.log||[]).forEach(function(e){ log.push(Object.assign({bid:b.id, deal:b.deal}, e)); }); });
+    log.sort(function(a,b){ return (a.t||0)-(b.t||0); }); log=log.slice(-12);
+    netPublish({t:'board', booth:booth, log:log, players:playerNames()}); }, 600);
 }
 var helloT=null;
 function sayHello(){
   clearInterval(helloT);
   netPublish({t:'hello', id:myId, name:myName});
-  helloT=setInterval(function(){ if(S.mode!=='guest' || S.board){ clearInterval(helloT); return; } netPublish({t:'hello', id:myId, name:myName}); }, 4000);
+  helloT=setInterval(function(){ if(S.mode!=='guest' || S.booth){ clearInterval(helloT); return; } netPublish({t:'hello', id:myId, name:myName}); }, 4000);
 }
 function sendBuy(){
   var p=S.pendingBuy; if(!p) return;
-  netPublish({t:'buy', id:myId, name:myName, q:p.q, rid:p.rid});
+  netPublish({t:'buy', id:myId, name:myName, q:p.q, deal:p.deal, rid:p.rid});
+  clearTimeout(p.timer);
   p.timer=setTimeout(function(){ if(S.pendingBuy!==p) return;
     if(++p.tries>=3){ S.pendingBuy=null; say('Can’t reach the host, hon. Is their phone still open?'); render(); return; }
-    sendBuy(); }, 7000);
+    sendBuy(); }, 8000);
 }
+// 20-60 tickets don't fit one relay message, so they travel in parts of TIX_PART
+var TIX_PART=12;
+S.rids={};
 function handleNet(o){
   if(S.mode==='host'){
-    if(o.t==='hello'){ S.box.players[o.id]=String(o.name||'Somebody').slice(0,16); saveBox(); publishBoard(); render(); }
+    if(o.t==='hello'){ S.players[o.id]=String(o.name||'Somebody').slice(0,16); saveBox(); publishBoard(); render(); }
     else if(o.t==='buy'){
-      var b=S.box, q=Math.max(1,Math.min(10,o.q|0)), tix;
-      b.rids=b.rids||{};
-      if(b.rids[o.rid]) tix=b.rids[o.rid].map(function(n){ return PT.ticketFor(b,n); });     // a retry: send the same tickets again
-      else { tix=PT.sell(b, o.id, String(o.name||'Somebody').slice(0,16), q); b.rids[o.rid]=tix.map(function(t){return t.n;}); }
-      saveBox(); netPublish({t:'tix', to:o.id, rid:o.rid, tickets:tix}); publishBoard(); render();
+      var tix, prev=S.rids[o.rid];
+      if(prev){ var pb=findBox(prev.bid); tix=pb ? prev.ns.map(function(n){ return PT.ticketFor(pb,n); }) : []; }   // a retry: the same tickets again
+      else {
+        var k=D[o.deal]?o.deal:S.deal, b=boxForBuy(k), q=Math.max(1,Math.min(60,o.q|0));
+        S.players[o.id]=String(o.name||'Somebody').slice(0,16);
+        tix=PT.sell(b, o.id, S.players[o.id], q);
+        S.rids[o.rid]={bid:b.id, ns:tix.map(function(t){return t.n;})};
+        var ks=Object.keys(S.rids); if(ks.length>200) delete S.rids[ks[0]];
+      }
+      saveBox();
+      var parts=Math.max(1,Math.ceil(tix.length/TIX_PART));
+      for(var i=0;i<parts;i++) netPublish({t:'tix', to:o.id, rid:o.rid, part:i, parts:parts, tickets:tix.slice(i*TIX_PART,(i+1)*TIX_PART)});
+      publishBoard(); render();
     }
-    else if(o.t==='claim'){ if(o.bid===S.box.id){ var r=PT.claim(S.box, o.id, o.n); if(r.ok){ saveBox(); publishBoard(); afterView(); render(); } } }
+    else if(o.t==='claim'){ var cb=findBox(o.bid); if(cb){ var r=PT.claim(cb, o.id, o.n); if(r.ok){ saveBox(); publishBoard(); ingestAll(); render(); } } }
   } else if(S.mode==='guest'){
     if(o.t==='board'){
-      var first=!S.board; S.board=o.view; S.lastBoardAt=Date.now();
-      if(first) say('You’re in! Box <b>'+S.code+'</b>, '+esc(D[o.view.deal].name)+'. Buy a few, hon.');
-      afterView(); render();
+      var first=!S.booth; S.booth=o.booth; S.boardPlayers=o.players||[]; S.lastBoardAt=Date.now();
+      ingest(o.log, first);
+      if(first) say('You’re in! Booth <b>'+S.code+'</b> — five boxes on the counter. Pick one and buy a few, hon.');
+      render();
     } else if(o.t==='tix' && o.to===myId){
       var p=S.pendingBuy; if(!p || p.rid!==o.rid) return;
-      clearTimeout(p.timer); S.pendingBuy=null; receiveTix(o.tickets||[]);
+      p.got[o.part|0]=o.tickets||[]; p.parts=o.parts||1;
+      if(Object.keys(p.got).length<p.parts){ clearTimeout(p.timer); p.timer=setTimeout(function(){ if(S.pendingBuy===p){ p.got={}; sendBuy(); } }, 8000); return; }
+      clearTimeout(p.timer); S.pendingBuy=null;
+      var all=[]; for(var i2=0;i2<p.parts;i2++) all=all.concat(p.got[i2]||[]);
+      receiveTix(all);
     }
   }
 }
@@ -1087,7 +1180,7 @@ if(legacyPaid) $('setupSay').innerHTML='New tickets came in, hon \u2014 the ones
   $('gnBuild').textContent='build '+BUILD_V+(w?' · '+w:''); })();
 
 // test door
-window.__PT = { S:S, bank:function(){return bank;}, pile:function(){return pile;}, aside:function(){return aside;}, setAside:setAside, toss:tossTicket, bringBack:bringBack, openTab:openTab, openAll:openAll, next:nextTicket, buy:buy, render:render };
+window.__PT = { S:S, viewOf:viewOf, bank:function(){return bank;}, pile:function(){return pile;}, aside:function(){return aside;}, setAside:setAside, toss:tossTicket, bringBack:bringBack, openTab:openTab, openAll:openAll, next:nextTicket, buy:buy, render:render };
 })();
 </script>
 </body>
