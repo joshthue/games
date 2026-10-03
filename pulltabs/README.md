@@ -45,7 +45,8 @@ Tickets from before v86 (matching rows, five tabs, seal cards) are cleared from 
 load, and any unopened winner among them is paid out first.
 
 ## Play (v95: the booth)
-- **The booth** — all five boxes sit on the counter at once, each drawn as an open cardboard box
+- **The booth** — all six boxes sit on the counter at once (two rows of three on a phone, one row
+  of six on a tablet), each drawn as an open cardboard box
   whose stack of tabs goes down as anybody buys, with its count left and whether its top prize
   is still in. Tap a box to buy from it and see its flare. A sold-out box stays on the counter,
   empty and stamped SOLD OUT, until somebody buys that deal again — then a fresh box is cracked.
@@ -53,7 +54,7 @@ load, and any unopened winner among them is paid out first.
   brought, so Net starts even); the ATM gives $100 for $103.
 - **Solo** — your own booth, all five boxes saved between visits. Fully offline.
 - **Shared booth** — one phone starts it and reads out a 4-letter code; everyone joins and buys
-  from the *same* five boxes, watching them go down together. Big hits pop up on every phone.
+  from the *same* six boxes, watching them go down together. Big hits pop up on every phone.
 - **Opening** — tap a tab to rip it open. Or slide it: it follows your finger, and if you let
   go part way it **stays peeked** right where you left it (saved with the ticket). Slide past
   85% and it peels off. A peeked tab can be picked up from where it sits.
@@ -66,9 +67,10 @@ load, and any unopened winner among them is paid out first.
   iPad in landscape, under it in portrait, behind the 📋 Flare button on a phone.
 
 ## Deals
-Five deals, 400 tickets each. Tabs are **$2** like at the bar — **Walleye Wishes**, **Hotdish
-Heaven**, **State Fair Fortune**, **Loonatic Lake** — with **Uff Da 7s** as the occasional **$5**
-box (v89). Prizes scale with the price, so a $2 box tops out at $200 and the $5 box at $500.
+Six deals, 400 tickets each. Tabs are **$2** like at the bar — **Cherry Poppers** (v96, the
+classic slot-style box from Josh's first photos: cherries are the key, arrow lines), **Walleye
+Wishes**, **Hotdish Heaven**, **State Fair Fortune**, **Loonatic Lake** — with **Uff Da 7s** as the
+occasional **$5** box (v89). Prizes scale with the price, so a $2 box tops out at $200 and the $5 box at $500.
 
 **Loonatic Lake** (v84) is the Loonatic Cannabis box: the top symbol is the brand's own loon
 roundel (cropped from the brand sheet in `~/Developer/loonaticCannabis/brand`, cream keyed to
