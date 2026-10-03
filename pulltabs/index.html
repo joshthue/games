@@ -79,7 +79,6 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .dealbtn .nm{font-family:Georgia,serif;font-weight:900;font-style:italic;font-size:17px;text-shadow:0 1px 0 rgba(0,0,0,.4)}
 .dealbtn .sy{font-size:22px;margin:4px 0}
 .dealbtn .pr{font-size:12px;font-weight:700;opacity:.9}
-.dealbtn[data-deal="loon"]{grid-column:1/-1}
 .dealbtn .si,.ftab .si,.winners .si,.seg .si{background:#fbf1d9;border-radius:50%;width:1.3em;height:1.3em}
 /* the Loonatic box wears the brand: night-lake ground, the spaced serif wordmark */
 .ticket[data-deal="loon"] .band:not(.fine){font-family:Georgia,serif;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:#f6f2ea;background:#1d2b20}
@@ -99,13 +98,13 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .bankbar .net{font-size:13px;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.3)}
 .net.up{color:#9ff0b9} .net.down{color:#ffb0a6}
 .bankbar .spacer{flex:1}
-.booth{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 10px}
+.booth{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0 0 10px}
 /* a box on the counter: cardboard, open at the top, its tabs stacked inside going down */
-.bxtile{font:inherit;color:var(--cream);background:var(--booth);border:2px solid transparent;border-radius:10px;padding:9px 5px 6px;overflow:hidden;
+.bxtile{font:inherit;color:var(--cream);background:var(--booth);border:2px solid transparent;border-radius:10px;padding:6px 5px 5px;gap:2px;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0}
 .bxtile.on{border-color:var(--gold);background:rgba(243,201,76,.14)}
-.bxn{font-size:11px;font-weight:800;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--cream)}
-.bx{position:relative;width:86%;height:58px;border:3px solid #7a5428;border-top:0;border-radius:0 0 6px 6px;
+.bxn{font-size:11px;font-weight:800;line-height:1.1;margin-bottom:6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;color:var(--cream)}
+.bx{position:relative;width:86%;height:38px;border:3px solid #7a5428;border-top:0;border-radius:0 0 6px 6px;
   background:linear-gradient(90deg,#b98544,#d4a462 50%,#b98544);box-shadow:inset 0 -6px 10px rgba(0,0,0,.25)}
 .bx:before,.bx:after{content:"";position:absolute;top:-7px;width:44%;height:8px;background:#c4914f;border:2px solid #7a5428}
 .bx:before{left:-5px;transform:skewX(-25deg)} .bx:after{right:-5px;transform:skewX(25deg)}
@@ -293,6 +292,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   .winners h3{font-size:19px} .winners ul{font-size:16px;max-height:none}
   .neon{font-size:64px} .neon small{font-size:18px} .sub{font-size:16px}
   .dealpick{grid-template-columns:repeat(3,1fr)}
+  .booth{grid-template-columns:repeat(6,minmax(0,1fr))}
   .roombar{font-size:15px}
   .booth{gap:10px} .bxn{font-size:13px} .bx{height:96px} .bxleft{font-size:15px} .bxtop{font-size:12px} .bxlbl{font-size:13px} .bxout{font-size:13px}
   .tixact .btn{font-size:18px;padding:12px 18px} .asidechip{font-size:16px}
@@ -325,7 +325,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
     <div class="panel">
       <div class="cap">Your name (for the winners board)</div>
       <input class="txt" id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/>
-      <div class="cap" style="margin-top:14px">Start at · all five boxes are on the counter</div>
+      <div class="cap" style="margin-top:14px">Start at · all six boxes are on the counter</div>
       <div class="dealpick" id="dealPick"></div>
       <div class="setbtns">
         <button class="btn" id="soloBtn">🎟️ Play solo · your own booth</button>
@@ -377,9 +377,9 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   <h3>The money</h3>
   <p>It's play money, but it sticks around between visits. You walk in with <b>$100</b>, and tabs go by the 20 — nobody buys one tab. The ATM gives you another $100 and charges a $3 fee, because it's a VFW. <b>Net</b> is your cash minus everything you brought and pulled out of the ATM — how far ahead (or behind) you really are.</p>
   <h3>The booth</h3>
-  <p>All five boxes sit on the counter at once. Each one shows its stack of tabs going down as people buy, and whether its top prize is still in there. Tap a box to buy from it and see its flare. A sold-out box sits there empty until somebody wants that deal again — then Darlene cracks a fresh one.</p>
+  <p>All six boxes sit on the counter at once. Each one shows its stack of tabs going down as people buy, and whether its top prize is still in there. Tap a box to buy from it and see its flare. A sold-out box sits there empty until somebody wants that deal again — then Darlene cracks a fresh one.</p>
   <h3>Shared booth</h3>
-  <p>One phone starts the booth and reads out the 4-letter code; everybody else joins with it. Everyone buys from the same five boxes and watches them go down together. The phone that started it holds the boxes — keep it open. When somebody hits big, it pops up on everyone's phone.</p>
+  <p>One phone starts the booth and reads out the 4-letter code; everybody else joins with it. Everyone buys from the same six boxes and watches them go down together. The phone that started it holds the boxes — keep it open. When somebody hits big, it pops up on everyone's phone.</p>
   <p style="opacity:.75">Pays back about 83% across the whole box — one ticket in eight is a winner. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
   <button class="btn" style="width:100%" data-close="rulesOv">Okie dokie</button>
 </div></div>
@@ -455,20 +455,27 @@ var DEALS={
     [{img:LOON_IMG, alt:'Loonatic loon'},'\uD83C\uDF19','\uD83C\uDF32','\uD83C\uDF43','\u2728','\uD83C\uDF0A','\uD83C\uDF6A','\uD83D\uDD25','\uD83C\uDF0C'],
     ['Once in a blue moon','Pine \u2019n dandy','Leaf it to me','North star','Lake effect','Edible-ish','Campfire','Northern lights'],
     'Loonatic Cannabis \u00b7 powered by Birch & Gran \u00b7 call of the wild'),
+  // The classic bar box from the first photos Josh sent: cherries are the key, the line is an
+  // arrow, and the prize pictures are slot-machine fare.
+  cherry: mk('cherry','Cherry Poppers',2,'#c8102e','#3d0610',
+    ['\uD83C\uDF52',{txt:'7', cls:'s7'},'\uD83D\uDCB0','\uD83D\uDD14','\uD83C\uDFB2','\uD83C\uDCCF','\uD83C\uDF4B','\uD83C\uDF53','\uD83E\uDE99'],
+    ['Lucky sevens','Money bags','Dinner bell','Bar dice','Cribbage night','Lemon bars','Strawberry social','Pocket change'],
+    'Pop \u2019em open \u00b7 cherries on top'),
 };
 // How a winning line is marked. Both styles come from real tickets Josh brought back:
 // an orange ARROW with a "$X TOTAL" splash, or a plain red BAR with a square "$X" box.
-var MARKER={ walleye:'arrow', hotdish:'arrow', loon:'arrow', fair:'bar', uffda:'bar' };
+var MARKER={ walleye:'arrow', hotdish:'arrow', loon:'arrow', cherry:'arrow', fair:'bar', uffda:'bar' };
 // the fine print on the strip between the 2nd and 3rd tabs
 var FINE={
   walleye:'\u201CFor sale or use at the Lake Uffda VFW. Catch limits apply. Void in Wisconsin.\u201D',
   hotdish:'\u201CNot valid with bars, Jell-O salad or Lutheran potlucks. Void in Wisconsin.\u201D',
   fair:'\u201CRedeem by Labor Day. Not responsible for lost Pronto Pups. Void in Wisconsin.\u201D',
   uffda:'\u201CVoid where prohibited, and in Iowa, dontcha know.\u201D',
-  loon:'\u201C21+. Powered by Birch & Gran. Leave no trace. Void in Wisconsin.\u201D' };
-var SHORT={ walleye:'Walleye', hotdish:'Hotdish', fair:'State Fair', uffda:'Uff Da 7s', loon:'Loonatic' };   // for the booth tiles
+  loon:'\u201C21+. Powered by Birch & Gran. Leave no trace. Void in Wisconsin.\u201D',
+  cherry:'\u201CPits not included. Spit responsibly. Void in Wisconsin.\u201D' };
+var SHORT={ walleye:'Walleye', hotdish:'Hotdish', fair:'State Fair', uffda:'Uff Da 7s', loon:'Loonatic', cherry:'Cherry Poppers' };   // for the booth tiles
 Object.keys(DEALS).forEach(function(k){ DEALS[k].marker=MARKER[k]||'arrow'; DEALS[k].fine=FINE[k]||''; DEALS[k].short=SHORT[k]||DEALS[k].name; });
-var DEAL_ORDER=['walleye','hotdish','fair','uffda','loon'];
+var DEAL_ORDER=['cherry','walleye','hotdish','fair','loon','uffda'];   // six boxes on the counter
 
 function payout(d){ return d.tiers.reduce(function(a,t){return a+t.amt*t.n;},0)/(d.count*d.price); }
 
@@ -591,7 +598,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v95";
+var BUILD_V="v96";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -706,7 +713,7 @@ function startHost(resume){
   PT.DEAL_ORDER.forEach(function(k){ if(!S.boxes[k]) S.boxes[k]=PT.newBox(k); });
   S.deal=pickDeal; S.players[myId]=myName; saveBox();
   enterGame(); netStart();
-  say('Booth <b>'+S.code+'</b> is open — all five boxes on the counter! Read that code out; everybody joins with it. Keep this phone open, hon, the boxes live here.');
+  say('Booth <b>'+S.code+'</b> is open — all six boxes on the counter! Read that code out; everybody joins with it. Keep this phone open, hon, the boxes live here.');
   publishBoard();
 }
 function startGuest(){
@@ -1124,7 +1131,7 @@ function handleNet(o){
     if(o.t==='board'){
       var first=!S.booth; S.booth=o.booth; S.boardPlayers=o.players||[]; S.lastBoardAt=Date.now();
       ingest(o.log, first);
-      if(first) say('You’re in! Booth <b>'+S.code+'</b> — five boxes on the counter. Pick one and buy a few, hon.');
+      if(first) say('You’re in! Booth <b>'+S.code+'</b> — six boxes on the counter. Pick one and buy a few, hon.');
       render();
     } else if(o.t==='tix' && o.to===myId){
       var p=S.pendingBuy; if(!p || p.rid!==o.rid) return;
