@@ -156,7 +156,9 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .cell .si{width:1.25em;height:1.25em}
 .cell .sy{position:relative;z-index:1}
 .cell svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
-.cell.on{background:radial-gradient(circle,#fff6c4 0 45%,#ffe066 100%);animation:glow 1s ease-in-out infinite alternate}
+/* winning squares look like any other square, as on the real tickets; about one winner in six
+   has a plain printed box around its line squares instead */
+.cell.boxed{box-shadow:inset 0 0 0 2px #ff8a1a}
 /* printed over the pictures (and the line), like the real sticker; only the $ box sits above it,
    and the sticker moves to the right when the $ box is in the top-left square */
 .serial{position:absolute;left:9%;top:38%;z-index:3;background:#ffe94a;color:#222;font-family:"Courier New",Courier,monospace;
@@ -564,7 +566,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v91";
+var BUILD_V="v92";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -784,7 +786,8 @@ function renderStage(){
   var tk=st.querySelector('.ticket');
   tk.classList.toggle('done', !!t.done); tk.classList.toggle('loser', !!t.done && !t.lines.length);
   t.open.forEach(function(o,i){ var r=st.querySelector('.tabrow[data-i="'+i+'"]'); r.classList.toggle('open',!!o); });
-  if(t.done) t.lines.forEach(function(x){ PT.LINES[x.line].forEach(function(k){ var c=st.querySelector('.cell[data-k="'+k+'"]'); if(c) c.classList.add('on'); }); });
+  // the occasional ticket prints a box around its winning squares (decided by the ticket number, so it never flickers)
+  if(t.done && ((Math.imul(t.n+7,2654435761)>>>0)%6===0)) t.lines.forEach(function(x){ PT.LINES[x.line].forEach(function(k){ var c=st.querySelector('.cell[data-k="'+k+'"]'); if(c) c.classList.add('boxed'); }); });
   var old=tk.querySelector('.stamp'); if(t.done && !old && t.amt>0){ var s=document.createElement('div'); s.className='stamp';
     s.textContent = 'WINNER '+money(t.amt); tk.appendChild(s); }
   $('tixAct').innerHTML = t.done
