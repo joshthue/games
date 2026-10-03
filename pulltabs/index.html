@@ -609,7 +609,7 @@ window.PT={ DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KEY, prizeSym:p
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v100";
+var BUILD_V="v101";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -711,7 +711,7 @@ function startSolo(){
 function startLive(){
   if(!needName()) return;
   S.mode='live'; S.boxes=null; S.old={}; S.gen={}; S.epoch=null; S.applied=0; S.buys=0; S.rids={}; S.seen={}; S.seenAt={};
-  S.players={}; S.players[myId]=myName; S.seenAt[myId]=Date.now(); S.ready=false; S.deal=pickDeal; S.feed=[]; NET.last=null;
+  S.players={}; S.players[myId]=myName; S.seenAt[myId]=Date.now(); S.ready=false; S.deal=pickDeal; S.feed=[]; NET.last=null; NET.lastTime=0;
   enterGame(); say('Walkin\u2019 you up to the booth, hon\u2026');
   netStart();
 }
@@ -725,8 +725,8 @@ function summary(b){ return { id:b.id, deal:b.deal, count:b.order.length, left:P
 function viewOf(k){ return S.boxes && S.boxes[k] ? summary(S.boxes[k]) : null; }
 function curView(){ return viewOf(S.deal); }
 function curDeal(){ return D[S.deal] || D[pickDeal]; }
-// who's at the booth: anybody seen buying, claiming or checking in over the last 10 minutes
-function playerNames(){ var now=Date.now(); return Object.keys(S.players).filter(function(k){ return S.mode==='solo' || k===myId || now-(S.seenAt[k]||0)<600000; }).map(function(k){ return S.players[k]; }); }
+// who's at the booth: anybody seen walking up, buying or claiming in the last 20 minutes
+function playerNames(){ var now=Date.now(); return Object.keys(S.players).filter(function(k){ return S.mode==='solo' || k===myId || now-(S.seenAt[k]||0)<1200000; }).map(function(k){ return S.players[k]; }); }
 // a box that has sold out stays on the counter, empty, until somebody wants that deal again
 function boxForBuy(k){
   var b=S.boxes[k];
@@ -1089,9 +1089,11 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function
 //
 // Only ntfy.sh is used here (not the second relay): two relays could order messages
 // differently, and the order IS the game.
-var RELAY='https://ntfy.sh/';
+// ntfy.envs.net, not ntfy.sh: ntfy.sh allows 250 messages a day per IP address (a whole bar, or a
+// whole house, shares one) and Josh's home ran out on day one; envs.net allows 17,280.
+var RELAY='https://ntfy.envs.net/';
 var BOOTH=(function(){ try{ var b=new URLSearchParams(location.search).get('booth'); if(b) return b.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24); }catch(e){} return 'lakeuffda'; })();
-var NET={on:false, ctrls:[], ok:false, last:null};
+var NET={on:false, ctrls:[], ok:false, last:null, lastTime:0};
 function topic(){ return 'jtpt-v2-'+BOOTH; }
 function tx(){ return window.__PT_TX || null; }
 function net_ok(){ return NET.ok; }
@@ -1114,7 +1116,7 @@ function snapshot(){
     Object.keys(x.claimed).forEach(function(n){ cl.push(+n); });
     b[k]={g:S.gen[k]||0, s:x.sold, tc:x.tierClaimed, cl:cl, q:x.seq};
     (x.log||[]).slice(-3).forEach(function(e){ w.push({who:e.who, amt:e.amt, tier:e.tier, tiers:e.tiers, seq:e.seq, bid:x.id, deal:k, t:e.t, kind:'win', id:e.id}); }); });
-  return {t:'snap', e:S.epoch, b:b, w:w, n:S.buys};
+  return {t:'snap', e:S.epoch, b:b, w:w, n:S.buys, up:S.lastKey?{time:S.lastKey.time, id:S.lastKey.id}:null};
 }
 function restore(o){
   coldStart(o.e);
@@ -1130,7 +1132,7 @@ function restore(o){
 function apply(o){
   if(!o || !o.t) return;
   if(o.from){ S.seenAt[o.from]=Date.now(); if(o.name) S.players[o.from]=String(o.name).slice(0,16); }
-  if(o.t==='snap'){ if(!S.applied && o.e) restore(o); return; }            // only a phone walking in uses one
+  if(o.t==='snap') return;                                                  // only replayBatch() uses snapshots
   if(o.t==='here') return;
   if(!S.boxes) coldStart(o.e||today());
   S.applied++;
@@ -1174,8 +1176,40 @@ function becameReady(){
   renderTicker(); render();
   netPublish({t:'here', name:myName});
 }
-function deliver(raw, id){
+// THE ORDER IS THE GAME, so it can't be whatever order the relay happens to hand over: envs.net
+// was caught streaming two same-second messages in one order and replaying them in the other.
+// Every phone applies messages sorted by (relay time, relay id) - the replay sorts its batch, and
+// live messages wait ~2.5s in a buffer so same-second arrivals can be put in order first.
+var BUF=[], flushT=null, HOLD=2500;
+function orderKey(a,b){ return (a.time-b.time) || (a.id<b.id?-1:(a.id>b.id?1:0)); }
+function enqueue(ev){
+  if(!ev || !ev.id || S.seen[ev.id]) return; S.seen[ev.id]=1;
+  if(ev.time>NET.lastTime) NET.lastTime=ev.time;
+  BUF.push({ev:ev, at:Date.now()});
+  if(!flushT) flushT=setInterval(function(){ flushBuf(false); }, 400);
+}
+function flushBuf(all){
+  BUF.sort(function(x,y){ return orderKey(x.ev,y.ev); });
+  var now=Date.now(), any=false;
+  if(all && S.replaying && !S.applied){ replayBatch(); any=true; }
+  while(BUF.length && (all || now-BUF[0].at>=HOLD)){ var e=BUF.shift().ev; deliver(e.message, null, e); any=true; }
+  if(!BUF.length && flushT){ clearInterval(flushT); flushT=null; }
+  if(any && !S.replaying) render();
+}
+// Walking in: if the feed holds a snapshot, start from the EARLIEST one and apply only what comes
+// after the last message it covers ("up") - not after the snapshot's own spot in the feed, since a
+// buy can arrive just before a snapshot yet sort just after the point it was taken.
+function replayBatch(){
+  BUF.sort(function(x,y){ return orderKey(x.ev,y.ev); });
+  var snapAt=-1, snap=null;
+  for(var i=0;i<BUF.length;i++){ var o=null; try{ o=JSON.parse(BUF[i].ev.message); }catch(e){} if(o && o.t==='snap' && o.e){ snapAt=i; snap=o; break; } }
+  if(!snap) return;                                  // no snapshot: everything applies from the start, in order
+  restore(snap); S.applied=1; S.lastKey=snap.up||BUF[snapAt].ev;
+  BUF=BUF.filter(function(x,i){ return i!==snapAt && (!snap.up || orderKey(x.ev, snap.up)>0); });
+}
+function deliver(raw, id, ev){
   if(id){ if(S.seen[id]) return; S.seen[id]=1; }
+  if(ev) S.lastKey={time:ev.time, id:ev.id};
   var o; try{ o=JSON.parse(raw); }catch(e){ return; }
   if(!o.mid || S.seen['m'+o.mid]) return; S.seen['m'+o.mid]=1;
   apply(o);
@@ -1186,15 +1220,17 @@ function netStart(){
   var t=tx();
   if(t){ testLoop(t); }
   else liveLoop();
-  clearInterval(hb); hb=setInterval(function(){ if(S.ready) netPublish({t:'here', name:myName}); render(); }, 120000);
+  clearInterval(hb); hb=setInterval(function(){ render(); }, 60000);     // no heartbeat messages: the relay counts every one
 }
-function netStop(){ NET.on=false; NET.ctrls.forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); NET.ctrls=[]; clearInterval(hb); try{ ES&&ES.close(); }catch(e){} ES=null;
+function netStop(){ BUF=[]; if(flushT){ clearInterval(flushT); flushT=null; } NET.on=false; NET.ctrls.forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); NET.ctrls=[]; clearInterval(hb); try{ ES&&ES.close(); }catch(e){} ES=null;
   if(S.pendingBuy){ clearTimeout(S.pendingBuy.timer); S.pendingBuy=null; } }
 // test transport: an in-memory relay with the same "everything, in order" semantics
 function testLoop(t){ (async function(){ var cur=0, first=true;
   while(NET.on){ try{ var m=await t.poll(topic(),cur); NET.ok=true;
-      for(var i=0;i<m.length;i++){ cur=Math.max(cur,m[i].idx+1); deliver(m[i].body, 'i'+m[i].idx); }
-      if(first){ first=false; becameReady(); } }catch(e){}
+      // the test relay can hand over (time, id) like ntfy does, to exercise the same ordering path
+      for(var i=0;i<m.length;i++){ cur=Math.max(cur,m[i].idx+1);
+        enqueue({id:m[i].id||('i'+m[i].idx), time:m[i].time!=null?m[i].time:m[i].idx, event:'message', message:m[i].body}); }
+      if(first){ first=false; flushBuf(true); becameReady(); } }catch(e){}
     await new Promise(function(r){ setTimeout(r,60); }); } })(); }
 // real relay: replay the cached feed (poll), then follow it live.
 // Phones are the hard case: a long fetch() stream can stall silently on iOS (and dies whenever the
@@ -1202,20 +1238,19 @@ function testLoop(t){ (async function(){ var cur=0, first=true;
 // alive best - restarted from the last message seen whenever it errors or the app comes back.
 // The history poll has a timeout and retries; the booth never goes "ready" without the history,
 // because cold-starting without it would put this phone on different boxes from everyone else.
-function handleLine(line){
-  var ev; try{ ev=(typeof line==='string')?JSON.parse(line):line; }catch(e){ return; }
-  if(ev.id) NET.last=ev.id;
-  if(ev.event==='message' && ev.message) deliver(ev.message, ev.id);
-}
+function parseEv(line){ var ev; try{ ev=(typeof line==='string')?JSON.parse(line):line; }catch(e){ return null; } return (ev && ev.event==='message' && ev.message) ? ev : null; }
+function handleLine(line){ var ev=parseEv(line); if(ev) enqueue(ev); }
 function withTimeout(url, ms){
   var ctrl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){ try{ ctrl&&ctrl.abort(); }catch(e){} }, ms);
   return fetch(url, ctrl?{signal:ctrl.signal, cache:'no-store'}:{cache:'no-store'}).finally(function(){ clearTimeout(to); });
 }
 async function catchUp(){
   // everything since the last message seen (or the whole cache on the way in)
-  var res=await withTimeout(RELAY+topic()+'/json?poll=1&since='+(NET.last?encodeURIComponent(NET.last):'all'), 12000);
+  // since a few seconds before the newest message seen (by time, not id: ids aren't in order); dupes are dropped by id
+  var res=await withTimeout(RELAY+topic()+'/json?poll=1&since='+(NET.lastTime?String(NET.lastTime-10):'all'), 12000);
   if(!res.ok) throw new Error('poll '+res.status);
   var txt=await res.text(); txt.split('\n').forEach(function(l){ if(l.trim()) handleLine(l); });
+  if(S.replaying) flushBuf(true);       // the replay is applied at once, in order
 }
 function liveLoop(){ (async function(){
   var tries=0;
@@ -1233,7 +1268,7 @@ function openStream(){
   if(!NET.on) return;
   try{ ES&&ES.close(); }catch(e){} ES=null;
   if(typeof EventSource==='undefined'){ pollFallback(); return; }
-  var es=ES=new EventSource(RELAY+topic()+'/sse?since='+(NET.last?encodeURIComponent(NET.last):String(Math.floor(Date.now()/1000)-5)));
+  var es=ES=new EventSource(RELAY+topic()+'/sse?since='+(NET.lastTime?String(NET.lastTime-10):String(Math.floor(Date.now()/1000)-5)));
   es.onopen=function(){ NET.ok=true; render(); };
   es.onmessage=function(m){ handleLine(m.data); };
   es.onerror=function(){ NET.ok=false; render(); try{ es.close(); }catch(e){} if(ES===es) ES=null;

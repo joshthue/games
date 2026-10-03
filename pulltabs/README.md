@@ -91,10 +91,21 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
 - **Claims tell the board, not sales.** A winner bought but not yet opened still shows green
   on the flare — exactly how the wall at the VFW works.
 - **Block 2 — the booth and the network (v97: no host).** Every phone posts its buys and claims
-  to ONE ntfy.sh topic (`jtpt-v2-lakeuffda`) and applies that feed **in the relay's order** with the
-  same `apply()`. Boxes are seeded from `(epoch, deal, generation)` (`seedOf`), so every phone
+  to ONE topic on **ntfy.envs.net** (`jtpt-v2-lakeuffda`) and applies that feed in one canonical order
+  with the same `apply()`. Boxes are seeded from `(epoch, deal, generation)` (`seedOf`), so every phone
   builds the identical box, allocates the identical tabs to each buyer, and cracks the identical
   fresh box when one sells out — no phone holds the boxes and nobody has to stay open.
+  **v101 — relay and ordering.** ntfy.sh allows **250 messages/day per IP** (`/v1/account`); a
+  house or a bar is one IP, and Josh's ran out on day one (every post 429'd, so a phone's buy never
+  echoed back and it sat "connecting"). The booth moved to ntfy.envs.net (17,280/day/IP, same 12h
+  cache) and dropped the "here" heartbeat — presence comes from buys/claims and one hello on
+  walking up. envs.net was caught streaming two same-second messages in one order and replaying
+  them in the other, so phones no longer trust relay order: every message is applied sorted by
+  **(relay time, relay id)** — the replay sorts its batch; live messages wait ~2.5s in a buffer so
+  same-second arrivals sort first. Snapshots now record `up`, the last message they cover; a phone
+  walking in uses the earliest snapshot whose `up` the relay still reaches back to and applies only
+  what sorts after it. Tested with a relay that hands every phone the messages in random order and
+  forgets old ones: four phones agree in every run.
   **Phones (v100):** the live part is an `EventSource` on ntfy's `/sse` (what BINGO uses — a long
   `fetch()` stream could stall silently on iOS and dies when the app is backgrounded), restarted
   from the last message id on any error and whenever the app comes back to the foreground, after
