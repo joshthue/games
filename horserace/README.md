@@ -80,6 +80,18 @@ The dice being fixed by the seed means a race's whole outcome is decided at the 
 decisions in the game that changes nothing for play — but somebody reading the source could know
 the winner early. Play money among friends; fine.
 
+## Table & names (v112)
+**⚙️ Table & names** (in the lobby and the Menu):
+- **Seats at the table: 2–8.** People at the rail sit first (up to 8), bots fill the rest. 44 cards go
+  round, so 8 seats is 5–6 cards each and a $1 scratch card costs less; 2 seats is 22 each.
+- **Your name** — the same `pt_name` Pull Tabs uses; changing it re-announces you at the rail.
+- **The regulars** — seven bot names, used in order.
+- **The horses** — a name for each number; blank is the stock name.
+
+Kept per device in `hr_prefs`. In a live race the phone that calls the horses to the gate sends
+its bots (as the seats) and its horse names (`start.horses`, only the changed ones) with the start,
+so every phone shows the same names for that race. A name change counts from the next race.
+
 ## Screen (v111)
 - **Wide screens** (any landscape ≥700px: iPad mini either way round is covered by this or the
   portrait rule, iPhone sideways too): two columns — scratches and the **track fill the left side
