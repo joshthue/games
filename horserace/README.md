@@ -80,6 +80,17 @@ The dice being fixed by the seed means a race's whole outcome is decided at the 
 decisions in the game that changes nothing for play — but somebody reading the source could know
 the winner early. Play money among friends; fine.
 
+## Money you can see move (v114)
+- **The table** shows what each seat has **put in** and **won** this race next to its net
+  (`in $14 · won $14.50   +$0.50`); the winner's circle shows the same per seat.
+- **Coins fly** when money moves: on a scratch a coin leaves every seat that pays and lands in the
+  pot; on a scratched roll one leaves the roller; on the win the pot pays out to each holder (green
+  coins), and into your cash box if one of them is you. Whatever a coin lands on glows.
+- **Cash and Pot count** to their new value (green going up, red going down) instead of jumping.
+- The winner's circle waits ~1.8 s so the payout lands before it covers the board.
+- All of it is skipped with Reduce Motion on, and on a replay/catch-up (only a single newly revealed
+  roll animates).
+
 ## Odds & stats (v113, Menu → Odds & stats)
 Off by default. When on:
 - A **WIN %** column on the track for every horse still running.
