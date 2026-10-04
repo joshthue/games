@@ -61,10 +61,20 @@ Messages:
   tapping Start at once agree on which race runs.
 - `roll {id, k}`.
 
-Who rolls: roll *k* belongs to seat `k % seats`. Your turn → **Your roll** button. Bots are rolled by
-the first human seat's phone after ~1.2 s, backed up by every other phone after ~4.5 s. A human who
+Who rolls: roll *k* belongs to seat `k % seats`. Your turn → **Your roll** button. A human who
 doesn't tap is rolled for after ~9 s ("rolling for 'em in 3…"). Anybody can roll for anybody once
 it's overdue, so the race finishes as long as any phone is open.
+
+**Bots' rolls are never sent (v110).** A bot's roll *k* exists the moment roll *k−1* does — its dice
+come from `(seed, k)` like everyone's — so every phone takes it on its own (`Kof()` walks past bot
+seats). The screen reveals them one at a time, ~1.3 s apart (`S.shown` lags the decided count), and
+only human taps go over the relay. v108 posted every bot roll from the first human's phone: ~50
+messages a minute, and ntfy's per-connection limit (a burst of 60, then one request every 5 s)
+answered **429** a couple of races in — Josh hit it playing alone with three bots. Now a race costs
+about one message per human turn (16 for a 34-roll, two-person race in the test, down from 61 for
+59), and a refused post is **retried** with the same message id (6 s after a 429) instead of being
+dropped. The live stream's reconnects back off too (2 s, 4 s, 8 s … 30 s), since each one is a
+request against the same limit.
 
 The dice being fixed by the seed means a race's whole outcome is decided at the gate. With no
 decisions in the game that changes nothing for play — but somebody reading the source could know
