@@ -129,6 +129,14 @@ body{
 .card.selected{outline:3px solid var(--gold);outline-offset:1px;transform:translateY(-4px)}
 .card.target{outline:3px dashed var(--ok);outline-offset:1px;cursor:pointer}
 .stack{position:relative;width:var(--cw)}
+/* drag & drop (v104): the card under your finger is a fixed-position ghost; the source hides */
+[data-src]{touch-action:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.card.drag-src{visibility:hidden}
+.card.drag-ghost{position:fixed;margin:0;z-index:60;pointer-events:none;will-change:transform,left,top;
+  box-shadow:0 12px 24px rgba(0,0,0,.5);transform:scale(1.08) rotate(-2deg);transition:transform .12s}
+.card.drag-ghost.snapped{transform:scale(1.03);transition:left .09s ease-out,top .09s ease-out,transform .09s}
+.card.drag-ghost.flying{transition:left .16s ease-out,top .16s ease-out,transform .16s}
+.card.target.snap{outline:3px solid var(--ok);box-shadow:0 0 0 6px rgba(80,200,120,.35),0 2px 5px rgba(0,0,0,.3)}
 .stack .count{position:absolute;top:-7px;right:-6px;background:var(--gold);color:#22180a;border-radius:999px;
   font-size:max(10px, calc(var(--cw) * .17));font-weight:800;padding:1px 5px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 
@@ -757,7 +765,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v82";
+  var BUILD_V = "v104";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -1001,7 +1009,7 @@ window.SM = (function(){
       var stk=document.createElement('div'); stk.className='stack';
       var top=centerTopCard(T.centers[c]) || cardEl(null,{});
       if(targets.indexOf(c)>=0) top.classList.add('target');
-      (function(ci){ top.addEventListener('click', function(){ onCenterTap(ci); }); })(c);
+      top.dataset.ctr=c; (function(ci){ top.addEventListener('click', function(){ onCenterTap(ci); }); })(c);
       stk.appendChild(top);
       if(T.centers[c].length){
         var n2=document.createElement('div'); n2.className='count'; n2.textContent=T.centers[c].length;
@@ -1015,7 +1023,7 @@ window.SM = (function(){
     // your payoff
     var yPay=$('youPayoff'); yPay.innerHTML='';
     var payCard=cardEl(SM.topPayoff(T,me()),{});
-    if(isHeroTurn() && !busy && SM.topPayoff(T,me())){ payCard.classList.add('selectable'); if(sel&&sel.kind==='payoff') payCard.classList.add('selected'); payCard.addEventListener('click', function(){ selectSource('payoff',0); }); }
+    if(isHeroTurn() && !busy && SM.topPayoff(T,me())){ payCard.dataset.src='payoff'; payCard.dataset.i=0; payCard.classList.add('selectable'); if(sel&&sel.kind==='payoff') payCard.classList.add('selected'); payCard.addEventListener('click', function(){ selectSource('payoff',0); }); }
     yPay.appendChild(payCard);
     if(p.payoff.length){ var pb=document.createElement('div'); pb.className='count'; pb.textContent=p.payoff.length; yPay.appendChild(pb); }
 
@@ -1028,9 +1036,9 @@ window.SM = (function(){
       if(isHeroTurn() && !busy){
         // a side stack is a discard target when a hand card is selected; or a source when it has a card
         if(sel && sel.kind==='hand'){ topc.classList.add('target'); }
-        else if(st2.length){ topc.classList.add('selectable'); if(sel&&sel.kind==='side'&&sel.i===s2) topc.classList.add('selected'); }
+        else if(st2.length){ topc.dataset.src='side'; topc.dataset.i=s2; topc.classList.add('selectable'); if(sel&&sel.kind==='side'&&sel.i===s2) topc.classList.add('selected'); }
       }
-      (function(si){ topc.addEventListener('click', function(){ onSideTap(si); }); })(s2);
+      topc.dataset.side=s2; (function(si){ topc.addEventListener('click', function(){ onSideTap(si); }); })(s2);
       wrp.appendChild(topc);
       if(st2.length>1){ var c3=document.createElement('div'); c3.className='count'; c3.textContent=st2.length; wrp.appendChild(c3); }
       ySides.appendChild(wrp);
@@ -1040,7 +1048,7 @@ window.SM = (function(){
     var handEl=$('hand'); handEl.innerHTML='';
     for(var h=0; h<p.hand.length; h++){
       var hc=cardEl(p.hand[h],{});
-      if(isHeroTurn() && !busy){ hc.classList.add('selectable'); if(sel&&sel.kind==='hand'&&sel.i===h) hc.classList.add('selected'); }
+      if(isHeroTurn() && !busy){ hc.dataset.src='hand'; hc.dataset.i=h; hc.classList.add('selectable'); if(sel&&sel.kind==='hand'&&sel.i===h) hc.classList.add('selected'); }
       (function(hi){ hc.addEventListener('click', function(){ selectSource('hand',hi); }); })(h);
       handEl.appendChild(hc);
     }
@@ -1068,7 +1076,7 @@ window.SM = (function(){
     } else if(sel){
       el.textContent = 'Tap a highlighted centre to play it there.';
     } else {
-      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Tap a card to select it.';
+      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Drag a card onto a green centre, or tap it to pick it up.';
     }
   }
 
@@ -1100,6 +1108,92 @@ window.SM = (function(){
     action.val = needs[0];
     sel=null; commitPlay(action);
   }
+  // ---------- drag & drop with snapping (v104) ----------
+  // Layered on top of tap-to-select, which still works: a press that doesn't move past
+  // DRAG_PX is a tap. Once it moves, the card becomes a ghost that follows the finger;
+  // render() runs with the card selected, so the legal drops light up exactly as they do
+  // for a tap. Near a legal drop the ghost snaps onto it; release there to play (centre)
+  // or discard (side stack, hand cards only). Anywhere else it flies home.
+  var DRAG_PX = 7, drag = null, swallowClick = false;
+  function rectC(r){ return {x:r.left+r.width/2, y:r.top+r.height/2}; }
+  function findSrcEl(kind,i){ return document.querySelector('#game [data-src="'+kind+'"][data-i="'+i+'"]'); }
+  document.addEventListener('pointerdown', function(e){
+    if(drag || e.button>0 || !isHeroTurn() || busy) return;
+    var el = e.target.closest && e.target.closest('[data-src]');
+    if(!el || $('game').classList.contains('hidden')) return;
+    drag = {kind:el.dataset.src, i:+el.dataset.i, id:e.pointerId, x0:e.clientX, y0:e.clientY, el:el, on:false};
+  });
+  function dragBegin(e){
+    var src=drag.el, r=src.getBoundingClientRect();
+    drag.on=true; drag.home=r; drag.dx=drag.x0-r.left; drag.dy=drag.y0-r.top;   // grab point from the press, not the first move
+    drag.prevSel=sel; sel={kind:drag.kind, i:drag.i}; render();      // lights up the legal drops
+    var fresh=findSrcEl(drag.kind, drag.i) || src;
+    var g=fresh.cloneNode(true);
+    g.classList.remove('selected','selectable','target'); g.classList.add('drag-ghost');
+    g.style.setProperty('--cw', r.width+'px');
+    g.style.width=r.width+'px'; g.style.height=r.height+'px'; g.style.left=r.left+'px'; g.style.top=r.top+'px';
+    document.body.appendChild(g); drag.ghost=g;
+    fresh.classList.add('drag-src'); drag.src=fresh;
+    drag.targets=[].map.call(document.querySelectorAll('#game .card.target'), function(t){
+      return {el:t, ctr:t.dataset.ctr, side:t.dataset.side, r:t.getBoundingClientRect()};
+    }).filter(function(t){ return t.ctr!=null || (t.side!=null && drag.kind==='hand'); });
+    drag.snap=null;
+    sfx('select');
+  }
+  document.addEventListener('pointermove', function(e){
+    if(!drag || e.pointerId!==drag.id) return;
+    if(!drag.on){
+      if(Math.hypot(e.clientX-drag.x0, e.clientY-drag.y0) < DRAG_PX) return;
+      dragBegin(e);
+    }
+    e.preventDefault();
+    var g=drag.ghost, w=drag.home.width, h=drag.home.height;
+    var cx=e.clientX-drag.dx+w/2, cy=e.clientY-drag.dy+h/2;
+    // nearest legal drop within reach; a little stickier once snapped so it doesn't flicker
+    var best=null, bd=1e9;
+    drag.targets.forEach(function(t){
+      var c=rectC(t.r), d=Math.hypot(cx-c.x, cy-c.y);
+      var reach=Math.max(t.r.width, 40) * (drag.snap===t ? 1.15 : 0.85);
+      if(d<reach && d<bd){ bd=d; best=t; }
+    });
+    if(best!==drag.snap){
+      if(drag.snap) drag.snap.el.classList.remove('snap');
+      drag.snap=best;
+      if(best){ best.el.classList.add('snap'); if(navigator.vibrate) try{ navigator.vibrate(8); }catch(_){} }
+    }
+    if(best){
+      g.classList.add('snapped');
+      g.style.left=(best.r.left+(best.r.width-w)/2)+'px'; g.style.top=(best.r.top+(best.r.height-h)/2)+'px';
+    } else {
+      g.classList.remove('snapped');
+      g.style.left=(e.clientX-drag.dx)+'px'; g.style.top=(e.clientY-drag.dy)+'px';
+    }
+  }, {passive:false});
+  function dragEnd(e, cancelled){
+    if(!drag || e.pointerId!==drag.id) return;
+    var d=drag; drag=null;
+    if(!d.on) return;                        // a tap: let the click handler have it
+    swallowClick=true; setTimeout(function(){ swallowClick=false; }, 0);   // only the click this release itself generates
+    var g=d.ghost, t=cancelled ? null : d.snap;
+    g.classList.remove('snapped'); g.classList.add('flying');
+    if(t){
+      g.style.left=(t.r.left+(t.r.width-d.home.width)/2)+'px'; g.style.top=(t.r.top+(t.r.height-d.home.height)/2)+'px';
+      g.style.transform='scale(1)';
+      busy=true;
+      setTimeout(function(){
+        busy=false; g.remove();
+        sel={kind:d.kind, i:d.i};
+        if(t.ctr!=null) onCenterTap(+t.ctr); else onSideTap(+t.side);
+      }, 110);
+    } else {
+      g.style.left=d.home.left+'px'; g.style.top=d.home.top+'px'; g.style.transform='scale(1)';
+      setTimeout(function(){ g.remove(); sel=null; render(); }, 170);
+    }
+  }
+  document.addEventListener('pointerup', function(e){ dragEnd(e, false); });
+  document.addEventListener('pointercancel', function(e){ dragEnd(e, true); });
+  document.addEventListener('click', function(e){ if(swallowClick){ swallowClick=false; e.stopPropagation(); e.preventDefault(); } }, true);
+
   // ---- wild value chooser (only reachable in 'either' mode) ----
   var wildCB=null;
   function askWildVal(needs, cb){

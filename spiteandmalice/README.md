@@ -19,8 +19,12 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
   behind** and only the 12 beneath it are recycled.
 - **Empty your goal pile to win.** You end your turn by discarding one hand card onto a
   side stack; if you empty your hand first you draw back up to five and keep going.
-- Tap a card to pick it up, tap a green centre to play it; tap a hand card then a side
-  stack to discard.
+- **Drag a card** (goal-pile top, hand card or side-stack top) onto a green centre to play it,
+  or drag a hand card onto one of your side stacks to discard and end your turn. Near a legal
+  drop the card **snaps** onto it (the stack glows) — let go anywhere in that zone and it lands.
+  Dropped anywhere else, it flies back to where it came from.
+- Tapping still works: tap a card to pick it up, tap a green centre to play it; tap a hand
+  card then a side stack to discard.
 
 ## Options
 
@@ -81,6 +85,22 @@ button re-deals in place without kicking anyone back to setup.
 the state the host broadcasts, so the guest plays the host's choice whatever its own deal
 screen says. A view without a direction (a phone still on an older build) is read as
 `A → K`.
+
+## Drag and drop (v104)
+
+Drag is layered on top of tap-to-select rather than replacing it, so every move still goes
+through `onCenterTap` / `onSideTap` and the same legality checks:
+
+- A press that moves less than 7px is a tap. Past that, the card becomes a fixed-position
+  ghost under the finger and `render()` runs with it selected, so the legal drops light up
+  exactly as they do for a tap.
+- Snapping: the nearest legal drop whose centre is within ~0.85 of a card width of the ghost's
+  centre captures it (a bit stickier — 1.15 — once snapped, so it doesn't flicker on the edge).
+  Android gives a tiny haptic tick on snap.
+- Pointer events, so mouse, finger and pencil all work; draggable cards are `touch-action:none`
+  so a drag doesn't scroll the page. The click a drag release generates is swallowed so it
+  can't re-select the card.
+- Works the same in two-phone games — a drop just commits the move like a tap would.
 
 ## How it's put together
 
