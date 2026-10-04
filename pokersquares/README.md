@@ -8,6 +8,25 @@ Solitaire poker on a 5×5 grid — a.k.a. **Poker Solitaire / Poker Patience**. 
 - When all 25 squares are full, each of the **5 rows and 5 columns** is scored as a poker hand; the total is the sum of all ten.
 - Aces play high or low, `A-2-3-4-5` is a straight, `10-J-Q-K-A` suited is a royal flush.
 - Best score is kept per device in `localStorage` (`pokersquares.v1`).
+- **🏆 High scores for everybody (v105):** a shared top 10 per scoring system — see below.
+
+## High scores — one board for everybody (v105)
+Finish a game with a score that makes the top 10 and the results panel asks for your name
+(remembered for next time) and posts it. 🏆 in the header (or Menu → High scores) shows the
+board, with American and English scoring as separate top-10s.
+
+There's no backend. Scores ride the public ntfy topic `jtps-v1-scores` on `ntfy.envs.net`
+(the relay Pull Tabs uses; `?hs=<topic>` overrides it for tests):
+- `{t:'score', e}` when someone posts; `e` = `{id, name, score, sys, at, cards}`.
+- ntfy keeps only **12 hours** of messages, so every phone also keeps the whole board in
+  `localStorage` (`pokersquares.board`) and re-posts it as `{t:'board', b}` whenever the feed has no
+  board message from the last 6 hours. The board carries forward as long as somebody plays now and
+  then, and a phone that has been away merges its copy back in when it returns.
+- Each entry carries its **25 cards** (2 base-36 chars each), and every phone re-scores them on the
+  way in, so a made-up "999" sent to the topic is dropped. (A real 25-card board could still be built
+  by hand — fine for friends and family, not for money.)
+- Offline: the score is saved locally and posted on the next load. One post per deal.
+- If the planned small Cloudflare server happens, this moves there and the board becomes permanent.
 
 ## Best board (v103)
 After the 25th card, a search rearranges the **same 25 cards** for the highest possible total

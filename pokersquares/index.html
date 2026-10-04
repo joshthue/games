@@ -115,6 +115,21 @@
   .scorecard .h{color:var(--gold); font-weight:700;}
   .scorecard .p{text-align:right; color:var(--gold); font-weight:700;}
   .muted{opacity:.75; font-size:12px;}
+  /* ---- shared high-score board (v105) ---- */
+  .hs{background:rgba(0,0,0,.22); border-radius:10px; padding:10px 12px; margin:10px 0;}
+  .hs h3{margin:0 0 6px !important;}
+  .hs ol{list-style:none; margin:0; padding:0; font-size:14px;}
+  .hs li{display:grid; grid-template-columns:22px 1fr auto auto; gap:8px; align-items:baseline; padding:4px 2px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .hs li:last-child{border-bottom:none;}
+  .hs li .rk{opacity:.6; font-weight:700; text-align:right;}
+  .hs li .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700;}
+  .hs li .sc{color:var(--gold); font-weight:900;}
+  .hs li .dt{font-size:11px; opacity:.6; min-width:42px; text-align:right;}
+  .hs li.me{background:rgba(240,198,116,.18); border-radius:6px;}
+  .hs .st{font-size:11px; opacity:.6; margin-top:6px; text-align:center;}
+  .hs-enter{display:flex; gap:8px; margin-top:6px;}
+  .hs-enter .btn{white-space:nowrap;}
+  .hs-enter input{flex:1 1 auto; min-width:0; font:inherit; font-size:16px; padding:9px 10px; border-radius:9px; border:1.5px solid var(--gold); background:rgba(0,0,0,.3); color:var(--cream);}
   @media(max-width:360px){ .pstray-score .num{font-size:22px;} h1{font-size:17px;} }
 </style>
 </head>
@@ -124,6 +139,7 @@
     <h1>🎴 POKER SQUARES <small>SOLITAIRE · 5×5 GRID</small></h1>
     <div class="top-btns">
       <a class="btn sec sm" href="../" title="All games">🏠</a>
+      <button class="btn sec sm" id="hsBtn" title="High scores">🏆</button>
       <button class="btn sec sm" id="rulesBtn">Rules</button>
       <button class="btn sec sm" id="menuBtn">Menu</button>
     </div>
@@ -276,6 +292,7 @@ function finish(){
   persist();
   render();
   openResults(total);
+  HS.refresh();
 }
 
 /* ---- render ---- */
@@ -358,6 +375,7 @@ function openMenu(){
     +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
     +'<div style="height:6px"></div>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 New game</button>'
+    +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
     +'<a class="setup-opt" href="../">🏠 Back to all games</a>'
     +'<button class="setup-opt" onclick="openRules()">📖 How to play</button>'
     +'<div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>';
@@ -373,6 +391,7 @@ function openResults(total){
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(beat?'🏆 New best!':'✅ Board complete')+'</h2>'
     +'<p style="font-size:26px;font-weight:900;color:var(--gold);text-align:center;margin:6px 0;">'+total+' pts</p>'
     +'<p class="muted" style="text-align:center;margin-top:0;">Best '+best+' · '+(settings.scoring==="american"?"American":"English")+' scoring</p>'
+    +'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>'
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +sc
     +'<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button></div>';
@@ -639,9 +658,148 @@ function showView(v){
 window.__PS={ get state(){ return {over,VIEW,SOLVE,ANIMATING,grid}; }, showView, startSolve, alignToMine,
   deal:function(cards){ grid=cards.slice(); queue=[]; current=null; lastMove=null; finish(); } };
 
+/* ============================================================
+   HIGH SCORES — one board everybody sees (v105)
+   No backend: scores ride a public ntfy topic (the same relay Pull Tabs
+   uses). ntfy only keeps 12 hours of messages, so every phone also keeps
+   the whole board in localStorage and re-posts it as a 'board' message
+   when the feed has none from the last 6 hours. As long as somebody opens
+   Poker Squares now and then, the board carries forward; a phone that has
+   been away just merges its copy back in when it returns.
+   Each entry carries its 25 cards, and every phone re-scores them on the
+   way in, so a typed-in "999" from the console doesn't make the board.
+   American and English scoring keep separate top-10s.
+   ============================================================ */
+const HS=(function(){
+  const RELAY="https://ntfy.envs.net/", TOPIC=(function(){ try{ return new URLSearchParams(location.search).get("hs")||"jtps-v1-scores"; }catch(e){ return "jtps-v1-scores"; } })(), TOP=10, CARRY_MS=6*3600*1000;
+  const KB="pokersquares.board", KN="pokersquares.name", KP="pokersquares.pending", KD="pokersquares.posted";
+  function load(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+  function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+  let board=load(KB,{american:[],english:[]});
+  if(!board.american) board.american=[]; if(!board.english) board.english=[];
+  let pending=load(KP,[]), posted=load(KD,[]), status="", lastSync=0, mine=null, tab=null, syncing=null;
+
+  const B36="0123456789abcdefghijklmnopqrstuvwxyz";
+  function encCards(g){ return g.map(c=>{ const k=(c.r-2)*4+c.s; return B36[k/36|0]+B36[k%36]; }).join(""); }
+  function decCards(s){ if(typeof s!=="string"||s.length!==50) return null; const g=[];
+    for(let i=0;i<50;i+=2){ const k=B36.indexOf(s[i])*36+B36.indexOf(s[i+1]); if(k<0||k>51) return null; g.push({r:2+(k>>2), s:k&3}); }
+    return new Set(g.map(c=>c.r*4+c.s)).size===25 ? g : null; }
+  function scoreOf(g, sys){ const keep=settings.scoring; settings.scoring=sys; try{ return computeLines(g).total; } finally{ settings.scoring=keep; } }
+  // anything off the wire is untrusted: shape-check it and re-score the cards
+  function clean(e){
+    if(!e||typeof e!=="object") return null;
+    const sys=e.sys==="english"?"english":(e.sys==="american"?"american":null); if(!sys) return null;
+    const g=decCards(e.cards); if(!g) return null;
+    const name=String(e.name||"").replace(/[\u0000-\u001f]/g,"").trim().slice(0,16); if(!name) return null;
+    const at=+e.at, id=String(e.id||"").slice(0,24); if(!at||!id) return null;
+    const score=scoreOf(g,sys); if(score!==+e.score || score<=0) return null;
+    return {id,name,score,sys,at,cards:e.cards};
+  }
+  function merge(list){
+    let changed=false;
+    list.forEach(raw=>{ const e=clean(raw); if(!e) return; const L=board[e.sys];
+      if(L.some(x=>x.id===e.id)) return; L.push(e); changed=true; });
+    ["american","english"].forEach(s=>{ board[s].sort((x,y)=>y.score-x.score||x.at-y.at); board[s]=board[s].slice(0,TOP); });
+    if(changed) save(KB,board);
+    return changed;
+  }
+  function post(obj){
+    return fetch(RELAY+TOPIC,{method:"POST", body:JSON.stringify(obj)}).then(r=>{ if(!r.ok) throw new Error(r.status); });
+  }
+  function withTimeout(url,ms){
+    const ctrl=window.AbortController?new AbortController():null, to=setTimeout(()=>ctrl&&ctrl.abort(),ms);
+    return fetch(url, ctrl?{signal:ctrl.signal,cache:"no-store"}:{cache:"no-store"}).finally(()=>clearTimeout(to));
+  }
+  function sync(){
+    if(syncing) return syncing;
+    status="Checking the board…"; paint();
+    syncing=withTimeout(RELAY+TOPIC+"/json?poll=1&since=all",12000).then(r=>{ if(!r.ok) throw new Error(r.status); return r.text(); }).then(txt=>{
+      let lastBoard=0; const got=[];
+      txt.split("\n").forEach(line=>{ if(!line) return; let m,o; try{ m=JSON.parse(line); o=JSON.parse(m.message); }catch(e){ return; }
+        if(o.t==="score") got.push(o.e);
+        else if(o.t==="board" && o.b){ (o.b.american||[]).concat(o.b.english||[]).forEach(x=>got.push(x)); lastBoard=Math.max(lastBoard,m.time*1000); } });
+      merge(got);
+      // anything we couldn't send earlier goes now
+      const p=pending.slice(); pending=[]; save(KP,pending);
+      p.forEach(e=>post({t:"score",e}).catch(()=>{ pending.push(e); save(KP,pending); }));
+      // carry the board across ntfy's 12-hour memory
+      if(Date.now()-lastBoard>CARRY_MS && (board.american.length||board.english.length)) post({t:"board",b:board}).catch(()=>{});
+      lastSync=Date.now(); status="";
+    }).catch(()=>{ status="Offline — showing the scores this phone has seen."; })
+      .finally(()=>{ syncing=null; paint(); });
+    return syncing;
+  }
+  function qualifies(score,sys){ const L=board[sys]; return score>0 && (L.length<TOP || score>L[L.length-1].score); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function when(at){ const d=new Date(at), now=new Date();
+    return d.toDateString()===now.toDateString() ? d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}) : d.toLocaleDateString([],{month:"short",day:"numeric"}); }
+  function listHTML(sys){
+    const L=board[sys];
+    if(!L.length) return '<div class="muted" style="text-align:center;padding:6px 0;">No scores yet — be the first on the board.</div>';
+    return '<ol>'+L.map((e,i)=>'<li class="'+(mine===e.id?'me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.name)+'</span><span class="sc">'+e.score+'</span><span class="dt">'+when(e.at)+'</span></li>').join("")+'</ol>';
+  }
+  function statusHTML(){ return status ? '<div class="st">'+esc(status)+'</div>' : ''; }
+  function dealKey(){ return settings.scoring+":"+encCards(grid); }
+  // the block inside the results panel
+  function resultsHTML(total){
+    const sys=settings.scoring, sysName=sys==="american"?"American":"English", key=dealKey();
+    let top='<h3>🏆 High scores · '+sysName+'</h3>';
+    if(posted.indexOf(key)<0 && qualifies(total,sys)){
+      const L=board[sys], rank=L.filter(e=>e.score>=total).length+1;
+      top+='<div style="font-size:14px;">'+total+' makes the board at <b>#'+rank+'</b>! Put your name on it:</div>'
+        +'<div class="hs-enter"><input id="hsName" maxlength="16" placeholder="Your name" autocomplete="off" enterkeyhint="send" onkeydown="if(event.key===\'Enter\')HS.submit()" value="'+esc(load(KN,""))+'">'
+        +'<button class="btn" onclick="HS.submit()">Post it</button></div>';
+    } else if(posted.indexOf(key)<0 && board[sys].length>=TOP){
+      top+='<div class="muted" style="margin-bottom:6px;">'+(board[sys][TOP-1].score+1-total)+' more would have made the board.</div>';
+    }
+    return top+listHTML(sys)+statusHTML();
+  }
+  function submit(){
+    const inp=document.getElementById("hsName"); if(!inp) return;
+    const name=inp.value.replace(/[\u0000-\u001f]/g,"").trim().slice(0,16);
+    if(!name){ inp.focus(); inp.style.borderColor="var(--red)"; return; }
+    save(KN,name);
+    const total=computeLines(grid).total, sys=settings.scoring, key=dealKey();
+    const e={id:Date.now().toString(36)+Math.random().toString(36).slice(2,8), name, score:total, sys, at:Date.now(), cards:encCards(grid)};
+    if(!clean(e)) return;
+    merge([e]); mine=e.id; posted.push(key); posted=posted.slice(-50); save(KD,posted);
+    sfx('win');
+    post({t:"score",e}).catch(()=>{ pending.push(e); save(KP,pending); status="Saved here — it'll post when you're back online."; paint(); });
+    paint();
+  }
+  // the standalone board (🏆 button / Menu)
+  function open(){
+    tab=tab||settings.scoring;
+    openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🏆 High scores</h2>'
+      +'<p class="muted" style="margin-top:0;">Everybody playing Poker Squares, on any phone. Top 10 for each scoring system.</p>'
+      +'<div id="hsPanel"></div>','scores');
+    paint(); sync();
+  }
+  function setTab(t){ tab=t; paint(); }
+  function paint(){
+    const box=document.getElementById("psHS");
+    if(box && curOverlay.kind==="results"){
+      const inp=document.getElementById("hsName"), typed=inp?inp.value:null, focused=inp&&document.activeElement===inp;
+      box.innerHTML=resultsHTML(computeLines(grid).total);
+      const ni=document.getElementById("hsName"); if(ni&&typed!==null){ ni.value=typed; if(focused) ni.focus(); }
+    }
+    const p=document.getElementById("hsPanel");
+    if(p && curOverlay.kind==="scores"){
+      const t=tab||settings.scoring;
+      p.innerHTML='<div style="text-align:center;margin-bottom:8px;"><div class="seg"><button class="'+(t==="american"?"on":"")+'" onclick="HS.setTab(\'american\')">American</button><button class="'+(t==="english"?"on":"")+'" onclick="HS.setTab(\'english\')">English</button></div></div>'
+        +'<div class="hs">'+listHTML(t)+statusHTML()+'</div>';
+    }
+  }
+  function refresh(){ sync(); }
+  // learn the board as soon as the page opens, so a finished game knows whether it qualifies
+  setTimeout(sync, 400);
+  return {open, submit, setTab, refresh, resultsHTML, sync, get board(){ return board; }, _clean:clean, _enc:encCards};
+})();
+
 /* ---- wire up ---- */
 document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand openRules the click Event
 document.getElementById("menuBtn").onclick=openMenu;
+document.getElementById("hsBtn").onclick=function(){ HS.open(); };
 document.getElementById("psUndo").onclick=undo;
 document.getElementById("psNew").onclick=function(){ newGame(); };
 document.getElementById("overlay").addEventListener("click",function(e){ if(e.target===this) closeOverlay(); });
@@ -668,7 +826,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v103", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v105", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
