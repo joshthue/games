@@ -81,6 +81,7 @@ const GAMES = [
   { title:"Stratego",         emoji:"🎖️", sub:"Take the flag · 40 pieces a side vs a bot that remembers", href:"stratego/", updated:"2026-09-15" },
   { title:"Links",            emoji:"⛳", sub:"Nine holes at Birch Hollow · three-tap swing", href:"golf/", updated:"2026-09-15" },
   { title:"Pull Tabs",        emoji:"🎟️", sub:"Lake Uffda VFW · one live booth for everybody · six boxes · big winners on the ticker", href:"pulltabs/", updated:"2026-10-02" },
+  { title:"Horse Race",       emoji:"🏇", sub:"Lake Uffda Downs · cards & dice · one live track, everybody's in · same wallet as Pull Tabs", href:"horserace/", updated:"2026-10-03" },
   // { title:"New Game", emoji:"🎲", sub:"make a folder with an index.html, then add one line here", href:"newgame/" },
 ];
 
@@ -140,7 +141,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v107", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v108", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

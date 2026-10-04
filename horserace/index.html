@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Horse Race</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{ --felt:#0d5c3f; --felt2:#0a4a33; --felt3:#063324;
+  --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --mute:rgba(247,243,232,.66);
+  --line:rgba(247,243,232,.16); --red:#e05252; --ok:#4cc27a; --cell:16px; }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--cream);
+  background:radial-gradient(circle at 50% 0%,var(--felt) 0%,var(--felt2) 60%,var(--felt3) 100%) fixed;background-color:var(--felt3);
+  min-height:100vh;overflow-x:hidden}
+.wrap{max-width:560px;margin:0 auto;padding:8px 12px 40px;display:flex;flex-direction:column;gap:9px}
+button{font-family:inherit;cursor:pointer;border:none}
+.hdr{display:flex;align-items:center;gap:6px}
+.hdr .title{font-family:Georgia,"Times New Roman",serif;font-weight:700;color:var(--gold);font-size:21px;letter-spacing:.5px;flex:1}
+.iconbtn{background:rgba(255,255,255,.12);color:var(--cream);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:700;text-decoration:none}
+.btn{background:var(--gold);color:var(--ink);border-radius:12px;padding:13px 14px;font-weight:800;font-size:16px;box-shadow:0 3px 8px rgba(0,0,0,.35);width:100%}
+.btn.ghost{background:rgba(255,255,255,.13);color:var(--cream);box-shadow:none}
+.btn:disabled{opacity:.45;cursor:default}
+.hidden{display:none !important}
+.panel{background:rgba(0,0,0,.22);border-radius:14px;padding:12px}
+.cap{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mute);font-weight:800;margin-bottom:6px}
+.txt{width:100%;font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1.5px solid var(--gold);background:rgba(0,0,0,.3);color:var(--cream)}
+.neon{font-family:Georgia,serif;font-size:40px;color:var(--gold);text-align:center;margin-top:10px;text-shadow:0 2px 10px rgba(240,198,116,.35)}
+.neon small{display:block;font-family:-apple-system,sans-serif;font-size:11px;letter-spacing:3px;color:var(--mute);margin-top:4px}
+.setbtns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.say{background:rgba(0,0,0,.22);border-radius:12px;padding:9px 11px;font-size:14px;line-height:1.4;display:flex;gap:8px;align-items:flex-start;min-height:42px}
+.say b{color:var(--gold)}
+.say .mic{flex:0 0 auto}
+/* wallet + pot */
+.money{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center}
+.mbox{background:rgba(0,0,0,.22);border-radius:12px;padding:6px 11px}
+.mbox .l{font-size:10px;letter-spacing:1.2px;color:var(--mute);font-weight:800}
+.mbox .v{font-size:21px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums}
+.mbox .v.neg{color:#f08a8a}
+.atm{padding:9px 11px;font-size:13px;border-radius:12px;background:rgba(255,255,255,.12);color:var(--cream);font-weight:700}
+.roombar{font-size:12px;color:var(--mute);text-align:center}
+.roombar b{color:var(--ok)}
+.roombar.off b{color:var(--red)}
+/* scratch slots */
+.scratch{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.slot{border:1.5px dashed var(--line);border-radius:10px;padding:4px 2px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px}
+.slot .n{font-size:19px;font-weight:900;line-height:1.1}
+.slot .c{font-size:10px;color:var(--mute);font-weight:700}
+.slot.on{border-style:solid;border-color:var(--red);background:rgba(224,82,82,.14)}
+.slot.next{border-color:var(--gold)}
+/* track */
+.track{display:flex;flex-direction:column;gap:3px;background:rgba(0,0,0,.24);border-radius:12px;padding:8px 6px}
+.post{display:grid;grid-template-columns:30px 1fr 18px;gap:5px;font-size:9px;color:var(--mute);letter-spacing:1px}
+.post span:nth-child(2){display:flex;justify-content:space-between}
+.lane{display:grid;grid-template-columns:30px 1fr 18px;align-items:center;gap:5px}
+.lane .no{font-weight:900;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.lane .no small{font-size:9px;color:var(--gold);margin-right:2px}
+.cells{display:grid;gap:2px;height:var(--cell)}
+.cells i{background:rgba(255,255,255,.08);border-radius:3px;position:relative}
+.cells i.gap{visibility:hidden}
+.cells i.done{background:rgba(255,255,255,.2)}
+.cells i.h{border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.35);font-style:normal;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.cells i.h.moved{animation:hop .45s ease-out}
+@keyframes hop{0%{transform:translateX(-120%) scale(.9)}60%{transform:translateX(10%) scale(1.25)}100%{transform:none}}
+.lane .fin{font-size:12px;text-align:center}
+.lane.scr .no{color:var(--red);text-decoration:line-through}
+.lane.scr .cells{opacity:.3}
+.lane.mine .no{color:var(--gold)}
+.lane.lead .cells i.h{box-shadow:0 0 0 2px var(--gold),0 0 10px var(--gold)}
+.lane.won{background:rgba(240,198,116,.16);border-radius:6px}
+/* dice */
+.rollrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
+.dice{display:flex;gap:7px;align-items:center}
+.die{width:44px;height:44px;border-radius:10px;background:var(--cream);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:7px;box-shadow:0 3px 7px rgba(0,0,0,.4)}
+.die i{width:8px;height:8px;border-radius:50%;background:var(--ink);place-self:center}
+.die.blank{opacity:.35}
+.die.tumble{animation:tumble .55s ease-out}
+@keyframes tumble{0%{transform:rotate(-200deg) translateY(-14px) scale(.7)}70%{transform:rotate(15deg)}100%{transform:none}}
+.rollbtn{min-height:52px}
+.rollbtn.wait{background:rgba(255,255,255,.12);color:var(--cream);box-shadow:none;font-size:14px}
+/* cards */
+.hand{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.card{width:40px;height:56px;border-radius:7px;background:var(--cream);color:var(--ink);position:relative;box-shadow:0 2px 5px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:17px;line-height:1}
+.card.red{color:#c22}
+.card small{font-size:8.5px;font-weight:800;opacity:.65;margin-top:3px}
+.card .silk{position:absolute;top:4px;left:4px;width:8px;height:8px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+.card.scr{opacity:.45}
+.card.scr::after{content:"";position:absolute;left:4px;right:4px;top:50%;border-top:2px solid var(--red);transform:rotate(-25deg)}
+.card.win{box-shadow:0 0 0 3px var(--gold),0 0 14px var(--gold)}
+/* seats */
+.seats{display:flex;flex-direction:column;gap:4px}
+.seat{display:grid;grid-template-columns:18px 1fr auto auto;gap:8px;align-items:center;background:rgba(0,0,0,.18);border-radius:9px;padding:6px 10px;font-size:13.5px}
+.seat .up{width:8px;height:8px;border-radius:50%;background:transparent}
+.seat.turn .up{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.seat.me{outline:1.5px solid var(--gold)}
+.seat .k{color:var(--mute);font-size:12px}
+.seat .m{font-weight:800;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+.seat .m.pos{color:var(--ok)} .seat .m.neg{color:#f08a8a}
+/* lobby */
+.lobby .who{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.chip{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700}
+.chip.me{background:var(--gold);color:var(--ink)}
+.chip.bot{opacity:.7}
+.lobby .btns{display:flex;flex-direction:column;gap:8px}
+/* overlays */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.overlay.on{display:flex}
+.sheet{background:linear-gradient(180deg,#12503a,#0c3d2c);border:2px solid var(--gold);border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;padding:18px}
+.sheet h2{margin:0 0 8px;color:var(--gold);font-family:Georgia,serif}
+.sheet h3{color:var(--gold);margin:14px 0 6px;font-size:15px}
+.sheet p,.sheet li{font-size:14px;line-height:1.5}
+.sheet ol,.sheet ul{padding-left:20px}
+.sheet table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+.sheet td,.sheet th{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left}
+.sheet th{color:var(--mute);font-size:11px;letter-spacing:.8px;text-transform:uppercase}
+.row{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
+.menubtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.winner{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:68px;height:68px;border-radius:50%;font-size:32px;font-weight:900;border:3px solid var(--gold);box-shadow:0 0 22px rgba(240,198,116,.45)}
+.winner .big{font-family:Georgia,serif;font-size:30px;color:var(--gold)}
+.winner .hn{font-size:14px;color:var(--mute)}
+.pays{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.switch{position:relative;width:46px;height:26px;display:inline-block}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;position:absolute;inset:0;z-index:2}
+.switch .track2{position:absolute;inset:0;border-radius:14px;background:rgba(0,0,0,.4)}
+.switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--cream);transition:left .15s}
+.switch input:checked ~ .track2{background:var(--gold)}
+.switch input:checked ~ .knob{left:23px}
+#toasts{position:fixed;left:0;right:0;top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
+.toast{background:#1c2a24;color:var(--cream);border:1.5px solid var(--gold);border-radius:12px;padding:8px 12px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.5);max-width:92vw}
+.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:16px 0 10px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px}
+@media (min-width:600px){ :root{--cell:20px} .card{width:46px;height:64px;font-size:19px} .die{width:50px;height:50px} }
+@media (prefers-reduced-motion:reduce){ .die.tumble,.cells i.h.moved{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <a class="iconbtn" href="../" title="All games">🏠</a>
+    <div class="title">Horse Race</div>
+    <button class="iconbtn" id="rulesBtn">Rules</button>
+    <button class="iconbtn" id="menuBtn">Menu</button>
+  </div>
+
+  <!-- ===== SETUP ===== -->
+  <section id="setup">
+    <div class="neon">Horse Race<small>LAKE UFFDA DOWNS · POST TIME</small></div>
+    <div class="panel" style="margin-top:12px">
+      <div class="cap">Your name (for the program)</div>
+      <input class="txt" id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/>
+      <div class="setbtns">
+        <button class="btn" id="liveBtn">🏇 Walk up to the rail · live with everybody</button>
+        <button class="btn ghost" id="soloBtn">🏠 Race the regulars · just you and the bots</button>
+      </div>
+      <div class="say" style="margin-top:12px"><span class="mic">🎙️</span><span id="setupSay"></span></div>
+    </div>
+  </section>
+
+  <!-- ===== GAME ===== -->
+  <section id="game" class="hidden" style="display:flex;flex-direction:column;gap:9px">
+    <div class="money">
+      <div class="mbox"><div class="l">CASH · SAME AS PULL TABS</div><div class="v" id="cash">$0</div></div>
+      <div class="mbox"><div class="l">POT</div><div class="v" id="pot">$0</div></div>
+      <button class="atm" id="atmBtn">🏧 ATM</button>
+    </div>
+    <div class="roombar" id="roombar"></div>
+    <div class="lobby panel hidden" id="lobby"></div>
+    <div id="raceArea" class="hidden" style="display:flex;flex-direction:column;gap:9px">
+      <div class="scratch" id="scratch"></div>
+      <div class="track" id="track"></div>
+      <div class="rollrow">
+        <div class="dice"><div class="die blank" id="die1"></div><div class="die blank" id="die2"></div></div>
+        <button class="btn rollbtn" id="rollBtn">🎲 Roll</button>
+      </div>
+      <div class="say"><span class="mic">🎙️</span><span id="say"></span></div>
+      <div><div class="cap" id="handCap">Your horses</div><div class="hand" id="hand"></div></div>
+      <div><div class="cap">The table</div><div class="seats" id="seats"></div></div>
+    </div>
+  </section>
+  <div class="gn-build" id="gnBuild"></div>
+</div>
+<div id="toasts"></div>
+
+<div class="overlay" id="winOv"><div class="sheet" id="winSheet"></div></div>
+
+<div class="overlay" id="rulesOv"><div class="sheet">
+  <h2>How Horse Race works</h2>
+  <p>Take the Aces and Kings out of a deck. The 44 cards left are the horses: 2 through 10, Jack is 11, Queen is 12. They're all dealt out, so each card you hold is a share in that horse. Four 7s means you own the whole 7.</p>
+  <h3>1 · Scratches</h3>
+  <p>The dice come around the table. The first four <b>different</b> totals rolled are scratched: the 1st costs <b>$1</b> a card, the 2nd <b>$2</b>, the 3rd <b>$3</b>, the 4th <b>$4</b>. Everybody pays that for each card of it they hold, into the pot. A total that's already scratched just rolls again.</p>
+  <h3>2 · The race</h3>
+  <p>Every roll moves that horse one step. Roll a scratched number and <b>you</b> pay its scratch price into the pot. The first horse to the finish wins, and the pot is split four ways — one share per card of the winning number. Hold two of them, get half.</p>
+  <h3>Track lengths</h3>
+  <table><tr><th>Horse</th><th>Steps</th><th>Comes up</th></tr>
+    <tr><td>2 · 12</td><td>3</td><td>1 in 36</td></tr><tr><td>3 · 11</td><td>5</td><td>2 in 36</td></tr>
+    <tr><td>4 · 10</td><td>6</td><td>3 in 36</td></tr><tr><td>5 · 9</td><td>8</td><td>4 in 36</td></tr>
+    <tr><td>6 · 8</td><td>9</td><td>5 in 36</td></tr><tr><td>7</td><td>10</td><td>6 in 36</td></tr></table>
+  <p style="opacity:.8">These are tuned so every horse that runs has about the same shot — roughly 1 race in 11. (The usual bar lengths let the 2 and 12 win 4 races in 10.) A race takes about 40 rolls.</p>
+  <h3>Live</h3>
+  <p>One track, everybody who has Horse Race open — no rooms, no codes. Get in the next race, and anyone at the rail can call the horses to the gate. Bots fill the table to four. Take your turn tapping Roll; if somebody's phone is in their pocket, the table rolls for them after a few seconds. Money comes out of the same wallet as Pull Tabs.</p>
+  <button class="btn" data-close="rulesOv">Got it</button>
+</div></div>
+
+<div class="overlay" id="menuOv"><div class="sheet">
+  <h2>Menu</h2>
+  <div class="row"><div>Sound</div><label class="switch"><input type="checkbox" id="menuSound"><span class="track2"></span><span class="knob"></span></label></div>
+  <div class="menubtns">
+    <button class="btn ghost" id="leaveBtn">🚪 Leave the track</button>
+    <a class="btn ghost" href="../pulltabs/" style="text-align:center;text-decoration:none">🎟️ Over to the pull tab booth</a>
+    <a class="btn ghost" href="../" style="text-align:center;text-decoration:none">🏠 Back to all games</a>
+    <button class="btn" data-close="menuOv">Close</button>
+  </div>
+</div></div>
+<script src="../sfx.js"></script>
+<script>
+/* ============================================================
+   HORSE RACE — the rules engine (window.HR). No DOM.
+   44 cards (2-10, J=11, Q=12, four of each) are the horses. Two dice.
+   The first four DIFFERENT totals rolled are scratched at $1/$2/$3/$4 a
+   card; then each roll moves that horse a step, and a scratched total
+   costs the roller its scratch price. First horse home wins; the pot is
+   split by card among whoever holds that number.
+
+   Everything is a pure function of (seed, seats, number of rolls): the
+   deal comes from the seed and roll k's dice come from (seed, k). There
+   are no decisions in Horse Race - only who taps Roll - so every phone
+   that knows the seed and how many rolls have happened agrees on the
+   whole race, whatever order the messages arrived in.
+   ============================================================ */
+window.HR=(function(){
+  // Steps to the wire. The usual bar lengths (3/6/8/11/14/17) sound fair but aren't: the long
+  // shots win on variance, and the 2 and 12 took 40% of 60,000 simulated races between them.
+  // These were searched for the fairest split with the four scratches in play: every horse that
+  // runs wins 7.6-10.9% of races (fair is 9.1%), and a race takes about 40 rolls.
+  var LEN={2:3,3:5,4:6,5:8,6:9,7:10,8:9,9:8,10:6,11:5,12:3};
+  var MAXLEN=10;
+  var SCR=[1,2,3,4];                                                  // 1st..4th scratch, per card
+  var RANKS=[2,3,4,5,6,7,8,9,10,11,12];
+  var NAMES={2:'Lutefisk Lightning',3:'Hotdish Harry',4:'Uff Da Express',5:'Lake Effect',6:'Ice House',
+    7:'Seventh Heaven',8:'Spam Can',9:'Bundled Up',10:'Ope, Excuse Me',11:'Paul Bunyan',12:'Babe the Blue Ox'};
+  var SILK={2:'#c0392b',3:'#ecebe4',4:'#1f5fbf',5:'#e6b422',6:'#2e8b57',7:'#1b1b1b',8:'#e67e22',9:'#8e44ad',10:'#d35c8a',11:'#3aa7b8',12:'#7a5230'};
+  var SILK_INK={3:'#1c2a24',5:'#1c2a24',7:'#f0c674'};
+  function rng(seed){ var a=seed>>>0; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a;
+    t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function rankName(r){ return r===11?'J':(r===12?'Q':String(r)); }
+
+  // The deal: shuffle 44 cards from the seed and go round the table from seat 0.
+  // hands[s] = sorted ranks; counts[s][r] = how many r's seat s holds.
+  function deal(seed, n){
+    var deck=[]; RANKS.forEach(function(r){ for(var i=0;i<4;i++) deck.push(r); });
+    var r=rng(seed^0x5eed);
+    for(var i=deck.length-1;i>0;i--){ var j=Math.floor(r()*(i+1)); var t=deck[i]; deck[i]=deck[j]; deck[j]=t; }
+    var hands=[], counts=[];
+    for(var s=0;s<n;s++){ hands.push([]); var c={}; RANKS.forEach(function(x){ c[x]=0; }); counts.push(c); }
+    deck.forEach(function(card,i){ hands[i%n].push(card); counts[i%n][card]++; });
+    hands.forEach(function(h){ h.sort(function(a,b){return a-b;}); });
+    return {hands:hands, counts:counts};
+  }
+  function dice(seed, k){ var r=rng((seed ^ Math.imul(k+1,2654435761))>>>0); r(); return [1+Math.floor(r()*6), 1+Math.floor(r()*6)]; }
+
+  // Play the race forward K rolls. Roll k is taken by seat k % n.
+  function sim(race, K){
+    var n=race.seats.length, d=race.dealt||(race.dealt=deal(race.seed,n));
+    var st={phase:'scratch', scratches:[], pos:{}, pot:0, paid:[], won:[], log:[], winner:0, rolls:0, share:0};
+    RANKS.forEach(function(x){ st.pos[x]=0; });
+    for(var s=0;s<n;s++){ st.paid.push(0); st.won.push(0); }
+    for(var k=0;k<K && st.phase!=='done';k++){
+      var roller=k%n, dd=dice(race.seed,k), t=dd[0]+dd[1], ev={k:k, roller:roller, d:dd, t:t, pays:null};
+      var si=st.scratches.indexOf(t);
+      if(st.phase==='scratch'){
+        if(si<0){
+          var price=SCR[st.scratches.length]; st.scratches.push(t);
+          ev.kind='scratch'; ev.price=price; ev.nth=st.scratches.length; ev.pays=[];
+          for(var p=0;p<n;p++){ var amt=price*d.counts[p][t]; ev.pays.push(amt); st.paid[p]+=amt; st.pot+=amt; }
+          if(st.scratches.length===SCR.length) st.phase='race';
+        } else ev.kind='again';
+      } else {
+        if(si>=0){ ev.kind='hit'; ev.price=SCR[si]; st.paid[roller]+=ev.price; st.pot+=ev.price; }
+        else {
+          st.pos[t]++; ev.kind='move'; ev.pos=st.pos[t];
+          if(st.pos[t]>=LEN[t]){
+            ev.kind='win'; st.phase='done'; st.winner=t; st.share=st.pot/4;
+            for(var q=0;q<n;q++) st.won[q]=st.share*d.counts[q][t];
+          }
+        }
+      }
+      st.log.push(ev); st.rolls=k+1;
+    }
+    st.next = st.phase==='done' ? -1 : st.rolls % n;    // seat that takes the next roll
+    st.hands=d.hands; st.counts=d.counts;
+    return st;
+  }
+  // how far each horse is from home, as a fraction - for the announcer
+  function leader(st){ var best=0, bf=-1; RANKS.forEach(function(x){ if(st.scratches.indexOf(x)>=0) return; var f=st.pos[x]/LEN[x]; if(f>bf){ bf=f; best=x; } }); return best; }
+  // run a whole race (tests / soak)
+  function runToEnd(race){ var K=0, st; do{ K++; st=sim(race,K); }while(st.phase!=='done' && K<2000); return {K:K, st:st}; }
+
+  return {LEN:LEN, MAXLEN:MAXLEN, SCR:SCR, RANKS:RANKS, NAMES:NAMES, SILK:SILK, SILK_INK:SILK_INK,
+    rng:rng, deal:deal, dice:dice, sim:sim, leader:leader, runToEnd:runToEnd, rankName:rankName};
+})();
+</script>
+<script>
+/* ============================================================
+   HORSE RACE — the screen and the live track. Knows none of the rules (HR does).
+   ============================================================ */
+(function(){
+"use strict";
+var BUILD_V="v108";
+function $(id){ return document.getElementById(id); }
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function shortId(){ return Math.random().toString(36).slice(2,10); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function money(x){ var neg=x<0; x=Math.abs(x); var s=(Math.abs(x-Math.round(x))<0.005)?'$'+Math.round(x):'$'+x.toFixed(2); return (neg?'−':'')+s; }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function nowSec(){ return Math.floor(Date.now()/1000); }
+
+// ---------- you, and the wallet you share with Pull Tabs ----------
+// Same keys as Pull Tabs (pt_id, pt_name, pt_bank_v1): one bar, one wallet. The wallet is read
+// fresh and written straight back on every change, so the two games never hold stale copies.
+var myId=lsGet('pt_id',null); if(!myId){ myId=shortId(); lsSet('pt_id',myId); }
+var myName=lsGet('pt_name','');
+var START=100, ATM_CASH=100, ATM_FEE=3;
+function bankGet(){ var b=Object.assign({cash:START, atm:START, bought:0, won:0, best:0, v:2}, lsGet('pt_bank_v1',{}));
+  if(b.v!==2){ b.cash+=START; b.atm+=START; b.v=2; } return b; }
+function bankAdd(delta){
+  var b=bankGet(); b.cash=Math.round((b.cash+delta)*100)/100; var trips=0;
+  while(b.cash<0){ b.cash+=ATM_CASH; b.atm+=ATM_CASH+ATM_FEE; trips++; }   // the pot doesn't wait: short? off to the ATM
+  lsSet('pt_bank_v1',b);
+  if(trips) toast('🏧 Short on cash, so it’s off to the ATM'+(trips>1?' ×'+trips:'')+'. $3 fee — it’s a VFW.');
+  return b;
+}
+
+var BOTS=['Uncle Dale','Bev','Lars','Arlene','Swede','Doris'];
+var SAY={
+  hello:['Horses are in the paddock, hon. Put your name on the program and walk on up.','Post time’s whenever you say. Lake Uffda Downs, finest dirt track in the county.','Bring cash. The 2 horse ate a whole hotdish this morning.'],
+  gate:['Horses are at the gate! Scratches first — the first four different numbers rolled come out.','They’re loading into the gate. First four different numbers rolled get scratched.'],
+  move:['moves up!','picks up a step!','is coming on!','gains a length!','surges!'],
+  close:['is one step from home!','can smell the barn!','is right at the wire!']
+};
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function hname(t){ return t+' · '+HR.NAMES[t]; }
+
+// ---------- state ----------
+// races[id] = {id, seed, seats:[{pid,name,bot}], prev, ticks:{k:pid}, at, lastAt}
+// The race in play is S.cur. A race is nothing but its seed, its seats, and how many rolls
+// have happened - HR.sim() rebuilds everything else, so every phone agrees.
+var S={mode:null, races:{}, cur:null, pend:{}, sits:{}, ready:false, replaying:false, seen:{}, starting:0,
+  applied:lsGet('hr_applied',{}), lastK:-1, waitSince:0, jit:0, shownWin:{}, animK:{}};
+
+function race(){ return S.cur ? S.races[S.cur] : null; }
+function Kof(r){ var k=0; while(r.ticks[k]!==undefined) k++; return k; }
+function seatOf(r,pid){ for(var i=0;i<r.seats.length;i++) if(r.seats[i].pid===pid) return i; return -1; }
+function simNow(r){ return HR.sim(r, Kof(r)); }
+
+// ---------- applying messages (the same path for live, replay and solo) ----------
+function okSeats(a){ return Array.isArray(a) && a.length>=2 && a.length<=8 && a.every(function(s){ return s && typeof s.pid==='string' && typeof s.name==='string'; }); }
+function apply(o, t){
+  t = t || nowSec();
+  if(o.t==='sit' && o.from){ S.sits[o.from]={name:String(o.name||'').slice(0,16)||'Somebody', at:t, left:false}; return; }
+  if(o.t==='leave' && o.from){ var s=S.sits[o.from]; if(s){ s.left=true; s.at=t; } return; }
+  if(o.t==='start'){
+    if(!o.id || S.races[o.id] || !okSeats(o.seats) || typeof o.seed!=='number') return;
+    var cur=race();
+    // a new race follows the one in play once it's finished, or once nobody has rolled in 5 min
+    if(cur && !(o.prev===cur.id && (simNow(cur).phase==='done' || t-cur.lastAt>300))) return;
+    var r={id:o.id, seed:o.seed>>>0, prev:o.prev||null, ticks:{}, at:t, lastAt:t,
+      seats:o.seats.map(function(s){ return {pid:String(s.pid), name:String(s.name).slice(0,16), bot:!!s.bot}; })};
+    S.races[r.id]=r; S.cur=r.id; S.starting=0;
+    var p=S.pend[r.id]; if(p){ Object.keys(p).forEach(function(k){ r.ticks[k]=p[k]; }); delete S.pend[r.id]; }
+    if(o.from){ var ss=S.sits[o.from]; if(!ss || ss.left || ss.at<t) S.sits[o.from]={name:String(o.name||'').slice(0,16), at:t, left:false}; }
+    return;
+  }
+  if(o.t==='roll' && o.id!=null && typeof o.k==='number' && o.k>=0 && o.k<2000){
+    var r2=S.races[o.id];
+    if(!r2){ (S.pend[o.id]=S.pend[o.id]||{})[o.k]=o.from||'?'; return; }
+    if(r2.ticks[o.k]===undefined) r2.ticks[o.k]=o.from||'?';
+    if(t>r2.lastAt) r2.lastAt=t;
+    // rolling your own turn keeps you at the rail; being rolled for doesn't
+    var n=r2.seats.length, seat=r2.seats[o.k%n];
+    if(o.from && seat && seat.pid===o.from){ var s2=S.sits[o.from]; if(s2 && !s2.left && t>s2.at) s2.at=t; else if(!s2) S.sits[o.from]={name:seat.name, at:t, left:false}; }
+  }
+}
+
+// who's at the rail for the next race: sat (or rolled their own turn) in the last 20 minutes
+function atRail(){
+  var cut=nowSec()-20*60, out=[];
+  Object.keys(S.sits).forEach(function(pid){ var s=S.sits[pid]; if(!s.left && s.at>=cut) out.push({pid:pid, name:s.name, at:s.at}); });
+  out.sort(function(a,b){ return a.at-b.at; });
+  return out;
+}
+function amAtRail(){ return atRail().some(function(x){ return x.pid===myId; }); }
+
+// ---------- settling up: your seat's money, once per roll ----------
+function settle(){
+  Object.keys(S.races).forEach(function(id){
+    var r=S.races[id], si=seatOf(r,myId); if(si<0) return;
+    var st=simNow(r), done=S.applied[id]||0; if(st.log.length<=done) return;
+    var delta=0;
+    for(var j=done;j<st.log.length;j++){ var e=st.log[j];
+      if(e.kind==='scratch') delta-=e.pays[si];
+      else if(e.kind==='hit' && e.roller===si) delta-=e.price;
+      else if(e.kind==='win') delta+=st.won[si]; }
+    S.applied[id]=st.log.length;
+    var keys=Object.keys(S.applied); if(keys.length>40) keys.slice(0,keys.length-40).forEach(function(k){ delete S.applied[k]; });
+    lsSet('hr_applied',S.applied);
+    if(delta) bankAdd(delta);
+  });
+}
+
+// ---------- doing things ----------
+function sitDown(){ if(S.mode==='live'){ netPublish({t:'sit', name:myName}); apply({t:'sit', from:myId, name:myName}); } render(); }
+function standUp(){ if(S.mode==='live'){ netPublish({t:'leave'}); apply({t:'leave', from:myId}); } render(); }
+function startRace(){
+  var cur=race();
+  if(cur && simNow(cur).phase!=='done') return;
+  var humans = S.mode==='solo' ? [{pid:myId, name:myName}] : atRail().filter(function(x){ return x.pid!==myId; });
+  if(S.mode==='live') humans.unshift({pid:myId, name:myName});
+  humans=humans.slice(0,6);
+  var seats=humans.map(function(h){ return {pid:h.pid, name:h.name}; });
+  var bots=BOTS.slice().sort(function(){ return Math.random()-.5; });
+  for(var b=0; seats.length<4; b++) seats.push({pid:'bot:'+b, name:bots[b], bot:1});
+  for(var i=seats.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var x=seats[i]; seats[i]=seats[j]; seats[j]=x; }   // who rolls first
+  var msg={t:'start', id:shortId(), prev:cur?cur.id:null, seed:(Math.random()*4294967296)>>>0, seats:seats};
+  if(S.mode==='solo'){ apply(msg); saveSolo(); afterChange(); return; }
+  S.starting=Date.now(); netPublish(msg); render();
+}
+function tryRoll(k, auto){
+  var r=race(); if(!r || Kof(r)!==k) return;
+  if(HR.sim(r,k).phase==='done') return;
+  r.ticks[k]=myId;     // the dice are already decided by (seed, k): showing them now is safe
+  if(S.mode==='live') netPublish({t:'roll', id:r.id, k:k, auto:auto?1:0});
+  else saveSolo();
+  afterChange();
+}
+function myRoll(){ var r=race(); if(!r) return; var k=Kof(r), st=HR.sim(r,k); if(st.phase==='done') return;
+  if(r.seats[st.next].pid!==myId) return; tryRoll(k,false); }
+
+// Bots roll by themselves; a human who doesn't tap gets rolled for. In a live race the first
+// human seat's phone drives the bots and everyone else backs it up a few seconds later, so
+// the race keeps going if that phone goes in a pocket. Duplicate rolls are harmless: roll k is
+// roll k, from any phone.
+function drive(){
+  var r=race(); if(!r || !S.ready) return;
+  var k=Kof(r), st=HR.sim(r,k); if(st.phase==='done') return;
+  if(k!==S.lastK){ S.lastK=k; S.waitSince=Date.now(); S.jit=Math.random()*1500; }
+  var seat=r.seats[st.next], waited=Date.now()-S.waitSince;
+  if(S.mode==='solo'){ if(seat.bot && waited>1000) tryRoll(k,true); return; }
+  if(seat.bot){ var drv=null; for(var i=0;i<r.seats.length;i++) if(!r.seats[i].bot){ drv=r.seats[i].pid; break; }
+    if((drv===myId && waited>1200) || waited>4500+S.jit) tryRoll(k,true); }
+  else if(seat.pid!==myId && waited>9000+S.jit) tryRoll(k,true);
+  renderRollBtn(r, st);
+}
+setInterval(drive, 300);
+
+function afterChange(){ settle(); render(); }
+
+// ---------- solo keeps its race between visits ----------
+function saveSolo(){ if(S.mode!=='solo') return; var r=race(); lsSet('hr_solo', r?{id:r.id, seed:r.seed, seats:r.seats, prev:r.prev, ticks:r.ticks}:null); }
+function loadSolo(){ var o=lsGet('hr_solo',null); if(!o || !o.id || !okSeats(o.seats)) return;
+  apply({t:'start', id:o.id, seed:o.seed, seats:o.seats, prev:null}); var r=race(); if(r){ r.ticks=o.ticks||{}; S.lastK=Kof(r); S.animK[r.id]=simNow(r).log.length; if(simNow(r).phase==='done') S.shownWin[r.id]=1; } }
+
+// ---------- render ----------
+function render(){
+  $('cash').textContent=money(bankGet().cash);
+  if(!S.mode) return;
+  var r=race(), st=r?simNow(r):null, running=st && st.phase!=='done';
+  $('pot').textContent=money(st?st.pot:0);
+  renderRoombar();
+  // the lobby shows between races (and to anyone watching a race they're not in)
+  var watching = r && running && seatOf(r,myId)<0;
+  $('lobby').classList.toggle('hidden', running && !watching);
+  if(!running || watching) renderLobby(r, st);
+  $('raceArea').classList.toggle('hidden', !r);
+  if(r) renderRace(r, st);
+  if(st && st.phase==='done' && !S.shownWin[r.id] && S.ready){
+    S.shownWin[r.id]=1;
+    // a race that finished before you walked up doesn't throw a party
+    if(!S.replaying && S.liveSince && r.lastAt>=S.liveSince-2) showWinner(r, st); }
+}
+function renderRoombar(){
+  var el=$('roombar');
+  if(S.mode==='solo'){ el.className='roombar'; el.innerHTML='Just you and the regulars'; return; }
+  if(!S.ready){ el.className='roombar off'; el.innerHTML='<b>●</b> Getting to the track…'; return; }
+  var rail=atRail(); el.className='roombar'+(NET.ok?'':' off');
+  el.innerHTML='<b>●</b> '+(NET.ok?'LIVE':'RECONNECTING')+' · '+rail.length+' at the rail'+(rail.length?' · '+rail.map(function(x){ return esc(x.name); }).join(', '):'');
+}
+function renderLobby(r, st){
+  var el=$('lobby'), h='';
+  var running = st && st.phase!=='done';
+  if(S.mode==='solo'){
+    h+='<div class="cap">'+(r?'Next race':'Post time')+'</div>'
+      +'<div class="who"><span class="chip me">'+esc(myName)+'</span>'+BOTS.slice(0,3).map(function(b){ return '<span class="chip bot">🤖 '+b+'</span>'; }).join('')+'</div>'
+      +'<div class="btns"><button class="btn" id="lbStart">🏁 Call the horses to the gate</button></div>';
+  } else if(!S.ready){
+    h+='<div class="cap">Walking up…</div><div style="opacity:.8">Reading the program — who’s here and what’s running.</div>';
+  } else {
+    var rail=atRail(), me=amAtRail();
+    h+='<div class="cap">'+(running?'This race is running — you’re watching':'At the rail for the next race')+'</div>';
+    h+='<div class="who">'+(rail.length?rail.map(function(x){ return '<span class="chip'+(x.pid===myId?' me':'')+'">'+esc(x.name)+'</span>'; }).join(''):'<span style="opacity:.7;font-size:13px">Nobody yet. Bots fill the table to four.</span>')+'</div>';
+    h+='<div class="btns">';
+    if(running){
+      h+= me ? '<div style="font-size:13px;opacity:.85">You’re in the next one. Hang tight.</div>' : '<button class="btn" id="lbSit">🏇 Get in the next race</button>';
+    } else if(S.starting && Date.now()-S.starting<15000){
+      h+='<button class="btn" disabled>Loading the gate…</button>';
+    } else {
+      h+='<button class="btn" id="lbStart">🏁 Call the horses to the gate'+(rail.filter(function(x){return x.pid!==myId;}).length?'':' (you + bots)')+'</button>';
+      if(me) h+='<button class="btn ghost" id="lbLeave">Step away from the rail</button>';
+    }
+    h+='</div>';
+  }
+  if(r && st && st.phase==='done') h='<div style="font-size:13px;margin-bottom:8px">Last race: <b style="color:var(--gold)">'+esc(hname(st.winner))+'</b> won a '+money(st.pot)+' pot.</div>'+h;
+  el.innerHTML=h;
+  var b;
+  if((b=$('lbStart'))) b.onclick=function(){ if(!myName) return; sfx('shuffle'); startRace(); };
+  if((b=$('lbSit'))) b.onclick=function(){ sfx('chip'); sitDown(); };
+  if((b=$('lbLeave'))) b.onclick=function(){ standUp(); };
+}
+var PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function paintDie(el, v, tumble){ el.innerHTML=''; el.classList.toggle('blank', !v);
+  for(var i=0;i<9;i++){ var p=document.createElement('i'); if(!v || PIPS[v].indexOf(i)<0) p.style.visibility='hidden'; el.appendChild(p); }
+  if(tumble){ el.classList.remove('tumble'); void el.offsetWidth; el.classList.add('tumble'); } }
+function renderRace(r, st){
+  var si=seatOf(r,myId), mine=si>=0?st.counts[si]:null, last=st.log[st.log.length-1];
+  var fresh = last && S.animK[r.id]!==st.log.length && !S.replaying;
+  var hop = fresh && S.animK[r.id]===st.log.length-1;     // exactly one new roll: animate it
+  S.animK[r.id]=st.log.length;
+  // scratches
+  var sc='';
+  for(var i=0;i<4;i++){ var t=st.scratches[i];
+    sc+='<div class="slot'+(t?' on':(i===st.scratches.length && st.phase==='scratch'?' next':''))+'"><span class="c">'+['1st','2nd','3rd','4th'][i]+' · $'+HR.SCR[i]+'</span><span class="n">'+(t||'?')+'</span><span class="c">'
+      +(t ? (mine ? (mine[t]? 'you paid '+money(HR.SCR[i]*mine[t]) : 'you’re clear') : HR.NAMES[t].split(' ')[0]) : (i===st.scratches.length && st.phase==='scratch'?'next roll':' '))+'</span></div>'; }
+  $('scratch').innerHTML=sc;
+  // track: every lane ends at the same finish line; the first cell of each lane is its gate
+  var M=HR.MAXLEN, lead=st.phase==='race'?HR.leader(st):0, tr='<div class="post"><span></span><span><span>GATE</span><span>FINISH →</span></span><span></span></div>';
+  HR.RANKS.forEach(function(n){
+    var scr=st.scratches.indexOf(n)>=0, L=HR.LEN[n], off=M-L, p=st.pos[n];
+    var cls='lane'+(scr?' scr':'')+(mine&&mine[n]&&!scr?' mine':'')+(n===lead&&p>0?' lead':'')+(st.winner===n?' won':'');
+    var cells='';
+    for(var c=0;c<=M;c++){
+      if(c<off){ cells+='<i class="gap"></i>'; continue; }
+      var step=c-off;
+      if(!scr && step===p){ var moved = hop && last && last.t===n && (last.kind==='move'||last.kind==='win');
+        cells+='<i class="h'+(moved?' moved':'')+'" style="background:'+HR.SILK[n]+';color:'+(HR.SILK_INK[n]||'#fff')+'">'+n+'</i>'; }
+      else cells+='<i class="'+(step<p&&!scr?'done':'')+'"></i>';
+    }
+    tr+='<div class="'+cls+'"><span class="no">'+(mine&&mine[n]&&!scr?'<small>★'+(mine[n]>1?mine[n]:'')+'</small>':'')+n+'</span><div class="cells" style="grid-template-columns:repeat('+(M+1)+',1fr)">'+cells+'</div><span class="fin">'+(scr?'✕':(st.winner===n?'🏆':'🏁'))+'</span></div>';
+  });
+  $('track').innerHTML=tr;
+  // dice + the call
+  paintDie($('die1'), last?last.d[0]:0, hop); paintDie($('die2'), last?last.d[1]:0, hop);
+  $('say').innerHTML=callFor(r, st, last, si);
+  if(hop) soundFor(last, si);
+  // your horses
+  if(si>=0){
+    $('handCap').textContent='Your horses · '+st.hands[si].length+' cards';
+    $('hand').innerHTML=st.hands[si].map(function(n){ var scr=st.scratches.indexOf(n)>=0;
+      return '<div class="card'+(scr?' scr':'')+(st.winner===n?' win':'')+'"><span class="silk" style="background:'+HR.SILK[n]+'"></span>'+HR.rankName(n)+'<small>#'+n+'</small></div>'; }).join('');
+  } else { $('handCap').textContent='You’re watching this one'; $('hand').innerHTML=''; }
+  // the table
+  $('seats').innerHTML=r.seats.map(function(s,i){ var net=st.won[i]-st.paid[i];
+    return '<div class="seat'+(i===st.next?' turn':'')+(i===si?' me':'')+'"><span class="up"></span><span>'+(s.bot?'🤖 ':'')+esc(s.name)+(st.winner&&st.counts[i][st.winner]?' · '+st.counts[i][st.winner]+'× #'+st.winner:'')+'</span><span class="k">'+st.hands[i].length+' cards</span><span class="m '+(net>0?'pos':(net<0?'neg':''))+'">'+(net?money(net):'even')+'</span></div>'; }).join('');
+  renderRollBtn(r, st);
+}
+function renderRollBtn(r, st){
+  var b=$('rollBtn'); if(!b) return;
+  if(!r || st.phase==='done'){ b.disabled=true; b.className='btn rollbtn wait'; b.textContent=st&&st.winner?'🏆 '+st.winner+' wins!':'—'; return; }
+  var seat=r.seats[st.next], k=st.log.length;
+  if(seat.pid===myId){ b.disabled=false; b.className='btn rollbtn'; b.textContent=st.phase==='scratch'?'🎲 Your roll · scratch':'🎲 Your roll'; return; }
+  b.disabled=true; b.className='btn rollbtn wait';
+  var waited=(S.lastK===k)?Date.now()-S.waitSince:0;
+  if(seat.bot || S.mode==='solo') b.textContent=seat.name+'’s rolling…';
+  else { var left=Math.ceil((9000-waited)/1000); b.textContent=seat.name+'’s up'+(left>0&&left<=6?' · rolling for ’em in '+left:'…'); }
+}
+function callFor(r, st, e, si){
+  if(!e) return pick(SAY.gate);
+  var who=esc(r.seats[e.roller].name), you=e.roller===si;
+  var roll=(you?'You':who)+' rolled <b>'+e.t+'</b>. ';
+  if(e.kind==='scratch'){ var mp=si>=0?e.pays[si]:0;
+    return roll+'<b>'+esc(hname(e.t))+' is scratched</b> — '+['1st','2nd','3rd','4th'][e.nth-1]+' scratch, $'+e.price+' a card. '+(si<0?'':(mp?'You pay '+money(mp)+'.':'You’re clear.'))+(e.nth===4?' <b>And they’re off!</b>':''); }
+  if(e.kind==='again') return roll+e.t+'’s already scratched — roll again.';
+  if(e.kind==='hit') return roll+'That’s a scratched horse — '+(you?'you pay':'pays')+' <b>$'+e.price+'</b> into the pot.';
+  if(e.kind==='win') return roll+'<b>'+esc(hname(e.t))+' wins it!</b> '+money(st.share)+' a card.';
+  var togo=HR.LEN[e.t]-e.pos;
+  return roll+'<b>'+esc(hname(e.t))+'</b> '+(togo===1?pick(SAY.close):pick(SAY.move)+' '+togo+' to go.');
+}
+function soundFor(e, si){
+  if(!e) return;
+  if(e.kind==='win') sfx(si>=0 && race() && simNow(race()).counts[si][e.t] ? 'win' : 'good');
+  else if(e.kind==='scratch' || e.kind==='hit') sfx('chip');
+  else if(e.kind==='again') sfx('select');
+  else sfx('place');
+}
+function showWinner(r, st){
+  var si=seatOf(r,myId), n=st.winner;
+  var rows=r.seats.map(function(s,i){ var c=st.counts[i][n], net=st.won[i]-st.paid[i];
+    return '<div class="seat'+(i===si?' me':'')+'"><span class="up"></span><span>'+(s.bot?'🤖 ':'')+esc(s.name)+(c?' · '+c+'× #'+n:'')+'</span><span class="k">'+(c?'+'+money(st.won[i]):'no '+n+'s')+'</span><span class="m '+(net>0?'pos':(net<0?'neg':''))+'">'+(net?money(net):'even')+'</span></div>'; }).join('');
+  var mineWon = si>=0 && st.counts[si][n];
+  $('winSheet').innerHTML='<div class="winner"><span class="badge" style="background:'+HR.SILK[n]+';color:'+(HR.SILK_INK[n]||'#fff')+'">'+n+'</span>'
+    +'<div class="big">'+n+' wins!</div><div class="hn">'+esc(HR.NAMES[n])+' · '+st.rolls+' rolls</div></div>'
+    +'<div class="money" style="grid-template-columns:1fr 1fr;margin-top:10px"><div class="mbox"><div class="l">POT</div><div class="v">'+money(st.pot)+'</div></div><div class="mbox"><div class="l">A CARD</div><div class="v">'+money(st.share)+'</div></div></div>'
+    +'<div class="pays">'+rows+'</div>'
+    +'<div class="say"><span class="mic">🎙️</span><span>'+(mineWon?'<b>Cash those tickets!</b> You held '+st.counts[si][n]+' of the '+n+'s.':(si>=0?'Not your race. The pot’s gone to the '+n+' holders.':'The pot’s gone to the '+n+' holders.'))+'</span></div>'
+    +'<div class="menubtns"><button class="btn" id="winNext">🏁 Next race</button><button class="btn ghost" id="winClose">Back to the rail</button></div>';
+  $('winOv').classList.add('on');
+  $('winNext').onclick=function(){ $('winOv').classList.remove('on'); startRace(); };
+  $('winClose').onclick=function(){ $('winOv').classList.remove('on'); render(); };
+  if(mineWon) confetti();
+}
+function confetti(){ /* small and cheap: a few emoji drifting down */
+  for(var i=0;i<14;i++){ var d=document.createElement('div'); d.textContent=pick(['🎉','💵','🏇','✨']);
+    d.style.cssText='position:fixed;top:-30px;left:'+(Math.random()*100)+'vw;font-size:22px;z-index:70;pointer-events:none;transition:transform 1.8s ease-in,opacity 1.8s';
+    document.body.appendChild(d); (function(d){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ d.style.transform='translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*540-270)+'deg)'; d.style.opacity='.2'; }); });
+      setTimeout(function(){ d.remove(); }, 1900); })(d); } }
+function toast(html){ var t=document.createElement('div'); t.className='toast'; t.innerHTML=html; $('toasts').appendChild(t); setTimeout(function(){ t.remove(); }, 3800); }
+
+// ---------- setup / modes ----------
+$('nameIn').value=myName;
+$('nameIn').addEventListener('input', function(){ myName=this.value.trim().slice(0,16); lsSet('pt_name',myName); });
+$('setupSay').textContent=pick(SAY.hello);
+function needName(){ if(myName) return true; $('nameIn').focus(); $('setupSay').innerHTML='Gotta put a name on the program, hon. <b>Type it up top.</b>'; return false; }
+function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); }
+function startSolo(){ if(!needName()) return; netStop(); reset(); S.mode='solo'; S.ready=true; S.liveSince=nowSec(); loadSolo(); showGame(); afterChange(); }
+function startLive(){ if(!needName()) return; reset(); S.mode='live'; S.replaying=true; showGame(); render(); netStart(); }
+function reset(){ S.races={}; S.cur=null; S.pend={}; S.sits={}; S.ready=false; S.seen={}; S.starting=0; S.lastK=-1; S.shownWin={}; S.animK={}; NET.lastTime=0; }
+function becameReady(){
+  S.ready=true; S.replaying=false; S.liveSince=nowSec();
+  Object.keys(S.races).forEach(function(id){ S.animK[id]=simNow(S.races[id]).log.length; if(simNow(S.races[id]).phase==='done') S.shownWin[id]=1; });
+  // walking up puts you at the rail
+  if(!amAtRail()) sitDown();
+  afterChange();
+}
+function leave(){ if(S.mode==='live' && amAtRail()) standUp(); netStop(); S.mode=null; $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
+$('liveBtn').addEventListener('click', startLive);
+$('soloBtn').addEventListener('click', startSolo);
+$('rollBtn').addEventListener('click', function(){ myRoll(); });
+$('atmBtn').addEventListener('click', function(){ var b=bankGet(); b.cash+=ATM_CASH; b.atm+=ATM_CASH+ATM_FEE; lsSet('pt_bank_v1',b); sfx('chip'); toast('🏧 A hundred bucks. Three-dollar fee — supports the color guard.'); render(); });
+$('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
+$('menuBtn').addEventListener('click', function(){ $('menuSound').checked=!!(window.SFX && SFX.isOn()); $('menuOv').classList.add('on'); });
+$('menuSound').addEventListener('change', function(){ if(window.SFX) SFX.setOn(this.checked); });
+$('leaveBtn').addEventListener('click', function(){ $('menuOv').classList.remove('on'); leave(); });
+Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function(b){ b.addEventListener('click', function(){ $(b.dataset.close).classList.remove('on'); }); });
+['rulesOv','menuOv'].forEach(function(id){ $(id).addEventListener('click', function(e){ if(e.target===this) this.classList.remove('on'); }); });
+
+// ================= NETWORK: one live track, no host =================
+// Same shape as the Pull Tabs booth: every phone posts to ONE topic on ntfy.envs.net and
+// replays it. Rolls carry only (race, k) - the dice come from the race's seed - so they can be
+// applied the moment they arrive, in any order, from any phone. The order only matters for
+// 'start' (which race follows which) and 'sit'/'leave', so those wait ~2.5s in a buffer and
+// are applied sorted by (relay time, relay id), the same on every phone.
+var RELAY='https://ntfy.envs.net/';
+var TRACK=(function(){ try{ var b=new URLSearchParams(location.search).get('track'); if(b) return b.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24); }catch(e){} return 'lakeuffda'; })();
+var NET={on:false, ok:false, lastTime:0};
+function topic(){ return 'jthr-v1-'+TRACK; }
+function tx(){ return window.__HR_TX || null; }
+function netPublish(obj){
+  obj.from=myId; obj.name=obj.name||myName; obj.mid=shortId();
+  var body=JSON.stringify(obj), t=tx();
+  if(t){ try{ t.publish(topic(), body); }catch(e){} return; }
+  try{ fetch(RELAY+topic(),{method:'POST', body:body}).then(function(r){ if(!r.ok) sendFailed(r.status); }).catch(function(){ sendFailed(0); }); }catch(e){}
+}
+function sendFailed(status){ toast(status===429 ? 'The track’s message line is full for this connection today (relay said 429). Try cell data, or race the regulars.' : 'Couldn’t reach the track — check your signal.'); }
+var BUF=[], flushT=null, HOLD=2500;
+function orderKey(a,b){ return (a.time-b.time) || (a.id<b.id?-1:(a.id>b.id?1:0)); }
+function enqueue(ev){
+  if(!ev || !ev.id || S.seen[ev.id]) return; S.seen[ev.id]=1;
+  if(ev.time>NET.lastTime) NET.lastTime=ev.time;
+  var o; try{ o=JSON.parse(ev.message); }catch(e){ return; }
+  if(!o || !o.mid || S.seen['m'+o.mid]) return;
+  if(o.t==='roll' && !S.replaying){ S.seen['m'+o.mid]=1; apply(o, ev.time); afterChange(); return; }   // rolls don't wait
+  BUF.push({ev:ev, o:o, at:Date.now()});
+  if(!flushT) flushT=setInterval(function(){ flushBuf(false); }, 400);
+}
+function flushBuf(all){
+  BUF.sort(function(x,y){ return orderKey(x.ev,y.ev); });
+  var now=Date.now(), any=false;
+  while(BUF.length && (all || now-BUF[0].at>=HOLD)){ var x=BUF.shift(); if(!S.seen['m'+x.o.mid]){ S.seen['m'+x.o.mid]=1; apply(x.o, x.ev.time); any=true; } }
+  if(!BUF.length && flushT){ clearInterval(flushT); flushT=null; }
+  if(any && !S.replaying) afterChange();
+}
+function netStart(){ netStop(); NET.on=true; NET.ok=false; var t=tx(); if(t) testLoop(t); else liveLoop(); }
+function netStop(){ BUF=[]; if(flushT){ clearInterval(flushT); flushT=null; } NET.on=false; try{ ES&&ES.close(); }catch(e){} ES=null; }
+function testLoop(t){ (async function(){ var cur=0, first=true;
+  while(NET.on){ try{ var m=await t.poll(topic(),cur); NET.ok=true;
+      for(var i=0;i<m.length;i++){ cur=Math.max(cur,m[i].idx+1);
+        enqueue({id:m[i].id||('i'+m[i].idx), time:m[i].time!=null?m[i].time:m[i].idx, event:'message', message:m[i].body}); }
+      if(first){ first=false; flushBuf(true); becameReady(); } }catch(e){}
+    await new Promise(function(r){ setTimeout(r,60); }); } })(); }
+function parseEv(line){ var ev; try{ ev=(typeof line==='string')?JSON.parse(line):line; }catch(e){ return null; } return (ev && ev.event==='message' && ev.message) ? ev : null; }
+function handleLine(line){ var ev=parseEv(line); if(ev) enqueue(ev); }
+function withTimeout(url, ms){
+  var ctrl=(typeof AbortController!=='undefined')?new AbortController():null, to=setTimeout(function(){ try{ ctrl&&ctrl.abort(); }catch(e){} }, ms);
+  return fetch(url, ctrl?{signal:ctrl.signal, cache:'no-store'}:{cache:'no-store'}).finally(function(){ clearTimeout(to); });
+}
+async function catchUp(){
+  var res=await withTimeout(RELAY+topic()+'/json?poll=1&since='+(NET.lastTime?String(NET.lastTime-10):'all'), 12000);
+  if(!res.ok) throw new Error('poll '+res.status);
+  var txt=await res.text(); txt.split('\n').forEach(function(l){ if(l.trim()) handleLine(l); });
+  if(S.replaying) flushBuf(true);
+}
+function liveLoop(){ (async function(){
+  var tries=0;
+  while(NET.on && !S.ready){
+    try{ await catchUp(); NET.ok=true; becameReady(); break; }
+    catch(e){ tries++; NET.ok=false;
+      if(tries===2) toast('Havin’ trouble reaching the track — still tryin’. Spotty signal?');
+      render(); await new Promise(function(r){ setTimeout(r, Math.min(8000, 1500*tries)); }); }
+  }
+  openStream();
+})(); }
+var ES=null;
+function openStream(){
+  if(!NET.on) return;
+  try{ ES&&ES.close(); }catch(e){} ES=null;
+  if(typeof EventSource==='undefined'){ pollFallback(); return; }
+  var es=ES=new EventSource(RELAY+topic()+'/sse?since='+(NET.lastTime?String(NET.lastTime-10):String(nowSec()-5)));
+  es.onopen=function(){ NET.ok=true; render(); };
+  es.onmessage=function(m){ handleLine(m.data); };
+  es.onerror=function(){ NET.ok=false; render(); try{ es.close(); }catch(e){} if(ES===es) ES=null;
+    setTimeout(function(){ if(NET.on && !ES) openStream(); }, 2000); };
+}
+function pollFallback(){ (async function(){ while(NET.on){ try{ await catchUp(); NET.ok=true; }catch(e){ NET.ok=false; } render(); await new Promise(function(r){ setTimeout(r,4000); }); } })(); }
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState!=='visible' || S.mode!=='live' || !NET.on) return;
+  (async function(){ try{ await catchUp(); NET.ok=true; }catch(e){} afterChange(); openStream(); })();
+});
+
+// ---------- boot ----------
+(function(){ var d=new Date(document.lastModified), w=isNaN(d)?'':d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  $('gnBuild').textContent='build '+BUILD_V+(w?' · '+w:''); })();
+render();
+window.__HR={ S:S, race:race, K:function(){ var r=race(); return r?Kof(r):-1; }, sim:function(){ var r=race(); return r?simNow(r):null; },
+  roll:myRoll, start:startRace, sit:sitDown, bank:bankGet, rail:atRail, me:function(){ return myId; } };
+})();
+</script>
+</body>
+</html>
