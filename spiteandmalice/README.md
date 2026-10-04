@@ -39,6 +39,13 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
 - **Tablet / landscape**: labels and buttons step up from 700px wide; in landscape (900px+)
   your hand moves up beside your piles so the board is three card-rows tall, not four.
   Leftover height is spread between the rows rather than pooling under the buttons.
+- **Phone sideways (v109)**: an iPhone in landscape is only ~390px tall, and the four-row board
+  scrolled — the centre stacks above the fold, your hand below it, so you couldn't drag one onto the
+  other. Any landscape screen under 540px tall now goes **two card-rows tall**: the bot's piles beside
+  the four centre stacks, your piles beside your hand, turn banner and stock count between. `fitBoard()`
+  sizes the cards for that row and never lets the board scroll there (66px cards on an iPhone 15,
+  80px on a Pro Max). Checked dragging by touch and mouse at 844×390, and in iPad mini portrait
+  (744×1133) and landscape (1133×744).
 - **Move hints** off by default.
 
 ### Either way

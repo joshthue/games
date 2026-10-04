@@ -164,6 +164,28 @@ body{
   .side-area.you .hand{flex-wrap:nowrap}
   .oppline{justify-content:center} .oppline .sides{flex:0 0 auto}
 }
+/* Phone held sideways (v109): an iPhone in landscape is ~390px tall, and the four-row board
+   scrolled - your hand was below the fold and the centre stacks above it, so you couldn't drag
+   one onto the other. Short-and-wide goes two card-rows tall instead: the bot's piles beside
+   the centre stacks, your piles beside your hand. fitBoard() sizes the cards for it. */
+@media (orientation:landscape) and (max-height:540px){
+  .wrap{padding:4px 8px 4px}
+  .hdr{padding:0 2px 2px}
+  .board{display:grid;grid-template-columns:auto auto;grid-template-areas:"opp ctr" "turn stk" "you you" "act act";
+    column-gap:20px;row-gap:4px;align-content:space-evenly;justify-content:center}
+  .board > .side-area:not(.you){grid-area:opp;align-self:end}
+  .board > .side-area:not(.you) .zonecap{display:none}
+  .centers{grid-area:ctr;padding:0;align-self:end}
+  .stockrow{grid-area:stk;padding:0;align-self:center;justify-content:flex-start}
+  #turnbar{grid-area:turn;margin:0;padding:4px 8px}
+  #tip{display:none}
+  .side-area.you{grid-area:you;flex-direction:row;align-items:flex-end;justify-content:center;gap:28px}
+  .side-area.you .hand{flex-wrap:nowrap}
+  .side-area.you .zonecap{margin-top:0 !important}
+  .actions{grid-area:act;padding-top:0;justify-content:flex-end}   /* clear of the build stamp, which sits bottom-centre */
+  .actions .btn{padding:6px 16px;font-size:14px}
+  .oppline{justify-content:flex-end}
+}
 /* Tablet (iPad mini is 744 wide in portrait). The cards already grow to fill the screen via
    --fit; this lifts the labels, buttons and banners so they don't look like a phone's. */
 @media (min-width:700px){
@@ -765,7 +787,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v104";
+  var BUILD_V = "v109";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -898,6 +920,13 @@ window.SM = (function(){
     var wYou= side ? (availW - 3*gapS - gapL - 4*gapS - gapA - 2)/10 : (availW - 3*gapS - gapL - 2)/5;
     var wOpp=(availW - 3*gapS - 2*gapL - hcw - 2)/(5*.85);
     var byW=Math.min(wYou,wOpp);
+    // phone sideways: the bot's piles share a row with the four centre stacks
+    var compact=!!(window.matchMedia && matchMedia('(orientation:landscape) and (max-height:540px)').matches);
+    if(compact){
+      var brd=document.querySelector('#game .board'), gapC=parseFloat(getComputedStyle($('centers')).columnGap)||7, cg=parseFloat(getComputedStyle(brd).columnGap)||20;
+      var wRowA=(availW - cg - 3*gapS - 2*gapL - hcw - 3*gapC - 4)/(5*.85+4);
+      byW=Math.min(wYou, wRowA);
+    }
     // height: bottom of the actions row at two trial fits
     var size=(window.CARDSIZE?CARDSIZE.value():1), act=document.querySelector('#game .actions');
     var board=document.querySelector('#game .board'); board.classList.add('measuring'); game.classList.add('measuring');
@@ -911,7 +940,9 @@ window.SM = (function(){
     // On a short phone (SE, 320x568) honouring the height would shrink cards below what they
     // were before v82; there a little scrolling is the better trade, so height can't take
     // the card below ~62px wide or below what the width allows, whichever is smaller.
-    var fit=Math.floor(Math.max(Math.min(byW, byH), Math.min(byW, 62)));
+    // Sideways there's no scrolling to fall back on (you drag between the two rows), so the
+    // height always wins there.
+    var fit=Math.floor(compact ? Math.min(byW, byH) : Math.max(Math.min(byW, byH), Math.min(byW, 62)));
     lastFit=fit; root.style.setProperty('--fit', fit+'px');
   }
   window.addEventListener('resize', function(){ fitBoard(); });
