@@ -73,11 +73,20 @@ roundel (cropped from the brand sheet in `~/Developer/loonaticCannabis/brand`, c
 transparent, a 9KB WebP data URI inside `PT.DEALS.loon`), a night-lake ticket in the brand's
 black-to-forest green, and the spaced serif wordmark. A symbol may be an emoji string or
 `{img, alt}`; the UI draws every symbol through `sym()`/`sym3()`, never `d.syms[i]` directly. Per $1 of price the box holds
-$100×1, $50×1, $30×1, $20×2, $10×3, $4×10, $2×12, $1×20 — 50 winners in 400,
-83.5% back over the whole box. No seal (removed in v86).
+$100×1, $50×1, $25×1, $15×2, $10×2, $4×8, $2×14, $1×66 — 95 prizes in 400 (4 of the cheap ones
+ride along as a second line on another winner, so ~91 winning tickets, **about 1 in 4.4**),
+87.75% back over the whole box. The $1-per-$1 rung is "money back" — $2 on a $2 tab.
+(v106; before that it was $100, $50, $30, $20×2, $10×3, $4×10, $2×12, $1×20 — 1 in 9, 83.5%.)
+
+**No teases (v106).** Besides real combos, a loser used to *look* like a winner about one time in six:
+three of the same picture in a line, or two key pictures in a line (cherry … cherry). `ticketFor()`
+now re-rolls free squares until no unprinted line shows either; printed lines are never touched.
+A ladder or layout change bumps `PT.BOX_V` (now 4): saved solo boxes from an older version are
+re-cracked, and the live booth moved to a fresh topic, `jtpt-v3-<booth>`, so phones on the old build
+can't disagree with new ones about what's in a box. No seal (removed in v86).
 
 ## Money
-Play money, kept per device across visits (`pt_bank_v1`). The ATM gives $20 for $23 —
+Play money, kept per device across visits (`pt_bank_v1`). The ATM gives $100 for $103 —
 a $3 fee, because it's a VFW. **Net** = cash − everything taken from the ATM.
 
 ## Architecture
@@ -91,7 +100,7 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
 - **Claims tell the board, not sales.** A winner bought but not yet opened still shows green
   on the flare — exactly how the wall at the VFW works.
 - **Block 2 — the booth and the network (v97: no host).** Every phone posts its buys and claims
-  to ONE topic on **ntfy.envs.net** (`jtpt-v2-lakeuffda`) and applies that feed in one canonical order
+  to ONE topic on **ntfy.envs.net** (`jtpt-v3-lakeuffda` since v106; `jtpt-v2-…` before) and applies that feed in one canonical order
   with the same `apply()`. Boxes are seeded from `(epoch, deal, generation)` (`seedOf`), so every phone
   builds the identical box, allocates the identical tabs to each buyer, and cracks the identical
   fresh box when one sells out — no phone holds the boxes and nobody has to stay open.
