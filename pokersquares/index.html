@@ -35,12 +35,13 @@
     background:linear-gradient(180deg,var(--wood),var(--wood2)); border-radius:12px; padding:10px 12px; margin:6px 0 10px;
     box-shadow:inset 0 2px 6px rgba(0,0,0,.3),0 3px 8px rgba(0,0,0,.4);}
   .pstray #psCurrent{flex:0 0 auto;}
-  .pstray-info{flex:1 1 auto; text-align:center; color:#2b1a08; font-weight:800; min-width:0;}
-  .pstray-place{font-size:14px;} .pstray-prog{font-size:12px; opacity:.85; margin-top:2px;}
-  .pstray-score{flex:0 0 auto; text-align:center; color:#2b1a08;}
-  .pstray-score .lbl{font-size:10px; letter-spacing:1px; opacity:.8;}
-  .pstray-score .num{font-size:26px; font-weight:900; line-height:1;}
-  .pstray-score .best{font-size:11px; opacity:.85; margin-top:2px; white-space:nowrap;}
+  /* text on the wood is cream, not brown: dark brown at partial opacity on wood was unreadable */
+  .pstray-info{flex:1 1 auto; text-align:center; color:var(--cream); font-weight:800; min-width:0; text-shadow:0 1px 2px rgba(0,0,0,.45);}
+  .pstray-place{font-size:14px;} .pstray-prog{font-size:12px; margin-top:2px;}
+  .pstray-score{flex:0 0 auto; text-align:center; color:var(--cream); text-shadow:0 1px 2px rgba(0,0,0,.45);}
+  .pstray-score .lbl{font-size:10px; letter-spacing:1px; font-weight:700;}
+  .pstray-score .num{font-size:26px; font-weight:900; line-height:1; color:var(--gold);}
+  .pstray-score .best{font-size:11px; font-weight:700; margin-top:2px; white-space:nowrap;}
 
   /* ---- cards ---- */
   .card{width:calc(52px * var(--size)); height:calc(74px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
@@ -826,7 +827,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v105", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v117", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
