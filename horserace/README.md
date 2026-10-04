@@ -80,6 +80,21 @@ The dice being fixed by the seed means a race's whole outcome is decided at the 
 decisions in the game that changes nothing for play — but somebody reading the source could know
 the winner early. Play money among friends; fine.
 
+## Odds & stats (v113, Menu → Odds & stats)
+Off by default. When on:
+- A **WIN %** column on the track for every horse still running.
+- In each seat's row, that seat's **chance to cash** (holds at least one card of the winner).
+- A stats box: the chance one of your horses wins, your **expected take** at the current pot,
+  the favorite, rolls so far, what's gone into the pot (scratches and scratched rolls), what you've
+  put in, and **your night** (`hr_stats`: races sat in, races cashed, net, best single take) with a
+  reset.
+
+The odds come from 1,500 simulated finishes with **fresh random dice** from where the race stands —
+never the race's own seeded dice, which would give the result away. ~10 ms per roll, cached per roll.
+
+**Your horses** never wrap any more: duplicates stack (v111) and the cards shrink to fit one row
+(`--hw`, 26–54px), so 22 cards in a 2-seat game still sit on one line on a phone.
+
 ## Table & names (v112)
 **⚙️ Table & names** (in the lobby and the Menu):
 - **Seats at the table: 2–8.** People at the rail sit first (up to 8), bots fill the rest. 44 cards go
