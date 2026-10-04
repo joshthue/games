@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#0d5c3f">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Game Night">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
@@ -15,7 +16,7 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;min-height:100%;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:radial-gradient(circle at 50% 12%, var(--felt) 0%, var(--felt2) 70%, #063324 100%);
+    background:var(--felt);
     color:var(--cream); min-height:100vh; display:flex; flex-direction:column; align-items:center;
     padding:max(20px,env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));}
   .wrap{width:100%; max-width:560px;}
@@ -145,7 +146,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v117", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v118", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
