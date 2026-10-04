@@ -73,16 +73,20 @@ roundel (cropped from the brand sheet in `~/Developer/loonaticCannabis/brand`, c
 transparent, a 9KB WebP data URI inside `PT.DEALS.loon`), a night-lake ticket in the brand's
 black-to-forest green, and the spaced serif wordmark. A symbol may be an emoji string or
 `{img, alt}`; the UI draws every symbol through `sym()`/`sym3()`, never `d.syms[i]` directly. Per $1 of price the box holds
-$100×1, $50×1, $25×1, $15×2, $10×2, $4×8, $2×14, $1×66 — 95 prizes in 400 (4 of the cheap ones
-ride along as a second line on another winner, so ~91 winning tickets, **about 1 in 4.4**),
-87.75% back over the whole box. The $1-per-$1 rung is "money back" — $2 on a $2 tab.
+$100×1, $50×1, $25×1, $15×2, $10×2, $4×8, $2×14, and a "money back" rung ($1 per $1 — $2 on a $2 tab)
+whose count differs by box (v107): Cherry 60, Walleye 55, Hotdish 57, State Fair 53, Loonatic 58,
+Uff Da 52. That puts each box's payout **around 85%, a little different box to box** — 86.25 / 85.00 /
+85.50 / 84.50 / 85.75 / 84.25% — like the real flares Josh sees at the bar, and the flare prints it
+the same way: `PAYOUT 85.00% · 84 winners`. About **1 ticket in 5** wins something (4 cheap prizes
+per box ride along as a second line on another winner).
+(v106 had one ladder for every box with 66 money-backs: 1 in 4.4, 87.75%.)
 (v106; before that it was $100, $50, $30, $20×2, $10×3, $4×10, $2×12, $1×20 — 1 in 9, 83.5%.)
 
 **No teases (v106).** Besides real combos, a loser used to *look* like a winner about one time in six:
 three of the same picture in a line, or two key pictures in a line (cherry … cherry). `ticketFor()`
 now re-rolls free squares until no unprinted line shows either; printed lines are never touched.
-A ladder or layout change bumps `PT.BOX_V` (now 4): saved solo boxes from an older version are
-re-cracked, and the live booth moved to a fresh topic, `jtpt-v3-<booth>`, so phones on the old build
+A ladder or layout change bumps `PT.BOX_V` (5 since v107): saved solo boxes from an older version are
+re-cracked, and the live booth moves to a fresh topic (`jtpt-v3-<booth>` in v106, `jtpt-v4-` in v107), so phones on the old build
 can't disagree with new ones about what's in a box. No seal (removed in v86).
 
 ## Money
@@ -100,7 +104,7 @@ Single `index.html`, two script blocks like Hold'em and Spite & Malice.
 - **Claims tell the board, not sales.** A winner bought but not yet opened still shows green
   on the flare — exactly how the wall at the VFW works.
 - **Block 2 — the booth and the network (v97: no host).** Every phone posts its buys and claims
-  to ONE topic on **ntfy.envs.net** (`jtpt-v3-lakeuffda` since v106; `jtpt-v2-…` before) and applies that feed in one canonical order
+  to ONE topic on **ntfy.envs.net** (`jtpt-v4-lakeuffda` since v107; v3 in v106, v2 before) and applies that feed in one canonical order
   with the same `apply()`. Boxes are seeded from `(epoch, deal, generation)` (`seedOf`), so every phone
   builds the identical box, allocates the identical tabs to each buyer, and cracks the identical
   fresh box when one sells out — no phone holds the boxes and nobody has to stay open.

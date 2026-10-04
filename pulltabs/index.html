@@ -228,6 +228,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   box-shadow:var(--shadow);border-top:10px solid var(--tc);position:relative}
 .flare h2{margin:0;font-family:Georgia,serif;font-style:italic;font-weight:900;font-size:22px;color:var(--tc2)}
 .flare .fsub{font-size:12px;opacity:.75;margin:2px 0 8px}
+.flare .fpay{display:inline-block;font-size:12px;font-weight:900;letter-spacing:1.5px;border:2px solid currentColor;border-radius:4px;padding:2px 8px;margin:0 0 8px}
 .flare .close{position:absolute;right:8px;top:8px}
 .ftab{width:100%;border-collapse:collapse;font-size:14px}
 .ftab td{padding:5px 3px;border-bottom:1px dashed rgba(0,0,0,.18);vertical-align:middle}
@@ -391,7 +392,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   <p>All six boxes sit on the counter at once. Each one shows its stack of tabs going down as people buy, and whether its top prize is still in there. Tap a box to buy from it and see its flare. A sold-out box sits there empty until somebody wants that deal again — then Darlene cracks a fresh one.</p>
   <h3>Live</h3>
   <p>There's one booth and everybody's in it — no rooms, no codes. Walk up and you're buying from the same six boxes as everyone else who has Pull Tabs open, watching them go down together in real time. Big winners scroll across the ticker up top (and pop up when they happen), and you'll hear about it when a box gets down to its last fifty with the top prize still in.</p>
-  <p style="opacity:.75">Pays back about 88% across the whole box — about one ticket in four wins something, and most of those are money back. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
+  <p style="opacity:.75">Every box prints its payout on the flare, about 85% like the real ones at the bar, a little different box to box. About one ticket in five wins something, and most of those are money back. Proceeds benefit the Lake Uffda Lions — new dock at the public access.</p>
   <button class="btn" style="width:100%" data-close="rulesOv">Okie dokie</button>
 </div></div>
 
@@ -437,7 +438,7 @@ var BOX_SIZE=400;
 // wins: lots of money-back tickets ($2 on a $2 tab, the "free one" everybody re-buys with) and
 // more $4-$8 hits, with the same top three prizes; ~87.75% back overall.
 var LADDER=[[100,1],[50,1],[25,1],[15,2],[10,2],[4,8],[2,14],[1,66]];
-var BOX_V=4;           // bump when the ladder or the ticket layout changes: older saved boxes are re-cracked
+var BOX_V=5;           // bump when the ladder or the ticket layout changes: older saved boxes are re-cracked
 // the eight lines an arrow can run, as cell indexes (row*3+col), in the order it's drawn
 var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
@@ -489,6 +490,11 @@ var FINE={
   loon:'\u201C21+. Powered by Birch & Gran. Leave no trace. Void in Wisconsin.\u201D',
   cherry:'\u201CPits not included. Spit responsibly. Void in Wisconsin.\u201D' };
 var SHORT={ walleye:'Walleye', hotdish:'Hotdish', fair:'State Fair', uffda:'Uff Da 7s', loon:'Loonatic', cherry:'Cherry Poppers' };   // for the booth tiles
+// v107: real flares print their payout and it sits around 85%, a little different box to box
+// (Josh, from the bar). So each deal trims its money-back rung a different amount; the flare
+// prints the result like the real ones do: PAYOUT 85.00%.
+var MONEY_BACK={ cherry:60, walleye:55, hotdish:57, fair:53, loon:58, uffda:52 };
+Object.keys(DEALS).forEach(function(k){ if(MONEY_BACK[k]) DEALS[k].tiers[DEALS[k].tiers.length-1].n=MONEY_BACK[k]; });
 Object.keys(DEALS).forEach(function(k){ DEALS[k].marker=MARKER[k]||'arrow'; DEALS[k].fine=FINE[k]||''; DEALS[k].short=SHORT[k]||DEALS[k].name; });
 var DEAL_ORDER=['cherry','walleye','hotdish','fair','loon','uffda'];   // six boxes on the counter
 
@@ -631,7 +637,7 @@ window.PT={ BOX_V:BOX_V, DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KE
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v106";
+var BUILD_V="v107";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -1010,6 +1016,7 @@ function renderFlare(){
     return ''; }).join('') : '<li class="none">Nobody’s hit yet. Somebody’s gotta be first!</li>';
   el.innerHTML='<button class="iconbtn close" id="flareClose" style="color:#fff;background:#3b2414">✕</button>'
     +'<h2>'+esc(d.name)+'</h2><div class="fsub">$'+d.price+' a tab · '+v.count+' tickets · <b>'+v.left+'</b> still in the box</div>'
+    +'<div class="fpay">PAYOUT '+(100*PT.payout(d)).toFixed(2)+'% · '+d.tiers.reduce(function(a,t){return a+t.n;},0)+' winners</div>'
     +'<div class="multi">Multiple winners · a ticket can hold two lines — the TOTAL adds them up</div><table class="ftab">'+rows+'</table>'
     +'<div class="winners"><h3>🏆 Winners board</h3><ul>'+wl+'</ul></div>'
     +'<div class="charity">Proceeds benefit the Lake Uffda Lions · new dock at the public access · Lic. #10000</div>';
@@ -1128,7 +1135,7 @@ Array.prototype.forEach.call(document.querySelectorAll('[data-close]'), function
 var RELAY='https://ntfy.envs.net/';
 var BOOTH=(function(){ try{ var b=new URLSearchParams(location.search).get('booth'); if(b) return b.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24); }catch(e){} return 'lakeuffda'; })();
 var NET={on:false, ctrls:[], ok:false, last:null, lastTime:0};
-function topic(){ return 'jtpt-v3-'+BOOTH; }   // v3 (v106): new ladder, so a fresh booth - phones on the old build stay on v2
+function topic(){ return 'jtpt-v4-'+BOOTH; }   // v4 (v107): per-box payouts; v3 was v106's ladder. A ladder change needs a fresh booth
 function tx(){ return window.__PT_TX || null; }
 function net_ok(){ return NET.ok; }
 function seedOf(e,k,g){ var str=e+':'+k+':'+g, h=2166136261; for(var i=0;i<str.length;i++) h=Math.imul(h^str.charCodeAt(i),16777619)>>>0; return h||1; }
