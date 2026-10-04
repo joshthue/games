@@ -54,24 +54,28 @@ button{font-family:inherit;cursor:pointer;border:none}
 .slot.on{border-style:solid;border-color:var(--red);background:rgba(224,82,82,.14)}
 .slot.next{border-color:var(--gold)}
 /* track */
-.track{display:flex;flex-direction:column;gap:3px;background:rgba(0,0,0,.24);border-radius:12px;padding:8px 6px}
-.post{display:grid;grid-template-columns:30px 1fr 18px;gap:5px;font-size:9px;color:var(--mute);letter-spacing:1px}
+.track{--lbl:calc(var(--cell) * 1.45 + 26px);display:flex;flex-direction:column;gap:3px;background:rgba(0,0,0,.24);border-radius:12px;padding:8px 6px}
+.post{display:grid;grid-template-columns:var(--lbl) 1fr 18px;gap:6px;font-size:9px;color:var(--mute);letter-spacing:1px}
 .post span:nth-child(2){display:flex;justify-content:space-between}
-.lane{display:grid;grid-template-columns:30px 1fr 18px;align-items:center;gap:5px}
-.lane .no{font-weight:900;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.lane .no small{font-size:9px;color:var(--gold);margin-right:2px}
+.lane{display:grid;grid-template-columns:var(--lbl) 1fr 18px;align-items:center;gap:6px}
+.lane .no{font-weight:900;font-size:calc(var(--cell) * .72);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;align-items:center;justify-content:flex-end;gap:3px}
+/* one gold pip per card you hold of that horse, beside the number - not a "★3 2" that reads as 32 */
+.lane .own{display:inline-flex;gap:2px;align-items:center}
+.lane .own i{width:max(4px, calc(var(--cell) * .17));aspect-ratio:1;border-radius:50%;background:var(--gold);box-shadow:0 0 0 1px rgba(0,0,0,.3)}
 .cells{display:grid;gap:2px;height:var(--cell)}
 .cells i{background:rgba(255,255,255,.08);border-radius:3px;position:relative}
 .cells i.gap{visibility:hidden}
 .cells i.done{background:rgba(255,255,255,.2)}
-.cells i.h{border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.35);font-style:normal;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center}
-.cells i.h.moved{animation:hop .45s ease-out}
+/* the horse: a round token as tall as the lane, centred in its (often wider) cell */
+.cells i.h{background:none;display:flex;align-items:center;justify-content:center}
+.cells i.h b{font-style:normal;height:calc(var(--cell) + 2px);aspect-ratio:1;max-width:120%;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.35),0 2px 4px rgba(0,0,0,.4);font-size:calc(var(--cell) * .55);font-weight:900;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.cells i.h.moved b{animation:hop .45s ease-out}
 @keyframes hop{0%{transform:translateX(-120%) scale(.9)}60%{transform:translateX(10%) scale(1.25)}100%{transform:none}}
 .lane .fin{font-size:12px;text-align:center}
 .lane.scr .no{color:var(--red);text-decoration:line-through}
 .lane.scr .cells{opacity:.3}
 .lane.mine .no{color:var(--gold)}
-.lane.lead .cells i.h{box-shadow:0 0 0 2px var(--gold),0 0 10px var(--gold)}
+.lane.lead .cells i.h b{box-shadow:0 0 0 2px var(--gold),0 0 12px var(--gold)}
 .lane.won{background:rgba(240,198,116,.16);border-radius:6px}
 /* dice */
 .rollrow{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center}
@@ -93,6 +97,9 @@ button{font-family:inherit;cursor:pointer;border:none}
 .card.scr{opacity:.45}
 .card.scr::after{content:"";position:absolute;left:4px;right:4px;top:50%;border-top:2px solid var(--red);transform:rotate(-25deg)}
 .card.win{box-shadow:0 0 0 3px var(--gold),0 0 14px var(--gold)}
+/* duplicates stack into one card with a count: three 2s is one 2 marked x3 */
+.card .cnt{position:absolute;top:-7px;right:-7px;background:var(--gold);color:var(--ink);border-radius:999px;font-size:11px;font-weight:900;padding:2px 6px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.card.scr .cnt{background:#a99;}
 /* seats */
 .seats{display:flex;flex-direction:column;gap:4px}
 .seat{display:grid;grid-template-columns:18px 1fr auto auto;gap:8px;align-items:center;background:rgba(0,0,0,.18);border-radius:9px;padding:6px 10px;font-size:13.5px}
@@ -134,9 +141,29 @@ button{font-family:inherit;cursor:pointer;border:none}
 .switch input:checked ~ .knob{left:23px}
 #toasts{position:fixed;left:0;right:0;top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
 .toast{background:#1c2a24;color:var(--cream);border:1.5px solid var(--gold);border-radius:12px;padding:8px 12px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.5);max-width:92vw}
+/* ---------- layout ----------
+   Phone (portrait): one column, in reading order. The two column wrappers dissolve
+   (display:contents) so their pieces can be ordered: money, rail, lobby, track, dice, hand, table. */
+.gamecols{display:flex;flex-direction:column;gap:9px}
+.colL,.colR{display:contents}
+#moneyRow{order:1} #roombar{order:2} #lobby{order:3} #raceL{order:4} #raceR{order:5}
+#raceL,#raceR{display:flex;flex-direction:column;gap:9px}
+#raceL.hidden,#raceR.hidden{display:none}
+/* Wide screens (iPad either way, iPhone sideways): the track gets the left side and the whole
+   height; everything you read or tap sits on the right. fitTrack() sizes the lanes to fill. */
+@media (min-width:700px) and (orientation:landscape){
+  .wrap{max-width:1280px;padding:6px 16px 10px}
+  .gamecols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,1fr);gap:14px;align-items:start}
+  .gamecols.norace{grid-template-columns:minmax(0,560px);justify-content:center}
+  .colL,.colR{display:flex;flex-direction:column;gap:9px;min-width:0}
+  .gamecols.norace .colL{display:none}
+  .gn-build{margin:6px 0 0}
+}
+@media (min-width:700px) and (orientation:portrait){ .wrap{max-width:640px} }
+@media (min-width:700px){ .card{width:50px;height:70px;font-size:21px} .card small{font-size:10px} .say{font-size:15px} .seat{font-size:15px;padding:8px 12px} .rollbtn{font-size:18px} .die{width:54px;height:54px} .die i{width:9px;height:9px} }
 .gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:16px 0 10px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px}
 @media (min-width:600px){ :root{--cell:20px} .card{width:46px;height:64px;font-size:19px} .die{width:50px;height:50px} }
-@media (prefers-reduced-motion:reduce){ .die.tumble,.cells i.h.moved{animation:none} }
+@media (prefers-reduced-motion:reduce){ .die.tumble,.cells i.h.moved b{animation:none} }
 </style>
 </head>
 <body>
@@ -163,24 +190,34 @@ button{font-family:inherit;cursor:pointer;border:none}
   </section>
 
   <!-- ===== GAME ===== -->
-  <section id="game" class="hidden" style="display:flex;flex-direction:column;gap:9px">
-    <div class="money">
-      <div class="mbox"><div class="l">CASH · SAME AS PULL TABS</div><div class="v" id="cash">$0</div></div>
-      <div class="mbox"><div class="l">POT</div><div class="v" id="pot">$0</div></div>
-      <button class="atm" id="atmBtn">🏧 ATM</button>
-    </div>
-    <div class="roombar" id="roombar"></div>
-    <div class="lobby panel hidden" id="lobby"></div>
-    <div id="raceArea" class="hidden" style="display:flex;flex-direction:column;gap:9px">
-      <div class="scratch" id="scratch"></div>
-      <div class="track" id="track"></div>
-      <div class="rollrow">
-        <div class="dice"><div class="die blank" id="die1"></div><div class="die blank" id="die2"></div></div>
-        <button class="btn rollbtn" id="rollBtn">🎲 Roll</button>
+  <section id="game" class="hidden">
+    <div class="gamecols norace" id="gamecols">
+      <!-- left on a wide screen: the scratches and the track -->
+      <div class="colL">
+        <div id="raceL" class="hidden">
+          <div class="scratch" id="scratch"></div>
+          <div class="track" id="track"></div>
+        </div>
       </div>
-      <div class="say"><span class="mic">🎙️</span><span id="say"></span></div>
-      <div><div class="cap" id="handCap">Your horses</div><div class="hand" id="hand"></div></div>
-      <div><div class="cap">The table</div><div class="seats" id="seats"></div></div>
+      <!-- right on a wide screen: money, the rail, the dice, your horses, the table -->
+      <div class="colR">
+        <div class="money" id="moneyRow">
+          <div class="mbox"><div class="l">CASH <span style="opacity:.7;letter-spacing:.4px">· PULL TABS WALLET</span></div><div class="v" id="cash">$0</div></div>
+          <div class="mbox"><div class="l">POT</div><div class="v" id="pot">$0</div></div>
+          <button class="atm" id="atmBtn">🏧 ATM</button>
+        </div>
+        <div class="roombar" id="roombar"></div>
+        <div class="lobby panel hidden" id="lobby"></div>
+        <div id="raceR" class="hidden">
+          <div class="rollrow">
+            <div class="dice"><div class="die blank" id="die1"></div><div class="die blank" id="die2"></div></div>
+            <button class="btn rollbtn" id="rollBtn">🎲 Roll</button>
+          </div>
+          <div class="say"><span class="mic">🎙️</span><span id="say"></span></div>
+          <div><div class="cap" id="handCap">Your horses</div><div class="hand" id="hand"></div></div>
+          <div><div class="cap">The table</div><div class="seats" id="seats"></div></div>
+        </div>
+      </div>
     </div>
   </section>
   <div class="gn-build" id="gnBuild"></div>
@@ -311,7 +348,7 @@ window.HR=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v110";
+var BUILD_V="v111";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -475,6 +512,21 @@ setInterval(drive, 300);
 
 function afterChange(){ settle(); render(); }
 
+// Lane height. Wide screens: the track fills the left column top to bottom. Otherwise it follows
+// the width, so the tokens stay round and readable on a phone and roomy on an iPad.
+function fitTrack(){
+  var tr=$('track'); if(!tr || $('raceL').classList.contains('hidden')) return;
+  var w=tr.clientWidth, h, cellW;
+  function cw(hh){ return (w-12-(hh*1.45+26)-18-12)/(HR.MAXLEN+1); }
+  cellW=cw(20);
+  var wide=window.matchMedia && matchMedia('(min-width:700px) and (orientation:landscape)').matches;
+  if(wide){ var top=tr.getBoundingClientRect().top, avail=window.innerHeight-top-28;
+    h=Math.floor((avail-16-16-3*11)/11); h=Math.max(16, Math.min(h, 46)); while(h>16 && cw(h)<h*.95) h--; }
+  else h=Math.max(16, Math.min(32, Math.floor(cellW*.72)));
+  tr.style.setProperty('--cell', h+'px');
+}
+window.addEventListener('resize', function(){ fitTrack(); });
+
 // ---------- solo keeps its race between visits ----------
 function saveSolo(){ if(S.mode!=='solo') return; var r=race(); lsSet('hr_solo', r?{id:r.id, seed:r.seed, seats:r.seats, prev:r.prev, ticks:r.ticks}:null); }
 function loadSolo(){ var o=lsGet('hr_solo',null); if(!o || !o.id || !okSeats(o.seats)) return;
@@ -491,8 +543,8 @@ function render(){
   var watching = r && running && seatOf(r,myId)<0;
   $('lobby').classList.toggle('hidden', running && !watching);
   if(!running || watching) renderLobby(r, st);
-  $('raceArea').classList.toggle('hidden', !r);
-  if(r) renderRace(r, st);
+  $('raceL').classList.toggle('hidden', !r); $('raceR').classList.toggle('hidden', !r); $('gamecols').classList.toggle('norace', !r);
+  if(r){ renderRace(r, st); fitTrack(); }
   if(st && st.phase==='done' && !S.shownWin[r.id] && S.ready){
     S.shownWin[r.id]=1;
     // a race that finished before you walked up doesn't throw a party
@@ -561,10 +613,11 @@ function renderRace(r, st){
       if(c<off){ cells+='<i class="gap"></i>'; continue; }
       var step=c-off;
       if(!scr && step===p){ var moved = hop && last && last.t===n && (last.kind==='move'||last.kind==='win');
-        cells+='<i class="h'+(moved?' moved':'')+'" style="background:'+HR.SILK[n]+';color:'+(HR.SILK_INK[n]||'#fff')+'">'+n+'</i>'; }
+        cells+='<i class="h'+(moved?' moved':'')+'"><b style="background:'+HR.SILK[n]+';color:'+(HR.SILK_INK[n]||'#fff')+'">'+n+'</b></i>'; }
       else cells+='<i class="'+(step<p&&!scr?'done':'')+'"></i>';
     }
-    tr+='<div class="'+cls+'"><span class="no">'+(mine&&mine[n]&&!scr?'<small>★'+(mine[n]>1?mine[n]:'')+'</small>':'')+n+'</span><div class="cells" style="grid-template-columns:repeat('+(M+1)+',1fr)">'+cells+'</div><span class="fin">'+(scr?'✕':(st.winner===n?'🏆':'🏁'))+'</span></div>';
+    var own=(mine&&mine[n])?'<span class="own" title="you hold '+mine[n]+'">'+'<i></i>'.repeat(mine[n])+'</span>':'';
+    tr+='<div class="'+cls+'"><span class="no">'+own+n+'</span><div class="cells" style="grid-template-columns:repeat('+(M+1)+',1fr)">'+cells+'</div><span class="fin">'+(scr?'\u2715':(st.winner===n?'\ud83c\udfc6':'\ud83c\udfc1'))+'</span></div>';
   });
   $('track').innerHTML=tr;
   // dice + the call
@@ -574,8 +627,9 @@ function renderRace(r, st){
   // your horses
   if(si>=0){
     $('handCap').textContent='Your horses · '+st.hands[si].length+' cards';
-    $('hand').innerHTML=st.hands[si].map(function(n){ var scr=st.scratches.indexOf(n)>=0;
-      return '<div class="card'+(scr?' scr':'')+(st.winner===n?' win':'')+'"><span class="silk" style="background:'+HR.SILK[n]+'"></span>'+HR.rankName(n)+'<small>#'+n+'</small></div>'; }).join('');
+    var groups=[]; st.hands[si].forEach(function(n){ var g=groups[groups.length-1]; if(g&&g.n===n) g.c++; else groups.push({n:n,c:1}); });
+    $('hand').innerHTML=groups.map(function(g){ var n=g.n, scr=st.scratches.indexOf(n)>=0;
+      return '<div class="card'+(scr?' scr':'')+(st.winner===n?' win':'')+'"><span class="silk" style="background:'+HR.SILK[n]+'"></span>'+HR.rankName(n)+'<small>#'+n+'</small>'+(g.c>1?'<span class="cnt">\u00d7'+g.c+'</span>':'')+'</div>'; }).join('');
   } else { $('handCap').textContent='You’re watching this one'; $('hand').innerHTML=''; }
   // the table
   $('seats').innerHTML=r.seats.map(function(s,i){ var net=st.won[i]-st.paid[i];
@@ -596,15 +650,15 @@ function renderRollBtn(r){
 }
 function callFor(r, st, e, si){
   if(!e) return pick(SAY.gate);
-  var who=esc(r.seats[e.roller].name), you=e.roller===si;
-  var roll=(you?'You':who)+' rolled <b>'+e.t+'</b>. ';
+  var who=r.seats[e.roller].name, you=e.roller===si, nm='<b>'+esc(HR.NAMES[e.t])+'</b>';
+  var lead=(you?'You':esc(who))+' rolled '+e.t+' \u2014 ';
   if(e.kind==='scratch'){ var mp=si>=0?e.pays[si]:0;
-    return roll+'<b>'+esc(hname(e.t))+' is scratched</b> — '+['1st','2nd','3rd','4th'][e.nth-1]+' scratch, $'+e.price+' a card. '+(si<0?'':(mp?'You pay '+money(mp)+'.':'You’re clear.'))+(e.nth===4?' <b>And they’re off!</b>':''); }
-  if(e.kind==='again') return roll+e.t+'’s already scratched — roll again.';
-  if(e.kind==='hit') return roll+'That’s a scratched horse — '+(you?'you pay':'pays')+' <b>$'+e.price+'</b> into the pot.';
-  if(e.kind==='win') return roll+'<b>'+esc(hname(e.t))+' wins it!</b> '+money(st.share)+' a card.';
+    return lead+nm+' is scratched, '+['1st','2nd','3rd','4th'][e.nth-1]+' scratch at $'+e.price+' a card. '+(si<0?'':(mp?'You pay <b>'+money(mp)+'</b>.':'You\u2019re clear.'))+(e.nth===4?' <b>And they\u2019re off!</b>':''); }
+  if(e.kind==='again') return lead+'already scratched. Roll again.';
+  if(e.kind==='hit') return lead+'a scratched horse. '+(you?'You pay':esc(who)+' pays')+' <b>$'+e.price+'</b> into the pot.';
+  if(e.kind==='win') return lead+nm+' <b>wins it!</b> '+money(st.share)+' a card.';
   var togo=HR.LEN[e.t]-e.pos;
-  return roll+'<b>'+esc(hname(e.t))+'</b> '+(togo===1?pick(SAY.close):pick(SAY.move)+' '+togo+' to go.');
+  return lead+nm+' '+(togo===1?pick(SAY.close):pick(SAY.move)+' '+togo+' to go.');
 }
 function soundFor(e, si){
   if(!e) return;

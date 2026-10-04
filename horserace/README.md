@@ -80,6 +80,20 @@ The dice being fixed by the seed means a race's whole outcome is decided at the 
 decisions in the game that changes nothing for play — but somebody reading the source could know
 the winner early. Play money among friends; fine.
 
+## Screen (v111)
+- **Wide screens** (any landscape ≥700px: iPad mini either way round is covered by this or the
+  portrait rule, iPhone sideways too): two columns — scratches and the **track fill the left side
+  top to bottom**, money / rail / dice / announcer / your horses / the table on the right.
+  `fitTrack()` sets the lane height (`--cell`, up to 46px) from the height left under the track and
+  keeps cells at least as wide as they're tall. Portrait phones and iPads stay one column, lanes
+  sized from the width.
+- Horses are **round tokens** as tall as the lane (they were stretched ovals filling wide cells).
+- Lane labels show **one gold pip per card you hold** of that horse (`••8` = you have two 8s);
+  v108–110 put a `★3` in front of the number, which read as "32".
+- **Your horses** stack duplicates into one card with a `×2` badge, so an 11-card hand is ~7 cards
+  and fits one row.
+- The announcer names the horse once: "Bev rolled 8 — **Spam Can** gains a length! 5 to go."
+
 ## Solo
 Race the regulars: you plus three bots, no network. The race in progress is kept in
 `hr_solo` so closing the app doesn't lose it.
