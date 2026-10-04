@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YachtRock</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{ --felt:#0d5c3f; --wood:#8a5a2b; --wood2:#5e3b1a;
+  --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --mute:rgba(247,243,232,.7); --ok:#4cc27a;
+  --d:min(58px, calc((100vw - 92px) / 5)); }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--felt)}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--cream);background:var(--felt);
+  min-height:100vh;overflow-x:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:560px;margin:0 auto;padding:8px 12px 28px;display:flex;flex-direction:column;gap:10px}
+button{font-family:inherit;cursor:pointer;border:none}
+
+/* ---- Game Night standard header: buttons on one row, the name on its own line, never wrapping ---- */
+.gn-top{display:flex;gap:6px;align-items:center}
+.gn-top .sp{flex:1}
+.gn-pill{background:rgba(255,255,255,.13);color:var(--cream);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;line-height:1;text-decoration:none;white-space:nowrap}
+.gn-name{font-family:Georgia,"Times New Roman",serif;color:var(--gold);font-size:28px;line-height:1.15;margin:2px 0 0;white-space:nowrap;overflow:hidden;font-weight:400}
+
+/* ---- the wood tray: light text on brown ---- */
+.tray{background:linear-gradient(180deg,var(--wood),var(--wood2));border-radius:16px;padding:10px 12px 12px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4);color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.tray .meta{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:700}
+.tray .meta .tot{font-size:22px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums}
+.dice{display:flex;justify-content:center;gap:10px;padding:22px 0 34px}
+.die{width:var(--d);height:var(--d);position:relative;perspective:500px;cursor:pointer;transition:transform .18s}
+.die .shadow{position:absolute;left:12%;right:12%;bottom:-9px;height:9px;border-radius:50%;background:rgba(0,0,0,.35);filter:blur(2px)}
+.cube{position:absolute;inset:0;transform-style:preserve-3d;transition:transform 1.1s cubic-bezier(.33,.5,.3,1)}
+.face{position:absolute;inset:0;border-radius:18%;background:var(--cream);-webkit-backface-visibility:hidden;backface-visibility:hidden;
+  display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:14%;box-shadow:inset 0 -3px 6px rgba(0,0,0,.14),inset 0 0 0 1px rgba(0,0,0,.07)}
+.face i{width:72%;height:72%;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.face i.on{visibility:visible}
+.die.held{transform:translateY(8px)}
+.die.held .face{box-shadow:0 0 0 3px var(--gold),inset 0 -3px 6px rgba(0,0,0,.14)}
+.die.held::after{content:"HELD";position:absolute;left:0;right:0;bottom:-26px;text-align:center;font-size:10px;font-weight:900;letter-spacing:1px;color:var(--gold)}
+.die.idle .cube{opacity:.5}
+.die.hop{animation:hop 1.1s ease-out both}
+@keyframes hop{0%{transform:translateY(0)}28%{transform:translateY(-44px)}58%{transform:translateY(0)}72%{transform:translateY(-9px)}86%,100%{transform:translateY(0)}}
+.rolls{display:flex;justify-content:center;gap:8px}
+.rolls span{width:10px;height:10px;border-radius:50%;background:rgba(247,243,232,.28);display:inline-block}
+.rolls span.used{background:var(--gold)}
+
+.btns{display:flex;gap:8px}
+.btn{flex:1;background:var(--gold);color:var(--ink);border-radius:12px;padding:14px 12px;font-weight:800;font-size:16px;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.btn.ghost{background:rgba(255,255,255,.13);color:var(--cream);box-shadow:none}
+.btn.off{opacity:.45}
+.say{text-align:center;font-size:14px;color:var(--mute);min-height:19px}
+.say b{color:var(--gold)}
+
+/* ---- score sheet ---- */
+.sheet{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.col{display:flex;flex-direction:column;gap:4px}
+.col h3{margin:0 0 2px;font-size:12px;letter-spacing:1px;color:var(--mute);font-weight:800;display:flex;justify-content:space-between}
+.row{display:flex;justify-content:space-between;align-items:center;gap:6px;background:rgba(0,0,0,.2);border-radius:9px;padding:8px 9px;
+  font-size:13.5px;color:var(--cream);text-align:left;min-height:36px;border:1.5px solid transparent}
+.row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .v{font-weight:800;font-variant-numeric:tabular-nums;min-width:24px;text-align:right}
+.row.done{background:rgba(0,0,0,.32)}
+.row.done .n{color:var(--mute)}
+.row.open .v{color:var(--gold);opacity:.75}
+.row.open.zero .v{color:var(--mute);opacity:.6}
+.row.sel{border-color:var(--gold);background:rgba(240,198,116,.16)}
+.row.sel .v{opacity:1}
+.row.locked{opacity:.4}
+.row.just .v{animation:pop .45s ease-out}
+@keyframes pop{0%{transform:scale(1.9);color:var(--gold)}100%{transform:scale(1)}}
+.row.sub{background:transparent;padding:4px 9px;min-height:0;font-size:12.5px;color:var(--mute);cursor:default}
+.row.sub .v{color:var(--cream)}
+.row.sub.won .v{color:var(--ok)}
+
+/* ---- overlays ---- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.overlay.on{display:flex}
+.panel{background:linear-gradient(180deg,#12503a,#0c3d2c);border:2px solid var(--gold);border-radius:16px;max-width:460px;width:100%;max-height:86vh;overflow-y:auto;padding:16px 18px}
+.panel h2{margin:0 0 8px;color:var(--gold);font-family:Georgia,serif;font-weight:400;font-size:24px;display:flex;justify-content:space-between;align-items:center}
+.panel h3{color:var(--gold);margin:14px 0 6px;font-size:15px}
+.panel p,.panel li{font-size:14px;line-height:1.5}
+.panel .x{background:rgba(255,255,255,.13);color:var(--cream);border-radius:9px;width:34px;height:34px;font-size:16px}
+.big{font-size:44px;font-weight:900;color:var(--gold);text-align:center;font-variant-numeric:tabular-nums}
+.line{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;border-bottom:1px solid rgba(247,243,232,.1)}
+.line b{color:var(--gold)}
+.line.me{color:var(--gold);font-weight:800}
+.line .ini{display:inline-block;min-width:3.2em;font-family:ui-monospace,Menlo,monospace;font-weight:800;letter-spacing:1px;color:var(--cream)}
+.line.me .ini{color:var(--gold)}
+.inibox{background:rgba(0,0,0,.25);border:1.5px solid var(--gold);border-radius:12px;padding:12px;margin:12px 0 4px;text-align:center}
+.inibox p{margin:0 0 8px;font-size:14px}
+.inibox input{width:5.2em;font:800 30px/1 ui-monospace,Menlo,monospace;letter-spacing:.35em;text-indent:.35em;text-align:center;text-transform:uppercase;
+  background:rgba(0,0,0,.35);color:var(--gold);border:1.5px solid rgba(240,198,116,.6);border-radius:10px;padding:8px 0}
+.inibox .btn{margin-top:10px;width:100%}
+.seg{display:inline-flex;background:rgba(0,0,0,.3);border-radius:20px;padding:3px;gap:3px}
+.seg button{background:transparent;color:var(--cream);padding:7px 13px;font-size:13px;font-weight:700;border-radius:16px}
+.seg button.on{background:var(--gold);color:var(--ink)}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0;font-size:14px}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translate(-50%,-20px);opacity:0;z-index:70;pointer-events:none;
+  font-family:Georgia,serif;font-size:40px;color:var(--gold);text-shadow:0 3px 12px rgba(0,0,0,.6);transition:opacity .25s,transform .25s;white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:10px 0 0;font-family:ui-monospace,Menlo,monospace}
+@media (min-width:700px){ :root{--d:66px} .wrap{max-width:620px} .row{font-size:15px} }
+@media (prefers-reduced-motion:reduce){ .cube{transition:none} .die.hop{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-top">
+    <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+    <button class="gn-pill" id="scoresBtn">Scores</button>
+    <button class="gn-pill" id="rulesBtn">Rules</button>
+    <button class="gn-pill" id="menuBtn">Menu</button>
+  </div>
+  <h1 class="gn-name" id="gnName">YachtRock</h1>
+
+  <div class="tray">
+    <div class="meta"><span id="turnLbl">Turn 1 of 13</span><span>Score <span class="tot" id="totLbl">0</span></span></div>
+    <div class="dice" id="dice"></div>
+    <div class="rolls" id="rolls"></div>
+  </div>
+  <div class="btns" id="btns"></div>
+  <div class="say" id="say"></div>
+  <div class="sheet">
+    <div class="col" id="colUp"></div>
+    <div class="col" id="colLo"></div>
+  </div>
+  <div class="gn-build" id="gnBuild"></div>
+</div>
+<div id="toast"></div>
+<div class="overlay" id="ov"><div class="panel" id="panel"></div></div>
+
+<script src="../sfx.js"></script>
+
+<!-- ===== block 1: rules engine (no DOM) ===== -->
+<script>
+(function(){
+  var UPPER=["ones","twos","threes","fours","fives","sixes"];
+  var LOWER=["three","four","full","small","large","yacht","chance"];
+  var NAME={ones:"Aces",twos:"Twos",threes:"Threes",fours:"Fours",fives:"Fives",sixes:"Sixes",
+    three:"3 of a kind",four:"4 of a kind",full:"Full house",small:"Sm straight",large:"Lg straight",yacht:"Yacht",chance:"Chance"};
+  var LONG={small:"Small straight",large:"Large straight"};
+  function counts(d){ var c=[0,0,0,0,0,0,0]; d.forEach(function(v){c[v]++;}); return c; }
+  function sum(d){ return d.reduce(function(a,b){return a+b;},0); }
+  function isYacht(d){ return d[0]>0 && d.every(function(v){return v===d[0];}); }
+  function run(c,n){ for(var s=1;s+n-1<=6;s++){ var ok=true; for(var k=s;k<s+n;k++) if(!c[k]) ok=false; if(ok) return true; } return false; }
+  // plain score of a box, before the joker rule
+  function raw(cat,d){
+    var c=counts(d), i=UPPER.indexOf(cat);
+    if(i>=0) return c[i+1]*(i+1);
+    var mx=Math.max.apply(null,c);
+    switch(cat){
+      case "three": return mx>=3?sum(d):0;
+      case "four":  return mx>=4?sum(d):0;
+      case "full":  return (c.indexOf(3)>0 && c.indexOf(2)>0)?25:0;
+      case "small": return run(c,4)?30:0;
+      case "large": return run(c,5)?40:0;
+      case "yacht": return mx===5?50:0;
+      case "chance":return sum(d);
+    }
+    return 0;
+  }
+  /* Every box the player may use for these dice, with what it would score.
+     Forced joker rule: a Yacht rolled after the Yacht box is filled (50 or 0) must go in its own
+     number's upper box if that is open; otherwise any open lower box, with full house and the
+     straights scoring in full; otherwise an open upper box for zero. */
+  function options(sheet,d){
+    var open=UPPER.concat(LOWER).filter(function(k){ return sheet[k]==null; }), out={};
+    if(isYacht(d) && sheet.yacht!=null){
+      var up=UPPER[d[0]-1];
+      if(sheet[up]==null){ out[up]=raw(up,d); return {joker:true, opts:out}; }
+      var lo=open.filter(function(k){return LOWER.indexOf(k)>=0;});
+      if(lo.length){ lo.forEach(function(k){ out[k]= k==="full"?25 : k==="small"?30 : k==="large"?40 : raw(k,d); }); return {joker:true, opts:out}; }
+      open.forEach(function(k){ out[k]=0; }); return {joker:true, opts:out};
+    }
+    open.forEach(function(k){ out[k]=raw(k,d); });
+    return {joker:false, opts:out};
+  }
+  function totals(sheet,ybonus){
+    var up=0, lo=0, par=0;
+    UPPER.forEach(function(k,i){ if(sheet[k]!=null){ up+=sheet[k]; par+=3*(i+1); } });
+    LOWER.forEach(function(k){ if(sheet[k]!=null) lo+=sheet[k]; });
+    var bonus=up>=63?35:0, yb=(ybonus||0)*100;
+    return {upper:up, par:par, bonus:bonus, lower:lo, yb:yb, total:up+bonus+lo+yb};
+  }
+  window.YR={UPPER:UPPER,LOWER:LOWER,NAME:NAME,LONG:LONG,raw:raw,options:options,totals:totals,isYacht:isYacht,counts:counts};
+})();
+</script>
+
+<!-- ===== block 2: table UI ===== -->
+<script>
+var BUILD_V="v119";
+var $=function(id){return document.getElementById(id);};
+var PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+// cube rotation that shows each number (faces: 1 front, 6 back, 3 right, 4 left, 2 top, 5 bottom)
+var ORIENT={1:[0,0],2:[-90,0],3:[0,-90],4:[0,90],5:[90,0],6:[0,180]};
+var FACE_T={1:"translateZ(H)",6:"rotateY(180deg) translateZ(H)",3:"rotateY(90deg) translateZ(H)",4:"rotateY(-90deg) translateZ(H)",2:"rotateX(90deg) translateZ(H)",5:"rotateX(-90deg) translateZ(H)"};
+var GKEY="yr_game_v1", SKEY="yr_stats_v1", OKEY="yr_opts_v1";
+var G, ST, OPT, ROLLING=false, SPIN=[0,0,0,0,0].map(function(){return {x:0,y:0};});
+
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function load(k,def){ try{ var v=JSON.parse(localStorage.getItem(k)); return v||def; }catch(e){ return def; } }
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function fresh(){ return {sheet:{}, dice:[0,0,0,0,0].map(function(){return 1+Math.floor(Math.random()*6);}), held:[false,false,false,false,false], rolls:0, turn:1, yb:0, sel:null, over:false}; }
+ST=load(SKEY,{best:0, played:0, sum:0, top:[]});
+OPT=load(OKEY,{hints:true});
+G=load(GKEY,null); if(!G || !G.sheet || G.over) G=fresh();
+G.sel=null;
+
+/* ---- dice ---- */
+function buildDice(){
+  var box=$("dice"), h="";
+  for(var i=0;i<5;i++){
+    h+='<div class="die" data-i="'+i+'"><div class="shadow"></div><div class="cube">';
+    for(var f=1;f<=6;f++){ h+='<div class="face" data-f="'+f+'">'; for(var p=0;p<9;p++) h+='<i'+(PIPS[f].indexOf(p)>=0?' class="on"':'')+'></i>'; h+='</div>'; }
+    h+='</div></div>';
+  }
+  box.innerHTML=h;
+  sizeFaces();
+  box.querySelectorAll(".die").forEach(function(el){ el.addEventListener("click",function(){ toggleHold(+el.dataset.i); }); });
+  G.dice.forEach(function(v,i){ setCube(i,v,false); });
+}
+function sizeFaces(){
+  var d=$("dice").querySelector(".die"); if(!d) return; var half=(d.offsetWidth/2)+"px";
+  $("dice").querySelectorAll(".face").forEach(function(f){ f.style.transform=FACE_T[f.dataset.f].replace("H",half); });
+}
+function cubeEl(i){ return $("dice").children[i].querySelector(".cube"); }
+function setCube(i,v,spin){
+  var o=ORIENT[v], s=SPIN[i], c=cubeEl(i);
+  if(spin){ s.x+=360*(1+Math.floor(Math.random()*2)); s.y+=360*(1+Math.floor(Math.random()*2))*(Math.random()<.5?-1:1); }
+  else c.style.transition="none";
+  c.style.transform="rotateX("+(o[0]+s.x)+"deg) rotateY("+(o[1]+s.y)+"deg)";
+  if(!spin){ void c.offsetWidth; c.style.transition=""; }
+}
+function toggleHold(i){
+  if(G.over || ROLLING || G.rolls===0 || G.rolls>=3) return;
+  G.held[i]=!G.held[i]; sfx("select"); G.sel=null; persist(); render();
+}
+function roll(){
+  if(G.over || ROLLING || G.rolls>=3) return;
+  if(G.held.every(Boolean)){ say("You're holding all five. Pick a box, or tap a die to let it roll."); return; }
+  ROLLING=true; G.sel=null; sfx("shuffle");
+  var n=0;
+  G.dice=G.dice.map(function(v,i){
+    if(G.held[i]) return v;
+    var nv=1+Math.floor(Math.random()*6), el=$("dice").children[i], delay=(n++)*70;
+    el.classList.remove("hop"); void el.offsetWidth;
+    el.style.animationDelay=delay+"ms"; el.classList.add("hop");
+    cubeEl(i).style.transitionDelay=delay+"ms";
+    setCube(i,nv,true);
+    return nv;
+  });
+  G.rolls++;
+  persist(); render();
+  var reduce=window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setTimeout(landed, reduce?0:1100+n*70);
+}
+function landed(){
+  ROLLING=false; sfx("place");
+  $("dice").querySelectorAll(".die").forEach(function(el){ el.classList.remove("hop"); el.style.animationDelay=""; el.querySelector(".cube").style.transitionDelay=""; });
+  if(YR.isYacht(G.dice)){ toast(G.sheet.yacht===50?"Yacht! +100":"Yacht!"); sfx("win"); }
+  render();
+}
+
+/* ---- scoring ---- */
+function opts(){ return G.rolls>0 && !ROLLING ? YR.options(G.sheet,G.dice) : {joker:false,opts:{}}; }
+function pick(cat){
+  if(G.over || ROLLING) return;
+  if(!(cat in opts().opts)) return;
+  if(G.sel!==cat){ G.sel=cat; sfx("select"); render(); return; }
+  commit(cat);
+}
+function commit(cat){
+  var v=opts().opts[cat]; if(v==null) return;
+  if(YR.isYacht(G.dice) && G.sheet.yacht===50) G.yb++;          // +100 for every later Yacht
+  G.sheet[cat]=v; G.sel=null; G.justCat=cat;
+  sfx(v>0?"chip":"bad");
+  if(G.turn>=13){ G.over=true; persist(); render(); finish(); return; }
+  G.turn++; G.rolls=0; G.held=[false,false,false,false,false];
+  persist(); render();
+}
+function finish(){
+  var t=YR.totals(G.sheet,G.yb).total, newBest=t>ST.best, at=Date.now();
+  ST.played++; ST.sum+=t; if(newBest) ST.best=t;
+  ST.top.push({s:t, d:at}); ST.top.sort(function(a,b){return b.s-a.s||a.d-b.d;}); ST.top=ST.top.slice(0,10);
+  var mine=ST.top.filter(function(x){return x.d===at;})[0];
+  if(mine) mine.i=OPT.ini||"";          // last initials used, until they're changed below
+  save(SKEY,ST);
+  setTimeout(function(){ sfx(newBest?"win":"good"); showResults(t,newBest,at,!!mine); }, 450);
+}
+
+/* ---- render ---- */
+function persist(){ save(GKEY,G); }
+function say(msg){ $("say").innerHTML=msg; }
+function render(){
+  var T=YR.totals(G.sheet,G.yb), O=opts(), left=3-G.rolls;
+  $("turnLbl").textContent=G.over?"Game over":"Turn "+G.turn+" of 13";
+  $("totLbl").textContent=T.total;
+  $("dice").querySelectorAll(".die").forEach(function(el,i){
+    el.classList.toggle("held",!!G.held[i]);
+    el.classList.toggle("idle",G.rolls===0 && !ROLLING);
+  });
+  var r=""; for(var k=0;k<3;k++) r+='<span class="'+(k<G.rolls?"used":"")+'"></span>'; $("rolls").innerHTML=r;
+  // buttons
+  var b="";
+  if(G.over) b='<button class="btn" id="newBtn">New game</button>';
+  else if(G.sel){
+    var sv=O.opts[G.sel];
+    b='<button class="btn ghost'+(left>0?'':' off')+'" id="rollBtn">'+(left>0?'Roll again':'No rolls left')+'</button>'
+     +'<button class="btn" id="scoreBtn">'+(sv>0?'Score '+sv:'Scratch for 0')+'</button>';
+  } else {
+    var rollTxt = G.rolls===0 ? "Roll" : left>0 ? "Roll again · "+left+" left" : "Pick a box";
+    b='<button class="btn'+(left>0&&!ROLLING?'':' off')+'" id="rollBtn">'+rollTxt+'</button>';
+  }
+  $("btns").innerHTML=b;
+  if($("rollBtn")) $("rollBtn").onclick=roll;
+  if($("scoreBtn")) $("scoreBtn").onclick=function(){ commit(G.sel); };
+  if($("newBtn")) $("newBtn").onclick=newGame;
+  // sheet
+  function rowHTML(cat){
+    var done=G.sheet[cat]!=null, has=cat in O.opts, cls="row", v="";
+    if(done){ cls+=" done"; v=G.sheet[cat]; }
+    else if(has){ cls+=" open"+(O.opts[cat]===0?" zero":""); v=(OPT.hints||G.sel===cat)?O.opts[cat]:""; }
+    else if(G.rolls>0 && !ROLLING) cls+=" locked";
+    if(G.sel===cat) cls+=" sel";
+    if(G.justCat===cat) cls+=" just";
+    return '<button class="'+cls+'" data-cat="'+cat+'"><span class="n">'+YR.NAME[cat]+'</span><span class="v">'+v+'</span></button>';
+  }
+  var diff=T.upper-T.par, pace=T.par===0?"":(diff>=0?"+"+diff:String(diff));
+  $("colUp").innerHTML='<h3><span>Upper</span><span>'+T.upper+'</span></h3>'+YR.UPPER.map(rowHTML).join("")
+    +'<div class="row sub'+(T.bonus?' won':'')+'"><span>Bonus'+(pace&&!T.bonus?' · pace '+pace:'')+'</span><span class="v">'+(T.bonus?'+35':T.upper+'/63')+'</span></div>';
+  $("colLo").innerHTML='<h3><span>Lower</span><span>'+(T.lower+T.yb)+'</span></h3>'+YR.LOWER.map(rowHTML).join("")
+    +(G.yb?'<div class="row sub won"><span>Yacht bonus</span><span class="v">+'+T.yb+'</span></div>':'');
+  document.querySelectorAll(".row[data-cat]").forEach(function(el){ el.onclick=function(){ pick(el.dataset.cat); }; });
+  G.justCat=null;
+  // hint line
+  if(G.over) say("Final score <b>"+T.total+"</b>");
+  else if(ROLLING) say("");
+  else if(G.rolls===0) say(G.turn===1?"Thirteen turns, up to three rolls each. Roll to start.":"Turn "+G.turn+". Roll when you're ready.");
+  else if(G.sel){ var v2=O.opts[G.sel], nm=YR.LONG[G.sel]||YR.NAME[G.sel]; say(v2>0?"<b>"+v2+"</b> in "+nm+". Tap it again or press Score.":"Scratch "+nm+" for 0? Tap it again or press Scratch."); }
+  else if(O.joker) say("Another Yacht! The joker rule decides which boxes it can go in.");
+  else if(left>0) say("Tap dice to hold them, then roll again or pick a box.");
+  else say("Pick a box to score this roll.");
+}
+
+/* ---- overlays ---- */
+function openPanel(title,body){ $("panel").innerHTML='<h2><span>'+title+'</span><button class="x" id="xBtn" aria-label="Close">✕</button></h2>'+body; $("ov").classList.add("on"); $("xBtn").onclick=closePanel; }
+function closePanel(){ $("ov").classList.remove("on"); }
+$("ov").addEventListener("click",function(e){ if(e.target===$("ov")) closePanel(); });
+function fmtDay(t){ try{ return new Date(t).toLocaleDateString([], {month:"short", day:"numeric"}); }catch(e){ return ""; } }
+function topList(mark){
+  if(!ST.top.length) return '<p>No finished games yet.</p>';
+  return ST.top.map(function(x,i){ return '<div class="line'+(x.d===mark?' me':'')+'"><span>'+(i+1)+'. <span class="ini">'+(esc(x.i)||'---')+'</span> '+fmtDay(x.d)+'</span><b>'+x.s+'</b></div>'; }).join("");
+}
+function esc(t){ return String(t||"").replace(/[^A-Z0-9]/g,""); }
+function cleanIni(v){ return String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,3); }
+function showResults(t,newBest,at,ask){
+  var T=YR.totals(G.sheet,G.yb), mine=ST.top.filter(function(x){return x.d===at;})[0];
+  var rank=ST.top.indexOf(mine)+1;
+  var iniHTML = ask && mine ? '<div class="inibox"><p>That\'s #'+rank+' on your top ten. Your initials?</p>'
+    +'<input id="iniIn" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" value="'+esc(mine.i)+'" aria-label="Initials">'
+    +'<button class="btn" id="iniSave">Save initials</button></div>' : '';
+  openPanel(newBest?"New best!":"Game over",
+    '<div class="big">'+t+'</div>'
+    +'<div class="line"><span>Upper</span><b>'+T.upper+'</b></div>'
+    +'<div class="line"><span>Upper bonus</span><b>'+(T.bonus?'+35':'—')+'</b></div>'
+    +'<div class="line"><span>Lower</span><b>'+T.lower+'</b></div>'
+    +(T.yb?'<div class="line"><span>Yacht bonus</span><b>+'+T.yb+'</b></div>':'')
+    +iniHTML
+    +'<h3>Your top ten</h3>'+topList(at)
+    +'<div class="btns" style="margin-top:14px"><button class="btn" id="againBtn">New game</button></div>');
+  $("againBtn").onclick=function(){ keepIni(); closePanel(); newGame(); };
+  var inp=$("iniIn");
+  function keepIni(){
+    if(!inp || !mine) return;
+    var v=cleanIni(inp.value); mine.i=v; if(v){ OPT.ini=v; save(OKEY,OPT); } save(SKEY,ST);
+  }
+  if(inp){
+    inp.oninput=function(){ var v=cleanIni(inp.value); if(inp.value!==v) inp.value=v; };
+    inp.onkeydown=function(e){ if(e.key==="Enter"){ e.preventDefault(); $("iniSave").click(); } };
+    $("iniSave").onclick=function(){ keepIni(); sfx("chip"); showResults(t,newBest,at,false); };
+    $("xBtn").onclick=function(){ keepIni(); closePanel(); };
+    setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 60);
+  }
+}
+function showScores(){
+  var avg=ST.played?Math.round(ST.sum/ST.played):0;
+  openPanel("Scores",
+    '<div class="line"><span>Best</span><b>'+(ST.best||'—')+'</b></div>'
+    +'<div class="line"><span>Average</span><b>'+(ST.played?avg:'—')+'</b></div>'
+    +'<div class="line"><span>Games played</span><b>'+ST.played+'</b></div>'
+    +'<h3>Top ten</h3>'+topList(0));
+}
+function showRules(){
+  openPanel("How to play",
+    '<p>Thirteen turns. Each turn, roll five dice up to three times, tapping dice between rolls to hold them. Then score the roll in one empty box. Every box gets used once, even if it scores zero.</p>'
+    +'<h3>Upper boxes</h3><p>Aces through Sixes score the total of that number. Reach <b>63</b> across them (three of each) for a <b>+35</b> bonus. “Pace” shows whether you’re ahead of three-of-each so far.</p>'
+    +'<h3>Lower boxes</h3><ul><li>3 or 4 of a kind: total of all five dice</li><li>Full house (three and a pair): 25</li><li>Small straight (four in a row): 30</li><li>Large straight (five in a row): 40</li><li>Yacht (all five the same): 50</li><li>Chance: total of all five dice</li></ul>'
+    +'<h3>More Yachts</h3><p>Every Yacht after you’ve scored 50 in the Yacht box is worth <b>+100</b>. Any later Yacht is also a joker: it must go in its own number’s upper box if that’s open; otherwise in any open lower box, where full house and the straights score in full; otherwise an upper box for zero.</p>'
+    +'<p>Tap a box once to highlight it, then tap again or press Score to lock it in.</p>');
+}
+function showMenu(){
+  var on=!!(window.SFX&&SFX.isOn());
+  openPanel("Menu",
+    '<div class="setrow"><span>Sound</span><span class="seg"><button id="sOn" class="'+(on?'on':'')+'">On</button><button id="sOff" class="'+(on?'':'on')+'">Off</button></span></div>'
+    +'<div class="setrow"><span>Show what each box would score</span><span class="seg"><button id="hOn" class="'+(OPT.hints?'on':'')+'">On</button><button id="hOff" class="'+(OPT.hints?'':'on')+'">Off</button></span></div>'
+    +'<div class="btns" style="margin-top:14px"><button class="btn ghost" id="mNew">New game</button></div>');
+  $("sOn").onclick=function(){ if(window.SFX) SFX.setOn(true); showMenu(); };
+  $("sOff").onclick=function(){ if(window.SFX) SFX.setOn(false); showMenu(); };
+  $("hOn").onclick=function(){ OPT.hints=true; save(OKEY,OPT); render(); showMenu(); };
+  $("hOff").onclick=function(){ OPT.hints=false; save(OKEY,OPT); render(); showMenu(); };
+  $("mNew").onclick=function(){
+    var started=!G.over && (G.turn>1 || G.rolls>0);
+    if(started && !confirm("Start over? This game won't count.")) return;
+    closePanel(); newGame();
+  };
+}
+function newGame(){ G=fresh(); persist(); G.dice.forEach(function(v,i){ setCube(i,v,false); }); render(); }
+var tT; function toast(t){ var el=$("toast"); el.textContent=t; el.classList.add("on"); clearTimeout(tT); tT=setTimeout(function(){ el.classList.remove("on"); },1400); }
+
+/* the game name stays on one line: shrink it rather than wrap */
+function fitName(){ var el=$("gnName"), s=28; el.style.fontSize=s+"px"; while(el.scrollWidth>el.clientWidth && s>16){ s--; el.style.fontSize=s+"px"; } }
+
+$("scoresBtn").onclick=showScores; $("rulesBtn").onclick=showRules; $("menuBtn").onclick=showMenu;
+addEventListener("resize",function(){ sizeFaces(); fitName(); });
+buildDice(); render(); fitName();
+
+// test door: live state and the same handlers the buttons call
+window.__YR={ get G(){return G;}, get ST(){return ST;}, get rolling(){return ROLLING;},
+  roll:roll, pick:pick, commit:commit, toggleHold:toggleHold, newGame:newGame,
+  set:function(d){ G.dice=d.slice(); if(!G.rolls) G.rolls=1; d.forEach(function(v,i){ setCube(i,v,false); }); render(); } };
+
+(function(){ var d=new Date(document.lastModified), w=isNaN(d)?'':d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}); $('gnBuild').textContent='build '+BUILD_V+(w?' · '+w:''); })();
+if('serviceWorker' in navigator){
+  addEventListener('load', function(){
+    navigator.serviceWorker.register('../sw.js', {updateViaCache:'none'}).then(function(reg){ reg.update(); setInterval(function(){ reg.update(); }, 60*60*1000); }).catch(function(){});
+    var reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){ if(reloaded) return; reloaded=true; location.reload(); });
+  });
+}
+</script>
+</body>
+</html>
