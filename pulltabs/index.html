@@ -323,16 +323,18 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 }
 @media (min-width:1000px) and (orientation:landscape) and (max-height:820px){ :root{--rh:66px;--tw:400px} .buyrow .btn{padding:9px 6px} }
 </style>
+<script src="../gn-header.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr">
-    <a class="iconbtn" href="../" title="All games">🏠</a>
-    <div class="title">Pull Tabs</div>
-    <div class="spacer"></div>
-    <button class="iconbtn" id="flareBtn">📋 Flare</button>
-    <button class="iconbtn" id="rulesBtn">Rules</button>
-    <button class="iconbtn" id="menuBtn">Menu</button>
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="flareBtn">Flare</button>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Pull Tabs</h1>
   </div>
 
   <!-- ===== SETUP ===== -->
@@ -637,7 +639,7 @@ window.PT={ BOX_V:BOX_V, DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KE
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v107";
+var BUILD_V="v121";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 

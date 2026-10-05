@@ -5,7 +5,7 @@ Hasbro trademark and is not used anywhere). Thirteen turns, up to three rolls ea
 
 First game built to the **Game Night standard header**: one row of text pills
 (`‹ Games` · game buttons · Rules · Menu) and the game name on its own line in gold Georgia,
-never wrapping — `fitName()` shrinks the type instead. No emoji or suit glyphs in the header.
+never wrapping. Since v121 the style and the shrink-to-fit live in the shared `gn-header.js`. No emoji or suit glyphs in the header.
 
 ## Rules as built
 - Upper: Aces–Sixes score that number's total; 63+ earns **+35**. The bonus row shows a

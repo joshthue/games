@@ -12,7 +12,7 @@ Solitaire poker on a 5×5 grid — a.k.a. **Poker Solitaire / Poker Patience**. 
 
 ## High scores — one board for everybody (v105)
 Finish a game with a score that makes the top 10 and the results panel asks for your name
-(remembered for next time) and posts it. 🏆 in the header (or Menu → High scores) shows the
+(remembered for next time) and posts it. **Scores** in the header (or Menu → High scores) shows the
 board, with American and English scoring as separate top-10s.
 
 There's no backend. Scores ride the public ntfy topic `jtps-v1-scores` on `ntfy.envs.net`
@@ -60,7 +60,7 @@ American mirrors real-poker rarity; English rewards how hard each hand is to bui
 
 ## Conventions (shared with the hub)
 - Felt-and-gold theme via the same `:root` vars + component classes (`.btn`, `.seg`, `.switch`/`.toggle`, `.panel`/`.overlay`, `.setup-opt`, `.tip-block`).
-- Header has 🏠 (→ `../`), Rules, Menu. Settings default: **tips off, four-color deck on**.
+- Standard Game Night header (`gn-header.js`): ‹ Games, Scores, Rules, Menu. Settings default: **tips off, four-color deck on**.
 - Build stamp `build vNN · <local time>` at the bottom (`V`/`ISO` consts) — bump with the `sw.js` cache version.
 - In-game asset refs point up one level (`../manifest.webmanifest`, `../icon-180.png`, `../sw.js`).
 - Sound from the shared `../sfx.js` (synthesized, offline, one mute setting for every game).

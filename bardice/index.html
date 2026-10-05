@@ -98,14 +98,17 @@ button{font-family:inherit;cursor:pointer;border:none}
   html{background:#0d5c3f;}
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
+<script src="../gn-header.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr">
-    <a class="iconbtn" href="../" title="All games">🏠</a>
-    <div class="title">Bar Dice</div>
-    <button class="iconbtn" id="rulesBtn">Rules</button>
-    <button class="iconbtn" id="menuBtn">Menu</button>
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Bar Dice</h1>
   </div>
   <div class="tabs"><button id="tabShake" class="on">🎲 Shake of the Day</button><button id="tabShip">⚓ Ship, Captain &amp; Crew</button></div>
   <div class="money">
@@ -214,7 +217,7 @@ window.BD=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v120";
+var BUILD_V="v121";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }

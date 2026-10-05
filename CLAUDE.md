@@ -87,6 +87,8 @@ manifest.webmanifest    PWA manifest
 icon-180/192/512.png    shared icons
 <game>/index.html       the entire game, one file
 <game>/README.md        what it is, how it plays, how it's built, how it's tested
+sfx.js, cardsize.js     shared sound and card-size control
+gn-header.js            the standard header (style + name fitting) — in sw.js ASSETS, keep it there
 ```
 
 `onpatrolbingo/` is a legacy stub kept for old links; `bingo/` superseded it.
@@ -146,6 +148,32 @@ Real examples: `Hold'em: tappable relay diagnostic in the online lobby; v73` ·
 
 **Update the game's README in the same commit.** Josh's standing rule — docs
 don't get to drift.
+
+---
+
+## The header — every game uses the same one
+
+```html
+<div class="gn-hdr">
+  <div class="gn-top">
+    <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+    <!-- the game's own pills, then -->
+    <button class="gn-pill" id="rulesBtn">Rules</button>
+    <button class="gn-pill" id="menuBtn">Menu</button>
+  </div>
+  <h1 class="gn-name">Game name</h1>
+</div>
+```
+
+plus `<script src="../gn-header.js"></script>` just before `</head>`. Text pills only —
+no emoji, no suit glyphs, no 🏠 — and the name on its own line in gold Georgia. **The
+name never wraps**: `gn-header.js` shrinks it to fit. No subtitles; the one allowed
+line under the name is a dedication (`<div class="gn-sub">`). Use a `div`, not a
+`<header>` tag — several pages still style bare `header` as a flex row.
+
+Converted so far (v121): Cribbage, Three-Card Poker, Ultimate Texas Hold'em, Poker
+Squares, Pull Tabs, Horse Race, Bar Dice, Stratego, YachtRock. Still to decide: I'm out,
+Jerry!, Blackjack, BINGO, Hold'em, Links, Spite & Malice.
 
 ---
 

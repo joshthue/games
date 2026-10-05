@@ -140,18 +140,19 @@
   html{background:#0d5c3f;}
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
+<script src="../gn-header.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>🎴 POKER SQUARES <small>SOLITAIRE · 5×5 GRID</small></h1>
-    <div class="top-btns">
-      <a class="btn sec sm" href="../" title="All games">🏠</a>
-      <button class="btn sec sm" id="hsBtn" title="High scores">🏆</button>
-      <button class="btn sec sm" id="rulesBtn">Rules</button>
-      <button class="btn sec sm" id="menuBtn">Menu</button>
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="hsBtn">Scores</button>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
     </div>
-  </header>
+    <h1 class="gn-name">Poker Squares</h1>
+  </div>
 
   <div class="pstray">
     <div id="psCurrent"></div>
@@ -834,7 +835,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v118", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v121", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

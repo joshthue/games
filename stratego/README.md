@@ -64,7 +64,7 @@ win or loss lands on its own.
 
 ## If you've forgotten how it works
 
-**How to play** in the header opens the rules — the point of the game, how a turn and a
+**Rules** in the header opens the rules — the point of the game, how a turn and a
 fight work, the three rules everyone forgets (Miner/Bomb, Spy-on-the-attack, equal ranks
 both die), and a short section on how to actually play rather than just move. It opens by
 itself the first time on a device. Second tab is the army table.
