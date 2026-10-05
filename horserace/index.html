@@ -113,6 +113,25 @@ button{font-family:inherit;cursor:pointer;border:none}
 .seat .k{color:var(--mute);font-size:12px}
 .seat .m{font-weight:800;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
 .seat .m.pos{color:var(--ok)} .seat .m.neg{color:#f08a8a}
+/* the tab: who owes what this race, scratch by scratch */
+.tabbox{background:rgba(0,0,0,.2);border-radius:12px;padding:9px 10px 10px}
+.tabbox table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.tabbox th{font-size:10px;letter-spacing:.6px;color:var(--mute);font-weight:800;text-align:right;padding:2px 3px 5px;white-space:nowrap;line-height:1.25}
+.tabbox th:first-child,.tabbox td:first-child{text-align:left}
+.tabbox th small{display:block;font-size:10px;letter-spacing:0;color:var(--cream);font-weight:800}
+.tabbox td{text-align:right;padding:5px 3px;border-top:1px solid rgba(247,243,232,.08);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabbox th{overflow:hidden}
+.tabbox col.c{width:12.5%} .tabbox col.r{width:15%} .tabbox col.o{width:14%}
+
+.tabbox td.z{color:rgba(247,243,232,.3)}
+.tabbox td.tot{font-weight:900;color:var(--gold)}
+.tabbox td.pos{color:var(--ok);font-weight:800} .tabbox td.neg{color:#f08a8a;font-weight:800}
+.tabbox tr.me td{color:var(--gold)} .tabbox tr.me td.z{color:rgba(240,198,116,.35)}
+.tabbox tfoot td{border-top:1.5px solid rgba(247,243,232,.3);font-weight:800;color:var(--cream)}
+.tabbox .hits{margin-top:8px;font-size:12px;color:var(--mute);line-height:1.5}
+.tabbox .hits b{color:var(--cream)}
+.tabbox sup{font-size:9px;opacity:.65;margin-left:1px}
+@media (max-width:360px){ .tabbox table{font-size:11px} .tabbox th,.tabbox td{padding-left:2px;padding-right:2px} .tabbox th small{font-size:9px} .tabbox{padding:8px 6px} }
 /* lobby */
 .lobby .who{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
 .chip{background:rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700}
@@ -258,6 +277,7 @@ button{font-family:inherit;cursor:pointer;border:none}
           <div class="say"><span class="mic">🎙️</span><span id="say"></span></div>
           <div><div class="cap" id="handCap">Your horses</div><div class="hand" id="hand"></div></div>
           <div><div class="cap">The table</div><div class="seats" id="seats"></div></div>
+          <div class="tabbox hidden" id="tabBox"></div>
           <div class="panel statsbox hidden" id="statsBox"></div>
         </div>
       </div>
@@ -395,7 +415,7 @@ window.HR=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v121";
+var BUILD_V="v125";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -797,9 +817,41 @@ function renderRace(r, st){
   // the table
   $('seats').innerHTML=r.seats.map(function(s,i){ var net=st.won[i]-st.paid[i];
     return '<div class="seat'+(i===st.next?' turn':'')+(i===si?' me':'')+'"><span class="up"></span><span>'+(s.bot?'🤖 ':'')+esc(s.name)+(st.winner&&st.counts[i][st.winner]?' · '+st.counts[i][st.winner]+'× #'+st.winner:'')+'</span><span class="k">'+st.hands[i].length+' cards'+(P&&st.phase!=='done'?' · '+pct(HR.RANKS.reduce(function(a,n){ return a+(st.counts[i][n]?P[n]:0); },0))+' to cash':'')+'</span><span class="in">in '+money(st.paid[i])+(st.won[i]?' \u00b7 won '+money(st.won[i]):'')+'</span><span class="m '+(net>0?'pos':(net<0?'neg':''))+'">'+(net?money(net):'even')+'</span></div>'; }).join('');
+  renderTab(r, st, si);
   renderStats(r, st, si);
   renderRollBtn(r);
   if(flyIt) animateMoney(r, st, last, si);
+}
+/* The tab: who owes what this race. One column per scratch (the horse and its price), one for
+   scratched numbers rolled during the race, and the total each seat has put in. Every figure is
+   read off the race log, so it always matches the pot. After the finish it adds won and net. */
+function renderTab(r, st, si){
+  var el=$('tabBox'); if(!el) return;
+  var n=r.seats.length, scr=[], hit=[], hitN=[], hits=[];
+  for(var i=0;i<n;i++){ scr.push([0,0,0,0]); hit.push(0); hitN.push(0); }
+  st.log.forEach(function(e){
+    if(e.kind==='scratch') e.pays.forEach(function(a,p){ scr[p][e.nth-1]=a; });
+    else if(e.kind==='hit'){ hit[e.roller]+=e.price; hitN[e.roller]++; hits.push(e); }
+  });
+  if(!st.log.length){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  var cols=[0,1,2,3];   // won and net live on the table above
+  var h='<div class="cap">The tab · this race</div><table><colgroup><col><col class="c"><col class="c"><col class="c"><col class="c"><col class="r"><col class="o"></colgroup><thead><tr><th></th>'
+    +cols.map(function(c){ var t=st.scratches[c]; return '<th title="'+['1st','2nd','3rd','4th'][c]+' scratch">'+['1st','2nd','3rd','4th'][c]+'<small>'+(t?'#'+t+' ':'')+money(HR.SCR[c])+'</small></th>'; }).join('')
+    +'<th>Rolled<small>scratch</small></th><th>Owes</th></tr></thead><tbody>';
+  var colTot=[0,0,0,0], hitTot=0;
+  r.seats.forEach(function(s,i){
+    h+='<tr'+(i===si?' class="me"':'')+'><td>'+esc(s.name)+'</td>'
+      +cols.map(function(c){ var a=scr[i][c], open=c>=st.scratches.length; colTot[c]+=a; return '<td class="'+(a?'':'z')+'">'+(open?'':a?money(a):'—')+'</td>'; }).join('')
+      +'<td class="'+(hit[i]?'':'z')+'">'+(hit[i]?money(hit[i])+(hitN[i]>1?'<sup>×'+hitN[i]+'</sup>':''):'—')+'</td>'
+      +'<td class="tot">'+money(st.paid[i])+'</td></tr>';
+    hitTot+=hit[i];
+  });
+  h+='</tbody><tfoot><tr><td>Pot</td>'+cols.map(function(c){ return '<td>'+(c<st.scratches.length?money(colTot[c]):'')+'</td>'; }).join('')
+    +'<td>'+(hitTot?money(hitTot):'—')+'</td><td class="tot">'+money(st.pot)+'</td></tr></tfoot></table>'
+
+  if(hits.length) h+='<div class="hits">'+hits.slice(-6).reverse().map(function(e){ return '<b>'+esc(r.seats[e.roller].name)+'</b> rolled '+e.t+' · '+money(e.price); }).join(' &nbsp;·&nbsp; ')+(hits.length>6?' &nbsp;·&nbsp; …':'')+'</div>';
+  el.innerHTML=h;
 }
 function renderRollBtn(r){
   var b=$('rollBtn'); if(!b) return;

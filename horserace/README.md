@@ -106,6 +106,18 @@ never the race's own seeded dice, which would give the result away. ~10 ms per r
 **Your horses** never wrap any more: duplicates stack (v111) and the cards shrink to fit one row
 (`--hw`, 26–54px), so 22 cards in a 2-seat game still sit on one line on a phone.
 
+## The tab (v125)
+Under the table, **The tab · this race** runs who owes what, read straight off the race log so it
+always adds up to the pot:
+- one column per scratch, headed with its price and the horse that went (`1st · $1` over `#5`), showing
+  what each seat paid for its cards of that number (— for none; blank until that scratch happens);
+- **Rolled scratch**: what each seat paid for rolling a scratched number during the race (with a
+  count when it's more than once);
+- **Owes**: the seat's total in. The footer row totals each column; the last cell is the pot.
+- Won and net stay on the table above it (in / won / net per seat).
+- Below, the latest scratched-number rolls: "Bev rolled 6 · $3".
+It appears once the first die is rolled and sits below the fold on a phone.
+
 ## Table & names (v112)
 **⚙️ Table & names** (in the lobby and the Menu):
 - **Seats at the table: 2–8.** People at the rail sit first (up to 8), bots fill the rest. 44 cards go
