@@ -34,12 +34,52 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
 - Who goes first rotates each round. Bots roll until crewed, then re-roll cargo that can't beat the
   table's best or is under 8.
 
+## Screen
+- **Header**: the standard Game Night header, with the **jackpot** (compact: small label, amount
+  never wraps) and the **ATM** right-aligned on the name's line (`.gn-namerow` from `gn-header.js`).
+  At the Ship, Captain & Crew table the jackpot doesn't apply, so that line shows the ATM only
+  (the pot is on the table's caption).
+- **Cash** gets its own full-width row, so "CASH · PULL TABS WALLET" is never truncated; the jackpot
+  ticker ("Nobody's hit it yet · 88 tries so far") sits under it.
+- **One source for the shake count**: `sodProgress()` feeds both the caption ("shake 1 of 3", the
+  shake just taken) and the button ("Shake 2 of 3 · 4 dice", the next one). The old button read
+  "Shake 4 · 2 left", where the 4 was a dice count that looked like a fourth shake.
+- **Die-face names** come from the engine, `BD.faceName(v, n)` / `BD.faceCount(v, n)`:
+  1 five, 2 fives, 0 fives, 1 six. Every line that names the number of the day uses them.
+
+## The roll
+Results are rolled **before** anything moves; the animation only reveals them
+(`revealRoll(box, slots, finals, opts, done)`, shared by both games).
+- Rolling dice **tumble** (faces cycle every 70ms, with a rock and bounce). Held dice never move.
+- They **land one at a time, left to right** (first at 380ms, then every 190ms), each with a thud
+  and a clack (`SFX "place"`). A five-die roll is done in about 1.3s.
+- **Suspense**: if the last die decides something big, it hangs about 1.3s more, slowing down and
+  teetering before it lands. Shake of the Day: the other four all show the number (one die from the
+  jackpot). Ship, Captain & Crew: your last roll, no crew yet, and the last die could bring one aboard.
+- **Payoff**: the jackpot glows the dice, counts the amount up on a banner, throws confetti and
+  plays the win sting; five of a kind on the wrong number still glows. A hang that misses gets a
+  shake of the die and a "So close!" beat (`SFX "bad"`); a crew that arrives on the hang gets
+  "Crew's aboard!".
+- The Shake / Roll button is disabled and reads "Shaking…" / "Rolling…" until every die is down.
+- **Tap anywhere to skip** to the results. That tap is swallowed, so it can't also press whatever
+  was under your finger.
+- **Reduce Motion**: results appear at once, no tumble, no hang; the banner shows the amount.
+
 ## Built
 One file, two script blocks: the engine `window.BD` (dice, day number, scoring, ship-captain-crew
 set-aside, the bot's stand rule — no DOM) and the UI + relay. `../sfx.js` for sound; respects
 Reduce Motion.
 
 ## Tested
+v122, headless at 390, 320, 430 and 834 wide: the name, jackpot and ATM on one line, the amount and
+the cash label never clipped, no horizontal scroll, Ship mode shows the ATM alone. With forced dice:
+a normal five-die roll settles left to right in 1.36s with no result shown early; a near miss hangs
+the last die and says "So close!" (about 2.4s); the jackpot banner counts up to the amount; a tap
+mid-roll lands everything at once without starting another shake; Reduce Motion is instant; a Ship,
+Captain & Crew near miss on the last roll hangs and the round finishes. Caption and button agree on
+every shake.
+
+Earlier (v116):
 Headless at 390×844 and 1133×744: 40 Shake of the Day tries each (wallet moves by exactly −$1 a try,
 +$2 for four, + the jackpot on five; jar count and epoch track it), six Ship, Captain & Crew rounds
 (sinks, ties splitting the pot, carry-over when everyone sinks), no horizontal overflow, no errors.

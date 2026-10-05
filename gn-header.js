@@ -13,7 +13,9 @@
    Rules of the standard: text pills only (no emoji or suit glyphs), the name on its
    own line in gold Georgia, no subtitles, and the name never wraps - fit() shrinks
    the type to the line instead. A dedication line (e.g. "Grandma Jo's game") may sit
-   under the name as <div class="gn-sub">.
+   under the name as <div class="gn-sub">. A game that needs a compact status on the name's line
+   (Bar Dice: jackpot + ATM) wraps the h1 in <div class="gn-namerow"> and puts it after the h1;
+   the name still shrinks rather than wraps.
 
    Loaded in <head> so the style is there before first paint. The page keeps its own
    button ids and handlers; this file only styles and fits. Must stay in sw.js ASSETS.
@@ -29,6 +31,7 @@
    +".gn-top .gn-pill:active{background:rgba(255,255,255,.22)}"
    +"h1.gn-name{font-family:Georgia,'Times New Roman',serif;color:var(--gold,#f0c674);font-size:28px;line-height:1.15;font-weight:400;"
    +  "font-style:normal;letter-spacing:0;text-transform:none;text-shadow:none;margin:6px 0 0;padding:0;white-space:nowrap;overflow:hidden;text-align:left}"
+   +".gn-namerow{display:flex;align-items:center;gap:8px}.gn-namerow h1.gn-name{flex:1 1 auto;min-width:0}"
    +".gn-sub{font-size:12.5px;color:var(--cream,#f7f3e8);opacity:.75;margin:1px 0 0;font-style:italic}";
   var st=document.createElement("style"); st.id="gn-header-css"; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);

@@ -170,6 +170,9 @@ no emoji, no suit glyphs, no 🏠 — and the name on its own line in gold Georg
 name never wraps**: `gn-header.js` shrinks it to fit. No subtitles; the one allowed
 line under the name is a dedication (`<div class="gn-sub">`). Use a `div`, not a
 `<header>` tag — several pages still style bare `header` as a flex row.
+A small status widget may share the name's line, right-aligned: wrap the `h1` in
+`<div class="gn-namerow">` and put the widget after it (Bar Dice: jackpot + ATM). The
+name still shrinks rather than wraps; keep the widget compact so it fits at 320 wide.
 
 Converted so far (v121): Cribbage, Three-Card Poker, Ultimate Texas Hold'em, Poker
 Squares, Pull Tabs, Horse Race, Bar Dice, Stratego, YachtRock. Still to decide: I'm out,
