@@ -106,6 +106,15 @@ never the race's own seeded dice, which would give the result away. ~10 ms per r
 **Your horses** never wrap any more: duplicates stack (v111) and the cards shrink to fit one row
 (`--hw`, 26–54px), so 22 cards in a 2-seat game still sit on one line on a phone.
 
+## TV-wide (v126)
+On a screen at least 1000px wide in landscape (an iPad sideways, a laptop, AirPlay to the TV) the race
+goes to **three columns** so nothing is below the fold: the track on the left (filling the height),
+money / dice / announcer / your horses in the middle, **the table and the tab** on the right (`.colX`).
+Seat rows and the tab tighten there and the build stamp pins to the corner. Checked to fit with no
+scrolling at 1280×720, 1366×768, 1024×768, 1133×744, 1180×820 and 1920×1080, up to 8 seats.
+Between 700 and 1000 wide (a phone sideways) it stays two columns, with the table and tab under the
+right column; a phone held sideways is too short to fit it all.
+
 ## The tab (v125)
 Under the table, **The tab · this race** runs who owes what, read straight off the race log so it
 always adds up to the pot:

@@ -56,10 +56,13 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
   the tray allows (up to 58px; 72px on a wide screen) with even 9px gaps. If five across would drop a
   die under **56px**, the tray goes **3 on top + 2 centred below** at full size. Never 4 + 1. Same
   rule while rolling and at round end. On a 375-wide iPhone it's one row; on a 320-wide one, 3 + 2.
-- **Ship, Captain & Crew groups its tray** (`.dice.grp`): ship, captain and crew always sit together on
-  the left and the two cargo dice together on the right, with an ~18px split between the groups (7px
-  inside a group, via a spacer column). When that's too tight for 56px dice it's ship/captain/crew on
-  top and the cargo below. The winning-shake strip splits the same way. One row on 375 and up.
+- **Ship, Captain & Crew uses berths** (v126, `sccTrayHTML` + `fitScc`): three labelled berths that
+  only ever hold the **6 (Ship), 5 (Captain) and 4 (Crew)**. An empty berth is a dashed outline with
+  its number. Beside them, **the hold**: the dice still in the cup, or, once the crew's aboard, the two
+  **Cargo** dice (outlined green). A roll tumbles in the hold; when it lands, the 6/5/4 Darlene sets
+  aside move up into their berths. Everything sits on one row, sized to fit (as small as 34px with
+  five dice still in the cup); if that's too small, berths go on top and the hold below. The
+  winning-shake strip shows the winner's 6-5-4 then cargo the same way.
 
 ## Ship, Captain & Crew round end
 - The tray keeps **your final shake**, exactly as it landed (set-aside dice first, cargo outlined

@@ -168,19 +168,31 @@ button{font-family:inherit;cursor:pointer;border:none}
    Phone (portrait): one column, in reading order. The two column wrappers dissolve
    (display:contents) so their pieces can be ordered: money, rail, lobby, track, dice, hand, table. */
 .gamecols{display:flex;flex-direction:column;gap:9px}
-.colL,.colR{display:contents}
-#moneyRow{order:1} #roombar{order:2} #lobby{order:3} #raceL{order:4} #raceR{order:5}
-#raceL,#raceR{display:flex;flex-direction:column;gap:9px}
-#raceL.hidden,#raceR.hidden{display:none}
+.colL,.colR,.colX{display:contents}
+#moneyRow{order:1} #roombar{order:2} #lobby{order:3} #raceL{order:4} #raceR{order:5} #raceX{order:6}
+#raceL,#raceR,#raceX{display:flex;flex-direction:column;gap:9px}
+#raceL.hidden,#raceR.hidden,#raceX.hidden{display:none}
 /* Wide screens (iPad either way, iPhone sideways): the track gets the left side and the whole
    height; everything you read or tap sits on the right. fitTrack() sizes the lanes to fill. */
 @media (min-width:700px) and (orientation:landscape){
   .wrap{max-width:1280px;padding:6px 16px 10px}
   .gamecols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(320px,1fr);gap:14px;align-items:start}
   .gamecols.norace{grid-template-columns:minmax(0,560px);justify-content:center}
-  .colL,.colR{display:flex;flex-direction:column;gap:9px;min-width:0}
-  .gamecols.norace .colL{display:none}
+  .colL,.colR,.colX{display:flex;flex-direction:column;gap:9px;min-width:0}
+  .colL{grid-row:1 / span 2} .colX{grid-column:2}
+  .gamecols.norace .colL,.gamecols.norace .colX{display:none}
   .gn-build{margin:6px 0 0}
+}
+/* TV-wide (an iPad sideways, a laptop, AirPlay to the TV): three columns so the whole race - track,
+   dice and your horses, the table and the tab - is on one screen with nothing below the fold. */
+@media (min-width:1000px) and (orientation:landscape){
+  .wrap{max-width:1600px;padding-bottom:4px}
+  .gamecols{grid-template-columns:minmax(0,1.35fr) minmax(280px,.8fr) minmax(290px,.85fr)}
+  .colL{grid-row:1} .colX{grid-column:3;grid-row:1}
+  .gamecols.norace{grid-template-columns:minmax(0,560px)}
+  .seat{padding:4px 10px;font-size:13.5px} .seat .k{display:none} .seat{grid-template-columns:18px 1fr auto auto} .seats{gap:3px}
+  .tabbox td{padding:3px 3px} .tabbox .hits{margin-top:5px;max-height:1.5em;overflow:hidden}
+  .gn-build{position:fixed;right:10px;bottom:4px;margin:0}   /* off the page flow so it never pushes a scroll */
 }
 @media (min-width:700px) and (orientation:portrait){ .wrap{max-width:640px} }
 @media (min-width:700px){ .card{width:50px;height:70px;font-size:21px} .card small{font-size:10px} .say{font-size:15px} .seat{font-size:15px;padding:8px 12px} .rollbtn{font-size:18px} .die{width:54px;height:54px} .die i{width:9px;height:9px} }
@@ -276,6 +288,11 @@ button{font-family:inherit;cursor:pointer;border:none}
           </div>
           <div class="say"><span class="mic">🎙️</span><span id="say"></span></div>
           <div><div class="cap" id="handCap">Your horses</div><div class="hand" id="hand"></div></div>
+        </div>
+      </div>
+      <!-- third column on a TV-wide screen (under the right column otherwise): the table, the tab, stats -->
+      <div class="colX">
+        <div id="raceX" class="hidden">
           <div><div class="cap">The table</div><div class="seats" id="seats"></div></div>
           <div class="tabbox hidden" id="tabBox"></div>
           <div class="panel statsbox hidden" id="statsBox"></div>
@@ -415,7 +432,7 @@ window.HR=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v125";
+var BUILD_V="v126";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -720,7 +737,7 @@ function render(){
   var watching = r && running && seatOf(r,myId)<0;
   $('lobby').classList.toggle('hidden', running && !watching);
   if(!running || watching) renderLobby(r, st);
-  $('raceL').classList.toggle('hidden', !r); $('raceR').classList.toggle('hidden', !r); $('gamecols').classList.toggle('norace', !r);
+  $('raceL').classList.toggle('hidden', !r); $('raceR').classList.toggle('hidden', !r); $('raceX').classList.toggle('hidden', !r); $('gamecols').classList.toggle('norace', !r);
   if(r){ renderRace(r, st); fitTrack(); }
   if(st && st.phase==='done' && !S.shownWin[r.id] && S.ready){
     S.shownWin[r.id]=1;
