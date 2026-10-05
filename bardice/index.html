@@ -13,12 +13,12 @@
 <style>
 :root{ --felt:#0d5c3f; --felt2:#0a4a33; --felt3:#063324; --wood:#8a5a2b; --wood2:#5e3b1a;
   --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --mute:rgba(247,243,232,.66); --line:rgba(247,243,232,.16);
-  --red:#e05252; --ok:#4cc27a; --die:min(58px, calc((100vw - 84px) / 5)); }
+  --red:#e05252; --ok:#4cc27a; --die:58px; }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--cream);
   background:var(--felt);min-height:100vh;overflow-x:hidden}
-.wrap{max-width:560px;margin:0 auto;padding:8px 12px 40px;display:flex;flex-direction:column;gap:10px}
+.wrap{max-width:560px;margin:0 auto;padding:8px 12px 14px;display:flex;flex-direction:column;gap:10px}
 button{font-family:inherit;cursor:pointer;border:none}
 .hdr{display:flex;align-items:center;gap:6px}
 .hdr .title{font-family:Georgia,"Times New Roman",serif;font-weight:700;color:var(--gold);font-size:21px;flex:1}
@@ -37,9 +37,24 @@ button{font-family:inherit;cursor:pointer;border:none}
 .cashrow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(0,0,0,.22);border-radius:12px;padding:7px 12px}
 .cashrow .l{font-size:10.5px;letter-spacing:1.2px;color:var(--mute);font-weight:800;white-space:nowrap}
 .cashrow .v{font-size:22px;font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
-.bar{background:linear-gradient(180deg,var(--wood),var(--wood2));border-radius:16px;padding:14px 12px;box-shadow:inset 0 2px 6px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:12px;align-items:center}
+.bar{background:linear-gradient(180deg,var(--wood),var(--wood2));border-radius:16px;padding:11px 12px;box-shadow:inset 0 2px 6px rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:9px;align-items:center}
 .bar .cap{color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,.45);}
-.dice{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;min-height:var(--die)}
+.dice{display:grid;width:100%;grid-template-columns:repeat(5,var(--die));gap:var(--gap,9px);justify-content:center;min-height:var(--die)}
+/* narrow screens: 3 on top, 2 centred below (never 4 + 1). fitDice() picks the mode. */
+.dice.two{grid-template-columns:repeat(6,calc(var(--die) / 2 + var(--gap,9px) / 2));column-gap:0;row-gap:22px}
+.dice.two .die{grid-column:span 2;justify-self:center}
+.dice.two .die:nth-child(4){grid-column:2 / span 2}
+.dice.two .die:nth-child(5){grid-column:4 / span 2}
+.strip{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(0,0,0,.22);border-radius:12px;padding:7px 10px;min-height:46px}
+.strip .lbl{font-size:13px;font-weight:700;line-height:1.3;min-width:0}
+.strip .lbl b{color:var(--gold)}
+.strip .nw{white-space:nowrap}
+.strip .mini{display:flex;gap:4px;flex:0 0 auto}
+.strip .die{border-radius:7px;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.strip .die.hit{box-shadow:0 0 0 2px var(--ok),0 2px 4px rgba(0,0,0,.4)}
+.strip.note{justify-content:center;text-align:center}
+.hint.won{color:var(--gold) !important;font-weight:900;font-size:15px}
+.bar.won{box-shadow:inset 0 2px 6px rgba(0,0,0,.35),0 0 0 2px var(--gold),0 0 18px rgba(240,198,116,.45)}
 .die{width:var(--die);height:var(--die);border-radius:12px;background:var(--cream);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:calc(var(--die)*.15);
   box-shadow:0 4px 8px rgba(0,0,0,.45);position:relative;transition:transform .15s}
 .die i{width:calc(var(--die)*.17);height:calc(var(--die)*.17);border-radius:50%;background:var(--ink);place-self:center}
@@ -88,7 +103,7 @@ button{font-family:inherit;cursor:pointer;border:none}
 .cap{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mute);font-weight:800;margin-bottom:5px}
 .hint{font-size:12.5px;color:var(--mute);text-align:center}
 .list{display:flex;flex-direction:column;gap:4px}
-.row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:rgba(0,0,0,.18);border-radius:9px;padding:7px 10px;font-size:13.5px}
+.row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:rgba(0,0,0,.18);border-radius:9px;padding:5px 10px;font-size:13.5px}
 .row .k{color:var(--mute);font-size:12px}
 .row .m{font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
 .row.me{outline:1.5px solid var(--gold)}
@@ -116,9 +131,13 @@ button{font-family:inherit;cursor:pointer;border:none}
 .txt{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--gold);background:rgba(0,0,0,.3);color:var(--cream)}
 #toasts{position:fixed;left:0;right:0;top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none}
 .toast{background:#1c2a24;color:var(--cream);border:1.5px solid var(--gold);border-radius:12px;padding:8px 12px;font-size:13.5px;box-shadow:0 6px 18px rgba(0,0,0,.5);max-width:92vw}
-.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:14px 0 8px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px}
-@media (max-width:360px){ .tabs button{flex:1 1 auto;font-size:12px;padding:10px 4px;letter-spacing:-.2px;white-space:nowrap} }
-@media (min-width:700px){ :root{--die:72px} .wrap{max-width:640px} .say{font-size:16px} .row{font-size:15px} }
+.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:4px 0 0;font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px}
+/* short phones (iPhone SE): tighten so a 4-player Ship, Captain & Crew round fits without scrolling */
+@media (max-height:740px){ .wrap{gap:7px} #ship{gap:6px !important} .row{padding:3px 10px} .cashrow{padding:5px 12px} .bar{padding:9px 12px;gap:7px}
+  .strip{min-height:40px;padding:5px 10px} .btn{padding:11px 14px} .cap{margin-bottom:3px} }
+@media (max-width:420px){ .tabs button{flex:1 1 auto;padding:9px 4px;white-space:nowrap} }
+@media (max-width:360px){ .tabs button{font-size:12px;letter-spacing:-.2px} }
+@media (min-width:700px){ .wrap{max-width:640px} .say{font-size:16px} .row{font-size:15px} }
 @media (prefers-reduced-motion:reduce){ .die,.die.tumbling,.die.hang,.die.teeter,.die.thud,.die.glow,.die.nope,.jp.bump,.cup.shake{animation:none !important} .beat.on{animation:none;opacity:1;transform:translate(-50%,-50%)} }
 </style>
 <style id="gn-safe">
@@ -163,13 +182,14 @@ button{font-family:inherit;cursor:pointer;border:none}
   </section>
 
   <!-- ===== SHIP, CAPTAIN & CREW ===== -->
-  <section id="ship" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+  <section id="ship" class="hidden" style="display:flex;flex-direction:column;gap:8px">
     <div class="bar">
       <div class="scc" id="sccMarks"><span>⚅ Ship</span><span>⚄ Captain</span><span>⚃ Crew</span></div>
       <div class="dice" id="sccDice"></div>
       <div class="beat" id="sccBeat"></div>
       <div class="hint" id="sccHint" style="color:var(--cream);text-shadow:0 1px 2px rgba(0,0,0,.45);"></div>
     </div>
+    <div class="strip hidden" id="sccWin"></div>
     <div class="btns" id="sccBtns"></div>
     <div class="say"><span>🍺</span><span id="sccSay"></span></div>
     <div><div class="cap" id="sccTableCap">The table</div><div class="list" id="sccList"></div></div>
@@ -255,7 +275,7 @@ window.BD=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v122";
+var BUILD_V="v123";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -276,7 +296,27 @@ function canPay(x){ return bankGet().cash>=x; }
 function atm(){ var b=bankGet(); b.cash+=ATM_CASH; b.atm+=ATM_CASH+ATM_FEE; lsSet('pt_bank_v1',b); sfx('chip'); toast('🏧 A hundred bucks. Three-dollar fee — it’s a VFW.'); renderMoney(); }
 
 var PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
-function dieHTML(v, cls){ var h='<div class="die '+(cls||'')+(v?'':' blank')+'">'; for(var i=0;i<9;i++) h+='<i'+(v&&PIPS[v].indexOf(i)>=0?'':' style="visibility:hidden"')+'></i>'; return h+'</div>'; }
+/* every die on the page comes from here. id: stable per die (handlers look dice up by id, never by
+   position, so a layout change can't send a tap or an outline to the wrong die). px: size override
+   (the winning-shake strip); otherwise the die takes its tray's --die, set by fitDice(). */
+function dieHTML(v, cls, id, px){
+  var h='<div class="die '+(cls||'')+(v?'':' blank')+'"'+(id?' data-id="'+id+'"':'')+(px?' style="--die:'+px+'px"':'')+'>';
+  for(var i=0;i<9;i++) h+='<i'+(v&&PIPS[v].indexOf(i)>=0?'':' style="visibility:hidden"')+'></i>';
+  return h+'</div>'; }
+function fitDiceSize(){ var b=$('sccDice'); return parseFloat(b.style.getPropertyValue('--die'))||58; }
+function dieEl(box, id){ return box.querySelector('[data-id="'+id+'"]'); }
+/* a tray is 5 across, as big as fits (up to 58px; 72 on a wide screen) with even gaps. If 5 across
+   would drop a die under a comfortable 56px tap size, it goes 3 on top + 2 centred below instead. */
+var TAP=56;
+function fitDice(box){
+  var w=box.clientWidth, max=innerWidth>=700?72:58, gap=9;
+  if(!w) return parseFloat(box.style.getPropertyValue('--die'))||max;   // hidden tab: fit it when it shows
+  var five=Math.floor((w-4*gap)/5), two=five<TAP;
+  var d=two?Math.min(max, Math.floor((w-2*gap)/3)):Math.min(max,five);
+  box.style.setProperty('--die', d+'px'); box.style.setProperty('--gap', gap+'px'); box.classList.toggle('two', two);
+  return d;
+}
+addEventListener('resize', function(){ ['sodDice','sccDice'].forEach(function(id){ var b=$(id); if(b && b.offsetParent) fitDice(b); }); });
 function toast(html){ var t=document.createElement('div'); t.className='toast'; t.innerHTML=html; $('toasts').appendChild(t); setTimeout(function(){ t.remove(); }, 3800); }
 function confetti(){ if(reduced()) return; for(var i=0;i<18;i++){ var d=document.createElement('div'); d.textContent=pick(['🎉','💵','🎲','✨','🍺']);
   d.style.cssText='position:fixed;top:-30px;left:'+(Math.random()*100)+'vw;font-size:24px;z-index:70;pointer-events:none;transition:transform 2s ease-in,opacity 2s';
@@ -295,18 +335,18 @@ function setFace(el, v){ el.classList.remove('blank'); var on=PIPS[v]||[]; Array
 function rnd(){ return 1+Math.floor(Math.random()*6); }
 function revealRoll(box, slots, finals, opts, done){
   if(ROLL) ROLL.skip();
-  var els=box.children, timers=[], cyc={}, landed={}, over=false, hung=false;
+  var pre=opts.idp||'', el_=function(i){ return dieEl(box, pre+i); }, timers=[], cyc={}, landed={}, over=false, hung=false;
   function later(fn,ms){ timers.push(setTimeout(fn,ms)); }
-  function land(k, quiet){ var i=slots[k], el=els[i]; if(landed[i]||!el) return; landed[i]=1; clearInterval(cyc[i]);
+  function land(k, quiet){ var i=slots[k], el=el_(i); if(landed[i]||!el) return; landed[i]=1; clearInterval(cyc[i]);
     setFace(el, finals[i]); el.classList.remove('tumbling','hang','teeter');
     if(!quiet){ el.classList.remove('thud'); void el.offsetWidth; el.classList.add('thud'); sfx('place'); }
     if(opts.onLand) opts.onLand(i); }
   function end(skipped){ if(over) return; over=true; timers.forEach(clearTimeout); for(var k=0;k<slots.length;k++) land(k,true); ROLL=null; done({skipped:skipped, hung:hung}); }
   if(reduced() || !slots.length){ for(var k=0;k<slots.length;k++) land(k,true); setTimeout(function(){ done({skipped:false, hung:false}); },0); return; }
-  slots.forEach(function(i){ var el=els[i]; setFace(el,rnd()); el.classList.add('tumbling'); el.style.animationDelay=(-Math.random()*0.26).toFixed(2)+'s';
+  slots.forEach(function(i){ var el=el_(i); setFace(el,rnd()); el.classList.add('tumbling'); el.style.animationDelay=(-Math.random()*0.26).toFixed(2)+'s';
     cyc[i]=setInterval(function(){ setFace(el,rnd()); }, 70); });
   function hang(k){
-    var i=slots[k], el=els[i], t=0; hung=true; clearInterval(cyc[i]);
+    var i=slots[k], el=el_(i), t=0; hung=true; clearInterval(cyc[i]);
     el.classList.remove('tumbling'); el.classList.add('hang');
     [70,85,100,120,145,175,215].forEach(function(g){ t+=g; later(function(){ setFace(el,rnd()); sfx('select'); }, t); });   // slowing down
     later(function(){ el.classList.remove('hang'); el.classList.add('teeter'); }, t+40);                                        // teeters on an edge
@@ -326,7 +366,7 @@ document.addEventListener('pointerdown', function(){ if(ROLL){ ROLL.skip(); swal
 document.addEventListener('click', function(e){ if(Date.now()<swallowUntil){ swallowUntil=0; e.stopPropagation(); e.preventDefault(); } }, true);
 function beat(id, html){ var b=$(id); b.innerHTML=html; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
 function nope(el){ if(!el) return; el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); }
-function glowAll(box){ Array.prototype.forEach.call(box.children, function(el){ el.classList.add('glow'); }); }
+function glowAll(box){ Array.prototype.forEach.call(box.querySelectorAll('.die'), function(el){ el.classList.add('glow'); }); }
 
 var tab=lsGet('bd_tab','shake');
 function renderMoney(){
@@ -359,8 +399,9 @@ function sodRender(){
   $('sodCap').innerHTML='Today’s number: <b>'+NUM+'</b> · '+(S.live?'shake '+P.taken+' of '+BD.SHAKES:'three shakes for a dollar');
   $('sodDice').innerHTML=S.dice.map(function(v,i){ var r=rolling.indexOf(i)>=0;
     var c=(S.live&&S.shakes<BD.SHAKES&&!r?'tap ':'')+(S.held[i]?'held ':'')+(v===NUM&&!r?'hit ':'');
-    return dieHTML(v,c); }).join('');
-  Array.prototype.forEach.call($('sodDice').children, function(el,i){ el.onclick=function(){ if(!S.live||S.busy||S.shakes>=BD.SHAKES||!S.dice[i]) return; S.held[i]=!S.held[i]; sfx('select'); sodRender(); }; });
+    return dieHTML(v,c,'sd'+i); }).join('');
+  fitDice($('sodDice'));
+  Array.prototype.forEach.call($('sodDice').querySelectorAll('.die'), function(el){ var i=+el.dataset.id.slice(2); el.onclick=function(){ if(!S.live||S.busy||S.shakes>=BD.SHAKES||!S.dice[i]) return; S.held[i]=!S.held[i]; sfx('select'); sodRender(); }; });
   var b=$('sodBtn');
   if(!S.live){ b.textContent='🎲 Shake · $1'; b.disabled=false; }
   else if(S.busy){ b.textContent='🎲 Shaking…'; b.disabled=true; }
@@ -388,7 +429,8 @@ function sodShake(){
   S.rolling=slots; sodRender();
   var last=slots[slots.length-1];
   revealRoll($('sodDice'), slots, S.dice, {
-    onLand:function(i){ if(S.dice[i]===NUM){ var el=$('sodDice').children[i]; if(el) el.classList.add('hit'); } },
+    idp:'sd',
+    onLand:function(i){ if(S.dice[i]===NUM){ var el=dieEl($('sodDice'),'sd'+i); if(el) el.classList.add('hit'); } },
     // one die from five of the number (= the jackpot): the last die hangs
     suspense:function(){ return S.dice.every(function(v,i){ return i===last || v===NUM; }); }
   }, function(res){
@@ -402,7 +444,7 @@ function sodShake(){
     $('sodSay').innerHTML=(res.hung?'<b>So close!</b> ':'')+(h?pick(['<b>'+BD.faceCount(NUM,h)+'</b>! Hold ’em and shake the rest.','There’s <b>'+h+'</b>. Keep goin’, hon.','<b>'+h+' of 5</b>. Darlene’s watchin’.']):pick(['Nothin’ yet. Shake ’em again.','Not a '+NUM+' in the bunch. Uff da.','Cold dice. Try again.']));
     sodRender();
     if(five){ glowAll($('sodDice')); beat('sodBeat','Five of a kind!'); sfx('good'); }
-    else if(res.hung){ nope($('sodDice').children[last]); beat('sodBeat','So close!'); sfx('bad'); }
+    else if(res.hung){ nope(dieEl($('sodDice'),'sd'+last)); beat('sodBeat','So close!'); sfx('bad'); }
   });
 }
 // the jackpot: amount counts up over the table, dice glow, confetti
@@ -428,7 +470,7 @@ function sodFinish(res){
   var five=entry.dice.every(function(v){ return v===entry.dice[0]; });
   if(r.jackpot){ glowAll($('sodDice')); jackpotParty(amt); var jb=$('jpBox'); jb.classList.remove('bump'); void jb.offsetWidth; jb.classList.add('bump'); }
   else if(five){ glowAll($('sodDice')); beat('sodBeat','Five of a kind!'); }
-  else if(res && res.hung){ var lastEl=$('sodDice').children[(res.lastSlot!=null)?res.lastSlot:4]; nope(lastEl); beat('sodBeat','So close!'); }
+  else if(res && res.hung){ nope(dieEl($('sodDice'),'sd'+(res.lastSlot!=null?res.lastSlot:4))); beat('sodBeat','So close!'); }
 }
 
 /* ---------- the shared jar (ntfy) ---------- */
@@ -505,11 +547,12 @@ function sccRoll(){
   var lastRoll=p.rolls>=BD.SCC_ROLLS && !before.crew && !p.bot;
   function crewed(ds){ return BD.sccTake(before, ds).crew; }
   revealRoll($('sccDice'), slots, show, {
+    idp:'sc',
     suspense:function(){ if(!lastRoll) return false; var rev=rolled.slice(0,-1); if(crewed(rev)) return false;
       for(var v=1;v<=6;v++) if(crewed(rev.concat([v]))) return true; return false; }
   }, function(res){
     p.dice=finalDice; SC.rolling=null; SC.busy=false;
-    if(res.hung){ sccRender(); if(p.st.crew){ beat('sccBeat','Crew’s aboard!'); sfx('good'); } else { nope($('sccDice').children[4]); beat('sccBeat','So close!'); } }
+    if(res.hung){ sccRender(); if(p.st.crew){ beat('sccBeat','Crew’s aboard!'); sfx('good'); } else { nope(dieEl($('sccDice'),'sc4')); beat('sccBeat','So close!'); } }
     var c=BD.cargoOf(p.st), left=BD.SCC_ROLLS-p.rolls;
     if(p.st.crew && !left) sccStand();
     else if(!p.st.crew && !left){ p.done=true; p.sunk=true; $('sccSay').innerHTML=(p.bot?esc(p.name):'You')+' '+pick(['sank — no crew aboard.','went down with the ship.','never got the crew. Zero.']); sfx('bad'); sccNext(); }
@@ -554,18 +597,34 @@ function sccRender(){
   var p=cur(), btns=$('sccBtns');
   var marks=$('sccMarks').children, st=p?(SC&&SC.rolling?SC.rolling.st:p.st):{};
   marks[0].classList.toggle('on',!!st.ship); marks[1].classList.toggle('on',!!st.captain); marks[2].classList.toggle('on',!!st.crew);
+  var strip=$('sccWin'), hint=$('sccHint'), bar=$('sccDice').parentNode;
+  strip.classList.add('hidden'); hint.classList.remove('won'); bar.classList.remove('won');
+  $('sccSay').parentNode.classList.toggle('hidden', !!(SC && SC.over));   // at round end the caption + strip tell it
   if(!SC || SC.over){
-    // between rounds, show the winning dice (or the last ones rolled)
-    var sp=SC&&(SC.players.filter(function(q){ return q.won; })[0]||cur());
-    $('sccDice').innerHTML=(sp?sp.dice:[0,0,0,0,0]).map(function(v,i){ return dieHTML(v, sp&&sp.st.crew&&i>=3?'hit':''); }).join('');
-    if(sp){ marks[0].classList.toggle('on',!!sp.st.ship); marks[1].classList.toggle('on',!!sp.st.captain); marks[2].classList.toggle('on',!!sp.st.crew); }
+    // between rounds the tray keeps YOUR last shake, exactly as it landed; the winner goes in the strip below
+    var me=SC&&SC.players.filter(function(q){ return !q.bot; })[0];
+    $('sccDice').innerHTML=(me?me.dice:[0,0,0,0,0]).map(function(v,i){ return dieHTML(v, me&&me.st.crew&&i>=3?'hit':'', 'sc'+i); }).join('');
+    fitDice($('sccDice'));
+    var ms=me?me.st:{};
+    marks[0].classList.toggle('on',!!ms.ship); marks[1].classList.toggle('on',!!ms.captain); marks[2].classList.toggle('on',!!ms.crew);
+    if(me){
+      var winners=SC.players.filter(function(q){ return q.won; }), best=winners.length?BD.cargoOf(winners[0].st):0;
+      if(me.won && winners.length===1){ hint.textContent='You take it with '+best+' \u2014 '+money(me.won); hint.classList.add('won'); bar.classList.add('won'); }
+      else if(me.won){ hint.textContent='You split it with '+best+' \u2014 '+money(me.won); hint.classList.add('won'); bar.classList.add('won'); }
+      else hint.textContent='Your shake \u00b7 '+(me.sunk?'sank':'cargo '+BD.cargoOf(me.st));
+      if(!winners.length){ strip.className='strip note'; strip.innerHTML='<div class="lbl">⚓ Everybody sank · <b>'+money(SC.carry||SC.pot)+'</b> rides to the next round</div>'; }
+      else if(winners.length>1){ strip.className='strip note'; strip.innerHTML='<div class="lbl">🤝 Tie on cargo <b>'+best+'</b> · '+winners.map(function(q){ return q.bot?esc(q.name):'you'; }).join(' & ')+' split the pot, '+money(winners[0].won)+' each</div>'; }
+      else if(winners[0].bot){ var wq=winners[0];
+        strip.className='strip'; strip.innerHTML='<div class="lbl">🏆 '+esc(wq.name)+'’s <span class="nw">winning shake</span> <span class="nw">· cargo <b>'+best+'</b></span></div><div class="mini">'
+          +wq.dice.map(function(v,i){ return dieHTML(v, wq.st.crew&&i>=3?'hit':'', 'sw'+i, Math.round(fitDiceSize()*0.57)); }).join('')+'</div>'; }
+    } else hint.textContent='Ship (6), captain (5), crew (4) in order \u2014 then your other two dice are the cargo.';
     btns.innerHTML='<button class="btn" id="sccGo">⚓ '+(SC?'Next round':'Deal me in')+' · '+money(cfg.ante)+' ante</button>';
     $('sccGo').onclick=function(){ var carry=SC&&SC.carry||0; sccNew(); if(SC&&carry){ SC.pot+=carry; $('sccSay').innerHTML+=' Plus '+money(carry)+' carried over — <b>'+money(SC.pot)+'</b>!'; renderMoney(); } };
-    $('sccHint').textContent=sp?(sp.bot?sp.name+'\u2019s':'Your')+' '+(sp.won?'winning ':'')+'dice':'Ship (6), captain (5), crew (4) in order \u2014 then your other two dice are the cargo.';
     if(!SC) $('sccSay').innerHTML='Pull up a stool. '+(cfg.n-1)+' regulars are in for '+money(cfg.ante)+' a round.';
   } else {
     var setN=(st.ship?1:0)+(st.captain?1:0)+(st.crew?1:0), R=SC.rolling;
-    $('sccDice').innerHTML=(R?R.dice:p.dice).map(function(v,i){ return dieHTML(v, (i<setN?'held ':'')+(!R&&st.crew&&i>=3?'hit ':'')); }).join('');
+    $('sccDice').innerHTML=(R?R.dice:p.dice).map(function(v,i){ return dieHTML(v, (i<setN?'held ':'')+(!R&&st.crew&&i>=3?'hit ':''), 'sc'+i); }).join('');
+    fitDice($('sccDice'));
     var mine=!p.bot, left=BD.SCC_ROLLS-p.rolls;
     $('sccHint').textContent=SC.rolling?'Tap anywhere to skip':(p.bot?p.name+'’s':'Your')+' turn · '+left+' roll'+(left===1?'':'s')+' left';
     if(mine){

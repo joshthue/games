@@ -47,6 +47,28 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
 - **Die-face names** come from the engine, `BD.faceName(v, n)` / `BD.faceCount(v, n)`:
   1 five, 2 fives, 0 fives, 1 six. Every line that names the number of the day uses them.
 
+## The dice tray
+- **One render function** for every die, `dieHTML(v, cls, id, px)`: the trays and the winning-shake
+  strip share it. Each die carries a **stable id** (`sd0`–`sd4` in Shake of the Day, `sc0`–`sc4` at
+  the Ship table, `sw0`–`sw4` in the strip). Holds, outlines, the roll reveal and the near-miss shake
+  all find dice by id (`dieEl(box, id)`), never by position.
+- **Layout** (`fitDice(box)`, on every render and on resize): five across in a CSS grid, as big as
+  the tray allows (up to 58px; 72px on a wide screen) with even 9px gaps. If five across would drop a
+  die under **56px**, the tray goes **3 on top + 2 centred below** at full size. Never 4 + 1. Same
+  rule while rolling and at round end. On a 375-wide iPhone it's one row; on a 320-wide one, 3 + 2.
+
+## Ship, Captain & Crew round end
+- The tray keeps **your final shake**, exactly as it landed (set-aside dice first, cargo outlined
+  green). The Ship / Captain / Crew chips light only for what you actually got.
+- Caption: **"Your shake · cargo N"** or **"Your shake · sank"**. If you won: **"You take it with 12 —
+  $4"** (or "You split it with…" on a tie) in gold, and the tray gets a gold win ring.
+- **Winning-shake strip**, between the tray and Next round: "🏆 Darrell's winning shake · cargo 12"
+  with the winner's five dice in one row at about 57% of the tray's die size, cargo outlined green.
+  Skipped when you won outright. A tie says who split it and for how much; when everybody sank it says
+  the pot rides to the next round. No dice in either case.
+- At round end Darlene's line steps aside (the caption and strip say who won). On short phones
+  (under 740px tall) spacing tightens so a four-player round fits an iPhone SE without scrolling.
+
 ## The roll
 Results are rolled **before** anything moves; the animation only reveals them
 (`revealRoll(box, slots, finals, opts, done)`, shared by both games).
@@ -71,6 +93,15 @@ set-aside, the bot's stand rule — no DOM) and the UI + relay. `../sfx.js` for 
 Reduce Motion.
 
 ## Tested
+v123, headless, forced dice, at 390×844, 375×667 and 320×568: you win (no strip, gold caption), a
+bot wins (you stood on 3; the strip shows its five dice in one row, 33px, cargo outlined), you sank
+(chips off, "Your shake · sank"), ship and captain then sank (only those two chips), everybody sank
+(strip says the pot rides), and a tie (strip says who split it). Tray is one row at 390 and 375,
+3 + 2 at 320 with 58px dice, both mid-roll and at round end; tapping the bottom-right die at 320 holds
+that die. Content fits without scrolling at 390×844 and 375×667 (four players, plus the status bar);
+a 320×568 first-generation SE still scrolls. The v122 roll suite still passes.
+
+Earlier (v122):
 v122, headless at 390, 320, 430 and 834 wide: the name, jackpot and ATM on one line, the amount and
 the cash label never clipped, no horizontal scroll, Ship mode shows the ATM alone. With forced dice:
 a normal five-die roll settles left to right in 1.36s with no result shown early; a near miss hangs
