@@ -76,7 +76,10 @@
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:12px;}
   /* the primary action stays reachable no matter how tall the table gets */
   #controls{position:sticky; bottom:0; z-index:5; padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px));
-    background:linear-gradient(to top, var(--felt2) 55%, rgba(10,74,51,0));}
+    background:linear-gradient(to top, var(--felt2) 55%, rgba(10,74,51,0));
+    /* its own compositing layer: without it iPad Safari repainted only the part of the bar under the
+       cards that just changed, so the freshly drawn buttons showed through a slot and the rest went missing */
+    -webkit-transform:translateZ(0); transform:translateZ(0);}
   .notes{max-width:470px; margin:2px auto 0;}
   .note{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:7px 11px; margin:6px 0; font-size:13px; line-height:1.45;}
   .note.win{border-left-color:var(--green);} .note.lose{border-left-color:var(--red);}
@@ -554,7 +557,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v121", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v127", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

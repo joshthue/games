@@ -48,3 +48,8 @@ trade-off XL is for.
 
 Open `index.html` in a browser — no build step or dependencies. Works offline once
 loaded, as part of the Game Night home-screen app.
+
+## iPad Safari: action buttons repaint (v127)
+The sticky action bar at the bottom gets its own compositing layer (`transform:translateZ(0)`).
+Without it, iPad Safari repainted only the strip of the bar under the cards that had just changed,
+so after a deal the new buttons showed through a slot that wide and the rest of the bar stayed blank.
