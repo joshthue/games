@@ -147,7 +147,7 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 #heroOdds{font-size:calc(11px * var(--fs));color:var(--ink-faint);white-space:nowrap}
 
 /* ---------- action bar ---------- */
-#actions{position:sticky;bottom:0;z-index:20;-webkit-transform:translateZ(0);transform:translateZ(0);flex:0 0 auto;background:linear-gradient(180deg,rgba(18,15,14,.6),var(--bg) 22%);
+#actions{position:sticky;bottom:0;z-index:20;flex:0 0 auto;background:linear-gradient(180deg,rgba(18,15,14,.6),var(--bg) 22%);
   padding:6px 10px calc(8px + env(safe-area-inset-bottom));max-width:700px;width:100%;margin:0 auto}
 .arow{display:flex;flex-direction:row;flex-wrap:nowrap;gap:7px}
 .abtn{flex:1 1 0;min-width:0;height:calc(var(--tap) * var(--fs));border-radius:12px;font-size:calc(14.5px * var(--fs));font-weight:700;
@@ -2022,7 +2022,7 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 })();
 </script>
 <script>
-(function(){ var V="v127", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+(function(){ var V="v128", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
   var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));

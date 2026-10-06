@@ -49,7 +49,11 @@ trade-off XL is for.
 Open `index.html` in a browser — no build step or dependencies. Works offline once
 loaded, as part of the Game Night home-screen app.
 
-## iPad Safari: action buttons repaint (v127)
+## iPad Safari: action buttons repaint (v127, v128)
 The sticky action bar at the bottom gets its own compositing layer (`transform:translateZ(0)`).
 Without it, iPad Safari repainted only the strip of the bar under the cards that had just changed,
 so after a deal the new buttons showed through a slot that wide and the rest of the bar stayed blank.
+v128: the layer alone didn't hold - the buttons came back jacked a hand later. The bar is now
+`position:fixed` to the bottom of the screen instead of sticky (`.wrap` has 96px bottom padding so
+nothing hides under it), and after the buttons are rebuilt the bar is dropped from layout and put
+back so WebKit paints it whole. Hold'em's bar goes back to plain sticky.

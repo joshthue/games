@@ -201,3 +201,4 @@ loaded, as part of the Game Night home-screen app.
 The sticky action bar at the bottom gets its own compositing layer (`transform:translateZ(0)`).
 Without it, iPad Safari repainted only the strip of the bar under the cards that had just changed,
 so after a deal the new buttons showed through a slot that wide and the rest of the bar stayed blank.
+v128: that layer is removed again here (it didn't hold in Ultimate Texas Hold'em); Hold'em's bar is plain sticky as before.
