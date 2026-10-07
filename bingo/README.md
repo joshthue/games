@@ -5,6 +5,24 @@ the couch/group-chat crowd. Tap squares as they happen and chase the pattern.
 
 Formerly *On Patrol Live BINGO* at `../onpatrolbingo/` (that path now redirects here).
 
+## Header and start screen
+
+The page uses the standard Game Night header (`../gn-header.js`): **‹ Games**,
+**Rules**, **Menu**, and the game's name (e.g. *On Patrol BINGO*, following the
+theme) on its own line, with the connection dot and status beside it.
+
+- **Rules** opens a How to play sheet, built from the live theme, pattern and centre square.
+- **Menu** is a set of shortcuts to the existing chips and modals: Invite, New
+  round, Connection details, Leave room (in a game), Tonight's game, Matchup,
+  Win pattern, Team, Call packs, Organize, **Square text**, Siren sound, and
+  **Back to all games**.
+
+The start screen is the shared setup sheet (`../gn-setup.js`): your name,
+**Tonight's game**, the **Matchup** (football only) and the **Room code** with a
+suggested code you can tap to use. **Team**, **Win pattern** and **Square text** are
+under **More options**. The **Start playing** button is pinned to the bottom of
+the screen, so you never have to scroll to it. Leaving a room brings the sheet back.
+
 ## Tonight's game (themes)
 
 The **🎬 chip** (or the setup screen) picks the game, grouped by category; it's a
@@ -88,7 +106,7 @@ are derived automatically, particles included (Van Ginkel, Van Ness).
 **📣 Invite** (next to ↩︎ Undo) builds a link carrying the room, the game, the win
 pattern and the matchup, and hands it to Share / Copy / Text / Email. Whoever opens
 it sees "You're invited 🎉", the game and room already set, and **one field: their
-name**. Everything else is hidden behind "⚙️ Change the game or room" for anyone who
+name**. Everything else is hidden behind "Change the game or room" for anyone who
 wants it.
 
 Params are `?room=&theme=&pat=&vs=away|home&v=` — a link can be hand-written too.
@@ -119,7 +137,7 @@ trap someone in a reload loop. An invite older than the running build is ignored
   need to share **one** working relay. The room code is a shared password, not private.
 - Transport is a long-lived SSE stream per relay (instant, one request), falling
   back to slow HTTPS polling when a stream is blocked.
-- **Tap the status line** (top-right, next to the dot) for a per-relay diagnosis —
+- **Tap the status line** (next to the dot, beside the game name), or Menu → Connection details, for a per-relay diagnosis —
   connected / blocked / rate-limited — plus the room topic. Tapping also retries.
   If both relays say blocked, that network is filtering them: try cell data or a hotspot.
 
@@ -140,8 +158,8 @@ squares on every phone, either of you can tap, and the boards stay in sync.
 
 ## Win pattern
 
-**Cover all is the default** — the whole card. Change it from the setup screen or
-the 🎯 chip next to your name during a game:
+**Cover all is the default** — the whole card. Change it from More options on the
+setup screen, Menu, or the 🎯 chip next to your name during a game:
 
 | Pattern | Wins on |
 | --- | --- |
@@ -155,18 +173,24 @@ The pattern is a **house rule, not a personal setting**: whoever changes it sets
 it for everyone in the room (last change wins) and the others get a toast saying
 who changed it to what. Someone joining mid-game picks it up from the room.
 
-## Text size
+## Square text
 
-The **🔠 chip** beside your name cycles **S → M → L → XL** and is remembered per
-phone (**L** is the default — these cards get read across a room). Only the card,
-the tapped-square readout and the suggestion text scale; the mini boards stay
-mark-only.
+Square text follows the **shared Game Night card-text setting** (`../cardsize.js`,
+`localStorage.gn_cardtext`): **S / M / L / XL** under **Square text** in Menu and in
+More options. One setting covers every game on the phone. Shared **M** is BINGO's old
+default **L** look (13.5px squares, 88px tall); the CSS scales the square font, the
+cell's minimum height, the tapped-square readout and the suggestion text by
+`var(--cardtext)`. The mini boards stay mark-only. The old private 🔠 chip
+(`opl_textsize`) is gone. Its value is copied into `gn_cardtext` once, on load, and
+only if `gn_cardtext` isn't already set (old S/M→S, L→M, XL→L).
 
 Bigger sizes grow the cells **downward** — `aspect-ratio` is dropped in favour of
 `min-height`, since keeping the square ratio would widen the cells past the screen.
 Each square then auto-fits: a canvas measures the longest word against the cell's
 inner width and steps the text down until it fits, only breaking a word when one
-is genuinely too long (paraphernalia, windshield) rather than mangling every call.
+is genuinely too long rather than mangling every call. On a 320px phone the cells
+are only ~46px wide, so many longer words break at every size. This happened
+before the shared setting as well.
 
 ## The card
 
@@ -320,7 +344,7 @@ New rounds are never held — a new round always deals.
 
 ## Build stamp
 
-The bottom of the setup screen and the suggestions panel show `build vNN · <date>`
+The setup screen (above Start) and the suggestions panel show `build vNN · <date>`
 in your local time — the quickest way to confirm a refresh actually took.
 `BUILD_V` / `BUILD_ISO` sit at the top of the script and are bumped together with
 the `sw.js` cache version.

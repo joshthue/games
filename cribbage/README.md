@@ -5,6 +5,14 @@ A single-file, play-in-the-browser game of **Cribbage** — the classic race to 
 you set the table up before the deal.
 
 ## Set up your game
+The game opens on the standard Game Night setup sheet (`../gn-setup.js`) under the standard
+header (‹ Games, Log, Rules, Menu). Name, **Players** and **Game to** are the key rows; the
+**Seats** rows stay on the sheet itself (not under More options) because choosing Phone for a
+seat is how you start a two-phone game. Tips, four-color deck, speed, card size and card text
+are under **More options**. **Deal** is pinned at the bottom (it reads **Create the room** when
+any seat is a phone); **Join a friend's game with a code** under it opens the join screen.
+Menu → *New game / change players* brings the sheet back.
+
 - **Players: 2, 3 or 4.** Four handed is **Partners** (across from each other, one shared score;
   your partner's crib is yours) or **Every player** for themselves.
 - **Game to 121** (standard) or **61** (short). Skunk lines move with it: under 91 / 61 in a 121
@@ -62,8 +70,9 @@ a page make noise before the first touch, so the audio context waits for a gestu
 
 ## Card size
 
-Cards scale with the shared **S / M / L / XL** control (`../cardsize.js`), which sits
-next to the four-color deck toggle. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
+Cards scale with the shared **S / M / L / XL** control (`../cardsize.js`), the **Card size**
+row in Menu and under More options. **Card text** (S / M / L / XL, `--cardtext`) scales just
+the printed rank and pip; cards clip their print so XL text can't spill. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
 rather than pixel sizes, because the games don't share a base card size — a multiplier
 scales each game from its own design. The choice is stored once for the whole origin,
 like the mute key, so the size you pick here is the size in every Game Night card game.

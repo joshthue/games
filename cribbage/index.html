@@ -76,14 +76,14 @@
 
   .card{width:calc(44px * var(--size)); height:calc(62px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
     box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; display:flex; align-items:center; justify-content:center;
-    user-select:none; border:1px solid #d8d2c0; transition:transform .12s ease, box-shadow .12s ease;}
+    user-select:none; overflow:hidden; border:1px solid #d8d2c0; transition:transform .12s ease, box-shadow .12s ease;}
   .card.sm{width:calc(34px * var(--size)); height:calc(48px * var(--size));}
-  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(13px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{font-size:calc(24px * var(--size));} .card.sm .pip{font-size:calc(19px * var(--size));}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(13px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(13px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{font-size:calc(24px * var(--size) * var(--cardtext,1));} .card.sm .pip{font-size:calc(19px * var(--size) * var(--cardtext,1));}
   /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
   .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
-  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
+  .seg.cardsize button,.seg.cardtext button{padding:5px 9px; font-size:12px; min-width:30px;}
   .card.red{color:var(--red);} .card.black{color:#1c2a24;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.playable{cursor:pointer;}
@@ -128,7 +128,7 @@
   .setup-opt.on{background:var(--gold); color:var(--ink);}
   .codebox{font-size:40px; letter-spacing:10px; font-weight:800; color:var(--gold); text-align:center; background:rgba(0,0,0,.3); border-radius:12px; padding:14px; margin:10px 0;}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:420px){ .card{width:calc(40px * var(--size));height:calc(56px * var(--size));} .card.sm{width:calc(32px * var(--size));height:calc(46px * var(--size));} .card .pip{font-size:calc(19px * var(--size));} h1{font-size:18px;} }
+  @media(max-width:420px){ .card{width:calc(40px * var(--size));height:calc(56px * var(--size));} .card.sm{width:calc(32px * var(--size));height:calc(46px * var(--size));} .card .pip{font-size:calc(19px * var(--size) * var(--cardtext,1));} h1{font-size:18px;} }
   /* v115: up to four players - lanes per side, everybody else in a row of seats */
   .track.p2 .fill{background:linear-gradient(90deg,#6fd08c,#178a3a);}
   .track.p3 .fill{background:linear-gradient(90deg,#f3c96b,#b8862e);}
@@ -158,6 +158,7 @@
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
 <script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -192,6 +193,7 @@
 
 <div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
 
+<div class="gn-setup" id="setup" hidden></div>
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
 <script src="../sfx.js"></script>
@@ -273,7 +275,7 @@ function D(ms){ const m={normal:1,fast:0.45,superfast:0.2}[settings.speed]||1; r
 function isAuto(){ return settings.speed!=="normal"; }
 function handoverMs(){ return settings.speed==="superfast"?700:1400; }
 function recapMs(){ return settings.speed==="superfast"?2000:4000; }
-function setSpeed(v){ settings.speed=v; if(curOverlay.kind==="menu") openMenu(); else if(curOverlay.kind==="boot") chooseMode(); }
+function setSpeed(v){ settings.speed=v; if(curOverlay.kind==="menu") openMenu(); else if(!document.getElementById("setup").hidden) chooseMode(); }
 let localSel=[];
 let net={online:false, role:null, seat:0, code:null};
 let curOverlay={kind:null,key:null};
@@ -797,7 +799,8 @@ function openMenu(){
     <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div>
     <h3>Deck &amp; speed</h3>
-    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div></div>
+    ${CARDSIZE.rowsHTML()}
     <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;"><span>Speed</span><div class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></div></div>
     <h3>Your name</h3>
     <input class="txtinp" value="${settings.playerName==='You'?'':escC(settings.playerName)}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
@@ -1045,29 +1048,34 @@ function chooseMode(){
       ${k==='bot'?`<input class="txtinp sm" maxlength="16" value="${escC(setup.bots[i-1]||'')}" placeholder="${BOT_DEFAULTS[i-1]}" oninput="setBotName(${i},this.value)">`:`<div class="muted ph">a friend joins with the code</div>`}</div>`;
   }
   const phones=setup.kinds.slice(1,n).filter(k=>k==="phone").length;
-  const html=`<button class="btn sec sm close" onclick="exitSetup()">✕</button>
-    <h2>♠ Cribbage ♥</h2><p>Set up your game.</p>
-    <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseMode')">📖 How to play</button></div>
-    <h3>Your name</h3>
-    <input class="txtinp" value="${settings.playerName==='You'?'':escC(settings.playerName)}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
-    <h3>Players</h3>
-    <div class="seg"><button class="${n===2?'on':''}" onclick="setN(2)">2</button><button class="${n===3?'on':''}" onclick="setN(3)">3</button><button class="${n===4?'on':''}" onclick="setN(4)">4</button></div>
-    ${n===4?`<div class="seg" style="margin-left:8px"><button class="${setup.teams?'on':''}" onclick="setTeams(true)">Partners</button><button class="${!setup.teams?'on':''}" onclick="setTeams(false)">Every player</button></div>`:""}
-    <p class="muted" style="margin:6px 0 0">${n===2?"6 cards each, throw 2 to the crib.":n===3?"5 cards each, throw 1; one card off the deck goes to the crib.":(setup.teams?"5 cards each, throw 1. Partners sit across and share one score.":"5 cards each, throw 1, every player scores for themselves.")}</p>
-    <h3>Game to</h3>
-    <div class="seg"><button class="${setup.target!==61?'on':''}" onclick="setTarget(121)">121 · standard</button><button class="${setup.target===61?'on':''}" onclick="setTarget(61)">61 · short</button></div>
-    <h3>Seats</h3>
-    <div class="seatrow"><div class="sl">You</div><div class="muted ph">${escC(settings.playerName||"You")}${phones?" · you host the room":""}</div></div>
-    ${seats}
-    <button class="btn" style="width:100%;margin-top:12px;padding:13px" onclick="startSetup()">${phones?`📱 Create the room · ${phones} phone${phones>1?"s":""} to join`:"🃏 Deal"}</button>
-    <button class="setup-opt" onclick="showJoin()">🔑 Join a friend's game with a code</button>
-    <h3>Tips</h3>
-    <div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="bootToggle(this)"></button><span id="bootTogTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
-    <div class="seg" style="margin:10px 0;opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></div>
-    <h3>Deck &amp; speed</h3>
-    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
-    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;"><span>Speed</span><div class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></div></div>`;
-  openPanel(html,"boot");
+  closeOverlay();
+  const el=document.getElementById("setup");
+  // the sheet re-renders on every choice; keep More options open/closed and the scroll where they were
+  const prevMore=el.querySelector(".gn-more"), moreOpen=prevMore?prevMore.open:false;
+  const prevBody=el.hidden?null:el.querySelector(".gn-setup-body"), bodyTop=prevBody?prevBody.scrollTop:0;
+  el.innerHTML=`<div class="gn-setup-body">
+      <p class="gn-pitch">Peg to ${setup.target===61?"61":"121"} against bots, or set a seat to Phone and friends join from their own phones with a code.</p>
+      <label class="gn-field">Your name<input value="${settings.playerName==='You'?'':escC(settings.playerName)}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You"></label>
+      <div class="gn-row"><span>Players</span><span class="seg"><button class="${n===2?'on':''}" onclick="setN(2)">2</button><button class="${n===3?'on':''}" onclick="setN(3)">3</button><button class="${n===4?'on':''}" onclick="setN(4)">4</button></span>
+        ${n===4?`<div style="flex-basis:100%;display:flex;justify-content:flex-end"><span class="seg"><button class="${setup.teams?'on':''}" onclick="setTeams(true)">Partners</button><button class="${!setup.teams?'on':''}" onclick="setTeams(false)">Every player</button></span></div>`:""}
+        <span class="gn-note">${n===2?"6 cards each, throw 2 to the crib.":n===3?"5 cards each, throw 1; one card off the deck goes to the crib.":(setup.teams?"5 cards each, throw 1. Partners sit across and share one score.":"5 cards each, throw 1, every player scores for themselves.")}</span></div>
+      <div class="gn-row"><span>Game to</span><span class="seg"><button class="${setup.target!==61?'on':''}" onclick="setTarget(121)">121</button><button class="${setup.target===61?'on':''}" onclick="setTarget(61)">61 short</button></span></div>
+      <div class="gn-row" style="margin-bottom:0"><span>Seats</span><span class="gn-note" style="flex-basis:auto;margin:0;text-align:right">${phones?"you host the room":"Bot, or Phone for a friend"}</span></div>
+      ${seats}
+      <details class="gn-more"${moreOpen?" open":""}><summary>More options</summary>
+        <div class="gn-row"><span>Tips</span><span style="display:flex;gap:8px;align-items:center"><button class="toggle ${settings.tipsOn?'on':''}" onclick="bootToggle(this)"></button>
+          <span class="seg" id="bootSeg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="bl-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshBootLevel();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="bl-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshBootLevel();">Advanced</button></span></span></div>
+        <div class="gn-row"><span>Four-color deck</span><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button></div>
+        <div class="gn-row"><span>Speed</span><span class="seg"><button class="${settings.speed==='normal'?'on':''}" onclick="setSpeed('normal')">Normal</button><button class="${settings.speed==='fast'?'on':''}" onclick="setSpeed('fast')">Fast</button><button class="${settings.speed==='superfast'?'on':''}" onclick="setSpeed('superfast')">Super</button></span></div>
+        ${CARDSIZE.rowsHTML()}
+      </details>
+    </div>
+    <div class="gn-setup-foot">
+      <button class="gn-start" onclick="startSetup()">${phones?"Create the room":"Deal"}</button>
+      <button class="gn-alt" onclick="showJoin()">Join a friend's game with a code</button>
+    </div>`;
+  GNSETUP.show(el);
+  if(bodyTop) el.querySelector(".gn-setup-body").scrollTop=bodyTop;
 }
 function setN(n){ setup.n=n; saveSetup(); chooseMode(); }
 function setTeams(t){ setup.teams=t; saveSetup(); chooseMode(); }
@@ -1075,13 +1083,15 @@ function setTarget(t){ setup.target=t; saveSetup(); chooseMode(); }
 function setSeat(i,k){ setup.kinds[i]=k; saveSetup(); chooseMode(); }
 function setBotName(i,v){ setup.bots[i-1]=String(v||"").trim().slice(0,16)||BOT_DEFAULTS[i-1]; saveSetup(); }
 function startSetup(){
+  GNSETUP.hide("setup");   // the host lobby / the table take over from here, as the old panel did
   const phones=setup.kinds.slice(1,setup.n).filter(k=>k==="phone").length;
   if(phones) hostCreate(); else startCpu();
 }
-function bootToggle(el){settings.tipsOn=!settings.tipsOn;updateTipVisibility();chooseMode();}
+function bootToggle(el){settings.tipsOn=!settings.tipsOn;updateTipVisibility();el.classList.toggle("on",settings.tipsOn);const g=document.getElementById("bootSeg");g.style.opacity=settings.tipsOn?1:.4;g.querySelectorAll("button").forEach(b=>b.disabled=!settings.tipsOn);}
 function refreshBootLevel(){document.getElementById("bl-b").classList.toggle("on",settings.tipLevel==='beginner');document.getElementById("bl-a").classList.toggle("on",settings.tipLevel==='advanced');}
 function startCpu(){ settings.mode="cpu"; net={online:false, role:null, seat:0, code:null}; updateTipVisibility(); closeOverlay(); newGame(); }
 function showJoin(){
+  GNSETUP.hide("setup");   // the join panel replaces the sheet; its Back button brings the sheet back
   const html=`<button class="btn sec sm close" onclick="chooseMode()">‹ Back</button><h2>Join a game</h2>
     <p>Type the 4-character code the host read to you. You'll get the next open seat.</p>
     <input class="code" id="codeInput" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="ABCD">
@@ -1119,9 +1129,8 @@ document.getElementById("tipBtn").onclick=openTips;
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand openRules the click Event
 document.getElementById("logBtn").onclick=openLog;
-document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules"||curOverlay.kind==="log") closeOverlay(); else if(curOverlay.kind==="boot" && G) closeOverlay(); };
-function exitSetup(){ if(G) closeOverlay(); else location.href="../"; }
-document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ if(curOverlay.kind==="setup"||curOverlay.kind==="boot") exitSetup(); else closeOverlay(); } });
+document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules"||curOverlay.kind==="log") closeOverlay(); };
+document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ closeOverlay(); } });
 updateTipVisibility();
 window.__CR={ get G(){ return G; }, get net(){ return net; }, setup, newGame, startSetup, hostDeal, chooseMode };
 chooseMode();
@@ -1146,7 +1155,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v121", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v129", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

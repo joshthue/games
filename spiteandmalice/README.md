@@ -6,6 +6,17 @@ centre stacks. They build **Ace → King**, **King → Ace**, or **either way** 
 choice on the deal screen. Play **solo against a bot**, or **head-to-head
 on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
 
+## Screen
+
+The standard Game Night header: **‹ Games**, **Rules**, **Menu**, the name, and the
+dedication line *Grandma Jo's game*. The deal screen is the shared setup sheet
+(`gn-setup.js`): goal pile, centre stacks (with a one-line explainer of the chosen
+direction) and opponent up front; bot difficulty, move hints, sound, card size and card
+text under **More options**; **Deal** pinned at the bottom. With **Two phones** picked the
+button becomes **Create game** and a **Join with code** button appears under it, both
+opening the existing room panels. **Menu** has Back to all games, New game (back to the
+sheet), Rules, and the in-game options.
+
 ## How it plays
 
 - Two decks plus **four Jokers** (Jokers are wild; Kings are just Kings).
@@ -31,11 +42,13 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
 - **Goal pile**: Short (13) or Standard (20).
 - **Centre stacks build**: `A → K` (standard), `K → A` (the mirror), or `Either way`.
 - **Bot**: Easy or Normal (solo only).
-- **Card size**: S / M / L / XL — the shared Game Night card size (`cardsize.js`), so a size
+- **Card size** and **Card text**: S / M / L / XL each — the shared Game Night card size (`cardsize.js`), so a size
   picked here is the size in every card game. Cards scale to the screen: `fitBoard()` measures
   the largest card the board can take (width *and* height) and **XL fills the screen**, M is
   ~70% of it. On an iPad mini, XL fills the whole display. Before v82 this was a text-only
-  setting inside a fixed 44px card, so the steps were barely visible.
+  setting inside a fixed 44px card, so the steps were barely visible. **Card text** (`--cardtext`)
+  scales only the printed rank and suit (the card's base font-size), not the card; cards clip with
+  `overflow:hidden` so XL text can't print past the edge.
 - **Tablet / landscape**: labels and buttons step up from 700px wide; in landscape (900px+)
   your hand moves up beside your piles so the board is three card-rows tall, not four.
   Leftover height is spread between the rows rather than pooling under the buttons.
@@ -43,7 +56,8 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
   scrolled — the centre stacks above the fold, your hand below it, so you couldn't drag one onto the
   other. Any landscape screen under 540px tall now goes **two card-rows tall**: the bot's piles beside
   the four centre stacks, your piles beside your hand, turn banner and stock count between. `fitBoard()`
-  sizes the cards for that row and never lets the board scroll there (66px cards on an iPhone 15,
+  sizes the cards for that row and never lets the board scroll there. The standard header folds to one
+  row there (name and dedication left, pills right) so the cards keep their height (66px cards on an iPhone 15,
   80px on a Pro Max). Checked dragging by touch and mouse at 844×390, and in iPad mini portrait
   (744×1133) and landscape (1133×744).
 - **Move hints** off by default.
@@ -76,8 +90,8 @@ which value it should take.
 
 ## Two phones (head-to-head)
 
-Pick **Two phones**, then one player taps **Create game** and reads out the 4-letter
-code; the other taps **Join with code**. You each play on your own phone.
+Pick **Two phones** on the deal screen, then one player taps **Create game** and reads out
+the 4-letter code; the other taps **Join with code**. You each play on your own phone.
 
 It's **host-authoritative with no backend**, exactly like Cribbage: the guest sends its
 moves to the host, the host owns the deal and the shared state and broadcasts a redacted
@@ -134,7 +148,7 @@ cards the bot needed and pushed the draw rate from 5% to 22%.
 
 Card, scoop and win sounds come from `../sfx.js`, the shared Game Night sound layer —
 synthesized with WebAudio, so there are no audio files to load and it works offline. The
-**Sound** toggle sits on the setup screen and in the menu; the setting is stored once for
+**Sound** toggle sits under More options on the deal screen and in the menu; the setting is stored once for
 the whole origin, so muting here mutes every Game Night game. iOS won't let a page make
 noise before the first touch, so the audio context is created on the first gesture.
 

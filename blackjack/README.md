@@ -9,9 +9,9 @@ persistent bankroll and casino table rules. Part of the Game Night home-screen a
 - **Split** up to 4 hands, **double** any two cards, **double after split** allowed,
   split aces get one card each and can't be re-split. Insurance is off.
 - Chips are $5 / $25 / $100 / $500; spread bets across up to **six spots**, laid out
-  in two rows. Settings offers 3 / 6 / 9 spots (one, two, or three rows).
+  in two rows. The Menu offers 3 / 6 / 9 spots (one, two, or three rows).
 - Your **bankroll persists** between sessions (stored on the device). Rebuy from
-  Settings if you bust out.
+  the Menu if you bust out.
 
 ## How it plays
 
@@ -20,16 +20,26 @@ Pick a chip, tap a betting spot to place it, then **Deal**. On your turn:
 out and pays the winners. Keyboard shortcuts on desktop: `Enter` deal, `H` hit,
 `S` stand, `D` double, `P` split, `R` repeat bet, `C` clear, `1–4` pick a chip.
 
+## Screen
+
+No setup screen — you sit straight down at the table. The header is the standard Game Night
+one: **‹ Games**, **Rules**, **Menu**, and the name, with the **bankroll** right-aligned on the
+name's line. **Rules** opens a rules sheet written from the live house rules (it updates when
+you change them). **Menu** is the old ⚙ settings sheet: Back to all games, Rules, card size and
+card text, then the table options and the bankroll reset.
+
 ## Options
 
-- **Card size** (A± in the top bar) cycles **S / M / L / XL**. It now comes from the shared
+- **Card size** and **Card text** are the two standard **S / M / L / XL** rows at the top of
+  the Menu (the old A± header button is gone). Card text scales only the printed rank and pip
+  (`--cardtext`), not the card, and cards clip so XL text stays inside. Card size comes from the shared
   `../cardsize.js`, on the same scale and the same origin-wide key as every other Game Night
   card game — a size picked here is the size in all of them. It used to be a private S/M/L on
   its own key, which meant Blackjack drifted out of step with the rest. Other preferences live
-  in **Settings** (⚙). Hand totals, the dealer's line, the chip denominations and the bet
+  in the **Menu**. Hand totals, the dealer's line, the chip denominations and the bet
   amounts all scale with the cards, so they stay readable on a desktop monitor and grow when
   you size the cards up.
-- The Settings footer shows the `build vNN` stamp — the quick way to confirm a
+- The Menu footer shows the `build vNN` stamp — the quick way to confirm a
   refresh actually took.
 
 ## Notes

@@ -30,16 +30,15 @@
   button{font-family:inherit; cursor:pointer; border:0; color:inherit; background:none;}
 
   /* ---------- chrome ---------- */
-  header{display:flex; align-items:center; gap:8px; padding:6px 10px; background:#0b2417;
-    border-bottom:1px solid var(--line); flex:0 0 auto;}
-  .brand{font-weight:800; letter-spacing:.14em; font-size:calc(13px * var(--fs)); color:var(--gold);}
-  .brand small{display:block; font-size:calc(8.5px * var(--fs)); letter-spacing:.2em; opacity:.7; color:var(--dim);}
+  /* the standard Game Night header (../gn-header.js styles the pills and the name);
+     here it only gets the dark bar it always sat in, and stays compact so the view keeps its height */
+  .gn-hdr{flex:0 0 auto; margin:0; padding:6px 10px 5px; background:#0b2417; border-bottom:1px solid var(--line);}
+  .gn-hdr h1.gn-name{margin-top:4px;}
   .hbtn{padding:6px 10px; border-radius:9px; background:rgba(255,255,255,.08); font-size:calc(12px * var(--fs));
     font-weight:600; color:var(--cream);}
   .hbtn:active{transform:translateY(1px);}
-  .spacer{margin-left:auto;}
-  .hinfo{text-align:right; font-size:calc(11px * var(--fs)); color:var(--dim); line-height:1.25;}
-  .hinfo b{color:var(--cream); font-size:calc(13px * var(--fs));}
+  .hinfo{flex:0 0 auto; text-align:right; font-size:calc(11.5px * var(--fs)); color:var(--dim); line-height:1.25; white-space:nowrap;}
+  .hinfo b{color:var(--cream); font-size:calc(12.5px * var(--fs));}
 
   /* ---------- the view ---------- */
   #stage{position:relative; flex:1 1 auto; min-height:0;}
@@ -119,17 +118,20 @@
   .sc-e{color:var(--cream);} .sc-u{color:var(--ok); font-weight:800;} .sc-o{color:var(--red);}
   .gn-build{text-align:center; font-size:10px; color:#4d7a63; padding:4px 0 2px; letter-spacing:.04em;}
 </style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 
-<header>
-  <button class="hbtn" onclick="location.href='../'">🏠</button>
-  <div class="brand">LINKS<small>GAME NIGHT GOLF</small></div>
-  <div class="spacer"></div>
-  <div class="hinfo" id="holeInfo"><b>—</b><br>—</div>
-  <button class="hbtn" id="cardBtn">Card</button>
-  <button class="hbtn" id="menuBtn">☰</button>
-</header>
+<div class="gn-hdr">
+  <div class="gn-top">
+    <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+    <button class="gn-pill" id="cardBtn">Card</button>
+    <button class="gn-pill" id="rulesBtn">Rules</button>
+    <button class="gn-pill" id="menuBtn">Menu</button>
+  </div>
+  <div class="gn-namerow"><h1 class="gn-name">Links</h1><div class="hinfo" id="holeInfo"><b>—</b></div></div>
+</div>
 
 <div id="stage">
   <canvas id="view"></canvas>
@@ -170,26 +172,30 @@
   <div class="seg" id="segText"></div>
   <button class="btn wide" id="menuArch">⛳ Design a course</button>
   <button class="btn wide" id="menuRestart">Restart the round</button>
-  <button class="btn ghost wide" id="menuRules">How to play</button>
+  <button class="btn ghost wide" id="menuRules">Rules</button>
   <button class="btn ghost wide" onclick="location.href='../'">🏠 Back to all games</button>
   <button class="btn ghost wide" id="menuClose">Close</button>
 </div></div>
 
 <div class="overlay" id="rulesOv"><div class="sheet">
-  <h2>How to play</h2>
+  <h2>Rules</h2>
   <h3>The swing</h3>
-  <p>Three taps, the way golf games have always done it. <b>Tap once</b> to start the meter moving.
+  <p>Three taps on <b>Swing</b>, the way golf games have always done it. <b>Tap once</b> to start the meter moving.
   <b>Tap again</b> at the top to set your power. <b>Tap a third time</b> as the marker comes back
-  through the centre line to set your accuracy — early pushes it right, late pulls it left.</p>
+  through the window at the left end to set your accuracy — early pushes it right, late pulls it left.</p>
   <p>You can swing past 100% into the red for extra yards, but the meter moves faster up there and a
-  miss costs you more.</p>
+  miss costs you more. Run off the end and it's an overswing.</p>
+  <h3>Aim and clubs</h3>
+  <p><b>Drag the view</b> left or right to aim. − and + change club. On a keyboard: space swings,
+  arrows change club and aim.</p>
   <h3>Clubs and lies</h3>
   <p>Distances shown are what the club carries from a clean lie. The rough takes yards off and kills
   your roll; sand takes more and you can't hit anything longer than a 7-iron out of it. Water and out
   of bounds cost you a stroke and you play from where you were.</p>
   <h3>On the green</h3>
-  <p>The meter becomes a putting stroke and the view drops to an overhead read. Watch the slope arrow:
-  the ball breaks as it rolls, and downhill putts run out.</p>
+  <p>The meter becomes a putting stroke, scaled to the putt: the white mark is the cup, and dead weight
+  sits near two thirds of the bar. Drag to aim finer than a full swing. Watch the slope arrow:
+  the ball breaks as it rolls, downhill putts run out, and a putt hit too hard lips out.</p>
   <button class="btn wide" id="rulesClose">Got it</button>
 </div></div>
 
@@ -1263,7 +1269,7 @@ window.GOLF_COURSES = {
       $('clubYds').textContent = 'meter ' + Math.round(putScale()) + ' ft';
     var w = R.wind||{speed:0,dir:0};
     $('windChip').innerHTML = w.speed ? ('Wind <b>'+w.speed+'</b> mph '+windArrow(w.dir)) : 'No wind';
-    $('holeInfo').innerHTML = '<b>Hole '+(R.hole+1)+'</b><br>Par '+H.par+' · '+H.len+' yds';
+    $('holeInfo').innerHTML = '<b>Hole '+(R.hole+1)+'</b> · Par '+H.par+' · '+H.len+' yds';
     $('swingBtn').disabled = !!anim;
   }
   function windArrow(dir){
@@ -1366,6 +1372,7 @@ window.GOLF_COURSES = {
   $('menuBtn').addEventListener('click', function(){ syncSwitches(); $('menuOv').classList.add('on'); });
   $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
   $('menuRules').addEventListener('click', function(){ $('menuOv').classList.remove('on'); $('rulesOv').classList.add('on'); });
+  $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
   $('rulesClose').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
   $('cardBtn').addEventListener('click', function(){ $('cardTitle').textContent=course.n; $('cardBody').innerHTML=cardHTML(); $('cardOv').classList.add('on'); });
   $('cardClose').addEventListener('click', function(){ $('cardOv').classList.remove('on'); });
@@ -1431,7 +1438,7 @@ window.GOLF_COURSES = {
 
 <script>
 (function(){
-  var V="v78", ISO=document.lastModified;
+  var V="v129", ISO=document.lastModified;
   var d=new Date(ISO);
   var el=document.getElementById('buildStamp');
   if(el) el.textContent='build '+V+(isNaN(d)?'':' · '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));

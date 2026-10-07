@@ -56,13 +56,13 @@
     display:flex; align-items:center; justify-content:center; padding:0 6px;}
 
   .card{width:calc(46px * var(--size)); height:calc(66px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
-    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0;}
-  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(14px * var(--size)); font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(14px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(23px * var(--size));}
+    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0; overflow:hidden;}
+  .card .rank{position:absolute; top:3px; left:5px; font-size:calc(14px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(14px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(23px * var(--size) * var(--cardtext,1));}
   /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
   .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
-  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
+  .seg.cardsize button,.seg.cardtext button{padding:5px 9px; font-size:12px; min-width:30px;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .card.win{box-shadow:0 0 0 2px var(--gold), 0 0 12px rgba(240,198,116,.6), 0 3px 8px rgba(0,0,0,.4);}
   .card.slot{background:rgba(0,0,0,.15); border:1px dashed rgba(255,255,255,.18); box-shadow:none;}
@@ -111,7 +111,7 @@
   .float-tip{position:fixed; bottom:16px; right:16px; z-index:40;}
   .float-tip button{width:54px; height:54px; border-radius:50%; font-size:24px; background:var(--gold); color:var(--ink); box-shadow:0 4px 12px rgba(0,0,0,.5);}
   .muted{opacity:.75; font-size:12px;}
-  @media(max-width:430px){ .card{width:calc(40px * var(--size));height:calc(58px * var(--size));} .card .pip{font-size:calc(20px * var(--size));} .card .rank,.card .rankb{font-size:calc(12px * var(--size));} h1{font-size:16px;} }
+  @media(max-width:430px){ .card{width:calc(40px * var(--size));height:calc(58px * var(--size));} .card .pip{font-size:calc(20px * var(--size) * var(--cardtext,1));} .card .rank,.card .rankb{font-size:calc(12px * var(--size) * var(--cardtext,1));} h1{font-size:16px;} }
 </style>
 <style id="gn-safe">
   /* Status bar: the app draws under it (black-translucent), so the felt runs to the top edge
@@ -120,6 +120,7 @@
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
 <script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -153,6 +154,7 @@
 </div>
 
 <div class="float-tip" id="floatTip"><button id="tipBtn" title="Tips">💡</button></div>
+<div class="gn-setup" id="setup" hidden></div>
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
 
 <script src="../sfx.js"></script>
@@ -495,7 +497,8 @@ function openMenu(){
     <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="menuToggleTips()"></button><span>Tips ${settings.tipsOn?'ON':'OFF'}</span></div>
     <div class="seg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';openMenu();">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';openMenu();">Advanced</button></div></div>
     <h3>Deck</h3>
-    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
+    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="menuToggleFour()"></button><span>Four-color deck</span></div></div>
+    ${CARDSIZE.rowsHTML()}
     <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="menuToggleSpeed()"></button><span>Speed play (fewer taps)</span></div>
     <h3>Table</h3>
     <a class="setup-opt" href="../">🏠 Back to all games</a>
@@ -513,32 +516,32 @@ function menuToggleSpeed(){ settings.speed=!settings.speed; openMenu(); }
 
 /* ============================================================ SETUP */
 function chooseSetup(){
-  const html=`<button class="btn sec sm close" onclick="exitSetup()">✕</button>
-    <h2>♠ Ultimate Texas Hold'em ♥</h2>
-    <p>Take on the dealer with two hole cards and five community cards. Bet big early when you like your hand.</p>
-    <div style="margin:8px 0;"><button class="btn sec sm" onclick="openRules('chooseSetup')">📖 How to play</button></div>
-    <h3>Your name</h3>
-    <input class="txtinp" value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You">
-    <h3>Tips</h3>
-    <div class="tiprow"><div class="switch"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button><span id="tipTxt">${settings.tipsOn?'Tips ON':'Tips OFF'}</span></div>
-    <div class="seg" id="setupSeg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></div></div>
-    <h3>Deck</h3>
-    <div class="optrow"><div class="switch" style="display:flex;"><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button><span>Four-color deck</span></div>${CARDSIZE.controlHTML()}</div>
-    <div class="switch" style="display:flex;margin-top:8px;"><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button><span>Speed play (fewer taps)</span></div>
-    <p class="muted" style="margin-top:12px;">You'll start with ${START_BANK} chips.</p>
-    <div style="text-align:center;margin-top:10px;"><button class="btn" onclick="closeOverlay();newSession();">Sit down ▶</button></div>`;
-  openPanel(html,"setup");
+  closeOverlay();
+  const el=document.getElementById("setup");
+  el.innerHTML=`<div class="gn-setup-body">
+      <p class="gn-pitch">Take on the dealer with two hole cards and five community cards. Bet big early when you like your hand. You start with ${START_BANK} chips.</p>
+      <label class="gn-field">Your name<input value="${settings.playerName==='You'?'':settings.playerName}" maxlength="16" autocomplete="off" oninput="onNameInput(this.value)" placeholder="You"></label>
+      <div class="gn-row"><span>Tips</span><span style="display:flex;gap:8px;align-items:center"><button class="toggle ${settings.tipsOn?'on':''}" onclick="toggleTipsSetup(this)"></button>
+        <span class="seg" id="setupSeg" style="opacity:${settings.tipsOn?1:.4};"><button class="${settings.tipLevel==='beginner'?'on':''}" id="s-b" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='beginner';refreshLvl()">Beginner</button><button class="${settings.tipLevel==='advanced'?'on':''}" id="s-a" ${settings.tipsOn?'':'disabled'} onclick="settings.tipLevel='advanced';refreshLvl()">Advanced</button></span></span></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Four-color deck</span><button class="toggle ${settings.fourColor?'on':''}" onclick="settings.fourColor=!settings.fourColor;this.classList.toggle('on',settings.fourColor);"></button></div>
+        <div class="gn-row"><span>Speed play (fewer taps)</span><button class="toggle ${settings.speed?'on':''}" onclick="settings.speed=!settings.speed;this.classList.toggle('on',settings.speed);"></button></div>
+        ${CARDSIZE.rowsHTML()}
+      </details>
+    </div>
+    <div class="gn-setup-foot"><button class="gn-start" onclick="startFromSetup()">Sit down</button></div>`;
+  GNSETUP.show(el);
 }
-function toggleTipsSetup(el){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); chooseSetup(); }
+function startFromSetup(){ GNSETUP.hide("setup"); newSession(); }
+function toggleTipsSetup(el){ settings.tipsOn=!settings.tipsOn; updateTipVisibility(); el.classList.toggle("on",settings.tipsOn); const g=document.getElementById("setupSeg"); g.style.opacity=settings.tipsOn?1:.4; g.querySelectorAll("button").forEach(b=>b.disabled=!settings.tipsOn); }
 function refreshLvl(){ document.getElementById("s-b").classList.toggle("on",settings.tipLevel==='beginner'); document.getElementById("s-a").classList.toggle("on",settings.tipLevel==='advanced'); }
 
 /* wire up */
 document.getElementById("tipBtn").onclick=openTips;
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("rulesBtn").onclick=()=>openRules();
-document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay(); else if(curOverlay.kind==="setup" && U) closeOverlay(); };
-function exitSetup(){ if(U) closeOverlay(); else location.href="../"; }
-document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ if(curOverlay.kind==="setup"||curOverlay.kind==="boot") exitSetup(); else closeOverlay(); } });
+document.getElementById("overlay").onclick=e=>{ if(e.target.id!=="overlay")return; if(curOverlay.kind==="tips"||curOverlay.kind==="menu"||curOverlay.kind==="rules") closeOverlay();  };
+document.addEventListener("keydown",function(e){ if(e.key==="Escape" && document.getElementById("overlay").classList.contains("show")){ closeOverlay(); } });
 updateTipVisibility();
 chooseSetup();
 </script>
@@ -562,7 +565,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v128", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v129", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

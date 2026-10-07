@@ -174,9 +174,30 @@ A small status widget may share the name's line, right-aligned: wrap the `h1` in
 `<div class="gn-namerow">` and put the widget after it (Bar Dice: jackpot + ATM). The
 name still shrinks rather than wraps; keep the widget compact so it fits at 320 wide.
 
-Converted so far (v121): Cribbage, Three-Card Poker, Ultimate Texas Hold'em, Poker
-Squares, Pull Tabs, Horse Race, Bar Dice, Stratego, YachtRock. Still to decide: I'm out,
-Jerry!, Blackjack, BINGO, Hold'em, Links, Spite & Malice.
+Every game uses it since v129. Allowed per game: at most one extra pill between
+‹ Games and Rules (Log, Scores, Card, Flare). Settings gears, size buttons and status
+dots go in Menu or on the name line, never as header pills.
+
+---
+
+## The start screen — every game uses the same sheet
+
+`gn-setup.js` (in `sw.js` ASSETS, keep it there). A game with a pre-game screen renders
+it into `<div class="gn-setup" id="setup" hidden>` and shows it with `GNSETUP.show()`:
+`.gn-setup-body` (pitch, name, **at most three** key rows, then `<details class="gn-more">`
+for everything else) and `.gn-setup-foot` (one gold `.gn-start`, at most one `.gn-alt`).
+The footer is pinned, so **Start never needs a scroll** — verified at 320×568, 390×844
+and 430×932 with More options open. The sheet sits at z-index 45, under every overlay,
+so Rules/Menu/join dialogs open over it. No ✕, no in-panel "How to play", no emoji on
+Start. Blackjack, Poker Squares, YachtRock, Bar Dice and Links start straight in.
+
+## Card size and card text
+
+`cardsize.js` sets two origin-wide multipliers: `--size` (card size, `gn_cardsize`) and
+`--cardtext` (rank/pip print only, `gn_cardtext`). Card print is written
+`calc(Npx * var(--size) * var(--cardtext,1))`, and `.card` has `overflow:hidden`.
+`CARDSIZE.rowsHTML()` renders both standard rows for a menu or More options;
+`rowsHTML({size:false, textLabel:'Square text'})` is BINGO's.
 
 ---
 

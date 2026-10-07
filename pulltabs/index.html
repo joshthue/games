@@ -55,15 +55,6 @@ body{
 input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--cream)}
 .cap{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);opacity:.9;margin:0 0 6px}
 
-/* the neon sign */
-.neon{text-align:center;margin:10px 0 2px;font-family:Georgia,serif;font-style:italic;font-weight:900;font-size:46px;
-  color:#ffe3f0;letter-spacing:1px;
-  text-shadow:0 0 4px #fff,0 0 10px var(--neon),0 0 22px var(--neon),0 0 40px var(--neon);animation:flick 6s infinite}
-.neon small{display:block;font-size:15px;font-style:normal;letter-spacing:2px;color:#dffaff;margin-top:4px;
-  text-shadow:0 0 4px #fff,0 0 10px var(--neon2),0 0 22px var(--neon2)}
-@keyframes flick{0%,92%,100%{opacity:1}93%{opacity:.55}94%{opacity:1}96%{opacity:.7}97%{opacity:1}}
-.sub{text-align:center;font-size:13px;opacity:.85;margin:0 0 14px}
-
 /* Darlene */
 .darlene{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
 .darlene .face{font-size:34px;line-height:1;flex:0 0 auto}
@@ -90,6 +81,9 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 .joinrow{display:flex;gap:8px;margin-top:10px}
 .joinrow input{text-transform:uppercase;letter-spacing:6px;text-align:center;font-weight:900}
 .setbtns{display:flex;flex-direction:column;gap:8px}
+#setup.gn-setup{background:radial-gradient(120% 80% at 50% 0%, rgba(255,190,110,.18), rgba(0,0,0,.55) 75%),repeating-linear-gradient(90deg, var(--wood1) 0 46px, var(--wood2) 46px 48px, var(--wood3) 48px 96px, var(--wood2) 96px 98px)}
+#setup .darlene .face{font-size:28px}
+#setup .darlene .bubble{font-size:14px}
 
 /* game layout */
 .bankbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--booth);border:1px solid var(--line);
@@ -306,14 +300,12 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
   .combo i{width:46px;height:46px;font-size:32px} .ftab .am{font-size:30px} .ftab .am small{font-size:13px} .multi{font-size:13px}
   .flare h2{font-size:28px} .flare .fsub{font-size:15px}
   .winners h3{font-size:19px} .winners ul{font-size:16px;max-height:none}
-  .neon{font-size:64px} .neon small{font-size:18px} .sub{font-size:16px}
   .dealpick{grid-template-columns:repeat(3,1fr)}
   .booth{grid-template-columns:repeat(6,minmax(0,1fr))}
   .roombar{font-size:15px}
   .tk{font-size:16px} .ticker .tklbl{font-size:13px;padding:10px 12px}
   .booth{gap:10px} .bxn{font-size:13px} .bx{height:96px} .bxleft{font-size:15px} .bxtop{font-size:12px} .bxlbl{font-size:13px} .bxout{font-size:13px}
   .tixact .btn{font-size:18px;padding:12px 18px} .asidechip{font-size:16px}
-  #setup .panel{max-width:640px;margin:0 auto}
 }
 /* landscape tablet / desktop: ticket on the left, the flare beside it */
 @media (min-width:1000px) and (orientation:landscape), (min-width:1200px){
@@ -324,6 +316,7 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
 @media (min-width:1000px) and (orientation:landscape) and (max-height:820px){ :root{--rh:66px;--tw:400px} .buyrow .btn{padding:9px 6px} }
 </style>
 <script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -337,22 +330,18 @@ input.txt{width:100%;font-size:17px;padding:10px 12px;border-radius:10px;border:
     <h1 class="gn-name">Pull Tabs</h1>
   </div>
 
-  <!-- ===== SETUP ===== -->
-  <section id="setup">
-    <div class="neon">Pull Tabs<small>LAND OF 10,000 TABS</small></div>
-    <div class="sub">Lake Uffda VFW Post 10,000 · booth's open, hon</div>
-    <div class="panel">
-      <div class="cap">Your name (for the winners board)</div>
-      <input class="txt" id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/>
-      <div class="cap" style="margin-top:14px">Start at · all six boxes are on the counter</div>
-      <div class="dealpick" id="dealPick"></div>
-      <div class="setbtns">
-        <button class="btn" id="liveBtn">🎟️ Walk up to the booth · live with everybody</button>
-        <button class="btn ghost" id="soloBtn">🏠 Play solo · your own booth, works offline</button>
-      </div>
+  <!-- ===== SETUP (the standard sheet; the six boxes are on the counter once you walk up) ===== -->
+  <div class="gn-setup" id="setup">
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Lake Uffda VFW Post 10,000 &middot; booth's open, hon. Walk up and buy from the same six boxes as everybody playing right now, or play solo at your own booth (works offline).</p>
+      <label class="gn-field">Your name (for the winners board)<input id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/></label>
       <div class="darlene"><div class="face">👵</div><div class="bubble" id="setupSay"></div></div>
     </div>
-  </section>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="liveBtn">Walk up to the booth</button>
+      <button class="gn-alt" id="soloBtn">Play solo</button>
+    </div>
+  </div>
 
   <!-- ===== GAME ===== -->
   <section id="game" class="hidden">
@@ -639,7 +628,7 @@ window.PT={ BOX_V:BOX_V, DEALS:DEALS, DEAL_ORDER:DEAL_ORDER, LINES:LINES, KEY:KE
    ============================================================ */
 (function(){
 'use strict';
-var BUILD_V="v121";
+var BUILD_V="v129";
 var $=function(id){ return document.getElementById(id); };
 var D=PT.DEALS;
 
@@ -712,15 +701,7 @@ function sym3(d,i){ var x=sym(d,i); return x+x+x; }
 function money(n){ return '$'+n.toLocaleString(); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 
-// ---------- setup screen ----------
-function renderDealPick(){
-  $('dealPick').innerHTML = PT.DEAL_ORDER.map(function(k){ var d=D[k];
-    return '<button class="dealbtn'+(k===pickDeal?' on':'')+'" data-deal="'+k+'" style="background:'+d.color+'">'
-      +'<div class="nm">'+esc(d.name)+'</div><div class="sy">'+sym3(d,0)+'</div>'
-      +'<div class="pr">$'+d.price+' a tab · top prize '+money(d.tiers[0].amt)+'</div></button>'; }).join('');
-}
-$('dealPick').addEventListener('click', function(e){ var b=e.target.closest('.dealbtn'); if(!b) return;
-  pickDeal=b.dataset.deal; lsSet('pt_deal',pickDeal); renderDealPick(); sfx('select'); });
+// ---------- setup screen (the box is picked on the booth once you walk up; pt_deal remembers it) ----------
 $('nameIn').value = myName;
 $('nameIn').addEventListener('input', function(){ myName=this.value.trim().slice(0,16); lsSet('pt_name', myName); });
 $('setupSay').textContent = pick(SAY.hello);
@@ -746,8 +727,8 @@ function startLive(){
   enterGame(); say('Walkin\u2019 you up to the booth, hon\u2026');
   netStart();
 }
-function enterGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); ingestAll(true); render(); }
-function leave(){ netStop(); S.mode=null; S.boxes=null; $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
+function enterGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); ingestAll(true); render(); }
+function leave(){ netStop(); S.mode=null; S.boxes=null; $('game').classList.add('hidden'); GNSETUP.show('setup'); }
 $('soloBtn').addEventListener('click', startSolo);
 $('liveBtn').addEventListener('click', startLive);
 
@@ -1342,7 +1323,6 @@ document.addEventListener('visibilitychange', function(){
 });
 
 // ---------- boot ----------
-renderDealPick();
 if(legacyPaid) $('setupSay').innerHTML='New tickets came in, hon \u2014 the ones with the arrows. I cashed your old winners: <b>'+money(legacyPaid)+'</b>.';
 (function(){ var d=new Date(document.lastModified), w=isNaN(d)?'':d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
   $('gnBuild').textContent='build '+BUILD_V+(w?' · '+w:''); })();

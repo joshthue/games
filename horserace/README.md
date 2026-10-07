@@ -139,6 +139,19 @@ Kept per device in `hr_prefs`. In a live race the phone that calls the horses to
 its bots (as the seats) and its horse names (`start.horses`, only the changed ones) with the start,
 so every phone shows the same names for that race. A name change counts from the next race.
 
+## Start screen (Oct 2026, Game Night standard)
+The start screen is the standard setup sheet (`gn-setup.js`): a one-line pitch, **Your name (for
+the program)**, the announcer's line, then **Walk up to the rail** (Start: the live track with
+everybody) and **Race the regulars** (just you and the bots). The neon "Horse Race" sign is gone;
+the header names the game. Leaving the track from the Menu brings the sheet back.
+
+## Card size and card text
+Horse Race loads `cardsize.js`. Your horses are sized from `--hw` (fitted in JS so the hand stays
+one row); the base width is the designed 44px (54 on a wide screen) times `--size`, still capped
+by the row width, and the rank/`#n` print is scaled by `--cardtext`. **Card size** and **Card text**
+are in the Menu; changing them re-renders. Checked at XL/XL on 320 wide: one row, no sideways
+scroll, print inside every card.
+
 ## Screen (v111)
 - **Wide screens** (any landscape ≥700px: iPad mini either way round is covered by this or the
   portrait rule, iPhone sideways too): two columns — scratches and the **track fill the left side

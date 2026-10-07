@@ -41,19 +41,15 @@
   .hidden{display:none !important;}
 
   /* ---------- top bar ---------- */
-  .topbar{flex:0 0 auto; display:flex; align-items:center; gap:10px;
-    padding:8px 12px; background:linear-gradient(#20130b,#160d07);
-    border-bottom:2px solid #000; box-shadow:0 2px 6px rgba(0,0,0,.5); z-index:6;}
-  .brand{font-weight:600; letter-spacing:.14em; font-size:17px; color:var(--gold);}
-  .brand small{color:var(--gold-dim); letter-spacing:.2em; font-size:10px; display:block; margin-top:-3px;}
-  .bank{margin-left:auto; text-align:right; line-height:1;}
+  /* the standard Game Night header (gn-header.js), on the old top bar's wood */
+  .gn-hdr.topbar{flex:0 0 auto; margin:0; padding:8px 12px 6px; background:linear-gradient(#20130b,#160d07);
+    border-bottom:2px solid #000; box-shadow:0 2px 6px rgba(0,0,0,.5); z-index:6; position:relative;}
+  .gn-hdr.topbar h1.gn-name{margin-top:4px;}
+  .bank{flex:0 0 auto; margin-left:auto; text-align:right; line-height:1;}
   .bank .lbl{font-size:9px; letter-spacing:.18em; color:#c8bfa8;}
   .bank .amt{font-size:20px; font-weight:600; color:var(--paper); font-variant-numeric:tabular-nums;}
   .bank .amt.flash{animation:bankflash .6s ease;}
   @keyframes bankflash{0%{transform:scale(1)}35%{transform:scale(1.14); color:var(--gold)}100%{transform:scale(1)}}
-  .iconbtn{width:38px; height:38px; border-radius:9px; background:#2a1a10; border:1px solid #47301d;
-    display:grid; place-items:center; font-size:16px; color:var(--gold); font-weight:600;}
-  .iconbtn:active{transform:scale(.94);}
 
   /* ---------- table ---------- */
   .table{position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
@@ -118,12 +114,12 @@
   /* cards */
   .card{width:var(--cw); height:var(--ch); border-radius:calc(var(--cw)*.11); position:relative;
     background:var(--paper); box-shadow:0 2px 4px rgba(0,0,0,.45); flex:0 0 auto;
-    margin-left:calc(var(--cw) * -0.42);}
+    margin-left:calc(var(--cw) * -0.42); overflow:hidden;}
   .card:first-child{margin-left:0;}
-  .card .r{position:absolute; font-weight:600; line-height:.9; font-size:calc(var(--cw)*.30);}
+  .card .r{position:absolute; font-weight:600; line-height:.9; font-size:calc(var(--cw)*.30*var(--cardtext,1));}
   .card .r.tl{top:calc(var(--cw)*.07); left:calc(var(--cw)*.09);}
   .card .r.br{bottom:calc(var(--cw)*.07); right:calc(var(--cw)*.09); transform:rotate(180deg);}
-  .card .pip{position:absolute; inset:0; display:grid; place-items:center; font-size:calc(var(--cw)*.5);}
+  .card .pip{position:absolute; inset:0; display:grid; place-items:center; font-size:calc(var(--cw)*.5*var(--cardtext,1));}
   .card.red{color:var(--red);} .card.blk{color:var(--ink);}
   .card.back{background:
       repeating-linear-gradient(45deg,#123f2b 0 6px,#0d3122 6px 12px);
@@ -180,6 +176,15 @@
   .seg button{flex:1 1 0; min-width:56px; min-height:38px; border-radius:9px; font-size:13px; font-weight:500;
     background:#241a10; border:1px solid #3f2e1b; color:#d8cdb6;}
   .seg button.on{background:linear-gradient(#f0d072,#cfa23f); color:#241a06; border-color:#8a6a1e; font-weight:600;}
+  /* card size / card text rows (CARDSIZE.rowsHTML) inside the Menu */
+  .seg.cardsize,.seg.cardtext{flex-wrap:nowrap;}
+  .seg.cardsize button,.seg.cardtext button{flex:0 0 auto; min-width:40px; padding:0 9px;}
+  .opt .gn-row{margin:0 0 4px;} .opt .gn-row>span:first-child{font-size:14px; font-weight:400; color:#eee;}
+  .menulink{display:grid; place-items:center; width:100%; min-height:44px; margin-top:8px; border-radius:10px; font-weight:600;
+    letter-spacing:.05em; background:#26160d; border:1px solid #46301d; color:var(--paper); text-decoration:none; font-size:14.5px;}
+  .rules p,.rules li{font-size:14px; line-height:1.5; color:#e8e2d2; letter-spacing:.01em;}
+  .rules h3{margin:14px 0 4px; font-size:14px; letter-spacing:.08em; color:var(--gold); font-weight:600;}
+  .rules ul{padding-left:18px; margin:4px 0;}
   .danger{width:100%; margin-top:14px; min-height:44px; border-radius:10px; font-weight:600;
     background:#3a1512; border:1px solid #7a2b25; color:#f2b6b2; letter-spacing:.05em;}
   .foot{padding:12px 18px; color:#6f6858; font-size:10.5px; letter-spacing:.08em; text-align:center;}
@@ -207,14 +212,18 @@
     .btn{font-size:16px;}
   }
 </style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
-  <div class="topbar">
-    <a class="iconbtn" href="../" title="All games" style="text-decoration:none;display:inline-flex;align-items:center">🏠</a>
-    <div class="brand">BLACKJACK<small>house rules</small></div>
-    <button class="iconbtn" id="sizeBtn" title="Card size">A±</button>
-    <button class="iconbtn" id="setBtn" title="Settings">⚙</button>
-    <div class="bank"><div class="lbl">BANKROLL</div><div class="amt" id="bank">$0</div></div>
+  <div class="gn-hdr topbar">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <div class="gn-namerow"><h1 class="gn-name">Blackjack</h1>
+      <div class="bank"><div class="lbl">BANKROLL</div><div class="amt" id="bank">$0</div></div></div>
   </div>
 
   <div class="table">
@@ -240,12 +249,20 @@
     <div class="dock" id="dock"></div>
   </div>
 
-  <!-- settings -->
+  <!-- menu (was the settings sheet) -->
   <div class="scrim hidden" id="setModal">
     <div class="sheet">
-      <header><h2>SETTINGS</h2><button class="x" id="setClose">×</button></header>
+      <header><h2>MENU</h2><button class="x" id="setClose">×</button></header>
       <div class="body" id="setBody"></div>
       <div class="foot" id="build"></div>
+    </div>
+  </div>
+
+  <!-- rules -->
+  <div class="scrim hidden" id="rulesModal">
+    <div class="sheet">
+      <header><h2>RULES</h2><button class="x" id="rulesClose">×</button></header>
+      <div class="body rules" id="rulesBody"></div>
     </div>
   </div>
 
@@ -294,7 +311,7 @@ function canDouble(hand,bank,rules){
    ================================================================= */
 const BUILD=(function(){   // Last-Modified from Pages = the deploy time
   const d=new Date(document.lastModified);
-  return 'build v78'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+  return 'build v129'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
 })();
 const mem={};
 const store={
@@ -643,6 +660,9 @@ function seg(key,opts,cur,fmt){
 function buildSettings(){
   const b=$('setBody');
   b.innerHTML=`
+    <a class="menulink" href="../">Back to all games</a>
+    <button class="menulink" id="menuRules">Rules</button>
+    <div class="opt">${CARDSIZE.rowsHTML()}</div>
     <div class="opt"><div class="q">Hands (betting spots)<em>How many circles you can spread bets across</em></div>
       ${seg('maxHands',[3,6,9],rules.maxHands)}</div>
     <div class="opt"><div class="q">Decks<em>Single deck reshuffles often with many spots</em></div>
@@ -661,6 +681,7 @@ function buildSettings(){
       ${seg('tableMax',[100,500,1000],rules.tableMax,o=>'$'+rules.tableMin+'–$'+o)}</div>
     <button class="danger" id="rebuy">Reset bankroll to $${rules.startingBankroll.toLocaleString()}</button>`;
   $('build').textContent=BUILD;
+  $('menuRules').onclick=()=>{closeSettings();openRules();};
   $('rebuy').onclick=()=>{state.bankroll=rules.startingBankroll;saveBank();renderBank(true);
     if(state.phase==='betting')render();closeSettings();};
   b.querySelectorAll('[data-set]').forEach(btn=>btn.onclick=()=>{
@@ -677,6 +698,30 @@ function buildSettings(){
     saveRules(); updateArc(); buildSettings(); render();
   });
 }
+/* Rules: Blackjack never had a rules page, so this is built from the live house rules
+   (the same values the Menu sets and the felt's arc prints). */
+function openRules(){
+  const pays=rules.blackjackPays==='6:5'?'6 to 5':'3 to 2';
+  $('rulesBody').innerHTML=`
+    <p>Beat the dealer: finish closer to 21 than the dealer without going over. Number cards count face value,
+      J/Q/K count 10, and an Ace counts 1 or 11.</p>
+    <h3>A ROUND</h3>
+    <ul><li>Pick a chip and tap a betting circle to bet (up to ${rules.maxHands} spots), then Deal.</li>
+      <li>On each hand: <b>Hit</b> takes a card, <b>Stand</b> stops, <b>Double</b> doubles the bet for exactly one more card,
+        <b>Split</b> turns a pair into two hands.</li>
+      <li>Then the dealer plays out the hand and every spot is paid.</li></ul>
+    <h3>HOUSE RULES (change them in Menu)</h3>
+    <ul><li>Blackjack pays ${pays}; a win pays 1 to 1; a tie is a push.</li>
+      <li>Dealer ${rules.hitSoft17?'hits':'stands on'} soft 17. Insurance is not offered.</li>
+      <li>${rules.decks} ${rules.decks>1?'decks':'deck'} in the shoe.</li>
+      <li>Split up to ${rules.maxSplitHands} hands; split aces ${rules.resplitAces?'can be resplit':'get one card each'};
+        double after split ${rules.doubleAfterSplit?'allowed':'not allowed'}.</li>
+      <li>Table limits $${rules.tableMin}–$${rules.tableMax}.</li></ul>
+    <h3>KEYS</h3>
+    <p>H hit · S stand · D double · P split · Enter deal · R repeat bet · C clear · 1–4 pick a chip.</p>`;
+  $('rulesModal').classList.remove('hidden');
+}
+function closeRules(){$('rulesModal').classList.add('hidden');}
 function updateArc(){
   $('arcPay').textContent='BLACKJACK PAYS '+(rules.blackjackPays==='6:5'?'6 TO 5':'3 TO 2');
   $('arcRule').textContent='Dealer '+(rules.hitSoft17?'hits':'stands on')+' soft 17 · Insurance not offered';
@@ -688,15 +733,18 @@ function updateArc(){
 /* Card size now comes from ../cardsize.js: the same scale and the same origin-wide key
    as every other card game, so a size chosen here is the size in all of them. This used
    to be a private S/M/L on a bj_size key; the shared module adds XL and drops the drift.
-   The A+- button stays - Blackjack has no settings sheet row to put a segmented control in. */
-const SIZES=CARDSIZE.STEPS;
-function applySize(){CARDSIZE.apply();$('sizeBtn').textContent=SIZES[CARDSIZE.idx()].k;}
-$('sizeBtn').onclick=()=>{CARDSIZE.choose((CARDSIZE.idx()+1)%SIZES.length);applySize();};
+   Card size and card text are the two standard rows (CARDSIZE.rowsHTML) at the top of the Menu;
+   the old header A+- button is gone. Everything sizes from --cw/--size/--cardtext in CSS. */
+function applySize(){CARDSIZE.apply();}
+window.onCardSize=function(){ try{ spotsEl.classList.toggle('center', spotsEl.scrollWidth <= spotsEl.clientWidth + 1); }catch(e){} };
 
 /* =================================================================
    EVENTS
    ================================================================= */
-$('setBtn').onclick=openSettings;
+$('menuBtn').onclick=openSettings;
+$('rulesBtn').onclick=openRules;
+$('rulesClose').onclick=closeRules;
+$('rulesModal').onclick=e=>{if(e.target===$('rulesModal'))closeRules();};
 $('setClose').onclick=closeSettings;
 $('setModal').onclick=e=>{if(e.target===$('setModal'))closeSettings();};
 
@@ -727,6 +775,7 @@ dockEl.addEventListener('click',e=>{
 
 document.addEventListener('keydown',e=>{
   if(!$('setModal').classList.contains('hidden')){if(e.key==='Escape')closeSettings();return;}
+  if(!$('rulesModal').classList.contains('hidden')){if(e.key==='Escape')closeRules();return;}
   const k=e.key.toLowerCase();
   if(state.phase==='betting'){
     if(k==='enter'){const d=$('deal');if(d&&!d.disabled)deal();}

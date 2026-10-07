@@ -51,6 +51,10 @@
     border-radius:11px; padding:10px 8px; cursor:pointer; transition:all .12s ease;}
   .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
   .seg button:active{transform:scale(.97);}
+  .gn-setup .gn-row .seg{flex:1 1 210px; justify-content:flex-end;}
+  .gn-setup .gn-row .seg button{flex:1 1 0; min-width:0; padding:9px 6px;}
+  .menu-list{display:flex; flex-direction:column; gap:8px; margin-bottom:8px;}
+  .menu-list .bigbtn{display:block; text-decoration:none; box-sizing:border-box; text-align:center;}
   .bigbtn{width:100%; font-family:inherit; font-weight:800; font-size:15px; letter-spacing:.5px;
     background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:14px;
     box-shadow:0 2px 7px rgba(0,0,0,.35); cursor:pointer;}
@@ -189,47 +193,43 @@
     font-family:ui-monospace,Menlo,monospace;}
 </style>
 <script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <div class="wrap">
   <div class="gn-hdr">
     <div class="gn-top">
       <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
-      <button class="gn-pill" id="helpBtn">Rules</button>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
     </div>
     <h1 class="gn-name">Stratego</h1>
   </div>
 
-  <!-- ============ DEAL SCREEN ============ -->
-  <div class="panel" id="setupPanel">
-    <h2>NEW GAME</h2>
-    <p class="sub">Forty pieces a side. Lowest number wins a fight — 1 is the Marshal. Take the enemy flag, or leave them with nothing that can move.</p>
-
-    <div class="row">
-      <label>Opponent</label>
-      <div class="seg" id="oppSeg">
-        <button data-v="easy">Computer · Easy</button>
-        <button data-v="normal" class="on">Computer · Normal</button>
+  <!-- ============ DEAL SCREEN = the standard setup sheet (../gn-setup.js) ============ -->
+  <div class="gn-setup" id="setupPanel">
+    <div class="gn-setup-body">
+      <p class="gn-pitch">You against the computer. Forty pieces a side, and lowest number wins a fight &mdash; 1 is the Marshal. Take the enemy flag, or leave them with nothing that can move.</p>
+      <div class="gn-row"><span>Opponent</span>
+        <div class="seg" id="oppSeg">
+          <button data-v="easy">Easy</button>
+          <button data-v="normal" class="on">Normal</button>
+        </div>
+      </div>
+      <div class="gn-row"><span>Your setup</span>
+        <div class="seg" id="setupSeg">
+          <button data-v="auto" class="on">Set up for me</button>
+          <button data-v="manual">I'll place them</button>
+        </div>
+      </div>
+      <div class="gn-row"><span>Memory aid</span>
+        <div class="seg" id="memSeg">
+          <button data-v="on" class="on">Remember for me</button>
+          <button data-v="off">Pure memory</button>
+        </div>
       </div>
     </div>
-
-    <div class="row">
-      <label>Your setup</label>
-      <div class="seg" id="setupSeg">
-        <button data-v="auto" class="on">Set up for me</button>
-        <button data-v="manual">I'll place them</button>
-      </div>
-    </div>
-
-    <div class="row">
-      <label>Memory aid</label>
-      <div class="seg" id="memSeg">
-        <button data-v="on" class="on">Remember for me</button>
-        <button data-v="off">Pure memory</button>
-      </div>
-    </div>
-
-    <button class="bigbtn" id="startBtn">Start the game</button>
+    <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Start the game</button></div>
   </div>
 
   <!-- ============ PLACEMENT SCREEN ============ -->
@@ -337,6 +337,19 @@
     </div>
 
     <button class="bigbtn" id="helpClose" style="margin-top:14px;">Close</button>
+  </div>
+</div>
+
+<!-- ============ MENU ============ -->
+<div class="modal" id="menuModal">
+  <div class="card">
+    <h2>MENU</h2>
+    <div class="menu-list">
+      <a class="bigbtn ghost" href="../">Back to all games</a>
+      <button class="bigbtn ghost" id="menuNew">New game</button>
+      <button class="bigbtn ghost" id="menuRules">Rules</button>
+    </div>
+    <button class="bigbtn" id="menuClose" style="margin-top:6px;">Close</button>
   </div>
 </div>
 
@@ -1024,17 +1037,25 @@ document.querySelector(".tabs").addEventListener("click", function(e){
   var b = e.target.closest("button"); if(b){ sfx("select"); helpTab(b.dataset.t); }
 });
 function openHelp(which){ helpTab(which || "how"); $("helpModal").classList.add("show"); }
-$("helpBtn").onclick = function(){ openHelp("how"); };
+$("rulesBtn").onclick = function(){ openHelp("how"); };
+/* ---------- menu ---------- */
+function closeMenu(){ $("menuModal").classList.remove("show"); }
+$("menuBtn").onclick = function(){ $("menuModal").classList.add("show"); };
+$("menuClose").onclick = closeMenu;
+$("menuModal").addEventListener("click", function(e){ if(e.target.id === "menuModal") closeMenu(); });
+$("menuRules").onclick = function(){ closeMenu(); openHelp("how"); };
+/* New game = the same path as the game-over "Play again": back to the setup sheet.
+   If the bot is mid-move, wait for it to land so its pending turn never runs on a cleared game. */
+$("menuNew").onclick = function(){
+  closeMenu();
+  (function go(){ if(G.busy) return setTimeout(go, 120); $("againBtn").onclick(); })();
+};
 $("helpClose").onclick = function(){
   $("helpModal").classList.remove("show");
   try{ localStorage.setItem("jt-stratego-seen-help", "1"); }catch(e){}
 };
-/* First time on this device, open the rules rather than making them hunt for them. */
-(function(){
-  var seen = false;
-  try{ seen = localStorage.getItem("jt-stratego-seen-help") === "1"; }catch(e){ seen = false; }
-  if(!seen) setTimeout(function(){ openHelp("how"); }, 350);
-})();
+/* The setup sheet is the start screen; the rules live behind the Rules pill in the header
+   (they used to pop open over everything on a first visit). */
 
 /* ---------- the coach ----------
    One line under the status strip. For your own piece: what it is for. For one of
@@ -1310,7 +1331,7 @@ $("startBtn").onclick = function(){
   G.reveal = false; G.sel = null;
   if(G.opts.setup === "manual"){
     G.phase = "place"; G.place = {cells:{}, pick:null};
-    show($("setupPanel"), false); show($("placePanel"), true);
+    GNSETUP.hide("setupPanel"); show($("placePanel"), true);
     show($("boardWrap"), true); show($("postBoard"), true); show($("caps"), false);
     show($("gameArea"), false); show($("readyBtn"), false); show(logEl, false);
     renderTray(); render();
@@ -1321,7 +1342,7 @@ $("startBtn").onclick = function(){
 };
 function beginPreview(){
   G.phase = "place";
-  show($("setupPanel"), false); show($("placePanel"), false);
+  GNSETUP.hide("setupPanel"); show($("placePanel"), false);
   show($("boardWrap"), true); show($("postBoard"), true); show($("readyBtn"), true);
   show($("caps"), false); show($("gameArea"), false); show(logEl, false);
   render();
@@ -1371,7 +1392,7 @@ function finish(){
 $("againBtn").onclick = function(){
   $("overModal").classList.remove("show");
   G.st = null; G.phase = "deal"; G.reveal = false;
-  show($("setupPanel"), true); show($("placePanel"), false);
+  GNSETUP.show("setupPanel"); show($("placePanel"), false);
   show($("boardWrap"), false); show($("postBoard"), false);
   show($("gameArea"), false);
 };
@@ -1389,7 +1410,7 @@ if("serviceWorker" in navigator){
   });
 }
 (function(){
-  var V = "v78", d = new Date(document.lastModified);
+  var V = "v129", d = new Date(document.lastModified);
   var when = isNaN(d) ? "" : d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent = "build " + V + (when ? " · " + when : "");
 })();

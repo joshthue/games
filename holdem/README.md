@@ -39,6 +39,15 @@ Monte Carlo against a range and weigh it against the pot odds.
 Measured over ~58,000 hands of bots-versus-bots, they play like their labels: The Rock
 runs about 16% VPIP / 10% PFR, Calls-a-Lot 37% / 7%, Maniac 44% / 42%.
 
+## Header and start screen
+
+The standard Game Night header: `‹ Games`, **Rules** and **Menu** pills, and the name
+"Hold'em" on its own line. The start screen is the standard setup sheet (`gn-setup.js`):
+**Table size** and **Blind speed** are the two key rows, a **Resume** row appears when a
+tournament is saved, card size and card text sit under *More options*, and the pinned footer
+has **New tournament** plus **Play with friends**. That opens the existing room dialog
+over the sheet. Menu → New tournament brings the sheet back.
+
 ## Options
 
 - **Table size**: 6, 8 or 9 players, picked before a tournament starts. A fuller table
@@ -46,6 +55,11 @@ runs about 16% VPIP / 10% PFR, Calls-a-Lot 37% / 7%, Maniac 44% / 42%.
 - **Blind speed**: Turbo (~20 min), Standard (~30), Marathon (~40). Turbo is the default.
 - **Text size**: S / M / L / XL, applied immediately — useful on a tablet, where the
   felt gets much bigger and the default type can look small.
+- **Card size** and **Card text** (shared `cardsize.js`, the same setting in every game):
+  card size grows the hero's hole cards and, on a 6-seat table, the board. Seat cards stay
+  put, and on 8 and 9 seats so does the board: the side seats sit level with it and measured
+  only 4–6px clear at M, overlapping by 1.1×. Card text multiplies every rank and suit.
+  At XL + XL on a 320×568 phone there is no horizontal scroll and the seats stay clear of the action bar.
 - **Felt logo**: Birch & Gran, Loonatic Cannabis, a plain Hold'em wordmark, or none.
   Loonatic is split across the table — the loon roundel above the pot, the lettering below the board.
 - **Four-color deck** and **Speed play** on by default; **Tips** (pot odds and each

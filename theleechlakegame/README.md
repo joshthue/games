@@ -9,6 +9,16 @@ The folder is still `theleechlakegame/` and always will be — the URL is what i
 phone home screens, and `localStorage` is per-origin-and-path, so moving it would
 silently reset everyone's name and settings.
 
+## Header and start screen
+
+The page uses the standard Game Night header: **‹ Games**, **Log**, **Rules**, **Menu**, then
+the name *I'm out, Jerry!* with *The Leech Lake Game* as a dedication line under it.
+
+The game opens on the standard setup sheet (`../gn-setup.js`): your name and the number of
+players (you + 1–6 computers) up top, everything else under **More options**, and **Deal**
+pinned at the bottom so it never needs a scroll. Menu → *New game / change players* brings
+the sheet back.
+
 ## How it plays
 
 - Each hand, a **caller** picks the mode for that round:
@@ -27,6 +37,8 @@ silently reset everyone's name and settings.
 
 ## Options
 
+These live under **More options** on the setup sheet and in Menu.
+
 - **Four-color deck** — ♠ black · ♥ red · ♦ blue · ♣ green (on by default).
 - **Speed play** — shorter delays for faster hands (on by default).
 - **Learning tips** — optional in-game hints, in **Beginner** (plain rules) or
@@ -42,8 +54,10 @@ a page make noise before the first touch, so the audio context waits for a gestu
 
 ## Card size
 
-Cards scale with the shared **S / M / L / XL** control (`../cardsize.js`), which sits
-next to the four-color deck toggle. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
+Cards scale with the shared **S / M / L / XL** control (`../cardsize.js`), shown as the
+**Card size** row in Menu and under More options on the setup sheet. Beside it, **Card text**
+(S / M / L / XL, `--cardtext`) scales only the printed rank and suit, including the XL
+swapped layout below; cards clip their print (`overflow:hidden`). The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
 rather than pixel sizes, because the games don't share a base card size — a multiplier
 scales each game from its own design. The choice is stored once for the whole origin,
 like the mute key, so the size you pick here is the size in every Game Night card game.

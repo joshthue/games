@@ -23,6 +23,14 @@ that is the point of the red.
 
 Drag the view to aim. On a desktop: space swings, arrow keys change club and aim.
 
+## Screen
+
+The standard Game Night header: ‹ Games, **Card** (the scorecard), **Rules**, **Menu**, with
+"Links" on the name line and the current hole, par and length beside it. There is no setup
+sheet — Links has no pre-round choices (the course is Birch Hollow, or whatever `?c=` carries),
+so it opens straight onto the Hole 1 card. That per-hole card is gameplay, not a start screen.
+The course architect and Restart live in Menu.
+
 ## What the engine actually models
 
 - **Fourteen clubs**, each with its own carry, roll, dispersion and loft. Loft drives the

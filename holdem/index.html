@@ -22,6 +22,7 @@
   --sp:#16181d; --he:#c8332f; --di:#2f6fd0; --cl:#1f8a4c;
   --r:14px; --tap:46px;
   --fs:1;              /* text size toggle: S .86 / M 1 / L 1.15 / XL 1.32 */
+  --felt:var(--felt2); --cream:var(--ink);   /* colours gn-header.js / gn-setup.js pick up */
 }
 html{height:100%}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);overflow-x:hidden;max-width:100%;
@@ -30,14 +31,15 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);overflow-x:hi
 body{display:flex;flex-direction:column;min-height:100%;user-select:none;-webkit-user-select:none}
 button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
 
-/* ---------- header ---------- */
-header{display:flex;align-items:center;gap:8px;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;
-  background:linear-gradient(180deg,#1d1715,#161110);border-bottom:1px solid var(--line);flex:0 0 auto}
-header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));letter-spacing:.3px;color:var(--gold);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbtn{min-width:38px;height:calc(34px * var(--fs));padding:0 10px;border-radius:10px;background:#2a221e;border:1px solid var(--line);
-  font-size:calc(13px * var(--fs));font-weight:600;display:flex;align-items:center;justify-content:center}
-.hbtn:active{background:#3a302a}
+/* ---------- header: the Game Night standard (gn-header.js); only the frame is ours ---------- */
+div.gn-hdr{flex:0 0 auto;margin:0;padding:calc(6px + env(safe-area-inset-top)) 10px 4px;
+  background:linear-gradient(180deg,#1d1715,#161110);border-bottom:1px solid var(--line)}
+.gn-hdr h1.gn-name{margin-top:4px}
+/* setup sheet: Start's text is dark on gold here (this page's --ink is the light one) */
+.gn-setup .gn-start{color:#211a0c}
+.gn-row .seg button{padding:7px 10px}
+.gn-row .switch{flex:0 0 auto}
+.gn-resume{padding:8px 16px;border-radius:10px;background:var(--gold-dim);color:#1a1409;font-size:14px;font-weight:800}
 
 /* ---------- blind / level strip ---------- */
 .strip{display:flex;align-items:center;gap:10px;padding:5px 12px;background:#171211;border-bottom:1px solid var(--line);
@@ -49,6 +51,7 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 #tableWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;padding:10px 8px 0;min-height:0}
 #table{position:relative;width:100%;max-width:680px;aspect-ratio:1/1.12;container-type:inline-size;
   --cardw:10.7cqw;
+  --bsize:var(--size,1);
   border-radius:48% / 46%;
   background:
     radial-gradient(ellipse at 50% 38%, var(--felt1) 0%, var(--felt2) 55%, var(--felt3) 100%);
@@ -57,7 +60,8 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
   box-shadow:0 0 0 10px var(--rail2), 0 0 0 11px rgba(217,164,65,.35), 0 14px 34px rgba(0,0,0,.6),
              inset 0 3px 22px rgba(0,0,0,.45);
 }
-#table[data-seats="8"],#table[data-seats="9"]{--cardw:9.5cqw}
+#table[data-seats="8"],#table[data-seats="9"]{--cardw:9.5cqw;
+  --bsize:1}   /* side seats sit level with the board: measured 4-6px clear at M, overlapping by 1.1x - so it stays put */
 #table::after{content:"";position:absolute;inset:14px;border-radius:48% / 46%;
   border:1px solid rgba(217,164,65,.16);pointer-events:none}
 .tlogo{position:absolute;left:50%;top:var(--y,24%);width:var(--w,52%);transform:translate(-50%,-50%);text-align:center;
@@ -84,8 +88,8 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 
 .mini{display:flex;gap:2px;justify-content:center;margin-bottom:3px;height:7.2cqw}
 .mini .card{width:5.2cqw;height:7.2cqw;border-radius:3px;padding:1px 0}
-.mini .card .rk{font-size:2.9cqw}
-.mini .card .su{font-size:2.4cqw}
+.mini .card .rk{font-size:calc(2.9cqw * var(--cardtext,1))}
+.mini .card .su{font-size:calc(2.4cqw * var(--cardtext,1))}
 
 .bubble{position:absolute;left:50%;top:-9px;transform:translate(-50%,-100%);
   background:#0c0a09;border:1px solid var(--gold-dim);color:var(--gold);font-weight:700;
@@ -112,16 +116,20 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 .pot{display:inline-flex;align-items:center;gap:5px;background:rgba(6,5,4,.7);border:1px solid var(--gold-dim);
   border-radius:20px;padding:3px 12px;font-size:calc(3.4cqw * var(--fs));font-weight:700;color:var(--gold);
   white-space:nowrap;font-variant-numeric:tabular-nums;margin-bottom:8px}
-.board{display:flex;gap:1.1cqw;justify-content:center;min-height:calc(var(--cardw) * 1.4);align-items:center}
+.board{display:flex;gap:1.1cqw;justify-content:center;min-height:calc(var(--cardw) * 1.4 * var(--bsize));align-items:center}
+/* card size (cardsize.js) grows the board and the hero's hole cards; seat minis stay put (see README) */
+.board .card{width:calc(var(--cardw) * var(--bsize));height:calc(var(--cardw) * 1.4 * var(--bsize))}
+.board .card .rk{font-size:calc(var(--cardw) * 0.43 * var(--bsize) * var(--cardtext,1))}
+.board .card .su{font-size:calc(var(--cardw) * 0.355 * var(--bsize) * var(--cardtext,1))}
 .sidepots{margin-top:6px;font-size:calc(2.7cqw * var(--fs));color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---------- cards ---------- */
 .card{width:var(--cardw);height:calc(var(--cardw) * 1.4);border-radius:5px;background:linear-gradient(160deg,#fff,#eae4d8);
   color:#16181d;display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-weight:800;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.5);flex:0 0 auto;
-  padding:2px 0;font-variant-numeric:tabular-nums}
-.card .rk{font-size:calc(var(--cardw) * 0.43)}
-.card .su{font-size:calc(var(--cardw) * 0.355);margin-top:1px}
+  padding:2px 0;font-variant-numeric:tabular-nums;overflow:hidden}
+.card .rk{font-size:calc(var(--cardw) * 0.43 * var(--cardtext,1))}
+.card .su{font-size:calc(var(--cardw) * 0.355 * var(--cardtext,1));margin-top:1px}
 .card.back{background:repeating-linear-gradient(45deg,#7a2d2a 0 5px,#5e211f 5px 10px);
   border:1px solid #8d3d39;box-shadow:0 2px 6px rgba(0,0,0,.5)}
 .card.back .rk,.card.back .su{display:none}
@@ -137,9 +145,9 @@ header .ttl{flex:1;min-width:0;font-weight:700;font-size:calc(15px * var(--fs));
 #hero{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 12px 4px;max-width:700px;
   width:100%;margin:0 auto}
 #heroCards{display:flex;gap:5px}
-#heroCards .card{width:calc(52px * var(--fs));height:calc(72px * var(--fs))}
-#heroCards .card .rk{font-size:calc(23px * var(--fs))}
-#heroCards .card .su{font-size:calc(18px * var(--fs))}
+#heroCards .card{width:calc(52px * var(--fs) * var(--size,1));height:calc(72px * var(--fs) * var(--size,1))}
+#heroCards .card .rk{font-size:calc(23px * var(--fs) * var(--size,1) * var(--cardtext,1))}
+#heroCards .card .su{font-size:calc(18px * var(--fs) * var(--size,1) * var(--cardtext,1))}
 #heroInfo{flex:1 1 auto;min-width:0}
 #heroName{font-size:calc(12px * var(--fs));color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #heroHand{font-size:calc(13.5px * var(--fs));font-weight:700;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -219,8 +227,8 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 @media (max-width:345px){
   :root{--tap:42px}
   #table{aspect-ratio:1/1.02}
-  #heroCards .card{width:calc(46px * var(--fs));height:calc(64px * var(--fs))}
-  #heroCards .card .rk{font-size:calc(20px * var(--fs))} #heroCards .card .su{font-size:calc(16px * var(--fs))}
+  #heroCards .card{width:calc(46px * var(--fs) * var(--size,1));height:calc(64px * var(--fs) * var(--size,1))}
+  #heroCards .card .rk{font-size:calc(20px * var(--fs) * var(--size,1) * var(--cardtext,1))} #heroCards .card .su{font-size:calc(16px * var(--fs) * var(--size,1) * var(--cardtext,1))}
   #hero{padding:6px 10px 2px}
 }
 
@@ -228,9 +236,9 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 @media (orientation:landscape) and (max-width:1023px){
   #table{max-width:410px}
   #hero{padding:4px 12px 2px}
-  #heroCards .card{width:calc(44px * var(--fs));height:calc(61px * var(--fs))}
-  #heroCards .card .rk{font-size:calc(19px * var(--fs))}
-  #heroCards .card .su{font-size:calc(15px * var(--fs))}
+  #heroCards .card{width:calc(44px * var(--fs) * var(--size,1));height:calc(61px * var(--fs) * var(--size,1))}
+  #heroCards .card .rk{font-size:calc(19px * var(--fs) * var(--size,1) * var(--cardtext,1))}
+  #heroCards .card .su{font-size:calc(15px * var(--fs) * var(--size,1) * var(--cardtext,1))}
   #msg{padding:2px 10px;min-height:16px}
 }
 
@@ -254,7 +262,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
   .ptag{font-size:calc(11px * var(--fs))}
   .mini{height:auto;gap:3px;margin-bottom:5px}
   .mini .card{width:34px;height:47px;border-radius:4px}
-  .mini .card .rk{font-size:16px} .mini .card .su{font-size:13px}
+  .mini .card .rk{font-size:calc(16px * var(--cardtext,1))} .mini .card .su{font-size:calc(13px * var(--cardtext,1))}
   .bubble{font-size:calc(12.5px * var(--fs));padding:3px 10px;top:-11px}
   .bet{font-size:calc(13.5px * var(--fs));padding:2px 9px;border-radius:12px}
   .bet .dot{width:10px;height:10px;max-width:10px;max-height:10px}
@@ -273,9 +281,9 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 
   #hero{max-width:560px;gap:18px;padding:10px 18px 4px}
   #heroCards{gap:8px}
-  #heroCards .card{width:calc(76px * var(--fs));height:calc(106px * var(--fs))}
-  #heroCards .card .rk{font-size:calc(33px * var(--fs))}
-  #heroCards .card .su{font-size:calc(26px * var(--fs))}
+  #heroCards .card{width:calc(76px * var(--fs) * var(--size,1));height:calc(106px * var(--fs) * var(--size,1))}
+  #heroCards .card .rk{font-size:calc(33px * var(--fs) * var(--size,1) * var(--cardtext,1))}
+  #heroCards .card .su{font-size:calc(26px * var(--fs) * var(--size,1) * var(--cardtext,1))}
   #heroStack{font-size:calc(28px * var(--fs))}
   #heroHand{font-size:calc(16px * var(--fs))}
   #heroName{font-size:calc(13px * var(--fs))}
@@ -293,15 +301,19 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
    where there is actually a pointer and keys — not a landscape tablet */
 @media (min-width:1024px) and (pointer:fine){ .kb{display:inline-block} }
 </style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body class="four">
 
-<header>
-  <button class="hbtn" id="btnHome" aria-label="All games">🏠</button>
-  <div class="ttl" id="gameTitle">Hold’em · Sit &amp; Go</div>
-  <button class="hbtn" id="btnRules">Rules</button>
-  <button class="hbtn" id="btnMenu" aria-label="Menu">☰</button>
-</header>
+<div class="gn-hdr">
+  <div class="gn-top">
+    <a class="gn-pill" href="../" id="btnHome">‹ Games</a><span class="sp"></span>
+    <button class="gn-pill" id="btnRules">Rules</button>
+    <button class="gn-pill" id="btnMenu">Menu</button>
+  </div>
+  <h1 class="gn-name" id="gameTitle">Hold’em</h1>
+</div>
 
 <div class="strip" id="strip"></div>
 
@@ -335,19 +347,22 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 
 <div class="gn-build" id="gnBuild"></div>
 
-<!-- ---------------- start ---------------- -->
-<div class="ov" id="ovStart">
-  <div class="sheet">
-    <h2 id="startTitle">6-Player Sit &amp; Go</h2>
-    <p id="startBlurb"></p>
-    <h3>Table size</h3>
-    <div class="seg" id="segSeats"></div>
-    <h3>Blind speed</h3>
-    <div class="seg" id="segBlinds"></div>
-    <p style="font-size:11px;color:var(--ink-faint)">Turbo ≈ 20 minutes · Standard ≈ 30 · Marathon ≈ 40. A fuller table plays tighter and runs longer.</p>
-    <button class="big" id="startBtn">New tournament</button>
-    <button class="big ghost" id="onlineBtn">Play with friends</button>
-    <button class="big ghost" id="resumeBtn">Resume</button>
+<!-- ---------------- start: the Game Night setup sheet (gn-setup.js) ---------------- -->
+<div class="gn-setup" id="setup" hidden>
+  <div class="gn-setup-body">
+    <p class="gn-pitch" id="startBlurb"></p>
+    <div class="gn-row" id="resumeRow" style="display:none"><span id="startTitle">Welcome back</span><button class="gn-resume" id="resumeBtn">Resume</button>
+      <span class="gn-note" id="resumeNote"></span></div>
+    <div class="gn-row"><span>Table size</span><div class="seg" id="segSeats"></div></div>
+    <div class="gn-row"><span>Blind speed</span><div class="seg" id="segBlinds"></div>
+      <span class="gn-note">Turbo ≈ 20 min · Standard ≈ 30 · Marathon ≈ 40. A fuller table runs longer.</span></div>
+    <details class="gn-more"><summary>More options</summary>
+      <div id="setupCardRows"></div>
+    </details>
+  </div>
+  <div class="gn-setup-foot">
+    <button class="gn-start" id="startBtn">New tournament</button>
+    <button class="gn-alt" id="onlineBtn">Play with friends</button>
   </div>
 </div>
 
@@ -394,6 +409,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
       <div class="ctl"><div class="switch" id="swSound"><i></i></div></div></div>
     <div class="row"><div class="lbl">Text size<small>Applies straight away</small></div></div>
     <div class="seg" id="segText"></div>
+    <div id="menuCardRows" style="margin-top:12px"></div>
     <div class="row" style="margin-top:14px"><div class="lbl">Felt logo<small>The watermark on the table</small></div></div>
     <div class="seg" id="segFelt"></div>
     <div class="row" style="margin-top:14px"><div class="lbl">Table size<small>Applies to the next tournament</small></div></div>
@@ -451,6 +467,7 @@ input[type=range]{width:100%;accent-color:var(--gold);margin:0 0 8px}
 </div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>;(function(root){
 'use strict';
 // ---------- cards ----------
@@ -1160,7 +1177,6 @@ function render(){
   const deckCls=S.fourColour?'four':'two';
   document.body.className=deckCls;
   const L=LEVELS[T.level];
-  const gt=$('gameTitle'); if(gt) gt.textContent='Hold\u2019em \u00b7 '+T.cfg.seats+'-Player Sit & Go';
   $('strip').innerHTML='Hand <b>'+T.handNo+'</b><span class="sep">|</span>Level <b>'+(T.level+1)+
     '</b><span class="sep">|</span>Blinds <b>'+fmt(L.sb)+'/'+fmt(L.bb)+'</b><span class="sep">|</span>Left <b>'+
     T.players.filter(p=>!p.out).length+'</b>';
@@ -1364,11 +1380,11 @@ function onKey(e){
 
   if(k==='escape'){
     const open=document.querySelector('.ov.open');
-    if(open && open.id!=='ovStart' && open.id!=='ovResult'){ open.classList.remove('open'); e.preventDefault(); return; }
+    if(open && open.id!=='ovResult'){ open.classList.remove('open'); e.preventDefault(); return; }
     if($('raisePanel').classList.contains('open')){ closeRaise(); e.preventDefault(); }
     return;
   }
-  if(document.querySelector('.ov.open')) return;      // a sheet is up; leave it alone
+  if(document.querySelector('.ov.open') || !$('setup').hidden) return;      // a sheet is up; leave it alone
   if(!pendingResolve || !T || T.phase!=='betting') return;
 
   const la=legalActions(T);
@@ -1791,6 +1807,7 @@ function onState(m){
   if(NET.mySeat<0) NET.mySeat=m.p.findIndex(q=>q.i===NET.me);
   hydrate(m);
   if($('ovOnline').classList.contains('open') && m.ph!=='idle') closeOv('ovOnline');
+  if(m.ph!=='idle') GNSETUP.hide('setup');
   const before=lastBoard; lastBoard=T.board.length;
   render();
   if(m.m) $('msg').textContent=m.m;
@@ -1906,7 +1923,7 @@ function startOnlineGame(){
   NET.mySeat=seatOf(NET.me);
   heroSeat=NET.mySeat<0?0:NET.mySeat;
   buildTable(); render();
-  closeOv('ovOnline');
+  closeOv('ovOnline'); GNSETUP.hide('setup');
   hostHand();
 }
 
@@ -1961,16 +1978,15 @@ function boot(){
   applyTextSize();
   document.addEventListener('keydown', onKey);
   buildTable();
-  $('btnHome').onclick=()=>{ location.href='../'; };
   $('btnRules').onclick=()=>openOv('ovRules');
-  $('btnMenu').onclick=()=>openOv('ovMenu');
+  $('btnMenu').onclick=()=>{ $('menuCardRows').innerHTML=CARDSIZE.rowsHTML(); openOv('ovMenu'); };
   document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeOv(b.getAttribute('data-close')));
   $('menuHome').onclick=()=>{ location.href='../'; };
-  $('menuNew').onclick=()=>{ closeOv('ovMenu'); if(confirm('Start a new tournament? The current one is lost.')) newGame(); };
+  $('menuNew').onclick=()=>{ closeOv('ovMenu'); if(confirm('Start a new tournament? The current one is lost.')) showSetup(false); };
   $('resAgain').onclick=()=>{ closeOv('ovResult'); newGame(); };
   $('resHome').onclick=()=>{ location.href='../'; };
-  $('startBtn').onclick=()=>{ closeOv('ovStart'); newGame(); };
-  $('resumeBtn').onclick=()=>{ closeOv('ovStart'); playHand(); };
+  $('startBtn').onclick=()=>{ GNSETUP.hide('setup'); newGame(); };
+  $('resumeBtn').onclick=()=>{ GNSETUP.hide('setup'); playHand(); };
   bindSwitch('swFour',()=>S.fourColour,v=>S.fourColour=v);
   bindSwitch('swTips',()=>S.tips,v=>S.tips=v);
   // sound lives in sfx.js, shared by every game on this origin — not in this game's settings
@@ -1981,8 +1997,7 @@ function boot(){
   bindSeg('segBlinds2',[['turbo','Turbo'],['standard','Standard'],['marathon','Marathon']],
           ()=>S.blinds,v=>S.blinds=v);
   const seatOpts=SEAT_COUNTS.map(n=>[n, n+' players']);
-  const setSeats=v=>{ S.seats=v; const b=$('startBlurb');
-    if(b && !localStorage.getItem(LS+'.game')) b.textContent=v+' players, 5,000 chips each, rising blinds. Last one standing wins.'; };
+  const setSeats=v=>{ S.seats=v; const b=$('startBlurb'); if(b) b.textContent=pitch(); };
   bindSeg('segSeats',  seatOpts, ()=>S.seats, setSeats);
   bindSeg('segSeats2', seatOpts, ()=>S.seats, setSeats);
   bindSeg('segText',[['s','S'],['m','M'],['l','L'],['xl','XL']],
@@ -2000,7 +2015,8 @@ function boot(){
   if(!NET.me){ NET.me='p'+Math.random().toString(36).slice(2,9); try{ localStorage.setItem(LS+'.id', NET.me); }catch(e){} }
   try{ const n=JSON.parse(localStorage.getItem(LS+'.net')||'{}');
        if(n.name) $('netName').value=n.name; if(n.room) $('netRoom').value=n.room; }catch(e){}
-  $('onlineBtn').onclick=()=>{ closeOv('ovStart'); openOv('ovOnline'); };
+  // over the sheet, not instead of it: closing the room dialog lands back on the sheet
+  $('onlineBtn').onclick=()=>openOv('ovOnline');
   $('netCreate').onclick=()=>netCreate();
   $('netJoin').onclick=()=>netJoin();
   $('netLeave').onclick=()=>{ netLeave(); renderLobby(); };
@@ -2010,19 +2026,22 @@ function boot(){
           ()=>NET.bots, v=>{ NET.bots=v; if(NET.host){ broadcastSeats(); renderLobby(); } });
   window.addEventListener('beforeunload', ()=>{ if(NET.on) netPost({k:'bye', id:NET.me}); });
 
-  const resumed=loadGame();
-  $('resumeBtn').style.display=resumed?'block':'none';
-  $('startTitle').textContent=resumed?'Welcome back':'6-Player Sit & Go';
-  $('startBlurb').textContent=resumed
-    ? 'You have a tournament in progress — hand '+T.handNo+', '+T.players.filter(p=>!p.out).length+' players left.'
-    : S.seats+' players, 5,000 chips each, rising blinds. Last one standing wins.';
-  openOv('ovStart');
+  showSetup(loadGame());
+}
+const pitch=()=>'A Sit & Go: '+S.seats+' players, 5,000 chips each, rising blinds. Last one standing wins.';
+// the start screen; Menu → New tournament comes back here too
+function showSetup(resumed){
+  $('startBlurb').textContent=pitch();
+  $('resumeRow').style.display=resumed?'flex':'none';
+  if(resumed) $('resumeNote').textContent='Tournament in progress — hand '+T.handNo+', '+T.players.filter(p=>!p.out).length+' players left.';
+  $('setupCardRows').innerHTML=CARDSIZE.rowsHTML();
+  GNSETUP.show('setup');
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
 })();
 </script>
 <script>
-(function(){ var V="v128", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+(function(){ var V="v129", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO);
   var s=isNaN(d)?V:(V+" · "+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+
         " "+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}));

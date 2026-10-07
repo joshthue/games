@@ -53,6 +53,53 @@
     }).join("")+'</span>';
   }
 
-  window.CARDSIZE={ STEPS:STEPS, idx:idx, value:value, apply:apply, choose:choose, controlHTML:controlHTML };
+  window.CARDSIZE={ STEPS:STEPS, idx:idx, value:value, apply:apply, choose:choose, controlHTML:controlHTML,
+    rowsHTML:function(opts){ return rowsHTML(opts); } };
   apply();
+
+  /* ---- Card text: the size of the rank and suit on the face, separate from the card ----
+     Same model as card size - one origin-wide key, a multiplier, an in-memory fallback - but
+     it scales only the printed rank/pip, through --cardtext. A game multiplies its card text
+     by it:  font-size: calc(13px * var(--size) * var(--cardtext,1)).  The ,1 fallback means a
+     game that forgets to load this file still renders at normal size.
+
+     It exists because a bigger card and bigger print are different needs: big rank text on a
+     normal card keeps a 7-card hand on a 320px phone, which an XL card can't. XL text is the
+     largest step whose rank + pip still fit inside the smallest card in the suite (a 44x62
+     trick-taking card at card size S); past it the pip runs into the corner index. */
+  var TKEY="gn_cardtext";
+  var TSTEPS=[{k:"S",v:0.9},{k:"M",v:1},{k:"L",v:1.2},{k:"XL",v:1.4}];
+  var tmem=null;
+  function tread(){ try{ var v=localStorage.getItem(TKEY); if(v!==null) return v; }catch(e){} return tmem; }
+  function twrite(v){ tmem=v; try{ localStorage.setItem(TKEY,v); }catch(e){} }
+  function tidx(){ var i=parseInt(tread(),10); return (i>=0 && i<TSTEPS.length) ? i : 1; }
+  function tapply(){
+    var el=document.documentElement; if(!el) return;
+    el.style.setProperty("--cardtext", TSTEPS[tidx()].v);
+    el.setAttribute("data-cardtext", TSTEPS[tidx()].k);
+  }
+  function tchoose(i,btn){
+    twrite(String(i)); tapply();
+    var seg = btn && btn.parentNode;
+    if(seg) [].forEach.call(seg.children, function(b,n){ b.classList.toggle("on", n===i); });
+    if(typeof window.onCardSize==="function") window.onCardSize();
+  }
+  function tcontrolHTML(){
+    var i=tidx();
+    return '<span class="seg cardtext">'+TSTEPS.map(function(s,n){
+      return '<button type="button" class="'+(n===i?"on":"")+'" onclick="CARDTEXT.choose('+n+',this)">'+s.k+'</button>';
+    }).join("")+'</span>';
+  }
+  window.CARDTEXT={ STEPS:TSTEPS, idx:tidx, value:function(){ return TSTEPS[tidx()].v; }, apply:tapply, choose:tchoose, controlHTML:tcontrolHTML };
+  tapply();
+
+  // The two standard setup-sheet / menu rows. {size:false} for a game whose cards can't grow
+  // (BINGO's squares, a fixed board) - those still get Card text.
+  function rowsHTML(opts){
+    opts=opts||{};
+    var h='';
+    if(opts.size!==false) h+='<div class="gn-row"><span>Card size</span>'+controlHTML()+'</div>';
+    h+='<div class="gn-row"><span>'+(opts.textLabel||'Card text')+'</span>'+tcontrolHTML()+'</div>';
+    return h;
+  }
 })();

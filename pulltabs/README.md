@@ -47,6 +47,15 @@ $ box is in the top-left square, so neither ever hides the other.
 Tickets from before v86 (matching rows, five tabs, seal cards) are cleared from a pile on
 load, and any unopened winner among them is paid out first.
 
+## Start screen (Oct 2026, Game Night standard)
+The lobby (neon sign, deal grid, two long buttons) became the standard setup sheet
+(`gn-setup.js`): a short pitch, **Your name (for the winners board)**, Darlene's line, then
+**Walk up to the booth** (Start: live with everybody) and **Play solo** (your own booth, works
+offline). The neon sign is gone (the header names the game). The six-box picker left the start
+screen: once you walk up, the six boxes are on the counter and you tap one there. The box you
+were last on is still remembered (`pt_deal`) and opens first. Leave the booth (Menu) brings the
+sheet back.
+
 ## Play (v95: the booth)
 - **The booth** — all six boxes sit on the counter at once (two rows of three on a phone, one row
   of six on a tablet), each drawn as an open cardboard box

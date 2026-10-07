@@ -35,6 +35,9 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
   table's best or is under 8.
 
 ## Screen
+- **Straight in** (no start screen): what loads is the game. Your name goes on the board from the
+  Menu. On a 320×568 phone (`max-height:600px`) the spacing tightens so the whole Shake of the Day
+  view, Shake button included, fits without scrolling. Only spacing changes; the dice keep their size.
 - **Header**: the standard Game Night header, with the **jackpot** (compact: small label, amount
   never wraps) and the **ATM** right-aligned on the name's line (`.gn-namerow` from `gn-header.js`).
   At the Ship, Captain & Crew table the jackpot doesn't apply, so that line shows the ATM only

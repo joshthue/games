@@ -46,13 +46,13 @@
 
   /* ---- cards ---- */
   .card{width:calc(52px * var(--size)); height:calc(74px * var(--size)); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
-    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0;}
-  .card .rank{position:absolute; top:4px; left:6px; font-size:calc(15px * var(--size)); font-weight:800; line-height:1;}
-  .card .rankb{position:absolute; bottom:4px; right:6px; font-size:calc(15px * var(--size)); font-weight:800; line-height:1; transform:rotate(180deg);}
-  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(26px * var(--size));}
+    box-shadow:0 2px 5px rgba(0,0,0,.4); flex:0 0 auto; user-select:none; border:1px solid #d8d2c0; overflow:hidden;}
+  .card .rank{position:absolute; top:4px; left:6px; font-size:calc(15px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:4px; right:6px; font-size:calc(15px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(26px * var(--size) * var(--cardtext,1));}
   /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
   .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
-  .seg.cardsize button{padding:5px 9px; font-size:12px; min-width:30px;}
+  .seg.cardsize button,.seg.cardtext button{padding:5px 9px; font-size:12px; min-width:30px;}
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 7px,#155a94 7px,#155a94 14px); border:2px solid #0e3f6b;}
 
   /* ---- 5x5 board + row/col score chips ---- */
@@ -64,8 +64,8 @@
   .pscell.just{animation:pop .18s ease-out;}
   @keyframes pop{from{transform:scale(.82);}to{transform:scale(1);}}
   .psmini{font-weight:800; line-height:1; text-align:center; display:flex; flex-direction:column; align-items:center;}
-  .psmini .r{font-size:clamp(13px,4.1vw,18px);}
-  .psmini .s{font-size:clamp(15px,4.6vw,20px); margin-top:1px;}
+  .psmini .r{font-size:calc(clamp(13px,4.1vw,18px) * var(--cardtext,1));}
+  .psmini .s{font-size:calc(clamp(15px,4.6vw,20px) * var(--cardtext,1)); margin-top:1px;}
   .psscore{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px; color:var(--gold); font-weight:800; min-height:34px;}
   .psscore .ab{font-size:9px; letter-spacing:.5px; opacity:.85;}
   .psscore .pts{font-size:13px; color:var(--cream);}
@@ -379,7 +379,8 @@ function openRules(){
 function openMenu(){
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>'
     +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.tipsOn?'on':'')+'" onclick="menuToggleTips()"></button><span>Tips '+(settings.tipsOn?'ON':'OFF')+'</span></div>'
-    +'<div class="optrow"><div class="switch" style="display:flex;"><button class="toggle '+(settings.fourColor?'on':'')+'" onclick="menuToggleFour()"></button><span>Four-color deck</span></div>'+CARDSIZE.controlHTML()+'</div>'
+    +'<div class="optrow"><div class="switch" style="display:flex;"><button class="toggle '+(settings.fourColor?'on':'')+'" onclick="menuToggleFour()"></button><span>Four-color deck</span></div></div>'
+    +CARDSIZE.rowsHTML()
     +'<div style="margin:12px 0 4px;font-size:13px;">Scoring system</div>'
     +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
     +'<div style="height:6px"></div>'
@@ -835,7 +836,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v121", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v129", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

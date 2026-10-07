@@ -19,6 +19,7 @@
     --bg:#0a0e1a; --panel:#121826; --panel2:#1a2234; --line:#26304a;
     --ink:#eef2fb; --muted:#8b97b3; --blue:#2e6bff; --blue2:#173a8f;
     --gold:#ffcf4a; --red:#ff4d5e; --green:#33d6a6;
+    --felt:#0e1424; --cream:#eef2fb;   /* the shared setup sheet / header read these */
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0;}
@@ -32,12 +33,9 @@
   }
   .wrap{max-width:640px; margin:0 auto; padding:14px 14px calc(env(safe-area-inset-bottom) + 18px); padding-top:calc(env(safe-area-inset-top) + 10px);}
 
-  /* Header */
-  header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px;}
-  .brand{display:flex; align-items:center; gap:9px; min-width:0;}
-  .brand .lights{font-size:22px; line-height:1;}
-  .brand h1{font-size:16px; margin:0; letter-spacing:.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .brand h1 b{color:var(--gold);}
+  /* Header: the standard Game Night header (../gn-header.js); the connection dot sits on the name line */
+  .gn-namerow .status{cursor:pointer; padding:4px 0 4px 6px; max-width:38%; min-width:0; flex:0 1 auto;}
+  .gn-namerow .status #statusText{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .status{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); flex-shrink:0;}
   .dot{width:9px; height:9px; border-radius:50%; background:var(--muted); box-shadow:0 0 0 0 rgba(51,214,166,.6);}
   .dot.on{background:var(--green); animation:pulse 2s infinite;}
@@ -48,9 +46,34 @@
   .panel{background:linear-gradient(180deg,var(--panel) 0%, #0e1420 100%); border:1px solid var(--line); border-radius:16px; padding:16px;}
   .hidden{display:none !important;}
 
-  /* Setup */
-  .setup h2{margin:2px 0 4px; font-size:20px;}
-  .setup p{margin:0 0 16px; color:var(--muted); font-size:13.5px; line-height:1.5;}
+  /* Setup sheet (../gn-setup.js) — BINGO's own colours on the shared layout */
+  .gn-setup{background:radial-gradient(900px 500px at 50% -20%, #16203a 0%, var(--bg) 60%);}
+  .gn-setup .gn-start{color:#2a1e00; background:linear-gradient(180deg,#ffd76a,#e5a600);}
+  .gn-setup .invitebox{margin:0 0 12px;}
+  .gn-setup .hint{margin:0 0 10px;}
+  .gn-setup .gn-more .hint{margin-top:-4px;}
+  .pickbtn{font-family:inherit; font-size:14px; font-weight:800; color:var(--gold); background:var(--panel2);
+    border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer; max-width:62%;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pickbtn::after{content:" \203A"; opacity:.7;}
+  .roomsug{display:flex; align-items:center; gap:8px; margin:-6px 0 10px; font-size:12px; color:var(--muted); flex-wrap:wrap;}
+  .roomsug button{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; font-weight:700; letter-spacing:1px; color:var(--gold);
+    background:var(--panel2); border:1px dashed var(--line); border-radius:8px; padding:6px 10px; cursor:pointer;}
+  .gn-setup #showRest{margin:4px 0 0;}
+  /* segmented controls for the shared Square text rows (../cardsize.js) */
+  .seg{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--panel2);}
+  .seg button{font-family:inherit; font-weight:800; color:var(--muted); background:none; border:none; cursor:pointer;}
+  .seg.cardsize button,.seg.cardtext button{padding:6px 10px; font-size:12px; min-width:34px;}
+  .seg button.on{background:var(--blue); color:#fff;}
+  /* Menu + Rules */
+  .menulist{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+  .menulist .btn{margin:0;}
+  .menuhead{font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin:14px 0 6px;}
+  .menulist a.btn{text-decoration:none;}
+  .rulesbody{font-size:13.5px; line-height:1.5; color:var(--ink);}
+  .rulesbody h4{margin:14px 0 4px; font-size:13px; color:var(--gold); letter-spacing:.4px;}
+  .rulesbody p{margin:0 0 6px;}
+  .rulesbody ul{margin:0 0 6px; padding-left:18px;}
   label{display:block; font-size:12px; color:var(--muted); margin:14px 0 6px; font-weight:600; letter-spacing:.3px;}
   input[type=text]{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--ink);
     font-size:17px; padding:13px 14px; border-radius:12px; outline:none; font-weight:600;}
@@ -84,8 +107,11 @@
   .pill.win{background:var(--gold); color:#2a1e00; border-color:transparent;}
 
   /* Bingo grid */
-  /* card text size — set by the 🔠 chip, remembered per phone */
-  :root{--cellfs:10.5px; --cellmin:0px; --cellpad:5px; --readfs:12.5px; --notefs:13.5px; --cellar:1/1;}
+  /* Square text follows the shared Game Night card-text setting (../cardsize.js sets --cardtext).
+     Card text M (1) is BINGO's old default "L" look: 13.5px squares, 88px min-height. Cells grow
+     downward (aspect-ratio auto) so bigger text never widens the grid; fitCells() steps long words down. */
+  :root{--cellfs:calc(13.5px * var(--cardtext,1)); --cellmin:calc(88px * var(--cardtext,1)); --cellpad:5px;
+        --readfs:calc(15px * var(--cardtext,1)); --notefs:calc(15px * var(--cardtext,1)); --cellar:auto;}
   .grid{display:grid; grid-template-columns:repeat(5,1fr); gap:7px;}
   .cell{position:relative; aspect-ratio:var(--cellar); min-height:var(--cellmin); background:var(--panel2); border:1px solid var(--line); border-radius:11px;
     display:flex; align-items:center; justify-content:center; text-align:center; padding:var(--cellpad);
@@ -276,74 +302,65 @@
     box-shadow:0 12px 30px -8px rgba(0,0,0,.6); font-size:14px; opacity:0; transition:opacity .3s, transform .3s; pointer-events:none;}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
 </style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <canvas id="confetti"></canvas>
 <div id="siren" class="siren"></div>
 <div class="wrap">
 
-  <header>
-    <div class="brand"><a href="../" title="All games" style="text-decoration:none;margin-right:8px;font-size:20px;">🏠</a><span class="lights">🚨</span><h1 id="gameTitle">On Patrol <b>BINGO</b></h1></div>
-    <div class="status" id="statusBox" style="cursor:pointer;"><span id="dot" class="dot"></span><span id="statusText">offline</span></div>
-  </header>
-
-  <!-- SETUP -->
-  <section id="setup" class="panel setup">
-    <h2 id="setupTitle">Let's play 🎲</h2>
-    <p id="setupBlurb">Pick tonight's game, type your name and a shared <b>room code</b>. Whoever you play with types the <b>same room code</b> on their phone — then you'll each get a card and see everyone else's live.</p>
-
-    <div id="inviteBox" class="invitebox hidden">
-      <div class="ttl"><span id="invEmoji">🎯</span> <b id="invGame">BINGO</b></div>
-      <div class="sub">You're joining room <code id="invRoom">—</code><span id="invExtra"></span></div>
-      <div class="sub2">Just put your name in and tap Start. <span id="invBuild" class="invbuild"></span></div>
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
     </div>
+    <div class="gn-namerow"><h1 class="gn-name" id="gameTitle">On Patrol BINGO</h1>
+      <div class="status" id="statusBox" title="Connection — tap for details"><span id="dot" class="dot"></span><span id="statusText">offline</span></div></div>
+  </div>
 
-    <label>Your name</label>
-    <input id="nameInput" type="text" placeholder="e.g. Junior" autocomplete="off" maxlength="16">
+  <!-- SETUP: the standard Game Night setup sheet (../gn-setup.js) -->
+  <div class="gn-setup" id="setup">
+    <div class="gn-setup-body">
+      <h2 id="setupTitle" hidden>Let's play</h2>
+      <p class="gn-pitch" id="setupBlurb">Type your name and a shared <b>room code</b>. Everyone who types the same code gets their own card and sees the others live.</p>
 
-    <div id="setupRest">
-    <label>Tonight's game <span id="catLabel" style="float:right;font-weight:700;opacity:.6;"></span></label>
-    <div class="roomgen">
-      <div id="themeChipSetup" class="code">🚨 On Patrol</div>
-      <button class="btn ghost small" id="themePickBtn" style="width:auto; padding:11px 14px;">Change</button>
-    </div>
-    <div id="matchupRow" style="display:none;">
-      <label style="margin-top:12px;">Matchup</label>
-      <div class="roomgen">
-        <div id="matchChipSetup" class="code">Pick a matchup</div>
-        <button class="btn ghost small" id="matchPickBtn" style="width:auto; padding:11px 14px;">Pick</button>
+      <div id="inviteBox" class="invitebox hidden">
+        <div class="ttl"><span id="invEmoji">🎯</span> <b id="invGame">BINGO</b></div>
+        <div class="sub">You're joining room <code id="invRoom">—</code><span id="invExtra"></span></div>
+        <div class="sub2">Just put your name in and tap Start. <span id="invBuild" class="invbuild"></span></div>
       </div>
-      <div class="hint">Both teams get their own calls — touchdowns, punts, turnovers, coach shots.</div>
-    </div>
 
-    <label style="margin-top:14px;">Team (optional)</label>
-    <div class="roomgen">
-      <div id="teamChipSetup" class="code">Solo</div>
-      <button class="btn ghost small" id="teamPickBtn" style="width:auto; padding:11px 14px;">Change</button>
-    </div>
-    <div class="hint">Everyone on the same team plays <b>one shared card</b> — either of you can tap it, and it stays in sync. Leave it on Solo for your own card.</div>
+      <label class="gn-field">Your name<input id="nameInput" type="text" placeholder="e.g. Junior" autocomplete="off" maxlength="16"></label>
 
-    <label style="margin-top:14px;">Win pattern</label>
-    <div class="roomgen">
-      <div id="patChipSetup" class="code">Cover all</div>
-      <button class="btn ghost small" id="patPickBtn" style="width:auto; padding:11px 14px;">Change</button>
-    </div>
-    <div class="hint">Cover all is the house rule. Whoever changes it sets it for everyone in the room.</div>
+      <div id="setupRest">
+        <div class="gn-row"><span>Tonight's game</span><button type="button" class="pickbtn" id="themePickBtn"><span id="themeChipSetup">On Patrol</span></button></div>
+        <span id="catLabel" hidden></span>
+        <div id="matchupRow" style="display:none;">
+          <div class="gn-row"><span>Matchup</span><button type="button" class="pickbtn" id="matchPickBtn"><span id="matchChipSetup">Pick a matchup</span></button></div>
+        </div>
+        <label class="gn-field">Room code<input id="roomInput" type="text" placeholder="e.g. couch-night" autocomplete="off" maxlength="24"></label>
+        <div class="roomsug"><span>Need one?</span><button type="button" id="useSuggest" title="Use this code"><span id="roomSuggest">—</span></button></div>
 
-    <label style="margin-top:14px;">Room code (both players type the same one)</label>
-    <input id="roomInput" type="text" placeholder="e.g. couch-night" autocomplete="off" maxlength="24">
-    <div class="roomgen">
-      <div id="roomSuggest" class="code">—</div>
-      <button class="btn ghost small" id="useSuggest" style="flex:0 0 auto; width:auto; padding:11px 14px;">Use this</button>
-    </div>
-    <div class="hint">The room code is a shared password, not private — anyone who types the exact same code lands in your game. A goofy phrase you both know works great.</div>
-    </div>
+        <details class="gn-more"><summary>More options</summary>
+          <div class="gn-row"><span>Team</span><button type="button" class="pickbtn" id="teamPickBtn"><span id="teamChipSetup">Solo</span></button></div>
+          <div class="hint">Everyone on the same team plays <b>one shared card</b>. Leave it on Solo for your own card.</div>
+          <div class="gn-row"><span>Win pattern</span><button type="button" class="pickbtn" id="patPickBtn"><span id="patChipSetup">Cover all</span></button></div>
+          <div class="hint">Cover all is the house rule. Whoever changes it sets it for everyone in the room.</div>
+          <div id="setupTextRows"></div>
+          <div class="hint">The room code is a shared password, not private — anyone who types the exact same code lands in your game. Capitals and spaces don't matter.</div>
+          <div class="hint">Add to Home Screen for an app-like experience. Works over the internet — you don't have to be on the same Wi-Fi.</div>
+        </details>
+      </div>
 
-    <button class="btn ghost small hidden" id="showRest" style="margin-top:12px;">⚙️ Change the game or room</button>
-    <button class="btn gold" id="startBtn" style="margin-top:18px;">Start playing 🎉</button>
-    <div class="meta">Add to Home Screen for an app-like experience. Works over the internet — you don't have to be on the same Wi-Fi.</div>
-    <div class="build" id="buildStampSetup">—</div>
-  </section>
+      <button class="btn ghost small hidden" id="showRest">Change the game or room</button>
+      <div class="build" id="buildStampSetup">—</div>
+    </div>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="startBtn">Start playing</button>
+    </div>
+  </div>
 
   <!-- GAME -->
   <section id="game" class="hidden">
@@ -359,7 +376,6 @@
           <span class="patchip" id="autoChip" title="Auto-refresh">⚡ Auto</span>
           <span class="patchip" id="lockChip" title="Organize">🔒</span>
           <span class="patchip" id="packChip" title="Call packs">🎴</span>
-          <span class="patchip" id="sizeChip" title="Text size">🔠 M</span>
           <span class="patchip" id="soundChip" title="Sound">🔊</span>
           <div class="pill" id="myPill">playing…</div>
         </div>
@@ -380,7 +396,7 @@
         <button class="btn ghost small" id="newCardBtn">🔀 My card</button>
         <button class="btn ghost small" id="leaveBtn">Leave</button>
       </div>
-      <div class="meta">🔠 sets the card text size — tap it until it reads right. <span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
+      <div class="meta">Square text size is in Menu. <span id="winRule">First to every square on the card wins.</span> Tap a square when you see it happen — the centre is <b id="centerName">—</b>, the one square everybody shares. Tap 🎯 to change the pattern for everyone.<br>
         <b>♻️ Fresh squares</b> re-deals only the squares you haven't marked (the centre stays put), pulling in whatever's in the pool now — then sits out 90 seconds before you can do it again. A new round clears the wait.</div>
     </div>
 
@@ -585,6 +601,24 @@
   </div>
 </div>
 
+<!-- MENU (header) -->
+<div id="menuModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>Menu</h3>
+    <div id="menuBody"></div>
+    <div class="footbar"><button class="btn ghost small" id="menuClose">Done</button></div>
+  </div>
+</div>
+
+<!-- RULES (header) -->
+<div id="rulesModal" class="modal hidden">
+  <div class="modalbox">
+    <h3>How to play</h3>
+    <div class="rulesbody" id="rulesBody"></div>
+    <div class="footbar"><button class="btn ghost small" id="rulesClose">Got it</button></div>
+  </div>
+</div>
+
 <!-- WIN BANNER -->
 <div id="banner" class="banner hidden">
   <div class="bwin">
@@ -598,6 +632,7 @@
 <div id="toast" class="toast"></div>
 
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 "use strict";
 
@@ -1029,7 +1064,7 @@ function theme(){ return THEMES[THEME] || THEMES.onpatrol; }
 
 /* ---------- build stamp (bump with the sw.js cache version) ---------- */
 const CENTER_SQUARE="Gran falls asleep";   // the shared centre square (was "★ FREE ★")
-const BUILD_V="v78";
+const BUILD_V="v129";
 function buildLabel(){
   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build actually running
   const d=new Date(document.lastModified);
@@ -1522,7 +1557,7 @@ function applyInvite(){
 function paintTheme(){
   const t=theme();
   const h=document.getElementById("gameTitle");
-  if(h) h.innerHTML=t.title;
+  if(h){ h.textContent=t.name+" BINGO"; if(window.GNHEADER) GNHEADER.fit(); }   // plain name: no emoji in the standard header
   const sub=document.getElementById("gameSub");
   if(sub) sub.textContent=t.sub;
   const lights=document.querySelector(".lights");
@@ -1532,7 +1567,7 @@ function paintTheme(){
   const catChip=document.getElementById("catLabel");
   if(catChip) catChip.textContent=CATEGORIES[t.cat] ? CATEGORIES[t.cat].emoji+" "+CATEGORIES[t.cat].name : "";
   const setupChip=document.getElementById("themeChipSetup");
-  if(setupChip) setupChip.textContent=(CATEGORIES[t.cat]?CATEGORIES[t.cat].emoji+" "+CATEGORIES[t.cat].name+" · ":"")+t.emoji+" "+t.name;
+  if(setupChip) setupChip.textContent=t.emoji+" "+t.name;
   const mrow=document.getElementById("matchupRow");
   if(mrow) mrow.style.display = t.matchup ? "" : "none";
   const mchip=document.getElementById("matchChip");
@@ -2190,10 +2225,11 @@ function relayState(h){ return relay[h] || (relay[h] = {live:false, es:null, pol
 function liveRelays(){ return RELAYS.filter(h=>relayState(h).live).length; }
 function refreshStatus(){
   const dot=document.getElementById("dot"), t=document.getElementById("statusText");
-  if(!ROOM){ dot.className="dot"; t.textContent="offline"; return; }
+  if(!ROOM){ dot.className="dot"; t.textContent="offline"; if(window.GNHEADER) GNHEADER.fit(); return; }
   const n=liveRelays();
   dot.className="dot"+(n?" on":" bad");
   t.textContent = n===RELAYS.length ? "synced" : n ? "synced ("+n+"/"+RELAYS.length+")" : "no signal — tap";
+  if(window.GNHEADER) GNHEADER.fit();   // the status shares the name's line — re-shrink the name so it never clips
 }
 function setStatus(){ refreshStatus(); }   // kept so callers read the same everywhere
 function syncDetails(){
@@ -2361,26 +2397,27 @@ function handleIncoming(b){
   renderOthers(); renderMine();
 }
 
-/* ---------- card text size ---------- */
-const SIZES = [
-  { key:"s",  label:"S",  cell:"10.5px", min:"0px",  ar:"1/1",  pad:"5px", read:"12.5px", note:"13.5px" },
-  { key:"m",  label:"M",  cell:"12px",   min:"74px", ar:"auto", pad:"5px", read:"13.5px", note:"14px"   },
-  { key:"l",  label:"L",  cell:"13.5px", min:"88px", ar:"auto", pad:"5px", read:"15px",   note:"15px"   },
-  { key:"xl", label:"XL", cell:"15.5px", min:"104px",ar:"auto", pad:"5px", read:"16.5px", note:"16.5px" }
-];
-let SIZE = store.get("opl_textsize") || "l";     // large by default — these get read from across a room
-function applySize(){
-  const z = SIZES.find(x=>x.key===SIZE) || SIZES[2];
-  const r = document.documentElement.style;
-  r.setProperty("--cellfs", z.cell);
-  r.setProperty("--cellmin", z.min);
-  r.setProperty("--cellar", z.ar);
-  r.setProperty("--cellpad", z.pad);
-  r.setProperty("--readfs", z.read);
-  r.setProperty("--notefs", z.note);
-  const chip=document.getElementById("sizeChip");
-  if(chip) chip.textContent="🔠 "+z.label;
+/* ---------- card text size ----------
+   Squares follow the shared Game Night "card text" setting (../cardsize.js, localStorage gn_cardtext,
+   --cardtext on <html>); the CSS scales --cellfs/--cellmin/--readfs/--notefs from it. BINGO's old
+   private S/M/L/XL chip (opl_textsize) is migrated once into gn_cardtext if that's still unset. */
+const CELL_BASE_PX = 13.5;   // must match --cellfs in the CSS: card text M = the old BINGO "L"
+(function migrateTextSize(){
+  try{
+    if(localStorage.getItem("gn_cardtext")!==null) return;
+    const old=localStorage.getItem("opl_textsize"); if(!old) return;
+    const map={ s:0, m:0, l:1, xl:2 };          // old S/M ≈ shared S, old L = shared M, old XL ≈ shared L
+    if(!(old in map)) return;
+    localStorage.setItem("gn_cardtext", String(map[old]));
+    if(window.CARDTEXT) CARDTEXT.apply();
+  }catch(e){}
+})();
+function applySize(){ /* driven by --cardtext in the CSS; nothing to set per game */ }
+function cardTextValue(){
+  const v=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cardtext"));
+  return v>0 ? v : 1;
 }
+window.onCardSize = function(){ fitCells(); };
 // A few calls are long enough to clip at the bigger sizes — shrink just those
 // cells until they fit, so the size chip never costs you a readable square.
 const _measure = (function(){ try{ return document.createElement("canvas").getContext("2d"); }catch(e){ return null; } })();
@@ -2393,7 +2430,7 @@ function widestWord(text, weight, fs, family){
 }
 function fitCells(){
   const grid=document.getElementById("myGrid"); if(!grid) return;
-  const base=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cellfs"))||12;
+  const base=CELL_BASE_PX*cardTextValue();
   for(const c of grid.children){
     const sp=c.querySelector("span"); if(!sp) continue;
     const cs=getComputedStyle(c);
@@ -2407,20 +2444,14 @@ function fitCells(){
     const tooWide = ()=> widestWord(text, weight, fs, family) > avail;
     const tooTall = ()=> sp.scrollHeight > c.clientHeight-4;
     // shrink until the longest word fits on a line and the whole call fits the cell
-    while((tooWide() || tooTall()) && fs > 9.5 && guard++ < 14){ fs -= 0.5; c.style.fontSize=fs+"px"; }
+    const steps=Math.ceil((base-9.5)/0.5)+1;   // enough half-px steps to reach the floor from any card-text size
+    while((tooWide() || tooTall()) && fs > 9.5 && guard++ < steps){ fs -= 0.5; c.style.fontSize=fs+"px"; }
     // a genuinely long word may break rather than shrink the whole square to nothing
     if(tooWide() || tooTall()){
       c.style.overflowWrap="break-word";
-      while(tooTall() && fs > 7.5 && guard++ < 26){ fs -= 0.5; c.style.fontSize=fs+"px"; }
+      while(tooTall() && fs > 7.5 && guard++ < steps+12){ fs -= 0.5; c.style.fontSize=fs+"px"; }
     }
   }
-}
-function cycleSize(){
-  const i = SIZES.findIndex(x=>x.key===SIZE);
-  SIZE = SIZES[(i+1)%SIZES.length].key;
-  store.set("opl_textsize", SIZE);
-  applySize(); fitCells();
-  showToast("🔠 Card text: "+SIZES.find(x=>x.key===SIZE).label);
 }
 
 /* ---------- siren sound (generated, no assets) ---------- */
@@ -2540,7 +2571,7 @@ function startGame(){
   document.getElementById("myName").textContent=NAME;
   document.getElementById("roomEcho").textContent=ROOM;
   const chip=document.getElementById("roomChip"); chip.textContent=ROOM; chip.classList.remove("hidden");
-  document.getElementById("setup").classList.add("hidden");
+  GNSETUP.hide("setup");
   document.getElementById("game").classList.remove("hidden");
   renderMine(); renderOthers();
   connect();
@@ -2644,7 +2675,8 @@ function newCard(){
 function leave(){
   cleanupSocket(); clearInterval(heartbeat);
   document.getElementById("game").classList.add("hidden");
-  document.getElementById("setup").classList.remove("hidden");
+  paintSetupTextRows();
+  GNSETUP.show("setup");
   setStatus("");
   players={}; seenBingo={}; seenClose={}; peek={}; document.getElementById("roomChip").classList.add("hidden"); renderOthers();
 }
@@ -2679,7 +2711,79 @@ document.getElementById("showRest").addEventListener("click",()=>{
   document.getElementById("showRest").classList.add("hidden");
 });
 document.getElementById("soundChip").addEventListener("click",toggleSound);
-document.getElementById("sizeChip").addEventListener("click",cycleSize);
+document.getElementById("menuBtn").addEventListener("click",openMenu);
+document.getElementById("rulesBtn").addEventListener("click",openRules);
+document.getElementById("menuClose").addEventListener("click",closeMenu);
+document.getElementById("menuModal").addEventListener("click",e=>{ if(e.target.id==="menuModal") closeMenu(); });
+document.getElementById("rulesClose").addEventListener("click",()=>document.getElementById("rulesModal").classList.add("hidden"));
+document.getElementById("rulesModal").addEventListener("click",e=>{ if(e.target.id==="rulesModal") document.getElementById("rulesModal").classList.add("hidden"); });
+
+/* ---------- header Menu + Rules ----------
+   The Menu is a doorway into the existing chips and modals — every item calls the same
+   function the chip or button already calls, so nothing about rooms or sync changes. */
+function paintSetupTextRows(){
+  const el=document.getElementById("setupTextRows");
+  if(el && window.CARDSIZE) el.innerHTML=CARDSIZE.rowsHTML({size:false, textLabel:"Square text"});
+}
+function closeMenu(){ document.getElementById("menuModal").classList.add("hidden"); }
+function menuGo(fn){ closeMenu(); fn(); }
+function openMenu(){
+  const inGame=!!ROOM && !document.getElementById("game").classList.contains("hidden");
+  const t=theme();
+  const items=[];
+  if(inGame){
+    items.push('<div class="menuhead">Room '+escapeMenu(ROOM)+'</div>');
+    items.push('<button class="btn ghost small" data-act="invite">Invite people</button>');
+    items.push('<button class="btn ghost small" data-act="round">New round (everyone)</button>');
+    items.push('<button class="btn ghost small" data-act="status">Connection details</button>');
+    items.push('<button class="btn ghost small" data-act="leave">Leave room (back to setup)</button>');
+  }
+  items.push('<div class="menuhead">Game</div>');
+  items.push('<button class="btn ghost small" data-act="theme">Tonight\'s game: '+escapeMenu(t.name)+'</button>');
+  if(t.matchup) items.push('<button class="btn ghost small" data-act="match">Matchup: '+escapeMenu(matchupLabel())+'</button>');
+  items.push('<button class="btn ghost small" data-act="pat">Win pattern: '+escapeMenu(pattern().name)+'</button>');
+  items.push('<button class="btn ghost small" data-act="team">Team: '+escapeMenu(TEAM||"Solo")+'</button>');
+  items.push('<button class="btn ghost small" data-act="packs">Call packs</button>');
+  if(inGame) items.push('<button class="btn ghost small" data-act="org">Organize</button>');
+  items.push('<div class="menuhead">This phone</div>');
+  items.push(CARDSIZE.rowsHTML({size:false, textLabel:"Square text"}));
+  items.push('<div class="gn-row"><span>Siren sound</span><button class="btn ghost small" style="width:auto" data-act="sound">'+(SOUND?"On":"Off")+'</button></div>');
+  items.push('<a class="btn ghost small" href="../">Back to all games</a>');
+  const body=document.getElementById("menuBody");
+  body.innerHTML='<div class="menulist">'+items.join("")+'</div>';
+  body.querySelectorAll("[data-act]").forEach(b=>b.addEventListener("click",()=>{
+    const act=b.dataset.act;
+    if(act==="invite") menuGo(openInvite);
+    else if(act==="round") menuGo(()=>document.getElementById("roundBtn").click());
+    else if(act==="status") menuGo(syncDetails);
+    else if(act==="leave") menuGo(leave);
+    else if(act==="theme") menuGo(openThemeModal);
+    else if(act==="match") menuGo(openMatchModal);
+    else if(act==="pat") menuGo(openPatModal);
+    else if(act==="team") menuGo(openTeamModal);
+    else if(act==="packs") menuGo(()=>document.getElementById("packChip").click());
+    else if(act==="org") menuGo(()=>document.getElementById("lockChip").click());
+    else if(act==="sound"){ toggleSound(); b.textContent=SOUND?"On":"Off"; }
+  }));
+  document.getElementById("menuModal").classList.remove("hidden");
+}
+function escapeMenu(x){ return String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function openRules(){
+  const t=theme();
+  const pats=PAT_ORDER.map(k=>"<li><b>"+PATTERNS[k].name+"</b> — "+PATTERNS[k].blurb+"</li>").join("");
+  document.getElementById("rulesBody").innerHTML=
+    "<p>Bingo you play along with whatever's on — tonight it's <b>"+escapeMenu(t.name)+"</b>. Tap a square when you see it happen.</p>"+
+    "<h4>Getting in</h4><p>Type your name and a <b>room code</b>. Everyone who types the same code is in the same game — capitals, spaces and dashes don't matter. Or send an invite link from the Menu; whoever opens it only needs a name.</p>"+
+    "<h4>The card</h4><p>Your 5×5 card is dealt from the call packs switched on. The centre, <b>"+escapeMenu(CENTER_SQUARE)+"</b>, is the one square everybody shares — it counts once you tap it.</p>"+
+    "<h4>Winning</h4><p>First to complete the room's pattern wins the round. Right now: <b>"+escapeMenu(patternLine())+"</b>. Whoever changes the pattern sets it for everyone.</p><ul>"+pats+"</ul>"+
+    "<h4>Teams</h4><p>Everyone on the same team shares one card — either phone can tap, and the first team to finish takes the round.</p>"+
+    "<h4>Handy buttons</h4><ul>"+
+    "<li><b>♻️ Fresh squares</b> re-deals only the squares you haven't marked, then sits out 90 seconds. A new round clears the wait.</li>"+
+    "<li><b>🔀 My card</b> deals you a whole new card. <b>↩︎ Undo</b> takes back a mis-tap.</li>"+
+    "<li><b>👥</b> on a square counts how many others in the room marked that call. Tap a square on someone else's board to read it.</li>"+
+    "<li>Long-press a square on your card to reword, re-tag or remove that call for the room.</li></ul>";
+  document.getElementById("rulesModal").classList.remove("hidden");
+}
 document.getElementById("roundBtn").addEventListener("click",()=>{
   if(confirm("Deal everyone in the room a fresh card and start round "+(ROUND+1)+"?")) startRound(true);
 });
@@ -2953,7 +3057,7 @@ document.getElementById("useSuggest").addEventListener("click",()=>{ document.ge
 
   // packs saved under another theme shouldn't leave this one with nothing switched on
   if(!allPackKeys().some(k=>packOn(k))){ PACKS_ON = allPackKeys().slice(); savePacksOn(); }
-  paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks(); paintApplyMode();
+  paintPattern(); paintSound(); applySize(); paintTeam(); paintTheme(); paintPacks(); paintApplyMode(); paintSetupTextRows();
   const cn=document.getElementById("centerName"); if(cn) cn.textContent=CENTER_SQUARE;
   const bl=buildLabel();
   document.getElementById("buildStamp").textContent=bl;

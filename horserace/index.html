@@ -31,8 +31,6 @@ button{font-family:inherit;cursor:pointer;border:none}
 .panel{background:rgba(0,0,0,.22);border-radius:14px;padding:12px}
 .cap{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mute);font-weight:800;margin-bottom:6px}
 .txt{width:100%;font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1.5px solid var(--gold);background:rgba(0,0,0,.3);color:var(--cream)}
-.neon{font-family:Georgia,serif;font-size:40px;color:var(--gold);text-align:center;margin-top:10px;text-shadow:0 2px 10px rgba(240,198,116,.35)}
-.neon small{display:block;font-family:-apple-system,sans-serif;font-size:11px;letter-spacing:3px;color:var(--mute);margin-top:4px}
 .setbtns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .say{background:rgba(0,0,0,.22);border-radius:12px;padding:9px 11px;font-size:14px;line-height:1.4;display:flex;gap:8px;align-items:flex-start;min-height:42px}
 .say b{color:var(--gold)}
@@ -90,8 +88,8 @@ button{font-family:inherit;cursor:pointer;border:none}
 .rollbtn.wait{background:rgba(255,255,255,.12);color:var(--cream);box-shadow:none;font-size:14px}
 /* cards */
 .hand{display:flex;flex-wrap:nowrap;gap:5px;justify-content:center}
-.hand .card{width:var(--hw,44px);height:calc(var(--hw,44px) * 1.4);font-size:calc(var(--hw,44px) * .42);flex:0 0 auto}
-.hand .card small{font-size:calc(var(--hw,44px) * .2)}
+.hand .card{width:var(--hw,44px);height:calc(var(--hw,44px) * 1.4);font-size:calc(var(--hw,44px) * .42 * var(--cardtext,1));flex:0 0 auto}
+.hand .card small{font-size:calc(var(--hw,44px) * .2 * var(--cardtext,1))}
 .hand .card .cnt{font-size:calc(var(--hw,44px) * .22);top:-6px;right:-5px;padding:1px 5px}
 .card{width:40px;height:56px;border-radius:7px;background:var(--cream);color:var(--ink);position:relative;box-shadow:0 2px 5px rgba(0,0,0,.4);
   display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:17px;line-height:1}
@@ -199,6 +197,11 @@ button{font-family:inherit;cursor:pointer;border:none}
 .segrow{display:flex;gap:6px;flex-wrap:wrap}
 .segrow button{flex:1;min-width:38px;background:rgba(255,255,255,.12);color:var(--cream);border-radius:10px;padding:10px 0;font-weight:800;font-size:16px}
 .segrow button.on{background:var(--gold);color:var(--ink)}
+/* the shared card size / card text rows (cardsize.js) in the Menu */
+.seg{display:inline-flex;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.3)}
+.seg.cardsize button,.seg.cardtext button{background:transparent;color:var(--cream);padding:6px 10px;font-size:12px;font-weight:800;min-width:32px}
+.seg.cardsize button.on,.seg.cardtext button.on{background:var(--gold);color:var(--ink)}
+#menuCards .gn-row{margin:10px 0}
 .txt.sm{font-size:15px;padding:8px 10px;border-width:1px}
 .tbgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .tbhorses{display:flex;flex-direction:column;gap:5px}
@@ -236,6 +239,7 @@ button{font-family:inherit;cursor:pointer;border:none}
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
 <script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -248,19 +252,18 @@ button{font-family:inherit;cursor:pointer;border:none}
     <h1 class="gn-name">Horse Race</h1>
   </div>
 
-  <!-- ===== SETUP ===== -->
-  <section id="setup">
-    <div class="neon">Horse Race<small>LAKE UFFDA DOWNS · POST TIME</small></div>
-    <div class="panel" style="margin-top:12px">
-      <div class="cap">Your name (for the program)</div>
-      <input class="txt" id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/>
-      <div class="setbtns">
-        <button class="btn" id="liveBtn">🏇 Walk up to the rail · live with everybody</button>
-        <button class="btn ghost" id="soloBtn">🏠 Race the regulars · just you and the bots</button>
-      </div>
-      <div class="say" style="margin-top:12px"><span class="mic">🎙️</span><span id="setupSay"></span></div>
+  <!-- ===== SETUP (the standard sheet) ===== -->
+  <div class="gn-setup" id="setup">
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Lake Uffda Downs, post time. Walk up to the rail and race with everybody who has Horse Race open, or race the regulars: just you and the bots.</p>
+      <label class="gn-field">Your name (for the program)<input id="nameIn" maxlength="16" placeholder="Like Gary, or Barb" autocomplete="off"/></label>
+      <div class="say"><span class="mic">🎙️</span><span id="setupSay"></span></div>
     </div>
-  </section>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="liveBtn">Walk up to the rail</button>
+      <button class="gn-alt" id="soloBtn">Race the regulars</button>
+    </div>
+  </div>
 
   <!-- ===== GAME ===== -->
   <section id="game" class="hidden">
@@ -330,6 +333,7 @@ button{font-family:inherit;cursor:pointer;border:none}
   <h2>Menu</h2>
   <div class="row"><div>Sound</div><label class="switch"><input type="checkbox" id="menuSound"><span class="track2"></span><span class="knob"></span></label></div>
   <div class="row"><div>Odds &amp; stats <span style="opacity:.65;font-size:12px">· win chances, your night</span></div><label class="switch"><input type="checkbox" id="menuStats"><span class="track2"></span><span class="knob"></span></label></div>
+  <div id="menuCards"></div>
   <div class="menubtns">
     <button class="btn ghost" id="menuTable">⚙️ Table &amp; names</button>
     <button class="btn ghost" id="leaveBtn">🚪 Leave the track</button>
@@ -339,6 +343,7 @@ button{font-family:inherit;cursor:pointer;border:none}
   </div>
 </div></div>
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 <script>
 /* ============================================================
    HORSE RACE — the rules engine (window.HR). No DOM.
@@ -432,7 +437,7 @@ window.HR=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v126";
+var BUILD_V="v129";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -828,7 +833,7 @@ function renderRace(r, st){
     $('hand').innerHTML=groups.map(function(g){ var n=g.n, scr=st.scratches.indexOf(n)>=0;
       return '<div class="card'+(scr?' scr':'')+(st.winner===n?' win':'')+'"><span class="silk" style="background:'+HR.SILK[n]+'"></span>'+HR.rankName(n)+'<small>#'+n+'</small>'+(g.c>1?'<span class="cnt">\u00d7'+g.c+'</span>':'')+'</div>'; }).join('');
     // v113: always one row - the cards shrink to fit instead of wrapping
-    var hd=$('hand'), W=hd.clientWidth, base=window.innerWidth>=700?54:44, gap=5;
+    var hd=$('hand'), W=hd.clientWidth, base=Math.round((window.innerWidth>=700?54:44)*(window.CARDSIZE?CARDSIZE.value():1)), gap=5;
     hd.style.setProperty('--hw', Math.max(26, Math.min(base, Math.floor((W-gap*(groups.length-1))/groups.length)))+'px');
   } else { $('handCap').textContent='You’re watching this one'; $('hand').innerHTML=''; }
   // the table
@@ -950,7 +955,7 @@ $('nameIn').value=myName;
 $('nameIn').addEventListener('input', function(){ myName=this.value.trim().slice(0,16); lsSet('pt_name',myName); });
 $('setupSay').textContent=pick(SAY.hello);
 function needName(){ if(myName) return true; $('nameIn').focus(); $('setupSay').innerHTML='Gotta put a name on the program, hon. <b>Type it up top.</b>'; return false; }
-function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); }
+function showGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); }
 function startSolo(){ if(!needName()) return; netStop(); reset(); S.mode='solo'; S.ready=true; S.liveSince=nowSec(); loadSolo(); showGame(); afterChange(); }
 function startLive(){ if(!needName()) return; reset(); S.mode='live'; S.replaying=true; showGame(); render(); netStart(); }
 function reset(){ S.races={}; S.cur=null; S.pend={}; S.sits={}; S.ready=false; S.seen={}; S.starting=0; S.waitKey=''; S.shownWin={}; S.animK={}; S.shown={}; NET.lastTime=0; }
@@ -961,13 +966,14 @@ function becameReady(){
   if(!amAtRail()) sitDown();
   afterChange();
 }
-function leave(){ if(S.mode==='live' && amAtRail()) standUp(); netStop(); S.mode=null; $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
+function leave(){ if(S.mode==='live' && amAtRail()) standUp(); netStop(); S.mode=null; $('game').classList.add('hidden'); GNSETUP.show('setup'); }
 $('liveBtn').addEventListener('click', startLive);
 $('soloBtn').addEventListener('click', startSolo);
 $('rollBtn').addEventListener('click', function(){ myRoll(); });
 $('atmBtn').addEventListener('click', function(){ var b=bankGet(); b.cash+=ATM_CASH; b.atm+=ATM_CASH+ATM_FEE; lsSet('pt_bank_v1',b); sfx('chip'); toast('🏧 A hundred bucks. Three-dollar fee — supports the color guard.'); render(); });
 $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
-$('menuBtn').addEventListener('click', function(){ $('menuSound').checked=!!(window.SFX && SFX.isOn()); $('menuStats').checked=!!prefs.stats; $('menuOv').classList.add('on'); });
+$('menuBtn').addEventListener('click', function(){ $('menuSound').checked=!!(window.SFX && SFX.isOn()); $('menuStats').checked=!!prefs.stats; $('menuCards').innerHTML=window.CARDSIZE?CARDSIZE.rowsHTML():''; $('menuOv').classList.add('on'); });
+window.onCardSize=function(){ render(); };
 $('menuSound').addEventListener('change', function(){ if(window.SFX) SFX.setOn(this.checked); });
 $('menuStats').addEventListener('change', function(){ prefs.stats=this.checked; savePrefs(); render(); });
 $('menuTable').addEventListener('click', function(){ $('menuOv').classList.remove('on'); openTable(); });

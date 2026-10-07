@@ -46,6 +46,11 @@ you lose.
 
 ## Options
 
+The start screen is the standard Game Night setup sheet (`../gn-setup.js`): a short pitch,
+the three choices below as rows, and **Start the game** pinned at the bottom. The header
+has ‹ Games, **Rules** and **Menu** (Back to all games, New game — which returns to this
+sheet — and Rules).
+
 - **Opponent** — Easy or Normal. Easy plays a third of its moves at random and
   doesn't track much; Normal wins about **73%** of the games between them.
 - **Your setup** — *Set up for me*, or place all forty by hand (tap a piece, tap a
@@ -66,8 +71,9 @@ win or loss lands on its own.
 
 **Rules** in the header opens the rules — the point of the game, how a turn and a
 fight work, the three rules everyone forgets (Miner/Bomb, Spy-on-the-attack, equal ranks
-both die), and a short section on how to actually play rather than just move. It opens by
-itself the first time on a device. Second tab is the army table.
+both die), and a short section on how to actually play rather than just move. Second tab
+is the army table. (It no longer pops open by itself on a first visit — the setup sheet is
+the start screen, and Rules is one tap away in the header.)
 
 There's also a **coach line** under the status bar:
 

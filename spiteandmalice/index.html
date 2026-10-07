@@ -37,10 +37,7 @@ body{
 }
 .wrap{max-width:1100px;margin:0 auto;padding:8px 8px 14px;min-height:100vh;display:flex;flex-direction:column}
 
-/* Header */
-.hdr{display:flex;align-items:center;gap:8px;padding:2px 2px 8px}
-.hdr .title{font-weight:800;letter-spacing:.3px;font-size:16px;color:var(--gold)}
-.hdr .spacer{flex:1}
+/* Header: the shared Game Night header (gn-header.js) */
 .iconbtn{background:linear-gradient(180deg,#1c4a33,#123524);border:1px solid var(--line);
   color:var(--cream);border-radius:10px;padding:7px 10px;font-size:14px;font-weight:600;cursor:pointer}
 .iconbtn:active{transform:translateY(1px)}
@@ -76,12 +73,9 @@ body{
 .switch input:checked ~ .track{background:linear-gradient(180deg,var(--gold),var(--gold2))}
 .switch input:checked ~ .knob{left:23px}
 
-/* Setup */
-#setup .logo{font-size:34px;font-weight:900;color:var(--gold);letter-spacing:.5px;text-align:center;margin:18px 0 2px}
-#setup .sub{text-align:center;color:var(--cream);opacity:.85;font-size:14px;margin-bottom:16px}
-.setup-opt{margin:14px 0}
-.dirnote{font-size:11.5px;line-height:1.45;opacity:.72;margin:6px 2px 0}
-.setup-opt .cap{font-size:13px;letter-spacing:.4px;text-transform:uppercase;color:var(--gold);opacity:.9;margin-bottom:6px}
+/* Setup sheet (gn-setup.js) - the game's own seg/switch controls in standard rows */
+#setup .gn-note{line-height:1.45}
+#setup .gn-alt.hidden{display:none !important}
 
 /* Board */
 .board{display:flex;flex-direction:column;gap:8px;flex:1}
@@ -108,7 +102,8 @@ body{
   width:var(--cw);height:calc(var(--cw) * 1.4);border-radius:calc(var(--cw) * .14);background:var(--card-bg);color:var(--card-ink);
   border:1px solid rgba(0,0,0,.25);box-shadow:0 2px 5px rgba(0,0,0,.3);
   display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--cw) * .07) calc(var(--cw) * .09);position:relative;
-  font-weight:800;font-size:calc(var(--cw) * .36);user-select:none;flex:0 0 auto;line-height:1;
+  font-weight:800;font-size:calc(var(--cw) * .36 * var(--cardtext,1));user-select:none;flex:0 0 auto;line-height:1;
+  overflow:hidden;   /* card text XL must never print past the card edge */
 }
 /* the opponent's cards are 85% of yours; --cw is inherited by the card inside */
 .stack.sm,.card.sm{--cw:calc(var(--fit) * var(--size,1) / 1.4 * .85)}
@@ -170,7 +165,11 @@ body{
    the centre stacks, your piles beside your hand. fitBoard() sizes the cards for it. */
 @media (orientation:landscape) and (max-height:540px){
   .wrap{padding:4px 8px 4px}
-  .hdr{padding:0 2px 2px}
+  /* the standard header is three lines; sideways every pixel is card height, so it tightens here */
+  .gn-hdr{margin-bottom:2px;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"name top" "sub top";column-gap:16px;align-items:center}
+  .gn-hdr .gn-top{grid-area:top} .gn-hdr h1.gn-name{grid-area:name;font-size:20px !important;margin:0}
+  .gn-hdr .gn-sub{grid-area:sub;font-size:11px;margin:0}
+  .gn-top .gn-pill{padding:5px 10px}
   .board{display:grid;grid-template-columns:auto auto;grid-template-areas:"opp ctr" "turn stk" "you you" "act act";
     column-gap:20px;row-gap:4px;align-content:space-evenly;justify-content:center}
   .board > .side-area:not(.you){grid-area:opp;align-self:end}
@@ -189,88 +188,80 @@ body{
 /* Tablet (iPad mini is 744 wide in portrait). The cards already grow to fill the screen via
    --fit; this lifts the labels, buttons and banners so they don't look like a phone's. */
 @media (min-width:700px){
-  .hdr .title{font-size:20px} .iconbtn{font-size:17px;padding:9px 14px}
+  .iconbtn{font-size:17px;padding:9px 14px}
   .btn{font-size:19px;padding:14px 22px} .seg button{font-size:17px;padding:10px 16px}
   .zonecap{font-size:14px} .payoff-lbl,.hand-count,.center-need{font-size:14px} .center-need{min-height:17px}
   .stockrow{font-size:16px} .turnbar{font-size:17px;padding:9px 10px} .tip-block{font-size:15px}
   .board{gap:12px} .sides,.hand{gap:8px} .centers{gap:12px} .oppline,.youline{gap:12px}
   .sheet h2{font-size:24px} .sheet h3{font-size:18px} .sheet p,.sheet li,.row .lbl{font-size:16px}
-  #setup .logo{font-size:44px} #setup .sub{font-size:17px} .setup-opt .cap{font-size:15px} .dirnote{font-size:14px}
+  #setup .gn-note{font-size:14px}
   .gn-build{font-size:12px}
 }
 </style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <!-- ===== SETUP ===== -->
-  <section id="setup">
-    <div class="hdr">
-      <a class="iconbtn" href="../" title="All games">🏠</a>
-      <div class="spacer"></div>
-      <button class="iconbtn" id="setupRules">Rules</button>
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
     </div>
-    <div class="logo">Spite &amp; Malice</div>
-    <div class="sub" id="setupSub">Race the bot to empty your goal pile · Ace → King</div>
-    <div class="panel">
-      <div class="setup-opt">
-        <div class="cap">Goal pile</div>
+    <h1 class="gn-name">Spite &amp; Malice</h1>
+    <div class="gn-sub">Grandma Jo's game</div>
+  </div>
+
+  <!-- ===== SETUP (the standard setup sheet, gn-setup.js) ===== -->
+  <div class="gn-setup" id="setup">
+    <div class="gn-setup-body">
+      <p class="gn-pitch" id="setupSub">Race the bot to empty your goal pile onto four shared centre stacks, built Ace &rarr; King.</p>
+      <div class="gn-row"><span>Goal pile</span>
         <div class="seg" id="segGoal">
           <button data-goal="13" class="on">Short · 13</button>
           <button data-goal="20">Standard · 20</button>
         </div>
       </div>
-      <div class="setup-opt">
-        <div class="cap">Centre stacks build</div>
+      <div class="gn-row"><span>Centre stacks</span>
         <div class="seg" id="segDir">
           <button data-dir="up" class="on">A → K</button>
           <button data-dir="down">K → A</button>
           <button data-dir="either">Either way</button>
         </div>
-        <p class="dirnote" id="dirNote"></p>
+        <div class="gn-note" id="dirNote"></div>
       </div>
-      <div class="setup-opt">
-        <div class="cap">Bot difficulty</div>
-        <div class="seg" id="segDiff">
-          <button data-diff="easy">Easy</button>
-          <button data-diff="normal" class="on">Normal</button>
-        </div>
-      </div>
-      <div class="setup-opt">
-        <div class="cap">Card size</div>
-        <div id="segSize"></div>
-      </div>
-      <div class="row"><div class="lbl">Show move hints</div>
-        <label class="switch"><input type="checkbox" id="optTips"><span class="track"></span><span class="knob"></span></label>
-      </div>
-      <div class="row"><div class="lbl">Sound</div>
-        <label class="switch"><input type="checkbox" id="optSound"><span class="track"></span><span class="knob"></span></label>
-      </div>
-      <div class="setup-opt">
-        <div class="cap">Opponent</div>
+      <div class="gn-row"><span>Opponent</span>
         <div class="seg" id="segMode">
-          <button data-mode="solo" class="on">🤖 Solo vs bot</button>
-          <button data-mode="online">📱 Two phones</button>
+          <button data-mode="solo" class="on">Solo vs bot</button>
+          <button data-mode="online">Two phones</button>
         </div>
+        <div class="gn-note hidden" id="onlineNote">One of you creates a game and reads out the 4-letter code; the other joins with it. Then you each play on your own phone. Free public relay, no accounts.</div>
       </div>
-      <div id="soloStart"><button class="btn" id="startBtn" style="width:100%">Deal</button></div>
-      <div id="onlineStart" class="hidden">
-        <button class="btn" id="hostBtn" style="width:100%;margin-bottom:8px">➕ Create game (host)</button>
-        <button class="btn ghost" id="joinBtn" style="width:100%">🔑 Join with code</button>
-        <p style="font-size:12px;opacity:.75;margin:10px 2px 0">One of you creates a game and reads out the 4-letter code; the other joins with it. Then you each play on your own phone. Free public relay, no accounts.</p>
-      </div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Bot difficulty</span>
+          <div class="seg" id="segDiff">
+            <button data-diff="easy">Easy</button>
+            <button data-diff="normal" class="on">Normal</button>
+          </div>
+        </div>
+        <div class="gn-row"><span>Show move hints</span>
+          <label class="switch"><input type="checkbox" id="optTips"><span class="track"></span><span class="knob"></span></label>
+        </div>
+        <div class="gn-row"><span>Sound</span>
+          <label class="switch"><input type="checkbox" id="optSound"><span class="track"></span><span class="knob"></span></label>
+        </div>
+        <div id="segSize"></div>
+      </details>
     </div>
-  </section>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="startBtn">Deal</button>
+      <button class="gn-alt hidden" id="joinBtn">Join with code</button>
+    </div>
+  </div>
 
   <!-- ===== GAME ===== -->
   <section id="game" class="hidden">
-    <div class="hdr">
-      <a class="iconbtn" href="../" title="All games">🏠</a>
-      <div class="title">Spite &amp; Malice</div>
-      <div class="spacer"></div>
-      <button class="iconbtn" id="gameRules">Rules</button>
-      <button class="iconbtn" id="gameMenu">Menu</button>
-    </div>
-
     <div class="turnbar hidden" id="netbar" style="margin-top:0"></div>
     <div class="board">
       <!-- opponent -->
@@ -365,18 +356,18 @@ body{
   <div class="overlay" id="menuOv">
     <div class="sheet">
       <h2>Menu</h2>
+      <div class="row"><a class="btn ghost" href="../" style="flex:1;text-align:center;text-decoration:none">Back to all games</a></div>
+      <div class="row"><button class="btn" id="menuNew" style="flex:1">New game</button></div>
+      <div class="row"><button class="btn ghost" id="menuRules" style="flex:1">Rules</button></div>
+      <h3>Options</h3>
       <div class="row"><div class="lbl">Show move hints</div>
         <label class="switch"><input type="checkbox" id="menuTips"><span class="track"></span><span class="knob"></span></label>
       </div>
       <div class="row"><div class="lbl">Sound</div>
         <label class="switch"><input type="checkbox" id="menuSound"><span class="track"></span><span class="knob"></span></label>
       </div>
-      <div class="row"><div class="lbl">Card size</div>
-        <div id="menuSize"></div>
-      </div>
-      <div class="row" style="margin-top:14px"><button class="btn" id="menuNew" style="flex:1">New game</button></div>
-      <div class="row"><a class="btn ghost" href="../" style="flex:1;text-align:center;text-decoration:none">🏠 Back to all games</a></div>
-      <div class="row"><button class="btn ghost" id="menuClose" style="flex:1">Close</button></div>
+      <div id="menuSize"></div>
+      <div class="row" style="margin-top:14px"><button class="btn ghost" id="menuClose" style="flex:1">Close</button></div>
     </div>
   </div>
 
@@ -787,7 +778,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v109";
+  var BUILD_V = "v129";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -803,7 +794,7 @@ window.SM = (function(){
   // cardsize.js setting. Carry an old pick across once, if no other game has set one yet.
   try{ if(window.CARDSIZE && localStorage.getItem('gn_cardsize')===null && prefs.fs && prefs.fs!==15){
     var _i={13:0,15:1,17:2,19:3}[prefs.fs]; if(_i!=null){ localStorage.setItem('gn_cardsize',String(_i)); CARDSIZE.apply(); } } }catch(e){}
-  function paintSize(){ if(!window.CARDSIZE) return; ['segSize','menuSize'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=CARDSIZE.controlHTML(); }); }
+  function paintSize(){ if(!window.CARDSIZE) return; ['segSize','menuSize'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=CARDSIZE.rowsHTML(); }); }
   window.onCardSize=function(){ fitBoard(); };
 
   var $ = function(id){ return document.getElementById(id); };
@@ -840,7 +831,7 @@ window.SM = (function(){
   };
   function syncDirBlurb(){
     $('dirNote').textContent = DIR_NOTE[prefs.dir] || DIR_NOTE.up;
-    $('setupSub').textContent = 'Race the bot to empty your goal pile \u00b7 ' + (DIR_SUB[prefs.dir] || DIR_SUB.up);
+    $('setupSub').textContent = 'Race the bot to empty your goal pile onto four shared centre stacks, built ' + (DIR_SUB[prefs.dir] || DIR_SUB.up) + '.';
   }
   syncDirBlurb();
   Array.prototype.forEach.call($('segDir').querySelectorAll('button'), function(b){
@@ -854,12 +845,14 @@ window.SM = (function(){
     if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
   });
 
-  $('startBtn').addEventListener('click', startSolo);
-  $('setupRules').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
-  $('gameRules').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
+  // Deal starts a solo game; with Two phones picked the same button creates the room (hostCreate)
+  var setupMode = 'solo';
+  $('startBtn').addEventListener('click', function(){ if(setupMode==='online') hostCreate(); else startSolo(); });
+  $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
+  $('menuRules').addEventListener('click', function(){ $('menuOv').classList.remove('on'); $('rulesOv').classList.add('on'); });
   $('rulesClose').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
   $('rulesClose2').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
-  $('gameMenu').addEventListener('click', openMenu);
+  $('menuBtn').addEventListener('click', openMenu);
 
   // overlay close on backdrop tap
   ['rulesOv','menuOv','winOv','wildOv'].forEach(function(id){
@@ -870,7 +863,7 @@ window.SM = (function(){
   $('menuSound').addEventListener('change', function(){
     if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
   });
-  $('menuNew').addEventListener('click', function(){ $('menuOv').classList.remove('on'); doNewGame(); });
+  $('menuNew').addEventListener('click', function(){ $('menuOv').classList.remove('on'); toSetup(); });
   $('menuClose').addEventListener('click', function(){ $('menuOv').classList.remove('on'); });
   $('undoSel').addEventListener('click', function(){ sel=null; render(); });
   $('wildCancel').addEventListener('click', function(){ closeWild(); });
@@ -881,10 +874,10 @@ window.SM = (function(){
     paintSize(); $('menuOv').classList.add('on'); }
   function syncSeg(segId,key){ var seg=$(segId); Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ var v=b.dataset[Object.keys(b.dataset)[0]]; if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on'); }); }
 
-  function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; updateNetbar(); $('game').classList.add('hidden'); $('setup').classList.remove('hidden'); }
+  function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; updateNetbar(); $('game').classList.add('hidden'); paintSize(); GNSETUP.show('setup'); }
 
   // ---------- start ----------
-  function showGame(){ $('setup').classList.add('hidden'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); fitted=false; fitBoard(); }
+  function showGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); fitted=false; fitBoard(); }
   function startSolo(){
     mode='solo'; net.online=false; net.joined=false;
     T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
@@ -1517,12 +1510,12 @@ window.SM = (function(){
       b.addEventListener('click', function(){
         Array.prototype.forEach.call(seg.querySelectorAll('button'), function(x){ x.classList.remove('on'); });
         b.classList.add('on');
-        var m=b.dataset.mode;
-        $('soloStart').classList.toggle('hidden', m!=='solo');
-        $('onlineStart').classList.toggle('hidden', m!=='online');
+        var m=b.dataset.mode; setupMode=m;
+        $('startBtn').textContent = m==='online' ? 'Create game' : 'Deal';
+        $('joinBtn').classList.toggle('hidden', m!=='online');
+        $('onlineNote').classList.toggle('hidden', m!=='online');
       });
     });
-    $('hostBtn').addEventListener('click', hostCreate);
     $('joinBtn').addEventListener('click', showJoinPanel);
     $('netOv').addEventListener('click', function(e){ if(e.target===this) closeNetOv(); });
   })();
