@@ -39,7 +39,8 @@
     ".gn-setup{position:fixed;left:0;right:0;top:var(--gn-top,96px);bottom:0;z-index:45;display:flex;flex-direction:column;"
    +  "background:var(--felt,#0f4a2c);color:var(--cream,#f7f3e8);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}"
    +".gn-setup[hidden]{display:none!important}"
-   +".gn-setup-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 12px;"
+   +"html.gn-setup-open,html.gn-setup-open body{overflow:hidden;overscroll-behavior:none}"
+   +".gn-setup-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 16px 12px;"
    +  "width:100%;max-width:520px;margin:0 auto;box-sizing:border-box}"
    +".gn-setup-foot{flex:0 0 auto;width:100%;max-width:520px;margin:0 auto;box-sizing:border-box;"
    +  "padding:10px 16px calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;"
@@ -79,7 +80,44 @@
   function show(el){ if(typeof el==="string") el=document.getElementById(el); if(!el) return; scrollTo(0,0); layout(); el.hidden=false; }
   function hide(el){ if(typeof el==="string") el=document.getElementById(el); if(el) el.hidden=true; }
 
+  /* While the sheet is up the page underneath must not move. The sheet is position:fixed
+     but the header is in the page flow, so on iOS a pull-down rubber-bands the whole page
+     and the header slides down under the sheet (v129, seen on a phone, not reproducible in
+     desktop Chrome). Two layers, because neither alone covers every iOS version:
+     - html.gn-setup-open: overflow hidden + overscroll-behavior none on the document, and
+       overscroll-behavior contain on the options area so its own scroll can't chain out.
+     - a touchmove guard that cancels drags starting on the header or on the sheet outside
+       a scrollable options area. Overlays (Rules, Menu, join dialogs) are not touched, so
+       they still scroll.
+     The class follows the sheet's hidden attribute through a MutationObserver, so it is
+     right whether a game calls show()/hide() or flips .hidden itself. */
+  var root=document.documentElement;
+  function sync(){
+    var open=false, els=document.querySelectorAll(".gn-setup");
+    for(var i=0;i<els.length;i++) if(!els[i].hidden && getComputedStyle(els[i]).display!=="none") open=true;
+    root.classList.toggle("gn-setup-open", open);
+  }
+  var mo=window.MutationObserver ? new MutationObserver(sync) : null;
+  function watch(){
+    if(!mo) return;
+    var els=document.querySelectorAll(".gn-setup");
+    for(var i=0;i<els.length;i++) mo.observe(els[i],{attributes:true,attributeFilter:["hidden","class","style"]});
+    sync();
+  }
+  document.addEventListener("touchmove",function(e){
+    if(!root.classList.contains("gn-setup-open")) return;
+    var t=e.target; if(!t || !t.closest) return;
+    if(t.closest(".gn-hdr")) { e.preventDefault(); return; }
+    var sheet=t.closest(".gn-setup"); if(!sheet) return;           // overlays scroll normally
+    var body=t.closest(".gn-setup-body");
+    if(!body || body.scrollHeight<=body.clientHeight+1) e.preventDefault();
+  },{passive:false});
+
+  var _show=show, _hide=hide;
+  show=function(el){ _show(el); sync(); };
+  hide=function(el){ _hide(el); sync(); };
   window.GNSETUP={layout:layout, show:show, hide:hide};
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",watch); else watch();
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",layout); else layout();
   addEventListener("load",layout); addEventListener("resize",layout);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(layout);

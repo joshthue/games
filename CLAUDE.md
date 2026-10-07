@@ -188,7 +188,10 @@ it into `<div class="gn-setup" id="setup" hidden>` and shows it with `GNSETUP.sh
 for everything else) and `.gn-setup-foot` (one gold `.gn-start`, at most one `.gn-alt`).
 The footer is pinned, so **Start never needs a scroll** — verified at 320×568, 390×844
 and 430×932 with More options open. The sheet sits at z-index 45, under every overlay,
-so Rules/Menu/join dialogs open over it. No ✕, no in-panel "How to play", no emoji on
+so Rules/Menu/join dialogs open over it. While it is up, `html.gn-setup-open` locks the page
+(overflow hidden, overscroll-behavior none) and drags on the header are cancelled —
+otherwise iOS rubber-bands the page and the header slides under the fixed sheet (v130).
+Never put an overlay inside `.gn-setup`; the drag guard would stop it scrolling. No ✕, no in-panel "How to play", no emoji on
 Start. Blackjack, Poker Squares, YachtRock, Bar Dice and Links start straight in.
 
 ## Card size and card text
