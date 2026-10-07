@@ -32,7 +32,9 @@ card text, then the table options and the bankroll reset.
 
 - **Card size** and **Card text** are the two standard **S / M / L / XL** rows at the top of
   the Menu (the old A± header button is gone). Card text scales only the printed rank and pip
-  (`--cardtext`), not the card, and cards clip so XL text stays inside. Card size comes from the shared
+  (`--cardtext`), not the card. At **L and XL text** a card shows only its top-left index
+  (rank over suit) — hands are fanned, so that corner is the part that always shows, and at
+  big print the two corners and the centre pip overlapped. Card size comes from the shared
   `../cardsize.js`, on the same scale and the same origin-wide key as every other Game Night
   card game — a size picked here is the size in all of them. It used to be a private S/M/L on
   its own key, which meant Blackjack drifted out of step with the rest. Other preferences live

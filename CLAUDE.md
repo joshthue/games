@@ -199,6 +199,9 @@ Start. Blackjack, Poker Squares, YachtRock, Bar Dice and Links start straight in
 `cardsize.js` sets two origin-wide multipliers: `--size` (card size, `gn_cardsize`) and
 `--cardtext` (rank/pip print only, `gn_cardtext`). Card print is written
 `calc(Npx * var(--size) * var(--cardtext,1))`, and `.card` has `overflow:hidden`.
+**Test card text for overlap, not just spill:** a face that keeps its print inside the card
+can still pile rank, pip and mirrored corner on top of each other (v130, Jerry at XL/XL).
+Faces that collide switch to an index face under `html[data-cardtext="L"|"XL"]`.
 `CARDSIZE.rowsHTML()` renders both standard rows for a menu or More options;
 `rowsHTML({size:false, textLabel:'Square text'})` is BINGO's.
 

@@ -81,6 +81,11 @@
   .card .rank{position:absolute; top:3px; left:5px; font-size:calc(13px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1;}
   .card .rankb{position:absolute; bottom:3px; right:5px; font-size:calc(13px * var(--size) * var(--cardtext,1)); font-weight:800; line-height:1; transform:rotate(180deg);}
   .card .pip{font-size:calc(24px * var(--size) * var(--cardtext,1));} .card.sm .pip{font-size:calc(19px * var(--size) * var(--cardtext,1));}
+  /* Card text XL: index face - rank top-left, suit bottom-right, mirrored corner dropped.
+     At XL print the centre pip ran into the corner rank on S and M cards. */
+  html[data-cardtext="XL"] .card .pip{position:absolute; bottom:2px; right:3px; line-height:1; font-size:calc(17px * var(--size) * var(--cardtext,1));}
+  html[data-cardtext="XL"] .card.sm .pip{font-size:calc(14px * var(--size) * var(--cardtext,1));}
+  html[data-cardtext="XL"] .card .rankb{display:none;}
   /* four-color toggle and card size share a row - the size control goes BESIDE it, not below */
   .optrow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:8px;}
   .seg.cardsize button,.seg.cardtext button{padding:5px 9px; font-size:12px; min-width:30px;}
@@ -1155,7 +1160,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v130", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v131", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

@@ -64,9 +64,15 @@
      game that forgets to load this file still renders at normal size.
 
      It exists because a bigger card and bigger print are different needs: big rank text on a
-     normal card keeps a 7-card hand on a 320px phone, which an XL card can't. XL text is the
-     largest step whose rank + pip still fit inside the smallest card in the suite (a 44x62
-     trick-taking card at card size S); past it the pip runs into the corner index. */
+     normal card keeps a 7-card hand on a 320px phone, which an XL card can't.
+
+     Bigger print does NOT fit every card face as designed. A face with a corner rank, a
+     centre pip and a mirrored corner has room for four symbols at M; at 1.2-1.4x they pile
+     into each other on a small card (v130: I'm out, Jerry! at XL/XL was unreadable). A game
+     whose face collides switches to an INDEX face under html[data-cardtext="L"|"XL"] -
+     rank top-left, suit bottom-right, nothing else (Jerry, Blackjack, Cribbage at XL).
+     "Stays inside the card" is not the test; "the pieces don't overlap each other" is -
+     measure it across every size x text step (scratch harness: overlap.mjs). */
   var TKEY="gn_cardtext";
   var TSTEPS=[{k:"S",v:0.9},{k:"M",v:1},{k:"L",v:1.2},{k:"XL",v:1.4}];
   var tmem=null;

@@ -72,7 +72,9 @@ a page make noise before the first touch, so the audio context waits for a gestu
 
 Cards scale with the shared **S / M / L / XL** control (`../cardsize.js`), the **Card size**
 row in Menu and under More options. **Card text** (S / M / L / XL, `--cardtext`) scales just
-the printed rank and pip; cards clip their print so XL text can't spill. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
+the printed rank and pip. At **XL text** the card switches to an index face (rank top-left,
+suit bottom-right, no mirrored corner), because the centre pip ran into the corner rank on
+S and M cards. Measured clean at every size × text step at 320 and 390. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
 rather than pixel sizes, because the games don't share a base card size — a multiplier
 scales each game from its own design. The choice is stored once for the whole origin,
 like the mute key, so the size you pick here is the size in every Game Night card game.

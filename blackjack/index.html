@@ -120,6 +120,10 @@
   .card .r.tl{top:calc(var(--cw)*.07); left:calc(var(--cw)*.09);}
   .card .r.br{bottom:calc(var(--cw)*.07); right:calc(var(--cw)*.09); transform:rotate(180deg);}
   .card .pip{position:absolute; inset:0; display:grid; place-items:center; font-size:calc(var(--cw)*.5*var(--cardtext,1));}
+  /* Card text L/XL: index face - the stacked rank+suit in the top-left corner only. At big
+     print the two corners and the centre pip overlapped on a fanned card. */
+  html[data-cardtext="L"] .card .pip, html[data-cardtext="XL"] .card .pip,
+  html[data-cardtext="L"] .card .r.br, html[data-cardtext="XL"] .card .r.br{display:none;}
   .card.red{color:var(--red);} .card.blk{color:var(--ink);}
   .card.back{background:
       repeating-linear-gradient(45deg,#123f2b 0 6px,#0d3122 6px 12px);
@@ -311,7 +315,7 @@ function canDouble(hand,bank,rules){
    ================================================================= */
 const BUILD=(function(){   // Last-Modified from Pages = the deploy time
   const d=new Date(document.lastModified);
-  return 'build v129'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
+  return 'build v131'+(isNaN(d)?'':' \u00b7 '+d.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}));
 })();
 const mem={};
 const store={
