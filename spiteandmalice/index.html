@@ -26,11 +26,13 @@
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
+html{background:#123524}  /* status bar + overscroll show felt, not white */
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   color:var(--cream);
-  background:
-    radial-gradient(120% 90% at 50% 0%, var(--felthi) 0%, var(--felt) 45%, var(--felt2) 100%);
+  /* Flat felt like the other games (v132). The old radial glow lit the top of the page,
+     so the header sat on a lighter band with a seam where the setup sheet began. */
+  background:var(--felt);
   min-height:100%;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   overflow-x:hidden;
@@ -778,7 +780,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v130";
+  var BUILD_V = "v132";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);

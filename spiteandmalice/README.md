@@ -9,7 +9,8 @@ on two phones** in a room — same room model as [`cribbage/`](../cribbage/).
 ## Screen
 
 The standard Game Night header: **‹ Games**, **Rules**, **Menu**, the name, and the
-dedication line *Grandma Jo's game*. The deal screen is the shared setup sheet
+dedication line *Grandma Jo's game*, on flat felt like the other games (no glow
+behind the header — removed in v132). The deal screen is the shared setup sheet
 (`gn-setup.js`): goal pile, centre stacks (with a one-line explainer of the chosen
 direction) and opponent up front; bot difficulty, move hints, sound, card size and card
 text under **More options**; **Deal** pinned at the bottom. With **Two phones** picked the
