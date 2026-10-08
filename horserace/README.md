@@ -170,6 +170,14 @@ scroll, print inside every card.
 Race the regulars: you plus three bots, no network. The race in progress is kept in
 `hr_solo` so closing the app doesn't lose it.
 
+## Next roller button (Menu toggle)
+Off by default (`prefs.step` in `hr_prefs`). On, a bot's roll doesn't land on the 1.3 s timer:
+the Roll button becomes **Next roller · Name**, and each tap brings up one bot roll, so the call
+for the last roll stays on screen until you've read it. The far-behind catch-up is off too, so
+every roll shows. Humans' rolls still land at once. It only paces **your** screen: bots' dice
+come from the race seed either way, so nobody else waits on you. In a live race the others can
+still roll for you if your turn sits for about 9 s after their screens catch up.
+
 ## Built
 One file, three script blocks: `../sfx.js`, the engine `window.HR` (deal, dice, `sim`, no DOM), and
 the UI + network. Sources are assembled from `engine.js`/`ui.js`/`head.html`/`body.html` by a build

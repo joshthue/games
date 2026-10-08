@@ -34,6 +34,12 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
 - Who goes first rotates each round. Bots roll until crewed, then re-roll cargo that can't beat the
   table's best or is under 8.
 
+- **Next roller button** (Menu toggle, `bd_step`, off by default). On: when a roller finishes, the
+  tray keeps their dice, the line under it says what they got and who's up next, and nothing
+  moves until someone taps **Next roller · Name** (or **Your turn** before yours). Off: the
+  handoff is automatic, but it now holds the finished shake for 1.8 s (was 0.9 s, too quick to
+  read) with the same "up next" line. Bots still take their own rolls within a turn on their own.
+
 ## Screen
 - **Straight in** (no start screen): what loads is the game. Your name goes on the board from the
   Menu. On a 320×568 phone (`max-height:600px`) the spacing tightens so the whole Shake of the Day
