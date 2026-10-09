@@ -41,6 +41,28 @@ and the results panel says how close you came ("best these cards make scores 275
 - Not a proof: on test deals it matched much longer searches about 99% of the time.
 - `window.__PS` exposes `state`, `showView`, `startSolve`, `deal(cards)` for headless tests.
 
+## Watch the bot (v135)
+**🤖 Watch bot** (beside New game, or Menu → Watch the bot play a new board) hands the board to a
+bot. On a fresh board it plays the whole deal; mid-game it picks up from where you are. While it
+plays, the buttons under the board become:
+
+- **Auto** switch: on, it places a card every **1.5 s**; off, it waits and **Next card ▶** places
+  one. The setting sticks (`settings.botAuto`, also in Menu). Auto pauses while a panel is open.
+- **Take over**: stops the bot; the board is yours from that card on.
+
+The board can't be tapped while the bot plays. **A board the bot placed any card on doesn't count**:
+your best is left alone and the high-score board isn't offered; the results say "The bot's board"
+and offer **Watch again**. Best board (the hindsight solver) still works on it.
+
+How it plays (`makeBot`, one function, no DOM): it sees what you see, never the deck order. For
+each empty square it estimates how much the card there raises the expected final value of that
+square's row plus its column, and takes the best. A partial line is worth the most of its flush odds
+(hypergeometric odds on the suit cards still unseen, split with the other lines chasing that suit),
+its straight odds (the ranks it still needs), and what its ranks make now plus their likeliest
+upgrades. Weights were tuned offline on 150-500 deals per setting and validated on fresh ones:
+**about 84 a board American and 37 English**, against 14 and 8 for placing at random. About 0.25 ms
+a card.
+
 ## Scoring
 Two point systems, switchable in the Menu (persisted):
 

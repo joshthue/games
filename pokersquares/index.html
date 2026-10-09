@@ -91,6 +91,8 @@
   .solvebox .bar{height:5px; border-radius:3px; background:rgba(255,255,255,.12); margin-top:8px; overflow:hidden;}
   .solvebox .bar i{display:block; height:100%; width:0; background:var(--gold); transition:width .3s;}
   .controls{display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:14px;}
+  .controls.hidden{display:none;}
+  .botbar{align-items:center;} .botbar .switch{margin-right:4px;}
   .tip-block{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px; margin:8px auto; font-size:13px; line-height:1.5; max-width:440px;}
   .tip-block b{color:var(--gold);}
 
@@ -172,9 +174,15 @@
 
   <div id="psTips"></div>
 
-  <div class="controls">
+  <div class="controls" id="psControls">
     <button class="btn sec sm" id="psUndo">↩ Undo</button>
     <button class="btn sm" id="psNew">🔀 New game</button>
+    <button class="btn sec sm" id="psBotGo">🤖 Watch bot</button>
+  </div>
+  <div class="controls botbar hidden" id="psBotBar">
+    <div class="switch"><button class="toggle" id="psBotAuto" aria-label="Auto-play"></button><span>Auto</span></div>
+    <button class="btn sm" id="psBotNext">Next card ▶</button>
+    <button class="btn sec sm" id="psBotStop">Take over</button>
   </div>
 </div>
 
@@ -204,7 +212,7 @@ const SCORING={
 };
 
 const LS_KEY="pokersquares.v1";
-let settings={tipsOn:false, fourColor:true, scoring:"american"};
+let settings={tipsOn:false, fourColor:true, scoring:"american", botAuto:true};
 let best=0;
 try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw);
   if(o&&o.settings) Object.assign(settings,o.settings); if(o&&typeof o.best==="number") best=o.best; } }catch(e){}
@@ -269,6 +277,7 @@ function newGame(){
   current=queue.pop();
   lastMove=null; over=false;
   VIEW="mine"; stopSolve(); SOLVE=null;
+  botStop(); botTouched=false;
   render();
 }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
@@ -295,7 +304,8 @@ function finish(){
   over=true; VIEW="mine";
   const {total}=computeLines(grid);
   startSolve();
-  var beatBest = total>best;          // a new personal best gets the bigger fanfare
+  botStop();
+  var beatBest = !botTouched && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
   if(beatBest){ best=total; }
   sfx(beatBest ? 'win' : 'good');
   persist();
@@ -316,13 +326,104 @@ function chipHTML(h){
 function miniHTML(card){
   return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>';
 }
+/* ---- the bot: Watch the bot ----------------------------------------------------------------
+   Plays the deal it's given one card at a time, the same way you do: it sees the board, the card
+   in the tray and which cards are still unseen - never the order of the deck. For each empty
+   square it estimates how much the card there raises the expected final value of that square's
+   row plus its column, and takes the best. A partial line is worth the most of: its flush odds
+   (the suit cards still to come, shared with the other lines chasing that suit), its straight
+   odds (the ranks it still needs), and what its ranks make now plus their likeliest upgrades.
+   Weights tuned offline over hundreds of deals: about 84 a board American and 37 English, against
+   about 14 / 8 for placing at random. Auto plays a card every 1.5 s; off, Next card plays one.
+   A board the bot placed any card on doesn't count toward your best or the high-score board. */
+// Poker Squares bot: places each card as it comes, never looking at the deck order.
+// lineVal() estimates a partial row/column's final worth from the unseen cards;
+// the bot picks the square that most raises (row value + column value).
+function makeBot(PTS, W){
+  W=Object.assign({empty:0.0, second:0.35, flushW:1, straightW:1, rankW:1, newPair:0.25, share:1},W||{});
+  const C=[]; for(let n=0;n<=52;n++){ C[n]=[1]; for(let k=1;k<=n;k++) C[n][k]=(C[n-1]?(C[n-1][k-1]||0)+(C[n-1][k]||0):0); }
+  const comb=(n,k)=>(k<0||k>n)?0:C[n][k];
+  // P(at least m of the a "good" cards turn up among the next R of D unseen)
+  function atLeast(D,a,R,m){ if(m<=0) return 1; if(a<m||R<m) return 0; let p=0, tot=comb(D,R);
+    for(let x=m;x<=Math.min(a,R);x++) p+=comb(a,x)*comb(D-a,R-x); return p/tot; }
+  function made(cnt){ const c=Object.values(cnt).sort((a,b)=>b-a);
+    if(c[0]>=4) return PTS.four; if(c[0]===3&&c[1]>=2) return PTS.full; if(c[0]===3) return PTS.three;
+    if(c[0]===2&&c[1]===2) return PTS.twopair; if(c[0]===2) return PTS.pair; return 0; }
+  function exact(cards){ // complete line
+    const rs=cards.map(c=>c.r).sort((a,b)=>a-b), fl=cards.every(c=>c.s===cards[0].s), u=new Set(rs).size;
+    let st=false; if(u===5){ if(rs[4]-rs[0]===4) st=true; else if(rs[0]===2&&rs[3]===5&&rs[4]===14) st=true; }
+    const cnt={}; rs.forEach(r=>cnt[r]=(cnt[r]||0)+1);
+    if(st&&fl) return rs[0]===10?PTS.royal:PTS.sflush; const m=made(cnt);
+    if(m>=PTS.full && m>PTS.flush) return m; if(fl) return Math.max(PTS.flush,m); if(st) return Math.max(PTS.straight,m); return m; }
+  function lineVal(cards, ctx){
+    const n=cards.length, k=5-n; if(k===0) return exact(cards);
+    if(n===0) return W.empty;
+    const {D,R,suit,rank}=ctx;
+    // flush draw
+    let fv=0; if(cards.every(c=>c.s===cards[0].s)){ const s0=cards[0].s, rivals=Math.max(0,(ctx.chase[s0]||0)-(ctx.self===s0?1:0));
+      const a=Math.round(suit[s0]/(1+W.share*rivals)); fv=W.flushW*atLeast(D,a,R,k)*PTS.flush; }
+    // straight draw: best window containing every rank
+    let sv=0; const rs=cards.map(c=>c.r);
+    if(new Set(rs).size===n){
+      for(let lo=1;lo<=10;lo++){ const win=[]; for(let r=lo;r<lo+5;r++) win.push(r===1?14:r);
+        if(!rs.every(r=>win.includes(r))) continue;
+        let p=1; win.forEach(r=>{ if(!rs.includes(r)) p*=atLeast(D,rank[r],R,1); });
+        sv=Math.max(sv,p); }
+      sv*=W.straightW*PTS.straight; }
+    // ranks: what's made now plus the best upgrades
+    const cnt={}; rs.forEach(r=>cnt[r]=(cnt[r]||0)+1); const base=made(cnt); const gains=[];
+    Object.keys(cnt).forEach(r=>{ const c2=Object.assign({},cnt); c2[r]++; const g=made(c2)-base; if(g>0) gains.push(g*atLeast(D,rank[r],R,1)); });
+    if(k>=2) gains.push(W.newPair*PTS.pair);
+    gains.sort((a,b)=>b-a);
+    const rv=base+W.rankW*((gains[0]||0)+(k>=2?W.second*(gains[1]||0):0));
+    return Math.max(fv,sv,rv)+0.15*Math.min(fv,rv);
+  }
+  const L=[]; for(let i=0;i<5;i++){ L.push([0,1,2,3,4].map(c=>i*5+c)); } for(let j=0;j<5;j++){ L.push([0,1,2,3,4].map(r=>r*5+j)); }
+  return function pick(grid, card, unseen){ // unseen: cards not on the board and not `card`
+    const suit=[0,0,0,0], rank=new Array(15).fill(0); unseen.forEach(c=>{ suit[c.s]++; rank[c.r]++; });
+    const empties=[]; grid.forEach((c,i)=>{ if(!c) empties.push(i); });
+    const chase=[0,0,0,0];
+    for(const l of L){ const cs=l.map(x=>grid[x]).filter(Boolean); if(cs.length>=1&&cs.length<5&&cs.every(c=>c.s===cs[0].s)) chase[cs[0].s]++; }
+    const ctx={D:unseen.length, R:empties.length-1, suit, rank, chase, self:-1};
+    let best=-1e9, bi=empties[0];
+    for(const i of empties){ let d=0;
+      for(const l of L){ if(!l.includes(i)) continue;
+        const before=l.map(x=>grid[x]).filter(Boolean), after=before.concat([card]);
+        const sf=cs=>(cs.length&&cs.every(c=>c.s===cs[0].s))?cs[0].s:-1;
+        ctx.self=sf(before); const vb=lineVal(before,ctx); ctx.self=sf(after); const va=lineVal(after,ctx); ctx.self=-1;
+        d+=va-vb; }
+      if(d>best+1e-9){ best=d; bi=i; } }
+    return bi; };
+}
+const BOT_W={flushW:1, rankW:2.2, share:0.5, second:0.7};
+const BOT_MS=1500;
+let BOT={on:false, t:null, fns:{}}, botTouched=false;
+function botPickFn(){ const k=settings.scoring; return BOT.fns[k]||(BOT.fns[k]=makeBot(SCORING[k], BOT_W)); }
+function unseenCards(){ const seen=new Set(grid.filter(Boolean).map(cardKey)); if(current) seen.add(cardKey(current));
+  return makeDeck().filter(c=>!seen.has(cardKey(c))); }
+function botMove(){ if(!BOT.on||over||!current||ANIMATING) return; botTouched=true; place(botPickFn()(grid, current, unseenCards())); }
+function botSchedule(){ clearTimeout(BOT.t); BOT.t=null;
+  if(!BOT.on||over||!settings.botAuto) return;
+  BOT.t=setTimeout(function(){ if(curOverlay.kind){ botSchedule(); return; }   // waits while a panel is open
+    botMove(); botSchedule(); }, BOT_MS); }
+function botStart(){ if(over) newGame(); BOT.on=true; closeOverlay(); render(); botSchedule(); }
+function botStop(){ BOT.on=false; clearTimeout(BOT.t); BOT.t=null; }
+function botTakeOver(){ botStop(); render(); }
+function botToggleAuto(){ settings.botAuto=!settings.botAuto; persist(); render(); botSchedule(); }
+function renderBotBar(){
+  const on=BOT.on&&!over;
+  document.getElementById("psControls").classList.toggle("hidden", on);
+  document.getElementById("psBotBar").classList.toggle("hidden", !on);
+  document.getElementById("psBotAuto").classList.toggle("on", !!settings.botAuto);
+  document.getElementById("psBotNext").style.display=settings.botAuto?"none":"";
+}
 function render(justIdx){
   const g=viewGrid(), showBest=g!==grid;
   const {rows,cols,total}=computeLines(g);
   // tray
   document.getElementById("psCurrent").innerHTML=bigCardHTML(current);
   const n=placed();
-  document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? "Board complete" : "Tap an empty square");
+  document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? (botTouched?"The bot's board":"Board complete") : (BOT.on ? (settings.botAuto?"The bot is playing":"Tap Next card") : "Tap an empty square"));
   document.getElementById("psProg").textContent  = showBest ? ("You scored "+computeLines(grid).total) : (over ? "25 of 25 placed" : ("Card "+(n+1)+" of 25"));
   document.getElementById("psTotal").textContent = total;
   document.getElementById("psBest").textContent  = "Best "+best;
@@ -334,7 +435,7 @@ function render(justIdx){
       if(card){
         html+='<div class="pscell filled'+(justIdx===idx?' just':'')+'" data-i="'+idx+'">'+miniHTML(card)+'</div>';
       }else{
-        const live=(!over&&current)?' live':'';
+        const live=(!over&&current&&!BOT.on)?' live':'';
         html+='<div class="pscell empty'+live+'"'+(live?(' onclick="place('+idx+')"'):'')+'></div>';
       }
     }
@@ -353,6 +454,7 @@ function render(justIdx){
     : "";
   // undo availability
   document.getElementById("psUndo").disabled = !lastMove || showBest;
+  renderBotBar();
 }
 
 /* ---- overlays ---- */
@@ -384,7 +486,9 @@ function openMenu(){
     +'<div style="margin:12px 0 4px;font-size:13px;">Scoring system</div>'
     +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
     +'<div style="height:6px"></div>'
+    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.botAuto?'on':'')+'" onclick="botToggleAuto();openMenu();"></button><span>Bot auto-plays a card every 1.5 s'+(settings.botAuto?'':' (off: tap Next card)')+'</span></div>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 New game</button>'
+    +'<button class="setup-opt" onclick="closeOverlay();newGame();botStart();">🤖 Watch the bot play a new board</button>'
     +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
     +'<a class="setup-opt" href="../">🏠 Back to all games</a>'
     +'<button class="setup-opt" onclick="openRules()">📖 How to play</button>'
@@ -397,14 +501,15 @@ function openResults(total){
   for(let i=0;i<5;i++) sc+='<div class="h">Row '+(i+1)+'</div><div>'+(rows[i]?rows[i].name:'—')+'</div>';
   for(let j=0;j<5;j++) sc+='<div class="h">Col '+(j+1)+'</div><div>'+(cols[j]?cols[j].name:'—')+'</div>';
   sc+='</div>';
-  const beat = total>=best && total>0;
-  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(beat?'🏆 New best!':'✅ Board complete')+'</h2>'
+  const beat = !botTouched && total>=best && total>0;
+  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(beat?'🏆 New best!':'✅ Board complete'))+'</h2>'
     +'<p style="font-size:26px;font-weight:900;color:var(--gold);text-align:center;margin:6px 0;">'+total+' pts</p>'
-    +'<p class="muted" style="text-align:center;margin-top:0;">Best '+best+' · '+(settings.scoring==="american"?"American":"English")+' scoring</p>'
-    +'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>'
+    +'<p class="muted" style="text-align:center;margin-top:0;">'+(botTouched?'Bot boards don\'t count toward your best ('+best+') or the high-score board':'Best '+best)+' · '+(settings.scoring==="american"?"American":"English")+' scoring</p>'
+    +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +sc
-    +'<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button></div>';
+    +'<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
+    +(botTouched?' <button class="btn sec" onclick="closeOverlay();newGame();botStart();">🤖 Watch again</button>':'')+'</div>';
   openPanel(html,"results");
 }
 
@@ -812,6 +917,10 @@ document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("hsBtn").onclick=function(){ HS.open(); };
 document.getElementById("psUndo").onclick=undo;
 document.getElementById("psNew").onclick=function(){ newGame(); };
+document.getElementById("psBotGo").onclick=function(){ botStart(); };          // from a fresh board, or takes over yours
+document.getElementById("psBotAuto").onclick=botToggleAuto;
+document.getElementById("psBotNext").onclick=function(){ botMove(); };
+document.getElementById("psBotStop").onclick=botTakeOver;
 document.getElementById("overlay").addEventListener("click",function(e){ if(e.target===this) closeOverlay(); });
 
 newGame();
@@ -836,7 +945,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v129", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v135", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
