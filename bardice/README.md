@@ -65,12 +65,16 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
   the tray allows (up to 58px; 72px on a wide screen) with even 9px gaps. If five across would drop a
   die under **56px**, the tray goes **3 on top + 2 centred below** at full size. Never 4 + 1. Same
   rule while rolling and at round end. On a 375-wide iPhone it's one row; on a 320-wide one, 3 + 2.
-- **Ship, Captain & Crew uses berths** (v126, `sccTrayHTML` + `fitScc`): three labelled berths that
-  only ever hold the **6 (Ship), 5 (Captain) and 4 (Crew)**. An empty berth is a dashed outline with
-  its number. Beside them, **the hold**: the dice still in the cup, or, once the crew's aboard, the two
-  **Cargo** dice (outlined green). A roll tumbles in the hold; when it lands, the 6/5/4 Darlene sets
-  aside move up into their berths. Everything sits on one row, sized to fit (as small as 34px with
-  five dice still in the cup); if that's too small, berths go on top and the hold below. The
+- **Ship, Captain & Crew is always five boxes, 3 over 2** (v134, `sccTrayHTML` + `fitScc`): **Ship,
+  Captain, Crew** on top, the two **Cargo** boxes centred underneath, and **one die size for the
+  whole game**, set from the screen width only (62px on a 390-430 phone, 50px on a short 320 one),
+  never from how many dice are in play. It used to be berths plus a separate "in the cup" group on
+  one row, which shrank and grew the dice from roll to roll. There are always exactly as many dice
+  in the cup as empty boxes (5, then 5 minus what's set aside, then the 2 cargo), so the cup's dice
+  simply fill the empty boxes in order. A kept 6/5/4 sits in its berth with a **gold ring and gold
+  label**; a loose die in an empty berth has neither. Crewed, the cargo boxes ring green and the
+  Cargo label goes gold. Before the first roll the empty boxes are dashed outlines (the berths show
+  6, 5, 4). The
   winning-shake strip shows the winner's 6-5-4 then cargo the same way.
 
 ## Ship, Captain & Crew round end
@@ -132,3 +136,8 @@ Headless at 390×844 and 1133×744: 40 Shake of the Day tries each (wallet moves
 (sinks, ties splitting the pot, carry-over when everyone sinks), no horizontal overflow, no errors.
 Live relay: two phones see each other's tries and the same jar; a third phone opened later picks up
 the jar and the day's board from the feed.
+
+v134 tray: played full four-player rounds at 390×844, 320×568 and 430×932 sampling the tray after
+every roll and handoff - one die size per screen the whole round (62 / 50 / 62px), tray height
+constant, always five boxes 3 over 2, no page errors. At 320×568 with four players the table list
+runs below the fold; the Roll button stays on screen.

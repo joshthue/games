@@ -116,18 +116,23 @@ button{font-family:inherit;cursor:pointer;border:none}
 .row .mini i.on{background:var(--gold)}
 .ticker{font-size:12.5px;color:var(--mute);text-align:center}
 .ticker b{color:var(--cream)}
-/* Ship, Captain & Crew tray: three berths that only ever hold the 6, the 5 and the 4 (an empty berth
-   is a dashed outline with its number), then the hold: the dice still rolling, or the two cargo dice
-   once the crew's aboard. fitScc() sizes them to one row, or berths over hold when that's too small. */
-.scctray{display:flex;align-items:flex-end;justify-content:center;gap:16px;width:100%;--die:52px}
-.scctray .berths,.scctray .free{display:flex;gap:6px}
-.scctray .berth,.scctray .hold{display:flex;flex-direction:column;align-items:center;gap:4px}
-.scctray .bl{font-size:9.5px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--cream);opacity:.85;text-shadow:0 1px 2px rgba(0,0,0,.45);height:12px;line-height:12px;white-space:nowrap}
-.scctray .berth.got .bl{color:var(--gold);opacity:1}
+/* Ship, Captain & Crew tray: always five boxes, 3 over 2 - Ship, Captain, Crew on top, the two
+   Cargo boxes centred underneath - and the dice are ONE size for the whole game (fitScc sizes them
+   from the screen width only, never from how many dice are in play). The dice in the cup fill
+   whichever boxes are still empty, in order; there are always exactly as many of them as empty
+   boxes (5, then 5 minus what's set aside, then the 2 cargo). A kept 6/5/4 sits in its berth with
+   a gold ring and a gold label; a loose die in an empty berth has neither. An empty box before
+   the first roll is a dashed outline (the berths show the number they need). */
+.scctray{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;--die:58px;--gap:10px}
+.scctray .r1,.scctray .r2{display:flex;gap:var(--gap);justify-content:center}
+.scctray .berth{display:flex;flex-direction:column;align-items:center;gap:4px;width:var(--die)}
+.scctray .hold{display:flex;flex-direction:column;align-items:center;gap:4px}
+.scctray .hold .r2{width:auto}
+.scctray .bl{font-size:9.5px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:var(--cream);opacity:.6;text-shadow:0 1px 2px rgba(0,0,0,.45);height:12px;line-height:12px;white-space:nowrap}
+.scctray .got>.bl{color:var(--gold);opacity:1}
 .scctray .die.set{box-shadow:0 0 0 3px var(--gold),0 4px 8px rgba(0,0,0,.45)}
-.scctray .die.slot{background:transparent;box-shadow:none;border:2px dashed rgba(247,243,232,.35);display:flex;align-items:center;justify-content:center;padding:0}
+.scctray .die.slot{background:transparent;box-shadow:none;border:2px dashed rgba(247,243,232,.35);display:flex;align-items:center;justify-content:center;padding:0;box-sizing:border-box}
 .scctray .die.slot b{font-size:calc(var(--die)*.42);font-weight:900;color:rgba(247,243,232,.32)}
-.scctray.two{flex-direction:column;align-items:center;gap:8px}
 .seg{display:inline-flex;background:rgba(0,0,0,.3);border-radius:20px;padding:3px;gap:3px}
 .seg button{background:transparent;color:var(--cream);padding:7px 13px;font-size:13px;font-weight:700;border-radius:16px}
 .seg button.on{background:var(--gold);color:var(--ink)}
@@ -298,7 +303,7 @@ window.BD=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v133";
+var BUILD_V="v134";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -351,21 +356,24 @@ addEventListener('resize', function(){ var b=$('sodDice'); if(b && b.offsetParen
    st: what's set aside; free: the dice in the hold (still rolling, or the cargo). */
 var BERTHS=[['ship',6,'Ship'],['captain',5,'Captain'],['crew',4,'Crew']];
 function sccTrayHTML(st, free, cargo){
-  st=st||{};
-  var h='<div class="berths">'+BERTHS.map(function(b,i){ var got=!!st[b[0]];
-    return '<div class="berth'+(got?' got':'')+'"><span class="bl">'+b[2]+'</span>'
-      +(got?dieHTML(b[1],'set','sb'+i):'<div class="die slot" data-id="sb'+i+'"><b>'+b[1]+'</b></div>')+'</div>'; }).join('')+'</div>';
-  h+='<div class="hold"><span class="bl">'+(cargo?'Cargo':(free.some(Boolean)?'In the cup':'&nbsp;'))+'</span><div class="free">'
-    +free.map(function(v,i){ return dieHTML(v, cargo?'hit':'', 'sc'+i); }).join('')+'</div></div>';
+  st=st||{}; free=free||[]; var k=0;
+  // the next die from the cup, into the next empty box. ids sc0..scN stay in cup order, so the
+  // roll reveal (which finds dice by id) animates them wherever they sit.
+  function next(numeral){ var i=k++;
+    if(i>=free.length) return '<div class="die slot"><b>'+(numeral||'')+'</b></div>';
+    if(!free[i]) return '<div class="die slot" data-id="sc'+i+'"><b>'+(numeral||'')+'</b></div>';
+    return dieHTML(free[i], cargo?'hit loose':'loose', 'sc'+i); }
+  var h='<div class="r1">'+BERTHS.map(function(b,i){ var got=!!st[b[0]];
+    return '<div class="berth'+(got?' got':'')+'"><span class="bl">'+b[2]+'</span>'+(got?dieHTML(b[1],'set','sb'+i):next(b[1]))+'</div>'; }).join('')+'</div>';
+  h+='<div class="hold'+(cargo?' got':'')+'"><span class="bl">Cargo</span><div class="r2">'+next('')+next('')+'</div></div>';
   return h;
 }
-// one row when every die can be at least 34px; otherwise berths on top, the hold below
+// One die size for the whole game: from the tray's width (3 across) and the screen, never from the
+// dice in play. Capped so two rows stay compact; smaller on a short phone.
 function fitScc(box){
-  var w=box.clientWidth, max=innerWidth>=700?64:58; if(!w) return;
-  var nFree=box.querySelectorAll('.free .die').length||1, items=3+nFree, gap=6, G=16;
-  var one=Math.floor((w-G-gap*(items-2))/items), two=one<34;
-  var d=two?Math.min(max, Math.floor((w-gap*(Math.max(3,nFree)-1))/Math.max(3,nFree))):Math.min(max,one);
-  box.style.setProperty('--die', d+'px'); box.classList.toggle('two', two);
+  var w=box.clientWidth; if(!w) return;
+  var gap=10, max=innerWidth>=700?72:(innerHeight<640?50:62);
+  box.style.setProperty('--die', Math.min(max, Math.floor((w-2*gap)/3))+'px'); box.style.setProperty('--gap', gap+'px');
 }
 function toast(html){ var t=document.createElement('div'); t.className='toast'; t.innerHTML=html; $('toasts').appendChild(t); setTimeout(function(){ t.remove(); }, 3800); }
 function confetti(){ if(reduced()) return; for(var i=0;i<18;i++){ var d=document.createElement('div'); d.textContent=pick(['🎉','💵','🎲','✨','🍺']);
@@ -603,7 +611,7 @@ function sccRoll(){
       for(var v=1;v<=6;v++) if(crewed(rev.concat([v]))) return true; return false; }
   }, function(res){
     p.dice=finalDice; SC.rolling=null; SC.busy=false;
-    if(res.hung){ sccRender(); if(p.st.crew){ beat('sccBeat','Crew’s aboard!'); sfx('good'); } else { nope($('sccDice').querySelector('.free .die:last-child')); beat('sccBeat','So close!'); } }
+    if(res.hung){ sccRender(); if(p.st.crew){ beat('sccBeat','Crew’s aboard!'); sfx('good'); } else { nope([].slice.call($('sccDice').querySelectorAll('.die.loose')).pop()); beat('sccBeat','So close!'); } }
     var c=BD.cargoOf(p.st), left=BD.SCC_ROLLS-p.rolls;
     if(p.st.crew && !left) sccStand();
     else if(!p.st.crew && !left){ p.done=true; p.sunk=true; $('sccSay').innerHTML=(p.bot?esc(p.name):'You')+' '+pick(['sank — no crew aboard.','went down with the ship.','never got the crew. Zero.']); sfx('bad'); sccNext(); }
