@@ -86,7 +86,7 @@
   .bestbar{max-width:440px; margin:12px auto 0; text-align:center;}
   .bestbar .seg button{padding:7px 14px;}
   .bestbar .note{font-size:12px; opacity:.8; margin-top:6px; min-height:16px;}
-  .solvebox{background:rgba(0,0,0,.22); border-left:3px solid var(--gold); border-radius:8px; padding:10px 12px; margin:10px 0 4px; font-size:14px; line-height:1.45;}
+  .solvebox{margin:4px 0 0; font-size:14px; line-height:1.45;}
   .solvebox b{color:var(--gold);}
   .solvebox .bar{height:5px; border-radius:3px; background:rgba(255,255,255,.12); margin-top:8px; overflow:hidden;}
   .solvebox .bar i{display:block; height:100%; width:0; background:var(--gold); transition:width .3s;}
@@ -100,7 +100,7 @@
   .overlay{position:fixed; inset:0; background:rgba(0,0,0,.62); display:none; align-items:center; justify-content:center; z-index:50; padding:16px;}
   .overlay.show{display:flex;}
   .panel{background:linear-gradient(180deg,#12503a,#0c3d2c); border:2px solid var(--gold); border-radius:16px;
-    max-width:520px; width:100%; max-height:88vh; overflow-y:auto; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+    max-width:520px; width:100%; max-height:88vh; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.6);}
   .panel h2{margin:0 0 6px; color:var(--gold); font-size:20px;} .panel h3{color:var(--gold); font-size:15px; margin:14px 0 6px;}
   .panel p,.panel li{font-size:14px; line-height:1.5;} .panel ul{margin:4px 0 4px 2px; padding-left:20px;}
   .panel table{width:100%; border-collapse:collapse; font-size:13px; margin:4px 0;}
@@ -115,9 +115,21 @@
   .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .18s;}
   .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
   .setup-opt{display:block; width:100%; text-align:left; background:rgba(255,255,255,.1); color:var(--cream); padding:13px 14px; border-radius:10px; margin:7px 0; font-size:15px; text-decoration:none;}
-  .scorecard{display:grid; grid-template-columns:1fr auto; gap:2px 10px; font-size:13px; margin:6px 0;}
-  .scorecard .h{color:var(--gold); font-weight:700;}
-  .scorecard .p{text-align:right; color:var(--gold); font-weight:700;}
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:10px 0 0;}
+  .stats div{background:rgba(0,0,0,.22); border-radius:9px; padding:7px 4px 6px; text-align:center; min-width:0;}
+  .stats span{display:block; font-size:10px; letter-spacing:.6px; text-transform:uppercase; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .stats b{display:block; font-size:19px; font-weight:900; color:var(--gold); line-height:1.25; font-variant-numeric:tabular-nums;}
+  .stats .bar{grid-column:1/-1; margin-top:2px; height:4px; border-radius:2px; background:rgba(255,255,255,.12); padding:0; overflow:hidden;}
+  .stats .bar i{display:block; height:100%; background:var(--gold); transition:width .3s;}
+  .stats-note{font-size:12px; opacity:.75; text-align:center; margin-top:5px;}
+  @media (max-height:640px){ .panel{padding:12px 14px;} .panel h2{font-size:18px; margin-bottom:2px;} .res-top .pts{font-size:26px;}
+    .hs{padding:8px 10px; margin:8px 0;} .hs li{padding:3px 2px;} .stats-note{display:none;} .res-btns{margin-top:10px;} }
+  .res-top{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:2px 0 2px;}
+  .res-top .pts{font-size:30px; font-weight:900; color:var(--gold); line-height:1;}
+  .res-top .sub{font-size:13px; opacity:.75;}
+  .res-btns{display:flex; gap:8px; margin-top:12px;} .res-btns .btn{flex:1 1 0;}
+  .hs .hs-h{display:flex; justify-content:space-between; align-items:baseline;}
+  .hs .hs-all{background:none; border:none; color:var(--gold); font-size:13px; font-weight:700; padding:0; white-space:nowrap;}
   .muted{opacity:.75; font-size:12px;}
   /* ---- shared high-score board (v105) ---- */
   .hs{background:rgba(0,0,0,.22); border-radius:10px; padding:10px 12px; margin:10px 0;}
@@ -305,6 +317,7 @@ function finish(){
   const {total}=computeLines(grid);
   startSolve();
   botStop();
+  if(!botTouched){ const k=settings.scoring, S=loadStats(); S[k]=S[k]||{n:0,sum:0}; S[k].n++; S[k].sum+=total; saveStats(S); }
   var beatBest = !botTouched && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
   if(beatBest){ best=total; }
   sfx(beatBest ? 'win' : 'good');
@@ -496,20 +509,17 @@ function openMenu(){
   openPanel(html,"menu");
 }
 function openResults(total){
-  const {rows,cols}=computeLines();
-  let sc='<div class="scorecard">';
-  for(let i=0;i<5;i++) sc+='<div class="h">Row '+(i+1)+'</div><div>'+(rows[i]?rows[i].name:'—')+'</div>';
-  for(let j=0;j<5;j++) sc+='<div class="h">Col '+(j+1)+'</div><div>'+(cols[j]?cols[j].name:'—')+'</div>';
-  sc+='</div>';
+  // One screen, no scrolling: the score line, the top five, the best-board line, two buttons.
+  // (The hand each row and column made is on the board's chips; the full ten are under Scores.)
   const beat = !botTouched && total>=best && total>0;
+  const sysName=settings.scoring==="american"?"American":"English";
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(beat?'🏆 New best!':'✅ Board complete'))+'</h2>'
-    +'<p style="font-size:26px;font-weight:900;color:var(--gold);text-align:center;margin:6px 0;">'+total+' pts</p>'
-    +'<p class="muted" style="text-align:center;margin-top:0;">'+(botTouched?'Bot boards don\'t count toward your best ('+best+') or the high-score board':'Best '+best)+' · '+(settings.scoring==="american"?"American":"English")+' scoring</p>'
+    +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">'+(botTouched?'Doesn\'t count toward your best ('+best+') · ':'Best '+best+' · ')+sysName+'</span></div>'
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
-    +sc
-    +'<div style="text-align:center;margin-top:12px;"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
-    +(botTouched?' <button class="btn sec" onclick="closeOverlay();newGame();botStart();">🤖 Watch again</button>':'')+'</div>';
+    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
+    +(botTouched?'<button class="btn sec" onclick="closeOverlay();newGame();botStart();">🤖 Watch again</button>'
+                :'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>✨ Best board</button>')+'</div>';
   openPanel(html,"results");
 }
 
@@ -687,18 +697,21 @@ function alignToMine(B){
   return bestG;
 }
 
+function loadStats(){ try{ return JSON.parse(localStorage.getItem("pokersquares.stats"))||{}; }catch(e){ return {}; } }
+function saveStats(S){ try{ localStorage.setItem("pokersquares.stats", JSON.stringify(S)); }catch(e){} }
+// The stat tiles on the results screen: your score, the most these 25 cards could make (from the
+// best-board search), your share of it, and your average board under this scoring.
 function solveBoxHTML(){
   if(!SOLVE) return "";
-  const mine=computeLines(grid).total;
-  if(!SOLVE.done){
-    const pct=Math.round(100*SOLVE.runs/SOLVE.max);
-    return 'Searching for the best board these 25 cards can make…<div class="bar"><i style="width:'+Math.max(6,pct)+'%"></i></div>';
-  }
-  const conf='<div class="muted" style="margin-top:4px;">'+SOLVE.agree+' of '+SOLVE.runs+' searches agreed.</div>';
-  if(SOLVE.score<=mine)
-    return '🎯 <b>That\'s the best board these cards make.</b> Nothing scored higher than your '+mine+'.'+conf;
-  return 'The best board these cards make scores <b>'+SOLVE.score+'</b> — '+(SOLVE.score-mine)+' more than yours ('+Math.round(100*mine/SOLVE.score)+'%).'+conf
-    +'<div style="text-align:center;margin-top:10px;"><button class="btn" onclick="closeOverlay();showView(\'best\')">✨ Show the best board</button></div>';
+  const mine=computeLines(grid).total, st=loadStats()[settings.scoring]||{n:0,sum:0};
+  const done=SOLVE.done, max=done?Math.max(SOLVE.score,mine):null, pct=done&&max?Math.round(100*mine/max):null;
+  const avg=botTouched?'—':(st.n?Math.round(st.sum/st.n):'—');
+  const tile=(l,v)=>'<div><span>'+l+'</span><b>'+v+'</b></div>';
+  const prog=done?pct:Math.max(6,Math.round(100*SOLVE.runs/SOLVE.max));
+  return '<div class="stats">'+tile(botTouched?'Bot':'You',mine)+tile('Max',done?max:'…')+tile('Of max',done?pct+'%':'…')
+    +tile(st.n&&!botTouched?'Avg · '+st.n:'Avg',avg)
+    +'<div class="bar"><i style="width:'+prog+'%"></i></div></div>'
+    +'<div class="stats-note">'+(!done?'Searching for the best board these 25 cards make…':(SOLVE.score<=mine?'🎯 That\'s the best board these cards make.':'Max is the best board these same 25 cards can make.'))+'</div>';
 }
 function renderBestBar(){
   const el=document.getElementById("psBestBar"); if(!el) return;
@@ -712,6 +725,7 @@ function renderBestBar(){
 }
 function refreshSolveUI(){
   const box=document.getElementById("psSolveBox"); if(box) box.innerHTML=solveBoxHTML();
+  const bb=document.getElementById("psBestBtn"); if(bb) bb.disabled=!(SOLVE&&SOLVE.done&&SOLVE.score>computeLines(grid).total);
   if(!ANIMATING) renderBestBar();
 }
 
@@ -848,17 +862,20 @@ const HS=(function(){
   function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   function when(at){ const d=new Date(at), now=new Date();
     return d.toDateString()===now.toDateString() ? d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}) : d.toLocaleDateString([],{month:"short",day:"numeric"}); }
-  function listHTML(sys){
+  function listHTML(sys, max){
     const L=board[sys];
     if(!L.length) return '<div class="muted" style="text-align:center;padding:6px 0;">No scores yet — be the first on the board.</div>';
-    return '<ol>'+L.map((e,i)=>'<li class="'+(mine===e.id?'me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.name)+'</span><span class="sc">'+e.score+'</span><span class="dt">'+when(e.at)+'</span></li>').join("")+'</ol>';
+    const row=(e,i)=>'<li class="'+(mine===e.id?'me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.name)+'</span><span class="sc">'+e.score+'</span><span class="dt">'+when(e.at)+'</span></li>';
+    let rows=L.map(row);
+    if(max && L.length>max){ const mi=L.findIndex(e=>e.id===mine); rows=rows.slice(0,max); if(mi>=max) rows.push(row(L[mi],mi)); }
+    return '<ol>'+rows.join("")+'</ol>';
   }
   function statusHTML(){ return status ? '<div class="st">'+esc(status)+'</div>' : ''; }
   function dealKey(){ return settings.scoring+":"+encCards(grid); }
   // the block inside the results panel
   function resultsHTML(total){
     const sys=settings.scoring, sysName=sys==="american"?"American":"English", key=dealKey();
-    let top='<h3>🏆 High scores · '+sysName+'</h3>';
+    let top='<div class="hs-h"><h3>🏆 Top scores</h3>'+(board[sys].length>5?'<button class="hs-all" onclick="HS.open()">All '+board[sys].length+' ›</button>':'')+'</div>';
     if(posted.indexOf(key)<0 && qualifies(total,sys)){
       const L=board[sys], rank=L.filter(e=>e.score>=total).length+1;
       top+='<div style="font-size:14px;">'+total+' makes the board at <b>#'+rank+'</b>! Put your name on it:</div>'
@@ -867,7 +884,7 @@ const HS=(function(){
     } else if(posted.indexOf(key)<0 && board[sys].length>=TOP){
       top+='<div class="muted" style="margin-bottom:6px;">'+(board[sys][TOP-1].score+1-total)+' more would have made the board.</div>';
     }
-    return top+listHTML(sys)+statusHTML();
+    return top+listHTML(sys, innerHeight<640?3:5)+statusHTML();   // short phones: top 3, so the results never scroll
   }
   function submit(){
     const inp=document.getElementById("hsName"); if(!inp) return;
@@ -945,7 +962,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v135", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v137", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

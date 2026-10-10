@@ -63,6 +63,23 @@ upgrades. Weights were tuned offline on 150-500 deals per setting and validated 
 **about 84 a board American and 37 English**, against 14 and 8 for placing at random. About 0.25 ms
 a card.
 
+## Results screen (v137)
+One screen, never scrolls (checked at 320×568, 375×667, 390×844, 430×932, with and without the
+name-entry row). Top to bottom:
+- **Title and score**: "Board complete" / "New best!", your points, best and scoring system on one line.
+- **Top scores**: the top 5 of the shared board (top 3 on phones under 640px tall), plus your own
+  row if you're lower down. **All 10 ›** opens the full list (same as the Scores pill). Making the
+  board still shows the name box here.
+- **Stat tiles**: **You** (this board), **Max** (the best board these same 25 cards can make, from the
+  best-board search), **Of max** (your share of it, as a %, with a bar), and **Avg** (your average
+  board under this scoring and how many games it covers; stored in `pokersquares.stats`, bot boards
+  never count). Max and % show "…" until the search finishes.
+- **New game** and **✨ Best board** side by side (Best board waits for the search; Watch again
+  instead for bot boards).
+
+The old per-row/column hand list is gone from this screen: the chips beside the board already show
+each line's hand. The panel stops its own scroll from dragging the page (`overscroll-behavior`).
+
 ## Scoring
 Two point systems, switchable in the Menu (persisted):
 
