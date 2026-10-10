@@ -257,6 +257,12 @@ Keep a fresh state serialising well under ntfy's **4 KB** message cap.
   *previous* build, so two deploys inside ten minutes precached stale files and
   looked exactly like "the update didn't take." `sw.js` now requests
   `{cache:"reload"}` / `{cache:"no-cache"}` deliberately. Don't simplify it back.
+- **"Fits on a phone" has to be measured with the notch and home bar.** Chromium reports
+  `env(safe-area-inset-*)` as 0, so a page that pads its body for them and also sizes something
+  to `100vh` looks perfect in a headless check and scrolls by the notch's height on every iPhone
+  (Spite & Malice until v138). Measure at full screen size with the real insets swapped into the
+  served CSS (top 59 / bottom 34 on a 15 Pro Max, 47 / 34 on a 13/14, 20 / 0 on an SE), at every
+  card size, and through the end of a game, not just the first screen.
 - **HTML is network-first, everything else cache-first**, so a killed-and-
   reopened app never serves yesterday's game.
 - Build stamps take their date from `document.lastModified` (Pages sends the

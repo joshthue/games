@@ -18,6 +18,24 @@ button becomes **Create game** and a **Join with code** button appears under it,
 opening the existing room panels. **Menu** has Back to all games, New game (back to the
 sheet), Rules, and the in-game options.
 
+## Never scrolls (v138)
+Checked with the real iPhone notch and home-bar insets injected (Chromium reports them as 0, which
+is how this slipped through): 15 Pro Max, 15/16, 13/14, SE and 320-wide SE, every card size, hints
+on and off, plus sideways and iPads. Fixes behind it:
+- `.wrap` was `min-height:100vh` inside a body already padded for the notch, so every iPhone ran
+  over by the notch's height (+59px on a Pro Max). It now subtracts the safe-area insets.
+- `fitBoard()` leaves room for the home bar, and after its two-point estimate it measures the real
+  bottom of the buttons row (rows packed) and steps the cards down until it clears. The estimate is
+  linear and labels/badges aren't, so it ran 30-40px optimistic at big sizes on small phones.
+- The buttons row keeps its height when empty (portrait), so it's measured the same either way.
+- The stock / done counts sit at the right end of the turn bar instead of a row of their own; the
+  hint line takes no room when Menu → hints is off (toggling refits); short phones (under 700px
+  tall) drop the zone captions and tighten the gaps.
+- The SE-size exception (keep cards >= 62px and accept a little scroll) is gone: height always wins.
+
+Card widths at M now: 77px on a Pro Max, 68 on a 15/16, 63 on an SE, 44 on a 320-wide SE (were 51
+and 44 at M, with scrolling); sideways 71 / 57px (were 56 / 46); iPad mini 82-128px, no scroll.
+
 ## How it plays
 
 - Two decks plus **four Jokers** (Jokers are wild; Kings are just Kings).
@@ -45,14 +63,17 @@ sheet), Rules, and the in-game options.
 - **Bot**: Easy or Normal (solo only).
 - **Card size** and **Card text**: S / M / L / XL each — the shared Game Night card size (`cardsize.js`), so a size
   picked here is the size in every card game. Cards scale to the screen: `fitBoard()` measures
-  the largest card the board can take (width *and* height) and **XL fills the screen**, M is
-  ~70% of it. On an iPad mini, XL fills the whole display. Before v82 this was a text-only
+  the largest card the board can take (width *and* height) with no scrolling, and **M fills it**
+  (v138; it used to be XL that filled and M ~70%, which left the bottom third of a phone empty).
+  S is a bit smaller; L and XL can't go past filling without scrolling, so in this game they stop
+  at M's size - Card text still enlarges the print. Before v82 this was a text-only
   setting inside a fixed 44px card, so the steps were barely visible. **Card text** (`--cardtext`)
   scales only the printed rank and suit (the card's base font-size), not the card; cards clip with
   `overflow:hidden` so XL text can't print past the edge.
 - **Tablet / landscape**: labels and buttons step up from 700px wide; in landscape (900px+)
   your hand moves up beside your piles so the board is three card-rows tall, not four.
-  Leftover height is spread between the rows rather than pooling under the buttons.
+  Portrait phones pack the rows together under the header (v138; they used to be spread down the
+  whole screen, which read as big empty bands at M).
 - **Phone sideways (v109)**: an iPhone in landscape is only ~390px tall, and the four-row board
   scrolled — the centre stacks above the fold, your hand below it, so you couldn't drag one onto the
   other. Any landscape screen under 540px tall now goes **two card-rows tall**: the bot's piles beside

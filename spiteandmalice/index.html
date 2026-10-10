@@ -17,12 +17,14 @@
   --card-bg:#f7f1e2; --card-ink:#1c2620; --red:#b23b34;
   --ok:#3f9d6a; --warn:#d9b45b; --bad:#b23b34;
   --shadow:0 4px 14px rgba(0,0,0,.35);
-  /* Card size. --fit is the largest card width the board can take on this screen, set by
-     fitBoard() (measured, width AND height). The shared S/M/L/XL multiplier (cardsize.js
-     --size: .86/1/1.2/1.4) scales from fit/1.4, so XL fills the screen and M is ~70% of it.
+  /* Card size. --fit is the largest card width the board can take on this screen with no
+     scrolling, set by fitBoard() (measured, width AND height). v138: M fills it (it used to be
+     XL that filled and M ~70%, which left the bottom third of a phone empty). S (.86) is a bit
+     smaller; L and XL can't go past filling without scrolling, so here they stop at M's size -
+     the separate Card text setting still makes the print bigger.
      Everything on a card - corner text, badges, padding - is a fraction of --cw. */
   --fit:69px;
-  --cw:calc(var(--fit) * var(--size,1) / 1.4);
+  --cw:calc(var(--fit) * min(var(--size,1), 1));
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
@@ -37,7 +39,10 @@ body{
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   overflow-x:hidden;
 }
-.wrap{max-width:1100px;margin:0 auto;padding:8px 8px 14px;min-height:100vh;display:flex;flex-direction:column}
+.wrap{max-width:1100px;margin:0 auto;padding:8px 8px 14px;display:flex;flex-direction:column;
+  /* the screen minus the notch and home bar the body already pads for - 100vh alone ran past the
+     bottom by the notch's height on every iPhone (v138) */
+  min-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
 
 /* Header: the shared Game Night header (gn-header.js) */
 .iconbtn{background:linear-gradient(180deg,#1c4a33,#123524);border:1px solid var(--line);
@@ -108,7 +113,7 @@ body{
   overflow:hidden;   /* card text XL must never print past the card edge */
 }
 /* the opponent's cards are 85% of yours; --cw is inherited by the card inside */
-.stack.sm,.card.sm{--cw:calc(var(--fit) * var(--size,1) / 1.4 * .85)}
+.stack.sm,.card.sm{--cw:calc(var(--fit) * min(var(--size,1), 1) * .85)}
 .card .r{font-size:1em}
 .card .s{align-self:flex-end;font-size:1em}
 .card.red{color:var(--red)}
@@ -141,19 +146,31 @@ body{
 .turnbar{display:flex;align-items:center;gap:8px;justify-content:center;font-size:13px;font-weight:700;
   padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.18);margin:2px 0}
 .turnbar .dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+/* v138: the stock / done counts live at the right end of the turn bar instead of a row of their own */
+#turnbar{justify-content:flex-start;padding-left:12px;padding-right:12px}
+#turnbar .stockrow{margin-left:auto;padding:0;gap:12px;font-weight:600}
+.tip-block.off{display:none}
 .turnbar.opp .dot{background:var(--warn)}
 .tip-block{font-size:12px;color:var(--cream);opacity:.85;text-align:center;padding:2px 6px;min-height:16px}
-.actions{display:flex;gap:8px;justify-content:center;padding-top:4px;flex-wrap:wrap}
+.actions{display:flex;gap:8px;justify-content:center;padding-top:4px;flex-wrap:wrap;min-height:48px}   /* room for its buttons even when empty, so fitBoard() measures the real height (v138) */
 
 .gn-build{position:fixed;left:0;right:0;bottom:2px;text-align:center;font-size:10px;color:var(--gold);opacity:.5;pointer-events:none}
 .hidden{display:none !important}
 .win-emoji{font-size:44px;text-align:center}
-/* The game fills the screen top to bottom: leftover height is shared out between the rows
-   instead of pooling under the buttons. fitBoard() switches this off while it measures. */
+/* The rows sit together under the header with even gaps (v138). They used to be spread evenly
+   down the whole screen, which at M and L card sizes left big empty bands between the bot's
+   piles, the centre stacks and yours. fitBoard() switches the flex off while it measures. */
 #game{flex:1;display:flex;flex-direction:column}
-.board{justify-content:space-evenly}
+.board{justify-content:flex-start;gap:14px}
 .board.measuring{justify-content:flex-start;flex:0 0 auto}
 #game.measuring{flex:0 0 auto}
+/* Short phones held upright (SE-size): tighter gaps and no zone captions, so the cards get the
+   height instead (v138). */
+@media (orientation:portrait) and (max-height:700px){
+  .board{gap:7px} .centers{padding:2px 0}
+  .board > .side-area:not(.you) .zonecap, .handblock .zonecap{display:none}
+  .actions{min-height:40px;padding-top:0}
+}
 /* Landscape tablet / desktop: your hand moves up beside your piles, so the board is three
    card-rows tall instead of four and the cards can be a third bigger. */
 @media (min-width:900px) and (orientation:landscape){
@@ -172,18 +189,17 @@ body{
   .gn-hdr .gn-top{grid-area:top} .gn-hdr h1.gn-name{grid-area:name;font-size:20px !important;margin:0}
   .gn-hdr .gn-sub{grid-area:sub;font-size:11px;margin:0}
   .gn-top .gn-pill{padding:5px 10px}
-  .board{display:grid;grid-template-columns:auto auto;grid-template-areas:"opp ctr" "turn stk" "you you" "act act";
+  .board{display:grid;grid-template-columns:auto auto;grid-template-areas:"opp ctr" "turn turn" "you you" "act act";
     column-gap:20px;row-gap:4px;align-content:space-evenly;justify-content:center}
   .board > .side-area:not(.you){grid-area:opp;align-self:end}
   .board > .side-area:not(.you) .zonecap{display:none}
   .centers{grid-area:ctr;padding:0;align-self:end}
-  .stockrow{grid-area:stk;padding:0;align-self:center;justify-content:flex-start}
   #turnbar{grid-area:turn;margin:0;padding:4px 8px}
   #tip{display:none}
   .side-area.you{grid-area:you;flex-direction:row;align-items:flex-end;justify-content:center;gap:28px}
   .side-area.you .hand{flex-wrap:nowrap}
   .side-area.you .zonecap{margin-top:0 !important}
-  .actions{grid-area:act;padding-top:0;justify-content:flex-end}   /* clear of the build stamp, which sits bottom-centre */
+  .actions{grid-area:act;padding-top:0;justify-content:flex-end;min-height:0}   /* clear of the build stamp, which sits bottom-centre */
   .actions .btn{padding:6px 16px;font-size:14px}
   .oppline{justify-content:flex-end}
 }
@@ -281,12 +297,8 @@ body{
 
       <!-- centers -->
       <div class="centers" id="centers"></div>
-      <div class="stockrow">
-        <span>stock <b id="stockN">0</b></span>
-        <span>done <b id="doneN">0</b></span>
-      </div>
-
-      <div class="turnbar" id="turnbar"><span class="dot"></span><span id="turntext">Your turn</span></div>
+      <div class="turnbar" id="turnbar"><span class="dot"></span><span id="turntext">Your turn</span>
+        <span class="stockrow"><span>stock <b id="stockN">0</b></span><span>done <b id="doneN">0</b></span></span></div>
       <div class="tip-block" id="tip"></div>
 
       <!-- you -->
@@ -780,7 +792,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v132";
+  var BUILD_V = "v138";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -861,7 +873,7 @@ window.SM = (function(){
     $(id).addEventListener('click', function(e){ if(e.target===this && id!=='winOv') this.classList.remove('on'); });
   });
   // menu controls
-  $('menuTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); render(); });
+  $('menuTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); render(); fitBoard(); });
   $('menuSound').addEventListener('change', function(){
     if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
   });
@@ -923,22 +935,27 @@ window.SM = (function(){
       byW=Math.min(wYou, wRowA);
     }
     // height: bottom of the actions row at two trial fits
-    var size=(window.CARDSIZE?CARDSIZE.value():1), act=document.querySelector('#game .actions');
+    var act=document.querySelector('#game .actions');
+    root.style.setProperty('--size', '1');          // measure at M; CARDSIZE.apply() puts the real step back below
     var board=document.querySelector('#game .board'); board.classList.add('measuring'); game.classList.add('measuring');
     function bottom(f){ root.style.setProperty('--fit', f+'px'); return act.getBoundingClientRect().bottom + window.scrollY; }
     var a=60, b=120, ha=bottom(a), hb=bottom(b), slope=(hb-ha)/(b-a);
-    var availH=window.innerHeight - 24;           // the build stamp floats at the bottom
+    // the build stamp floats at the bottom, above the home bar the body pads for
+    var availH=window.innerHeight - (parseFloat(getComputedStyle(document.body).paddingBottom)||0) - 24;
     var byH = slope>0 ? a + (availH-ha)/slope : byW;
-    // byH is the fit at which the board's height at THIS size fills the screen; normalise to XL
-    byH = byH * size / 1.4;
+    // v138: the height always wins - the page never scrolls (it used to keep cards >= 62px on a
+    // 320x568 phone at the cost of a little scrolling).
+    var fit=Math.floor(Math.min(byW, byH));
+    root.style.setProperty('--fit', fit+'px');
+    // The two-point estimate is linear; labels, badges and gaps that don't scale with the cards
+    // make it a few dozen px optimistic at big card sizes on small phones. Check the real bottom
+    // of the buttons row and step the cards down until it clears (v138).
+    for(var k=0; k<16; k++){ var over=act.getBoundingClientRect().bottom + window.scrollY - availH; if(over<=0 || fit<=24) break;
+      fit-=Math.max(1, Math.ceil(over/6)); root.style.setProperty('--fit', fit+'px'); }
+    // measured with the rows packed (.measuring); only now let them spread back out
     board.classList.remove('measuring'); game.classList.remove('measuring');
-    // On a short phone (SE, 320x568) honouring the height would shrink cards below what they
-    // were before v82; there a little scrolling is the better trade, so height can't take
-    // the card below ~62px wide or below what the width allows, whichever is smaller.
-    // Sideways there's no scrolling to fall back on (you drag between the two rows), so the
-    // height always wins there.
-    var fit=Math.floor(compact ? Math.min(byW, byH) : Math.max(Math.min(byW, byH), Math.min(byW, 62)));
-    lastFit=fit; root.style.setProperty('--fit', fit+'px');
+    lastFit=fit;
+    if(window.CARDSIZE) CARDSIZE.apply(); else root.style.removeProperty('--size');
   }
   window.addEventListener('resize', function(){ fitBoard(); });
   window.addEventListener('orientationchange', function(){ setTimeout(fitBoard, 250); });
@@ -1094,6 +1111,7 @@ window.SM = (function(){
 
   function renderTip(selCard){
     var el=$('tip');
+    el.classList.toggle('off', !prefs.tips);
     if(!prefs.tips){ el.textContent=''; return; }
     if(!isHeroTurn()){ el.textContent=''; return; }
     if(sel && sel.kind==='hand'){

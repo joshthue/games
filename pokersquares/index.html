@@ -19,7 +19,7 @@
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--felt);
     color:var(--cream); min-height:100vh; overflow-x:hidden; display:flex; flex-direction:column; align-items:center;}
-  .wrap{width:100%; max-width:520px; padding:8px 12px 44px; position:relative;}
+  .wrap{width:100%; max-width:520px; padding:8px 12px 22px; position:relative;}
   header{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;}
   h1{font-size:19px; margin:0; letter-spacing:1px; color:var(--gold); text-shadow:0 1px 2px rgba(0,0,0,.5);}
   h1 small{display:block; font-size:10px; letter-spacing:2px; opacity:.7; font-weight:600;}
@@ -57,7 +57,7 @@
 
   /* ---- 5x5 board + row/col score chips ---- */
   .psboard{display:grid; grid-template-columns:repeat(5,1fr) minmax(30px,auto); gap:5px; width:100%; max-width:440px; margin:0 auto;}
-  .pscell{position:relative; height:clamp(50px,14.5vw,66px); border-radius:7px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .pscell{position:relative; height:var(--cellh, clamp(50px,14.5vw,66px)); border-radius:7px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
   .pscell.empty{background:rgba(0,0,0,.18); border:1.5px dashed rgba(247,243,232,.3);}
   .pscell.empty.live{border-color:var(--gold); background:rgba(240,198,116,.10); cursor:pointer;}
   .pscell.filled{background:var(--cream); box-shadow:0 1px 3px rgba(0,0,0,.4); border:1px solid #d8d2c0;}
@@ -86,6 +86,7 @@
   .bestbar{max-width:440px; margin:12px auto 0; text-align:center;}
   .bestbar .seg button{padding:7px 14px;}
   .bestbar .note{font-size:12px; opacity:.8; margin-top:6px; min-height:16px;}
+  @media (max-height:640px){ .bestbar .note{display:none;} }
   .solvebox{margin:4px 0 0; font-size:14px; line-height:1.45;}
   .solvebox b{color:var(--gold);}
   .solvebox .bar{height:5px; border-radius:3px; background:rgba(255,255,255,.12); margin-top:8px; overflow:hidden;}
@@ -435,6 +436,7 @@ function render(justIdx){
   const {rows,cols,total}=computeLines(g);
   // tray
   document.getElementById("psCurrent").innerHTML=bigCardHTML(current);
+  document.getElementById("psCurrent").style.display=current?"":"none";   // board full: no next card, give the room back
   const n=placed();
   document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? (botTouched?"The bot's board":"Board complete") : (BOT.on ? (settings.botAuto?"The bot is playing":"Tap Next card") : "Tap an empty square"));
   document.getElementById("psProg").textContent  = showBest ? ("You scored "+computeLines(grid).total) : (over ? "25 of 25 placed" : ("Card "+(n+1)+" of 25"));
@@ -468,7 +470,18 @@ function render(justIdx){
   // undo availability
   document.getElementById("psUndo").disabled = !lastMove || showBest;
   renderBotBar();
+  fitPS();
 }
+// Never scroll the main screen: if the page is taller than the phone (small phone, or a big card
+// size growing the tray's card), take the difference out of the board's cell height (v138).
+function fitPS(){
+  const root=document.documentElement, cell=document.querySelector('#psboard .pscell'); if(!cell) return;
+  root.style.removeProperty('--cellh');
+  let h=cell.getBoundingClientRect().height;
+  for(let i=0;i<12;i++){ const over=root.scrollHeight-innerHeight; if(over<=0||h<=38) break;
+    h=Math.max(38, Math.floor(h-Math.ceil(over/5)-1)); root.style.setProperty('--cellh', h+'px'); }
+}
+addEventListener('resize', function(){ try{ fitPS(); }catch(e){} });
 
 /* ---- overlays ---- */
 function openPanel(html,kind){ document.getElementById("panel").innerHTML=html; document.getElementById("overlay").classList.add("show"); curOverlay={kind}; }
@@ -713,7 +726,8 @@ function solveBoxHTML(){
     +'<div class="bar"><i style="width:'+prog+'%"></i></div></div>'
     +'<div class="stats-note">'+(!done?'Searching for the best board these 25 cards make…':(SOLVE.score<=mine?'🎯 That\'s the best board these cards make.':'Max is the best board these same 25 cards can make.'))+'</div>';
 }
-function renderBestBar(){
+function renderBestBar(){ renderBestBar_(); try{ fitPS(); }catch(e){} }   // the bar appearing after a game can push the page; refit
+function renderBestBar_(){
   const el=document.getElementById("psBestBar"); if(!el) return;
   if(!over || !SOLVE){ el.innerHTML=""; return; }
   const mine=computeLines(grid).total;
@@ -902,7 +916,9 @@ const HS=(function(){
   // the standalone board (🏆 button / Menu)
   function open(){
     tab=tab||settings.scoring;
-    openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🏆 High scores</h2>'
+    // opened from the results screen (All 10 ›): a Back button returns to it instead of closing everything
+    const fromResults=curOverlay.kind==="results";
+    openPanel((fromResults?'<button class="btn sec sm close" onclick="openResults(computeLines(grid).total)">‹ Back</button>':'<button class="btn sec sm close" onclick="closeOverlay()">✕</button>')+'<h2>🏆 High scores</h2>'
       +'<p class="muted" style="margin-top:0;">Everybody playing Poker Squares, on any phone. Top 10 for each scoring system.</p>'
       +'<div id="hsPanel"></div>','scores');
     paint(); sync();
@@ -957,12 +973,12 @@ if('serviceWorker' in navigator){
 }
 </script>
 <div class="gn-build" id="gnBuild"></div>
-<style>.gn-build{text-align:center;font-size:10.5px;opacity:.5;margin:16px 0 10px;
+<style>.gn-build{position:fixed;left:0;right:0;bottom:calc(2px + env(safe-area-inset-bottom,0px));pointer-events:none;text-align:center;font-size:10.5px;opacity:.5;margin:0;
   font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px;}</style>
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v137", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v138", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

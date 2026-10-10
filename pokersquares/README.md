@@ -80,6 +80,20 @@ name-entry row). Top to bottom:
 The old per-row/column hand list is gone from this screen: the chips beside the board already show
 each line's hand. The panel stops its own scroll from dragging the page (`overscroll-behavior`).
 
+## Main screen never scrolls (v138)
+- The build stamp is pinned to the bottom (off the page flow, above the home bar), and the page's
+  bottom padding dropped from 44 to 22px.
+- `fitPS()` runs after every render: if the page is taller than the phone, it takes the difference
+  out of the board's cell height (floor 38px). Bigger card sizes grow the tray's card, which is
+  what pushed it over on smaller phones.
+- After the 25th card the tray's empty card slot hides (there's no next card), and on phones under
+  640px tall the "Tap Best to watch…" hint under the Your board / Best switch is dropped.
+- **All 10 ›** on the results screen opens the full list with a **‹ Back** button that returns to
+  the results (it used to replace them with no way back).
+
+Checked with real iPhone notch/home-bar insets (15 Pro Max to 320-wide SE), every card size, through
+a whole game to the results, the All 10 → Back round trip, and the results panel itself.
+
 ## Scoring
 Two point systems, switchable in the Menu (persisted):
 
