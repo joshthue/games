@@ -81,6 +81,7 @@ const GAMES = [
   { title:"Spite & Malice",   emoji:"😈", sub:"Race to empty your goal pile · vs bot or two phones", href:"spiteandmalice/", updated:"2026-09-14" },
   { title:"Blackjack",        emoji:"🂡", sub:"You vs the dealer · splits, doubles, 3:2 · bankroll", href:"blackjack/", updated:"2026-09-12" },
   { title:"Poker Squares",    emoji:"🎴", sub:"Solitaire · build 10 poker hands in a 5×5 grid", href:"pokersquares/", updated:"2026-09-13" },
+  { title:"Corners",          emoji:"🟦", sub:"Fit your 21 pieces corner to corner · box the others out · you vs 1 or 3 bots", href:"corners/", updated:"2026-10-09" },
   { title:"Stratego",         emoji:"🎖️", sub:"Take the flag · 40 pieces a side vs a bot that remembers", href:"stratego/", updated:"2026-09-15" },
   // hidden for now (Josh, Oct 4) - golf/ still works by its URL; uncomment to bring the tile back
   // { title:"Links",            emoji:"⛳", sub:"Nine holes at Birch Hollow · three-tap swing", href:"golf/", updated:"2026-09-15" },
@@ -147,7 +148,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v135", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v136", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
