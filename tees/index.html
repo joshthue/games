@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Golf Tees</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Golf Tees">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --hole:28px; --tee:30px; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:560px; margin:0 auto; padding:8px 12px 8px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  .strip{display:flex; gap:8px; margin:2px 0 8px;}
+  .tile{flex:1 1 0; background:rgba(0,0,0,.22); border-radius:10px; padding:6px 8px; text-align:center;}
+  .tile span{display:block; font-size:10px; letter-spacing:.8px; text-transform:uppercase; opacity:.7; font-weight:800;}
+  .tile b{display:block; font-size:20px; font-weight:900; color:var(--gold); font-variant-numeric:tabular-nums; line-height:1.2;}
+  .tile b.dim{color:var(--cream); opacity:.6;}
+
+  /* the board: a wooden triangle, holes and tees placed by fit() */
+  .stage{flex:1 1 auto; min-height:0; position:relative;}
+  .board{position:absolute; left:50%; transform:translateX(-50%);}
+  .wood{position:absolute; inset:0; clip-path:polygon(50% 0%, 100% 100%, 0% 100%);
+    background:linear-gradient(160deg,#c99a5b 0%,#b5833f 45%,#9c6b2e 100%);
+    filter:drop-shadow(0 6px 10px rgba(0,0,0,.45));}
+  .grain{position:absolute; inset:0; clip-path:polygon(50% 0%, 100% 100%, 0% 100%); opacity:.22;
+    background:repeating-linear-gradient(100deg, transparent 0 7px, rgba(60,30,5,.5) 7px 8px, transparent 8px 19px, rgba(255,230,180,.35) 19px 20px);}
+  .hole{position:absolute; width:var(--hole); height:var(--hole); margin:calc(var(--hole) / -2) 0 0 calc(var(--hole) / -2); border-radius:50%;
+    background:radial-gradient(circle at 50% 40%, #2a1606 0%, #3d230c 55%, #6b4419 100%); box-shadow:inset 0 2px 4px rgba(0,0,0,.7);}
+  .hole.target{box-shadow:inset 0 2px 4px rgba(0,0,0,.7), 0 0 0 3px #6fe39a, 0 0 14px 2px rgba(111,227,154,.7); animation:pulse 1s ease-in-out infinite;}
+  .hole.hint{box-shadow:inset 0 2px 4px rgba(0,0,0,.7), 0 0 0 3px var(--gold), 0 0 14px 2px rgba(240,198,116,.8);}
+  @keyframes pulse{50%{box-shadow:inset 0 2px 4px rgba(0,0,0,.7), 0 0 0 3px #6fe39a, 0 0 22px 5px rgba(111,227,154,.5);}}
+  /* a tee seen from above: a round head with a dimple, coloured, with a shadow on the board */
+  .tee{position:absolute; width:var(--tee); height:var(--tee); margin:calc(var(--tee) / -2) 0 0 calc(var(--tee) / -2); border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.85) 0 8%, var(--c) 22%, var(--c2) 100%);
+    box-shadow:0 3px 4px rgba(0,0,0,.45), inset 0 -2px 3px rgba(0,0,0,.25); cursor:pointer; z-index:2; touch-action:none;}
+  .tee::after{content:""; position:absolute; left:32%; top:32%; width:36%; height:36%; border-radius:50%;
+    background:radial-gradient(circle at 60% 65%, rgba(255,255,255,.35), rgba(0,0,0,.28)); }
+  .tee.sel{box-shadow:0 0 0 3px var(--gold), 0 10px 14px rgba(0,0,0,.5); transform:translateY(-4px) scale(1.12); transition:transform .12s;}
+  .tee.can{animation:breathe 1.6s ease-in-out infinite;}
+  @keyframes breathe{50%{box-shadow:0 3px 4px rgba(0,0,0,.45), 0 0 0 2px rgba(240,198,116,.55);}}
+  .tee.last{box-shadow:0 0 0 3px var(--gold), 0 0 26px 8px rgba(240,198,116,.8); animation:none;}
+  .tee.flying{z-index:5; pointer-events:none;}
+
+  .say{text-align:center; font-size:14px; min-height:20px; margin:6px 2px; line-height:1.35;}
+  .say b{color:var(--gold);}
+
+  /* the tees you've pulled */
+  .pulled{display:flex; flex-wrap:wrap; justify-content:center; gap:3px; min-height:18px; margin:0 0 8px;}
+  .pulled i{width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff 0 10%, var(--c) 30%, var(--c2) 100%); box-shadow:0 1px 2px rgba(0,0,0,.4);}
+
+  .ctl{display:flex; gap:8px;}
+  .ctl button{flex:1 1 0; min-height:44px; border:none; border-radius:12px; font-size:15px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
+  .ctl button.go{background:var(--gold); color:var(--ink);}
+  .ctl button:disabled{opacity:.4;}
+
+  /* flare */
+  .spark{position:absolute; width:7px; height:7px; border-radius:50%; pointer-events:none; z-index:6;}
+  .dust{position:absolute; border-radius:50%; border:2px solid rgba(255,240,210,.8); pointer-events:none; z-index:1;}
+  .pop{position:absolute; transform:translate(-50%,-50%); font-weight:900; font-size:22px; color:var(--gold); pointer-events:none; z-index:7;
+    text-shadow:0 2px 6px rgba(0,0,0,.6), 0 0 2px #000; white-space:nowrap;}
+  .confetti{position:fixed; top:-20px; width:9px; height:14px; z-index:90; pointer-events:none; border-radius:2px;}
+
+  /* modals */
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .card{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px;
+    max-width:400px; width:100%; max-height:88vh; overflow-y:auto; overscroll-behavior:contain; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:23px; text-align:center;}
+  .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.9;}
+  .modal .sub{text-align:center; margin:0 0 12px;}
+  .modal ul{padding-left:18px; margin:0 0 8px;}
+  .modal h3{font-size:11px; letter-spacing:1.3px; text-transform:uppercase; color:var(--gold); margin:12px 0 4px;}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:4px 0 6px;}
+  .stats div{background:rgba(0,0,0,.22); border-radius:9px; padding:7px 4px; text-align:center;}
+  .stats span{display:block; font-size:10px; letter-spacing:.6px; text-transform:uppercase; opacity:.7;}
+  .stats b{display:block; font-size:19px; font-weight:900; color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink);
+    border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4;
+    font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+</style>
+<script src="../gn-header.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Golf Tees</h1>
+  </div>
+  <div class="strip">
+    <div class="tile"><span>Tees left</span><b id="tLeft">14</b></div>
+    <div class="tile"><span>Best possible</span><b id="tBest">1</b></div>
+    <div class="tile"><span>One-tee wins</span><b id="tWins">0</b></div>
+  </div>
+  <div class="stage" id="stage"><div class="board" id="board"><div class="wood"></div><div class="grain"></div></div></div>
+  <div class="say" id="say"></div>
+  <div class="pulled" id="pulled"></div>
+  <div class="ctl">
+    <button id="undoBtn">Undo</button>
+    <button id="hintBtn">Hint</button>
+    <button class="go" id="newBtn">New game</button>
+  </div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="card">
+  <h2>Menu</h2>
+  <div class="switchrow"><span>Show the best you can still do</span><button class="toggle" id="bestTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button>
+  <button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a>
+  <button class="bigbtn" data-close>Close</button>
+</div></div>
+
+<div class="modal" id="rulesModal"><div class="card">
+  <h2>How to play</h2>
+  <p>The triangle has 15 holes and 14 tees. Leave as few tees standing as you can.</p>
+  <h3>Start</h3>
+  <p>Tap any tee to pull it out. That's your empty hole. (Every starting hole can be finished with one tee.)</p>
+  <h3>Jumping</h3>
+  <ul>
+    <li>Tap a tee, then a glowing hole. Or drag the tee there.</li>
+    <li>A tee jumps over one neighbour into an empty hole, in a straight line: along a row or either slant.</li>
+    <li>The tee it jumps comes out.</li>
+  </ul>
+  <h3>The end</h3>
+  <p>When no tee can jump, count what's left. One is genius; two is pretty sharp; three is respectable. <b>Hint</b> shows a jump that keeps your best finish alive; <b>Undo</b> takes back as many as you like.</p>
+  <button class="bigbtn" data-close>Got it</button>
+</div></div>
+
+<div class="modal" id="overModal"><div class="card">
+  <h2 id="oTitle"></h2>
+  <p class="sub" id="oSub"></p>
+  <div class="stats" id="oStats"></div>
+  <button class="bigbtn" id="oAgain">Same start again</button>
+  <button class="bigbtn ghost" id="oNew">Pull a different tee</button>
+  <button class="bigbtn ghost" data-close>Look at the board</button>
+</div></div>
+
+<script>
+/* ============================================================
+   GOLF TEES - the engine. No DOM. window.TEES.
+   The triangle board: 15 holes in rows of 1-2-3-4-5, 14 tees. Pull one tee to start.
+   A move jumps a tee over a neighbour into an empty hole in a straight line (along a row
+   or either diagonal); the jumped tee comes out. No moves left: count what's standing.
+   A board is a 15-bit number, bit i set = tee in hole i (holes numbered row by row from the top).
+   ============================================================ */
+(function(G){
+  var ROWS=5, HOLES=15, RC=[], ID={};
+  for(var r=0,i=0;r<ROWS;r++) for(var c=0;c<=r;c++,i++){ RC.push([r,c]); ID[r+','+c]=i; }
+  // the six straight-line directions in (row, col): along the row, and both diagonals
+  var DIRS=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[-1,-1]];
+  var JUMPS=[];                                   // [from, over, to]
+  RC.forEach(function(rc,i){ DIRS.forEach(function(d){ var o=ID[(rc[0]+d[0])+','+(rc[1]+d[1])], t=ID[(rc[0]+2*d[0])+','+(rc[1]+2*d[1])];
+    if(o!=null && t!=null) JUMPS.push([i,o,t]); }); });
+  var FULL=(1<<HOLES)-1;
+  function has(b,i){ return (b>>i)&1; }
+  function count(b){ var n=0; while(b){ b&=b-1; n++; } return n; }
+  function start(empty){ return FULL & ~(1<<empty); }
+  function moves(b){ return JUMPS.filter(function(j){ return has(b,j[0]) && has(b,j[1]) && !has(b,j[2]); }); }
+  function movesFrom(b,i){ return moves(b).filter(function(j){ return j[0]===i; }); }
+  function apply(b,j){ return (b & ~(1<<j[0]) & ~(1<<j[1])) | (1<<j[2]); }
+  // the fewest tees you can still finish with from this board (memoised over all 2^15 boards)
+  var memo=new Int8Array(1<<HOLES).fill(-1);
+  function best(b){
+    if(memo[b]>=0) return memo[b];
+    var ms=moves(b), m=count(b);
+    for(var k=0;k<ms.length && m>1;k++){ var v=best(apply(b,ms[k])); if(v<m) m=v; }
+    memo[b]=m; return m;
+  }
+  // a move that keeps the best finish possible (the hint), or null
+  function hint(b){ var target=best(b), ms=moves(b); for(var k=0;k<ms.length;k++) if(best(apply(b,ms[k]))===target) return ms[k]; return null; }
+  // how good a finish is, in words (our own, not anybody's placemat)
+  function rating(n){
+    return n===1?{t:'One tee. Genius.', s:'Clean board. Frame it.'}
+         : n===2?{t:'Two left. Pretty sharp.', s:'One jump short of genius.'}
+         : n===3?{t:'Three left. Not bad.', s:'Respectable. Try again?'}
+         : n===4?{t:'Four left.', s:'The board won this one.'}
+         : {t:n+' left.', s:'Pull a different tee and try again.'};
+  }
+  G.TEES={ROWS:ROWS, HOLES:HOLES, RC:RC, ID:ID, JUMPS:JUMPS, FULL:FULL, has:has, count:count, start:start,
+    moves:moves, movesFrom:movesFrom, apply:apply, best:best, hint:hint, rating:rating};
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<script src="../sfx.js"></script>
+<script>
+/* ============================================================
+   GOLF TEES - the screen. Knows none of the rules: asks window.TEES.
+   ============================================================ */
+(function(){
+var T=window.TEES, $=function(id){ return document.getElementById(id); };
+// tee colours, like a handful from a golf bag; fixed per hole so a game always looks the same
+var TCOL=[['#e8463a','#9e1f17'],['#f2c531','#b07f0a'],['#3d7fe0','#1c4a96'],['#38b064','#1d6b3a'],['#f6f1e4','#bdb39a'],['#f08a2c','#a5520e'],['#c45bd6','#7a2a88']];
+function teeCol(i){ return TCOL[(i*3+1)%TCOL.length]; }
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) SFX.play(n); }
+var prefs=Object.assign({showBest:true}, lsGet('tees_prefs',{}));
+var stats=Object.assign({games:0, ones:0, best:null, byLeft:{}}, lsGet('tees_stats',{}));
+
+var CM=[], B=T.FULL, startHole=null, hist=[], sel=null, pulledList=[], lastTee=null, chain=0, busy=false, reported=false;
+var POS=[], STEP=40;                         // hole centres in board px
+var teeEl={};                                // tee element by the hole it stands in
+
+/* ---------- geometry ---------- */
+function fit(){
+  var st=$('stage'), w=st.clientWidth, h=st.clientHeight;
+  // triangle width W, height ~0.87W plus a margin; as big as fits both ways
+  var W=Math.max(200, Math.min(w, (h-6)/0.9, 480));
+  var bh=Math.round(W*0.88), bd=$('board'); bd.style.width=W+'px'; bd.style.height=bh+'px'; bd.style.top=Math.max(0,(h-bh)/2)+'px';
+  STEP=W/5.6; var top=W*0.2, ry=STEP*0.87;
+  POS=T.RC.map(function(rc){ return [W/2+(rc[1]-rc[0]/2)*STEP, top+rc[0]*ry*1.04]; });
+  document.documentElement.style.setProperty('--hole', Math.round(STEP*.56)+'px');
+  document.documentElement.style.setProperty('--tee', Math.round(STEP*.62)+'px');
+}
+function build(){
+  var bd=$('board'); [].slice.call(bd.querySelectorAll('.hole,.tee')).forEach(function(e){ e.remove(); }); teeEl={};
+  POS.forEach(function(p,i){ var h=document.createElement('div'); h.className='hole'; h.dataset.h=i; h.style.left=p[0]+'px'; h.style.top=p[1]+'px'; bd.appendChild(h); });
+  for(var i=0;i<T.HOLES;i++) if(T.has(B,i)) addTee(i, CM[i]);
+}
+function addTee(hole, colourOf){
+  var t=document.createElement('div'), c=teeCol(colourOf); t.className='tee'; t.dataset.h=hole; t.dataset.c=colourOf;
+  t.style.setProperty('--c',c[0]); t.style.setProperty('--c2',c[1]); t.style.left=POS[hole][0]+'px'; t.style.top=POS[hole][1]+'px';
+  $('board').appendChild(t); teeEl[hole]=t; return t;
+}
+
+/* ---------- state ---------- */
+function newGame(){ CM=[]; for(var i=0;i<T.HOLES;i++) CM.push(i); B=T.FULL; startHole=null; hist=[]; sel=null; pulledList=[]; lastTee=null; chain=0; reported=false; fit(); build(); render(); }
+function replay(){ var s=startHole; newGame(); if(s!=null){ B=T.start(s); startHole=s; var t=teeEl[s]; if(t){ t.remove(); delete teeEl[s]; } pulledList=[s]; render(); } }
+function render(){
+  var started=startHole!=null, n=T.count(B), ms=started?T.moves(B):[];
+  $('tLeft').textContent=n;
+  var bb=started?T.best(B):1; $('tBest').textContent=prefs.showBest?bb:'—'; $('tBest').classList.toggle('dim', !prefs.showBest);
+  $('tWins').textContent=stats.ones;
+  // tees that can move breathe; the selected one lifts; its landing holes glow
+  var movers={}; ms.forEach(function(j){ movers[j[0]]=1; });
+  Object.keys(teeEl).forEach(function(h){ var t=teeEl[h]; t.classList.toggle('can', started && !!movers[h] && sel==null); t.classList.toggle('sel', sel===+h); t.classList.toggle('last', started && n===1); });
+  var tg={}; if(sel!=null) T.movesFrom(B,sel).forEach(function(j){ tg[j[2]]=1; });
+  [].forEach.call($('board').querySelectorAll('.hole'),function(h){ h.classList.toggle('target', !!tg[h.dataset.h]); h.classList.remove('hint'); });
+  $('pulled').innerHTML=pulledList.map(function(i){ var c=teeCol(i); return '<i style="--c:'+c[0]+';--c2:'+c[1]+'"></i>'; }).join('');
+  $('undoBtn').disabled=!hist.length||busy; $('hintBtn').disabled=!started||!ms.length||busy;
+  if(!started) say('Tap any tee to <b>pull it out</b> and start.');
+  else if(!ms.length) say(n===1?'<b>One tee.</b> Genius.':'No jumps left: <b>'+n+'</b> tees standing.');
+  else if(sel!=null) say('Tap a <b>glowing hole</b> to jump.');
+  else say(prefs.showBest&&bb>1&&hist.length?'One tee is out of reach now. Best you can do: <b>'+bb+'</b>.':'Tap a tee, then where it jumps to. Or drag it.');
+}
+function say(h){ $('say').innerHTML=h; }
+
+/* ---------- moves ---------- */
+function pullStart(h){
+  startHole=h; B=T.start(h); pulledList=[h]; sfx('select');
+  var t=teeEl[h]; delete teeEl[h]; knockOut(t, h, 0); render();
+}
+function jump(j){
+  if(busy) return; busy=true;
+  hist.push({B:B, CM:CM.slice(), pulled:pulledList.slice(), lastTee:lastTee, chain:chain});
+  CM[j[2]]=CM[j[0]];
+  chain = (lastTee===j[0]) ? chain+1 : 1; lastTee=j[2];
+  var mover=teeEl[j[0]], victim=teeEl[j[1]]; delete teeEl[j[0]]; delete teeEl[j[1]]; teeEl[j[2]]=mover; mover.dataset.h=j[2];
+  B=T.apply(B,j); sel=null; pulledList.push(+victim.dataset.c);
+  render(); busy=true;
+  hop(mover, j[0], j[2], function(){
+    busy=false; render();
+    if(chain>=2) pop(POS[j[2]], chain===2?'Double jump!':chain===3?'Triple jump!':chain+'× jump!', 1);
+    if(!T.moves(B).length) finish();
+  });
+  setTimeout(function(){ knockOut(victim, j[1], 1); }, reduced()?0:190);
+}
+function undo(){ if(!hist.length||busy) return; var h=hist.pop(); B=h.B; CM=h.CM; pulledList=h.pulled; lastTee=h.lastTee; chain=h.chain; sel=null; sfx('select'); reported=false; build(); render(); }
+function hint(){ if(busy||startHole==null) return; var j=T.hint(B); if(!j) return; sel=j[0]; render();
+  var h=$('board').querySelector('.hole[data-h="'+j[2]+'"]'); if(h){ h.classList.remove('target'); h.classList.add('hint'); } sfx('select'); }
+
+/* ---------- flare ---------- */
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+// the jumper: up in an arc, growing as it rises (closer to you), shadow stretching, then a squash and a dust ring
+function hop(el, from, to, done){
+  var a=POS[from], b=POS[to]; el.classList.add('flying'); el.classList.remove('sel','can');
+  if(reduced() || !el.animate){ el.style.left=b[0]+'px'; el.style.top=b[1]+'px'; el.classList.remove('flying'); sfx('place'); done(); return; }
+  var dx=b[0]-a[0], dy=b[1]-a[1], lift=STEP*0.9, frames=[], N=14;
+  for(var i=0;i<=N;i++){ var t=i/N, arc=Math.sin(Math.PI*t), s=1+0.38*arc;
+    frames.push({transform:'translate('+(dx*t)+'px,'+(dy*t-lift*arc)+'px) scale('+s+') rotate('+(t*200*(dx<0?-1:1))+'deg)',
+      boxShadow:'0 '+(3+22*arc)+'px '+(4+16*arc)+'px rgba(0,0,0,'+(0.45-0.2*arc)+')', offset:t}); }
+  sfx('flip');
+  el.animate(frames,{duration:460, easing:'ease-in-out'}).onfinish=function(){
+    el.style.left=b[0]+'px'; el.style.top=b[1]+'px'; el.classList.remove('flying');
+    el.animate([{transform:'scale(1.18,.84)'},{transform:'scale(.94,1.06)'},{transform:'scale(1)'}],{duration:220, easing:'ease-out'});
+    dust(b); sfx('place'); done(); };
+}
+// the jumped tee: knocked up spinning with a burst of sparks, then off into the pulled tray
+function knockOut(el, hole, big){
+  if(!el) return; var p=POS[hole], bd=$('board');
+  if(reduced() || !el.animate){ el.remove(); return; }
+  el.classList.add('flying'); el.style.zIndex=6;
+  sparks(p, el.style.getPropertyValue('--c'), big?12:7);
+  if(big) sfx('chip');
+  var tray=$('pulled').getBoundingClientRect(), br=bd.getBoundingClientRect();
+  var tx=tray.left+tray.width/2-br.left-p[0], ty=tray.top+8-br.top-p[1];
+  el.animate([
+    {transform:'translate(0,0) scale(1) rotate(0)', opacity:1},
+    {transform:'translate('+(tx*0.15)+'px,'+(-STEP*1.1)+'px) scale(1.45) rotate(320deg)', opacity:1, offset:.35},
+    {transform:'translate('+tx+'px,'+ty+'px) scale(.45) rotate(720deg)', opacity:.15}
+  ],{duration:big?720:520, easing:'cubic-bezier(.3,.7,.4,1)'}).onfinish=function(){ el.remove(); };
+  if(big) pop([p[0],p[1]-STEP*0.4], 'out!', 0);
+}
+function sparks(p, col, n){ var bd=$('board');
+  for(var i=0;i<n;i++){ var s=document.createElement('div'); s.className='spark'; s.style.left=(p[0]-3)+'px'; s.style.top=(p[1]-3)+'px';
+    s.style.background=i%3===0?'#fff4c8':(col||'#f0c674'); bd.appendChild(s);
+    var a=(Math.PI*2*i/n)+Math.random()*.5, r=STEP*(0.55+Math.random()*0.5);
+    s.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+Math.cos(a)*r+'px,'+(Math.sin(a)*r-STEP*.2)+'px) scale(.3)',opacity:0}],
+      {duration:480+Math.random()*200, easing:'cubic-bezier(.2,.8,.4,1)'}).onfinish=(function(s){ return function(){ s.remove(); }; })(s); } }
+function dust(p){ var d=document.createElement('div'), r=STEP*.35; d.className='dust'; d.style.left=(p[0]-r)+'px'; d.style.top=(p[1]-r)+'px'; d.style.width=d.style.height=(2*r)+'px';
+  $('board').appendChild(d); d.animate([{transform:'scale(.6)',opacity:.9},{transform:'scale(1.7)',opacity:0}],{duration:420, easing:'ease-out'}).onfinish=function(){ d.remove(); }; }
+function pop(p, text, big){ var e=document.createElement('div'); e.className='pop'; e.textContent=text; e.style.left=p[0]+'px'; e.style.top=p[1]+'px';
+  if(!big) e.style.fontSize='15px'; $('board').appendChild(e);
+  if(!e.animate){ setTimeout(function(){ e.remove(); },900); return; }
+  e.animate([{transform:'translate(-50%,-30%) scale(.6)',opacity:0},{transform:'translate(-50%,-90%) scale(1.15)',opacity:1,offset:.3},{transform:'translate(-50%,-160%) scale(1)',opacity:0}],
+    {duration:big?1100:700, easing:'ease-out'}).onfinish=function(){ e.remove(); }; }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff'];
+  for(var i=0;i<46;i++){ var c=document.createElement('div'); c.className='confetti'; c.style.left=(Math.random()*100)+'vw'; c.style.background=cols[i%cols.length]; document.body.appendChild(c);
+    c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],
+      {duration:1800+Math.random()*1400, delay:Math.random()*400, easing:'cubic-bezier(.3,.4,.6,1)'}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+/* ---------- the end ---------- */
+function finish(){
+  var n=T.count(B);
+  if(!reported){ reported=true; stats.games++; if(n===1) stats.ones++; stats.byLeft[n]=(stats.byLeft[n]||0)+1; if(stats.best==null||n<stats.best) stats.best=n; lsSet('tees_stats',stats); }
+  render();
+  if(n===1){ sfx('win'); confetti(); var last=teeEl[Object.keys(teeEl)[0]]; if(last) sparks(POS[+last.dataset.h], '#f0c674', 16); }
+  else sfx(n===2?'good':'bad');
+  var r=T.rating(n);
+  $('oTitle').textContent=r.t; $('oSub').textContent=r.s;
+  $('oStats').innerHTML='<div><span>Games</span><b>'+stats.games+'</b></div><div><span>One tee</span><b>'+stats.ones+'</b></div><div><span>Best</span><b>'+(stats.best==null?'—':stats.best)+'</b></div>';
+  setTimeout(function(){ $('overModal').classList.add('show'); }, n===1?1400:700);
+}
+
+/* ---------- pointing: tap, or drag a tee to a hole ---------- */
+var drag=null;
+function holeAt(x,y){ var br=$('board').getBoundingClientRect(), bx=x-br.left, by=y-br.top, best=-1, bd=1e9;
+  POS.forEach(function(p,i){ var d=(p[0]-bx)*(p[0]-bx)+(p[1]-by)*(p[1]-by); if(d<bd){ bd=d; best=i; } }); return bd<(STEP*.6)*(STEP*.6)?best:-1; }
+$('board').addEventListener('pointerdown', function(e){
+  if(busy||document.querySelector('.modal.show')) return;
+  var h=holeAt(e.clientX,e.clientY); if(h<0) return; e.preventDefault();
+  if(startHole==null){ if(teeEl[h]) pullStart(h); return; }
+  if(teeEl[h]){ if(sel===h){ sel=null; render(); return; }
+    if(T.movesFrom(B,h).length){ sel=h; sfx('select'); render(); drag={h:h, x:e.clientX, y:e.clientY, moved:false, id:e.pointerId}; try{ $('board').setPointerCapture(e.pointerId); }catch(_){} }
+    else { sfx('illegal'); teeEl[h].animate&&teeEl[h].animate([{transform:'translateX(0)'},{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'translateX(0)'}],{duration:220}); }
+    return; }
+  if(sel!=null){ var j=T.movesFrom(B,sel).filter(function(m){ return m[2]===h; })[0]; if(j) jump(j); else { sel=null; render(); } }
+});
+$('board').addEventListener('pointermove', function(e){
+  if(!drag||e.pointerId!==drag.id) return; var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(!drag.moved && dx*dx+dy*dy<64) return; drag.moved=true;
+  var t=teeEl[drag.h]; if(t) t.style.transform='translate('+dx+'px,'+dy+'px) scale(1.15)';
+});
+$('board').addEventListener('pointerup', function(e){
+  if(!drag||e.pointerId!==drag.id) return; var d=drag; drag=null; var t=teeEl[d.h]; if(t) t.style.transform='';
+  if(!d.moved) return;
+  var h=holeAt(e.clientX,e.clientY), j=T.movesFrom(B,d.h).filter(function(m){ return m[2]===h; })[0];
+  if(j) jump(j); else render();
+});
+$('board').addEventListener('pointercancel', function(){ if(drag){ var t=teeEl[drag.h]; if(t) t.style.transform=''; drag=null; } });
+
+/* ---------- buttons and menus ---------- */
+$('undoBtn').onclick=undo; $('hintBtn').onclick=hint; $('newBtn').onclick=newGame;
+function openM(id){ $(id).classList.add('show'); }
+function closeM(el){ while(el&&!el.classList.contains('modal')) el=el.parentNode; if(el) el.classList.remove('show'); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ closeM(b); }; });
+[].forEach.call(document.querySelectorAll('.modal'),function(m){ m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ openM('rulesModal'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); openM('rulesModal'); };
+function paintMenu(){ $('bestTog').classList.toggle('on',!!prefs.showBest); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); }
+$('menuBtn').onclick=function(){ paintMenu(); openM('menuModal'); };
+$('bestTog').onclick=function(){ prefs.showBest=!prefs.showBest; lsSet('tees_prefs',prefs); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); newGame(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); replay(); };
+$('oNew').onclick=function(){ $('overModal').classList.remove('show'); newGame(); };
+addEventListener('resize', function(){ if(busy) return; fit(); build(); render(); });
+
+newGame();
+window.__GT={ get b(){ return B; }, get busy(){ return busy; }, pos:function(i){ return POS[i]; } };
+
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v140", d=new Date(document.lastModified);
+  var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>
