@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Video Poker">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
-  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --glass:#0a1fa8; --yel:#ffe14d; --cw:64px; }
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --glass:#0a1fa8; --yel:#ffe14d; --cw:52px; --vs:1; }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0;} html{background:var(--felt);}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
@@ -42,17 +42,24 @@
   .msg{flex:1 1 auto; min-height:28px; display:flex; align-items:center; justify-content:center; text-align:center; color:#fff; font-size:clamp(16px, 5.2vw, 24px);
     text-shadow:0 0 8px #6cf, 0 2px 0 #000; padding:4px 0; line-height:1.1;}
   .msg.small{font-size:clamp(13px, 4vw, 18px); color:var(--yel); text-shadow:0 2px 0 #000;}
-  .cards{display:flex; justify-content:center; gap:calc(var(--cw) * .09); flex:0 0 auto;}
+  .cards{display:flex; justify-content:center; gap:6px; flex:0 0 auto;}
   .slot{display:flex; flex-direction:column; align-items:center; cursor:pointer; touch-action:manipulation;}
-  .held{height:calc(14px + var(--cw) * .1); margin-top:4px; color:var(--yel); font-size:calc(var(--cw) * .19); letter-spacing:1px; line-height:1;}
-  .card{width:var(--cw); height:calc(var(--cw) * 1.42); border-radius:calc(var(--cw) * .1); background:#fbf8ef; color:#1c2a24; position:relative; overflow:hidden;
-    box-shadow:0 2px 6px rgba(0,0,0,.55); transform-style:preserve-3d;}
-  .card .rk{position:absolute; top:calc(var(--cw) * .05); left:calc(var(--cw) * .08); font-size:calc(var(--cw) * .34 * var(--cardtext,1)); font-weight:800; line-height:1; letter-spacing:-.04em;}
-  .card .su{position:absolute; top:calc(var(--cw) * (.07 + .34 * var(--cardtext,1))); left:calc(var(--cw) * .09); font-size:calc(var(--cw) * .25 * var(--cardtext,1)); line-height:1;}
-  .card .pip{position:absolute; right:calc(var(--cw) * .07); bottom:calc(var(--cw) * .05); font-size:calc(var(--cw) * .52); line-height:1;}
-  html[data-cardtext="L"] .card .pip, html[data-cardtext="XL"] .card .pip{display:none;}
-  .card.red{color:#c8161b;}
-  .card.back{background:repeating-linear-gradient(45deg,#b33a3a,#b33a3a 5px,#962c2c 5px,#962c2c 10px); border:3px solid #fbf8ef;}
+  .held{height:calc(9px + 9px * var(--vs)); margin-top:4px; color:var(--yel); font-size:calc(13px * var(--vs)); letter-spacing:1px; line-height:1;}
+  /* the house card - same face, fonts and sizes as Three-Card Poker and Poker Squares (52x74, 46x66
+     on a phone, times the shared Card size), with --vs the scale actually used: a row of five XL
+     cards can't always fit the glass, so the machine scales them back and the print goes with them */
+  .card{width:var(--cw); height:calc(var(--cw) * 74 / 52); border-radius:8px; background:var(--cream); color:var(--ink); position:relative;
+    box-shadow:0 2px 6px rgba(0,0,0,.55); flex:0 0 auto; border:1px solid #d8d2c0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-weight:400; text-transform:none; overflow:hidden;}
+  .card .rank{position:absolute; top:calc(4px * var(--vs)); left:calc(6px * var(--vs)); font-size:calc(15px * var(--vs) * var(--cardtext,1)); font-weight:800; line-height:1;}
+  .card .rankb{position:absolute; bottom:calc(4px * var(--vs)); right:calc(6px * var(--vs)); font-size:calc(15px * var(--vs) * var(--cardtext,1)); font-weight:800; line-height:1; transform:rotate(180deg);}
+  .card .pip{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:calc(26px * var(--vs) * var(--cardtext,1)); line-height:1;}
+  /* bigger print: the index face - rank and suit top-left, the suit again bottom-right, nothing in
+     the middle to collide with (the house rule since Jerry at XL/XL, v130) */
+  html[data-cardtext="L"] .card .rankb, html[data-cardtext="XL"] .card .rankb{display:none;}
+  html[data-cardtext="L"] .card .pip, html[data-cardtext="XL"] .card .pip{top:auto; left:auto; bottom:calc(3px * var(--vs)); right:calc(5px * var(--vs)); transform:none;
+    font-size:calc(19px * var(--vs) * var(--cardtext,1));}
+  .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 7px,#155a94 7px,#155a94 14px); border:2px solid #0e3f6b;}
   .card.back > *{display:none;}
   .card.wild{box-shadow:0 0 0 2px var(--yel), 0 2px 6px rgba(0,0,0,.55);}
   .card.dim{filter:brightness(.55);}
@@ -82,7 +89,7 @@
   .gpick button{font-size:13px; font-weight:800; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:8px 4px; line-height:1.2;}
   .gpick button small{display:block; font-weight:600; opacity:.7; font-size:11px;}
   .gpick button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
-  .seg.cardtext button{padding:6px 9px; font-size:12px; min-width:34px; flex:0 0 auto;}
+  .seg.cardsize button,.seg.cardtext button{padding:6px 9px; font-size:12px; min-width:34px; flex:0 0 auto;}
 
   .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
   .modal.show{display:flex;}
@@ -160,6 +167,7 @@
 
 <div class="modal" id="menuModal"><div class="box">
   <h2>Menu</h2>
+  <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
   <div id="textRow"></div>
   <h3 id="stTitle">This machine</h3>
@@ -297,7 +305,7 @@ var V=window.VP, $=function(id){ return document.getElementById(id); };
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) SFX.play(n); }
-var prefs=Object.assign({game:'job', denom:0.25, coins:5, speed:2}, lsGet('vp_prefs',{}));
+var prefs=Object.assign({game:'job', denom:0.25, coins:5, speed:2, four:true}, lsGet('vp_prefs',{}));
 function savePrefs(){ lsSet('vp_prefs',prefs); }
 var stats=lsGet('vp_stats',{});
 
@@ -318,13 +326,15 @@ function paintTable(){
   var g=V.GAMES[prefs.game], hitRow=Hd&&Hd.phase==='done'&&Hd.result?V.row(prefs.game,Hd.result):-1;
   var preRow=Hd&&Hd.phase==='draw'?V.row(prefs.game,V.evaluate(prefs.game,Hd.cards)):-1;
   $('pt').innerHTML=g.rows.map(function(r,i){
-    var cells='<td>'+r[1]+'</td>'; for(var c=1;c<=5;c++) cells+='<td class="'+(c===prefs.coins?'on':'')+'">'+(r[0]==='royal'&&c===5?4000:r[2]*c)+'</td>';
+    var cells='<td><span>'+r[1]+'</span></td>'; for(var c=1;c<=5;c++) cells+='<td class="'+(c===prefs.coins?'on':'')+'">'+(r[0]==='royal'&&c===5?4000:r[2]*c)+'</td>';
     return '<tr class="'+(i===hitRow&&!busy?'hit':i===preRow?'pre':'')+'">'+cells+'</tr>'; }).join('');
 }
 function cardHTML(c,back){
   if(back||!c) return '<div class="card back"></div>';
-  var red=c.s===1||c.s===2, wild=prefs.game==='deuces'&&c.r===2;
-  return '<div class="card'+(red?' red':'')+(wild?' wild':'')+'"><span class="rk">'+V.rname(c.r)+'</span><span class="su">'+V.SUITS[c.s]+'</span><span class="pip">'+V.SUITS[c.s]+'</span></div>'; }
+  var wild=prefs.game==='deuces'&&c.r===2, r=V.rname(c.r)+V.SUITS[c.s];
+  return '<div class="card'+(wild?' wild':'')+'" style="color:'+suitColor(c.s)+'"><span class="rank">'+r+'</span><span class="pip">'+V.SUITS[c.s]+'</span><span class="rankb">'+r+'</span></div>'; }
+var FOURCOL=["#1c2a24","#c22","#1b6fb3","#178a3a"];   // ♠ black, ♥ red, ♦ blue, ♣ green - the house four-color deck
+function suitColor(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?"#c22":"#1c2a24"); }
 function paintCards(backs){
   var h='';
   for(var i=0;i<5;i++){ var c=Hd?Hd.cards[i]:null, held=Hd&&Hd.phase==='draw'&&Hd.held[i];
@@ -403,24 +413,26 @@ function stat(){ var s=stats[prefs.game]; if(!s) s=stats[prefs.game]={hands:0, b
 function round2(x){ return Math.round(x*100)/100; }
 
 /* ---------- fitting the cards into what's left ---------- */
+function setCW(px){ var r=document.documentElement; r.style.setProperty('--cw',px+'px'); r.style.setProperty('--vs',(px/52).toFixed(3)); }
 function fit(){
   var root=document.documentElement; root.style.removeProperty('--ptf'); root.style.removeProperty('--ptp');
   var crt=$('crt'), cs=getComputedStyle(crt), padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight)+8;
   // a short glass (a phone on its side, 13-row tables): the table itself has to fit first
   var f0=parseFloat(getComputedStyle($('pt')).fontSize);
   while($('pt').offsetHeight>crt.clientHeight-14 && f0>7){ f0-=0.5; root.style.setProperty('--ptf', f0+'px'); }
-  var W=$('msg').clientWidth-8, wFit=W/(5+4*0.09);
-  document.documentElement.style.setProperty('--cw', Math.floor(Math.min(wFit,118))+'px');
+  // five across the glass: L fills its width, M and S are 83% and 72% of that; XL can't go wider than L
+  var W=$('msg').clientWidth-8, wFit=(W-24)/5;
+  setCW(Math.floor(Math.min(wFit, wFit*CARDSIZE.value()/1.2)));
   // shrink until the glass holds everything with the message line at least 28px
   for(var n=0;n<40;n++){
     var over=crt.scrollHeight-crt.clientHeight, msgH=$('msg').offsetHeight;
     if(over<=0 && msgH>=28) break;
-    var cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw')); if(cw<=34) break;
-    document.documentElement.style.setProperty('--cw', Math.floor(cw-Math.max(1,(over+Math.max(0,28-msgH))/3))+'px');
+    var cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw')); if(cw<=30) break;
+    setCW(Math.floor(cw-Math.max(1,(over+Math.max(0,28-msgH))/3)));
   }
   // a tall phone: grow the pay table into the spare glass, as long as every label still fits its column
   var f=parseFloat(getComputedStyle($('pt')).fontSize);
-  function clipped(){ return [].some.call($('pt').querySelectorAll('td:first-child'),function(td){ return td.scrollWidth>td.clientWidth+1; }); }
+  function clipped(){ return [].some.call($('pt').querySelectorAll('td:first-child'),function(td){ var sp=td.firstChild; return sp.offsetWidth>td.clientWidth-8; }); }
   for(var m=0;m<30 && $('msg').offsetHeight>64 && f<19;m++){
     f+=0.5; root.style.setProperty('--ptf', f+'px');
     if(crt.scrollHeight>crt.clientHeight || $('msg').offsetHeight<56 || clipped()){ f-=0.5; root.style.setProperty('--ptf', f+'px'); break; }
@@ -456,7 +468,8 @@ function closeM(el){ while(el&&!el.classList.contains('modal')) el=el.parentNode
 [].forEach.call(document.querySelectorAll('.modal'),function(m){ m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
 $('rulesBtn').onclick=function(){ openM('rulesModal'); };
 $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); openM('rulesModal'); };
-$('menuBtn').onclick=function(){ $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('textRow').innerHTML=CARDSIZE.rowsHTML({size:false}); paintStats(); openM('menuModal'); };
+$('menuBtn').onclick=function(){ $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('fourTog').classList.toggle('on',!!prefs.four); $('textRow').innerHTML=CARDSIZE.rowsHTML(); paintStats(); openM('menuModal'); };
+$('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); $('fourTog').classList.toggle('on',prefs.four); paintCards(); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); };
 $('menuGame').onclick=function(){ $('menuModal').classList.remove('show'); showSetup(); };
 $('startBtn').onclick=sitDown; $('atmBtn').onclick=atm;
@@ -472,7 +485,7 @@ else { Hd=null; var last=lsGet('vp_last',null); if(last&&last.game===prefs.game)
 window.__VP={ get H(){ return Hd; }, get busy(){ return busy; }, credits:credits };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v143", d=new Date(document.lastModified);
+(function(){ var V="v144", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();

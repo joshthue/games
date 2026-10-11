@@ -20,6 +20,16 @@ A royal flush on 5 coins pays **4000**, not 1250, like every real machine.
   rolls up the WIN and CREDITS meters (a chip tick per step). A royal or four deuces sets off confetti.
 - **Speed** 1-3 changes how fast the cards flip.
 
+## Cards
+- The house card from Three-Card Poker and Poker Squares: rank and suit in the corners, the pip in
+  the middle, the blue back, and the **four-color deck** (on by default, Menu to turn off).
+- **Card size** and **Card text** are the shared controls (`gn_cardsize`, `gn_cardtext`) in Menu.
+  Five cards run across the glass, so sizes are relative to its width: **L fills it**, M is 83%,
+  S 72%. XL can't go any wider than L. The print scales with the card (`--vs` = the card's width
+  over the standard 52px).
+- Card text **L/XL** switches to the index face (rank and suit top-left, suit bottom-right) so the
+  big print never piles up, the same rule Jerry, Blackjack and Cribbage use.
+
 ## Money
 - It's the **same wallet as Pull Tabs, Horse Race and Bar Dice** (`pt_bank_v1`), with the same
   ATM ($100 for a $3 fee). The bet comes out on Deal and the win goes in on Draw. **Credits** are
@@ -34,7 +44,7 @@ One screen, no scroll. The cards size from the glass width. On a tall phone the 
 into the spare glass (font first, as long as every label fits, then the row spacing). A phone on
 its side puts the table on the left and the cards on the right. Checked with real notch/home-bar
 insets at 320×568, 375×667, 390×844 and 430×932, plus 667×375 and 932×430 on the side, for all
-four games and Card text M to XL.
+four games and every Card size and Card text step.
 
 ## How it's built
 - **Engine** `window.VP`, no DOM: `GAMES` (rows top to bottom as drawn), `evaluate(game, five)`
