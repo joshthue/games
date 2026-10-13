@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shut the Box</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shut the Box">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --felt2:#0a4a33; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --wood:#8a5a2b; --wood2:#6b4420; --die:58px; --tw:40px; --th:84px; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:600px; margin:0 auto; padding:8px 10px 16px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  .players{display:flex; gap:5px; margin:0 0 8px; flex:0 0 auto;}
+  .pl{flex:1 1 0; min-width:0; text-align:center; background:rgba(0,0,0,.22); border:2px solid transparent; border-radius:10px; padding:4px 4px; line-height:1.2;}
+  .pl .n{font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pl .v{font-size:15px; font-weight:900; color:var(--gold); font-variant-numeric:tabular-nums;}
+  .pl .v.wait{color:var(--cream); opacity:.45;}
+  .pl.turn{border-color:var(--gold);}
+  .pl.win{background:rgba(240,198,116,.22);}
+
+  /* ---- the box ---- */
+  .stage{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:10px;}
+  .info{text-align:center; font-size:12.5px; opacity:.75; line-height:1.4; flex:0 0 auto;}
+  .info b{color:var(--gold);}
+  .box{flex:0 1 auto; min-height:0; border-radius:16px; padding:10px; display:flex; flex-direction:column;
+    background:linear-gradient(180deg,#9b6631,var(--wood) 40%,var(--wood2)); box-shadow:inset 0 2px 0 rgba(255,235,200,.35), inset 0 -3px 0 rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.45);}
+  .owner{font-size:12px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:#f7e2b8; text-align:center; margin:-2px 0 6px; text-shadow:0 1px 0 rgba(0,0,0,.4);}
+  .rack{display:flex; justify-content:center; gap:4px; padding:6px 6px 0; background:linear-gradient(180deg,#4a2c12,#5c3816); border-radius:9px;
+    box-shadow:inset 0 3px 6px rgba(0,0,0,.6); flex:0 0 auto;}
+  .tile{width:var(--tw); height:var(--th); position:relative; transform-origin:50% 100%; transition:transform .32s cubic-bezier(.5,0,.6,1.4), filter .2s; cursor:pointer; touch-action:manipulation;}
+  .tile .f{position:absolute; inset:0; border-radius:5px 5px 2px 2px; background:linear-gradient(180deg,#f6e7c4,#e4cb94 70%,#cfb07a);
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,.18), 0 2px 3px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center;
+    font-family:Georgia,"Times New Roman",serif; font-weight:700; font-size:calc(var(--tw) * .62); color:#3b220c; text-shadow:0 1px 0 rgba(255,255,255,.5);}
+  .tile.sel{transform:translateY(-8px);} .tile.sel .f{box-shadow:0 0 0 3px var(--gold), 0 0 14px rgba(240,198,116,.85), 0 6px 8px rgba(0,0,0,.4);}
+  .tile.hint .f{box-shadow:0 0 0 3px #6fe39a, 0 0 14px rgba(111,227,154,.8);}
+  .tile.no{cursor:default;}
+  .tile.down{transform:perspective(calc(var(--th) * 3)) rotateX(68deg); cursor:default;}
+  .tile.down .f{background:linear-gradient(180deg,#6e4a22,#a37744); color:transparent; text-shadow:none; box-shadow:inset 0 2px 4px rgba(0,0,0,.4);}
+  .ledge{height:10px; margin:0 -6px; background:linear-gradient(180deg,#b07a3c,#8a5a2b); border-radius:0 0 9px 9px; box-shadow:0 2px 3px rgba(0,0,0,.4);}
+  .tray{flex:0 0 auto; height:calc(var(--die) * 2.1); margin-top:10px; border-radius:11px; background:radial-gradient(ellipse at 50% 40%, #12704c, var(--felt2) 75%);
+    box-shadow:inset 0 3px 10px rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; gap:calc(var(--die) * .45); position:relative; overflow:hidden;}
+  .die{width:var(--die); height:var(--die); border-radius:calc(var(--die) * .18); background:linear-gradient(145deg,#fff,#e9e4d6); box-shadow:inset -2px -3px 4px rgba(0,0,0,.18), 0 4px 8px rgba(0,0,0,.45);
+    display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:calc(var(--die) * .13);}
+  .die i{width:calc(var(--die) * .17); height:calc(var(--die) * .17); border-radius:50%; background:#1c1c1c; align-self:center; justify-self:center; visibility:hidden; box-shadow:inset 0 1px 1px rgba(255,255,255,.25);}
+  .die i.on{visibility:visible;}
+  .die.ghost{opacity:.22;}
+  .total{position:absolute; right:10px; bottom:6px; font-weight:900; font-size:15px; color:#cfe9da; opacity:.85;}
+  .big{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:30px; color:var(--gold); text-shadow:0 3px 10px rgba(0,0,0,.7); pointer-events:none; text-align:center; line-height:1.1;}
+
+  .say{text-align:center; font-size:14px; min-height:20px; margin:8px 2px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 0 auto;}
+  .say b{color:var(--gold);}
+  .ctl{display:flex; gap:8px; flex:0 0 auto;}
+  .ctl button{flex:1 1 0; min-height:48px; border:none; border-radius:12px; font-size:15px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
+  .ctl button.go{background:var(--gold); color:var(--ink); flex:1.6 1 0;}
+  .ctl button:disabled{opacity:.4;}
+  .confetti{position:fixed; top:-20px; width:9px; height:14px; z-index:90; pointer-events:none; border-radius:2px;}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+  .gn-setup .gn-row .seg, .modal .gn-row .seg{flex:1 1 210px; justify-content:flex-end;}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .card{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px;
+    max-width:400px; width:100%; max-height:88vh; overflow-y:auto; overscroll-behavior:contain; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:23px; text-align:center;}
+  .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.9;}
+  .modal .sub{text-align:center; margin:0 0 10px;}
+  .modal ul{padding-left:18px; margin:0 0 8px;}
+  .modal h3{font-size:11px; letter-spacing:1.3px; text-transform:uppercase; color:var(--gold); margin:12px 0 4px;}
+  table.st{width:100%; border-collapse:collapse; font-size:14px; margin:4px 0;}
+  table.st td{padding:6px 4px; border-bottom:1px solid rgba(255,255,255,.1);} table.st td.n{text-align:right; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums;}
+  table.st tr.best td:first-child::after{content:" ★"; color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink);
+    border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4;
+    font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+  @media (max-height:500px){ .info{display:none;} .players{margin-bottom:4px;} .pl{padding:2px 4px;} .owner{display:none;} .say{margin:5px 2px;} .ctl button{min-height:42px;} }
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Shut the Box</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Roll the dice, flip down tiles that add up to the roll. Keep going until you can't. Whatever's still standing is your score &mdash; shut them all and you've shut the box.</p>
+      <div class="gn-row"><span>Players</span><div class="seg" id="segP"><button data-v="1">Solo</button><button data-v="2">+ 1 bot</button><button data-v="3">+ 2</button><button data-v="4">+ 3</button></div></div>
+      <div class="gn-row"><span>Tiles</span><div class="seg" id="segN"><button data-v="9">1-9</button><button data-v="10">1-10</button><button data-v="12">1-12</button></div></div>
+      <div class="gn-row"><span>One die</span><div class="seg" id="segR"><button data-v="1">When 7 &amp; up are shut</button><button data-v="0">Never</button></div></div>
+      <div class="gn-row" id="rowL"><span>Bots</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+    </div>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="startBtn">Play</button>
+      <button class="gn-alt hide" id="resumeBtn">Resume your game</button>
+    </div>
+  </div>
+
+  <div class="players" id="players"></div>
+  <div class="stage" id="stage">
+  <div class="box" id="box">
+    <div class="owner" id="owner"></div>
+    <div class="rack" id="rack"></div>
+    <div class="ledge"></div>
+    <div class="tray" id="tray"><div class="die ghost" id="d0"></div><div class="die ghost" id="d1"></div><div class="total" id="total"></div><div class="big" id="big"></div></div>
+  </div>
+  <div class="info" id="info"></div>
+  </div>
+  <div class="say" id="say"></div>
+  <div class="ctl">
+    <button id="hintBtn">Hint</button>
+    <button id="oneBtn" class="hide">Roll 1 die</button>
+    <button id="goBtn" class="go">Roll</button>
+  </div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="card">
+  <h2>Menu</h2>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <h3 id="stTitle">Your record</h3>
+  <table class="st" id="stats"></table>
+  <button class="bigbtn ghost" id="menuNew">New game</button>
+  <button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a>
+  <button class="bigbtn" data-close>Close</button>
+</div></div>
+
+<div class="modal" id="rulesModal"><div class="card">
+  <h2>How to play</h2>
+  <ul>
+    <li>All the tiles start standing. <b>Roll</b> the two dice.</li>
+    <li>Flip down any standing tiles that <b>add up to the roll</b>: roll a 9 and you can shut the 9, or 1 + 8, 2 + 7, 3 + 6, 4 + 5, 1 + 2 + 6, 1 + 3 + 5, 2 + 3 + 4. Then roll again.</li>
+    <li>When a roll can't be made from what's standing, your turn is over. Your <b>score is the total of the tiles still up</b>. Low is good.</li>
+    <li>Flip every tile and you've <b>shut the box</b>: score 0, and you win on the spot.</li>
+    <li><b>One die</b>: once every tile 7 and up is down, you can choose to roll just one die (if that rule is on).</li>
+  </ul>
+  <h3>Against the bots</h3>
+  <p>Everybody plays their own box in turn. Lowest score wins. Normal bots play perfectly (the lowest average score possible). Easy bots grab the biggest tile they can.</p>
+  <h3>On the phone</h3>
+  <ul>
+    <li>Tap tiles to pick them. When they add up to the roll, tap <b>Shut</b>.</li>
+    <li><b>Hint</b> shows what perfect play would do: which tiles to shut, or whether to roll one die.</li>
+  </ul>
+  <p id="odds"></p>
+  <button class="bigbtn" data-close>Got it</button>
+</div></div>
+
+<div class="modal" id="overModal"><div class="card">
+  <h2 id="oTitle"></h2>
+  <p class="sub" id="oSub"></p>
+  <table class="st" id="oTable"></table>
+  <p class="sub" id="oStats"></p>
+  <button class="bigbtn" id="oAgain">Play again</button>
+  <button class="bigbtn ghost" id="oSetup">Change setup</button>
+  <button class="bigbtn ghost" data-close>Look at the box</button>
+</div></div>
+
+<script>
+/* ============================================================
+   SHUT THE BOX - the engine. No DOM. window.STB.
+   A row of tiles 1..N (9, 10 or 12) starts open. Roll two dice; shut any open tiles that add up
+   to the roll. Keep going until a roll can't be made: your score is what's still open. Shut every
+   tile and you've shut the box (score 0). With the one-die rule, once every tile 7 and up is shut
+   you may roll just one die.
+   A box is a bitmask: bit i set = tile i+1 is open.
+   The bot plays perfectly: V[mask] is the expected final score from a box with best play,
+   worked out exactly over every box (2^12 at most) before the first roll.
+   ============================================================ */
+(function(G){
+  var P2=[], P1=[];                                      // chance of each total, two dice / one die
+  for(var t=0;t<=12;t++){ P2[t]=0; P1[t]=0; }
+  for(var a=1;a<=6;a++){ P1[a]=1/6; for(var b=1;b<=6;b++) P2[a+b]+=1/36; }
+  function full(n){ return (1<<n)-1; }
+  function sum(m){ var s=0; for(var i=0;m;i++,m>>=1) if(m&1) s+=i+1; return s; }
+  function tiles(m){ var o=[]; for(var i=0;m;i++,m>>=1) if(m&1) o.push(i+1); return o; }
+  function toMask(ts){ return ts.reduce(function(m,t){ return m|(1<<(t-1)); },0); }
+  function oneDieOK(m,rule){ return !!rule && (m>>6)===0; }       // nothing 7 or higher still open
+  // every way to shut tiles adding to r out of box m (as masks)
+  function ways(m,r){ var out=[]; for(var s=m;s;s=(s-1)&m) if(sum(s)===r) out.push(s); return out; }
+
+  var cache={};
+  function solve(n,rule){
+    var k=n+':'+(rule?1:0); if(cache[k]) return cache[k];
+    var N=1<<n, V=new Float64Array(N), D=new Uint8Array(N), W=[];    // value, dice to roll (1/2)
+    for(var m=0;m<N;m++){
+      W[m]=[]; for(var r=0;r<=12;r++) W[m][r]=null;
+      if(m===0){ V[0]=0; D[0]=2; continue; }
+      var sc=sum(m);
+      function ev(P){ var e=0; for(var r=1;r<=12;r++){ if(!P[r]) continue; var w=W[m][r]||(W[m][r]=ways(m,r)), best=sc;
+          for(var j=0;j<w.length;j++){ var v=V[m^w[j]]; if(v<best) best=v; } e+=P[r]*best; } return e; }
+      var e2=ev(P2); V[m]=e2; D[m]=2;
+      if(oneDieOK(m,rule)){ var e1=ev(P1); if(e1<e2){ V[m]=e1; D[m]=1; } }
+    }
+    return (cache[k]={n:n, rule:rule, V:V, D:D});
+  }
+  // the best shut for roll r from box m: a mask of the tiles to shut, or 0 when nothing works
+  function best(n,rule,m,r){ var S=solve(n,rule), w=ways(m,r), bm=0, bv=Infinity;
+    w.forEach(function(s){ var v=S.V[m^s]; if(v<bv-1e-12||(Math.abs(v-bv)<1e-12&&s>bm)){ bv=v; bm=s; } }); return bm; }
+  function diceFor(n,rule,m){ return oneDieOK(m,rule)?solve(n,rule).D[m]:2; }
+  function expected(n,rule,m){ return solve(n,rule).V[m]; }
+  // chance of shutting the box from m if you play for the lowest expected score
+  function shutChance(n,rule){
+    var S=solve(n,rule), N=1<<n, Q=new Float64Array(N); Q[0]=1;
+    for(var m=1;m<N;m++){ var P=S.D[m]===1?P1:P2, q=0;
+      for(var r=1;r<=12;r++){ if(!P[r]) continue; var b=best(n,rule,m,r); if(b) q+=P[r]*Q[m^b]; } Q[m]=q; }
+    return Q[N-1];
+  }
+
+  /* ---- a game: everybody plays one box, lowest score wins; shutting the box wins outright ---- */
+  function newRound(n,players,rule){ return {n:n, rule:!!rule, players:players, turn:0, box:full(n), roll:null, dice:null, scores:[], over:false, shutBy:null}; }
+  function rollDice(st,count,rnd){ rnd=rnd||Math.random; if(count===1&&!oneDieOK(st.box,st.rule)) count=2;
+    var d=[1+Math.floor(rnd()*6)]; if(count===2) d.push(1+Math.floor(rnd()*6));
+    st.dice=d; st.roll=d.reduce(function(a,b){ return a+b; },0); st.dead=!ways(st.box,st.roll).length; return st.dead; }
+  function canShut(st,mask){ return st.roll!=null && !st.dead && mask && (mask&st.box)===mask && sum(mask)===st.roll; }
+  function shut(st,mask){ if(!canShut(st,mask)) throw new Error('those tiles do not make '+st.roll);
+    st.box^=mask; st.roll=null; st.dice=null; if(!st.box) return endTurn(st); return null; }
+  // the turn ends: shut (0) or dead roll (what's open)
+  function endTurn(st){ var s=sum(st.box); st.scores[st.turn]=s; st.roll=null; st.dice=null; st.dead=false;
+    if(s===0){ st.over=true; st.shutBy=st.turn; return s; }
+    if(st.turn+1>=st.players){ st.over=true; return s; }
+    st.turn++; st.box=full(st.n); return s; }
+  function winners(st){ if(st.shutBy!=null) return [st.shutBy]; var lo=Math.min.apply(null,st.scores), w=[]; st.scores.forEach(function(s,p){ if(s===lo) w.push(p); }); return w; }
+
+  // bots: Normal plays perfectly; Easy shuts the biggest single tile it can, otherwise a random way
+  function botShut(st,level,rnd){ rnd=rnd||Math.random;
+    if(level==='easy'){ var w=ways(st.box,st.roll); if(!w.length) return 0; var single=w.filter(function(s){ return !(s&(s-1)); });
+      if(single.length) return single[0]; return w[Math.floor(rnd()*w.length)]; }
+    return best(st.n,st.rule,st.box,st.roll); }
+  function botDice(st,level){ if(!oneDieOK(st.box,st.rule)) return 2; return level==='easy'?1:diceFor(st.n,st.rule,st.box); }
+
+  G.STB={P1:P1, P2:P2, full:full, sum:sum, tiles:tiles, toMask:toMask, ways:ways, oneDieOK:oneDieOK, solve:solve, best:best, diceFor:diceFor,
+    expected:expected, shutChance:shutChance, newRound:newRound, rollDice:rollDice, canShut:canShut, shut:shut, endTurn:endTurn, winners:winners,
+    botShut:botShut, botDice:botDice};
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<script src="../sfx.js"></script>
+<script>
+/* ============================================================
+   SHUT THE BOX - the screen. Knows none of the rules: asks window.STB.
+   ============================================================ */
+(function(){
+var S=window.STB, $=function(id){ return document.getElementById(id); };
+var NAMES=['You','Bea','Dot','Cy'];
+var SPEED={relaxed:{roll:700,think:900,hold:1500}, normal:{roll:480,think:560,hold:1100}, fast:{roll:260,think:260,hold:650}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) SFX.play(n); }
+var prefs=Object.assign({players:1, n:9, rule:1, level:'normal', speed:'normal'}, lsGet('stb_prefs',{}));
+function savePrefs(){ lsSet('stb_prefs',prefs); }
+var stats=lsGet('stb_stats',{});
+
+var ST=null, LEVEL='normal', sel=0, hint=0, busy=false, timer=null, showBox=null, showOwner=null, showDice=null;
+function sp(){ return SPEED[prefs.speed]||SPEED.normal; }
+function skey(){ return ST.n+(ST.rule?'d':''); }
+function myStats(){ var k=skey(); return stats[k]||(stats[k]={games:0, shut:0, total:0, best:null, played:0, wins:0}); }
+
+/* ---------- setup ---------- */
+function seg(id,val,on){ [].forEach.call($(id).children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){
+  seg('segP',prefs.players,function(v){ prefs.players=+v; savePrefs(); renderSetup(); });
+  seg('segN',prefs.n,function(v){ prefs.n=+v; savePrefs(); renderSetup(); });
+  seg('segR',prefs.rule,function(v){ prefs.rule=+v; savePrefs(); renderSetup(); });
+  seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); });
+  $('rowL').style.visibility=prefs.players>1?'':'hidden';
+  var g=lsGet('stb_game',null); $('resumeBtn').classList.toggle('hide', !(g&&g.st&&!g.st.over));
+}
+function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
+function start(){ ST=S.newRound(prefs.n,prefs.players,!!prefs.rule); LEVEL=prefs.level; sel=hint=0; showBox=null; busy=false; GNSETUP.hide('setup'); closeAll();
+  S.solve(ST.n,ST.rule); save(); fit(); render(); say(prefs.players>1?'You go first. <b>Roll</b>.':'Roll the dice.'); next(); }
+function resume(){ var g=lsGet('stb_game',null); if(!g||!g.st){ start(); return; } ST=g.st; LEVEL=g.level||'normal'; sel=hint=0; showBox=null; busy=false;
+  GNSETUP.hide('setup'); S.solve(ST.n,ST.rule); fit(); render(); next(); }
+function save(){ if(ST&&!ST.over) lsSet('stb_game',{st:ST, level:LEVEL}); else { try{ localStorage.removeItem('stb_game'); }catch(e){} } }
+
+/* ---------- drawing ---------- */
+var PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function face(el,v){ var on=PIPS[v]||[]; el.innerHTML=[0,1,2,3,4,5,6,7,8].map(function(i){ return '<i class="'+(on.indexOf(i)>=0?'on':'')+'"></i>'; }).join(''); }
+function paintDice(d){ d=d||[]; [0,1].forEach(function(i){ var el=$('d'+i); el.classList.toggle('ghost',d[i]==null); el.classList.toggle('hide', d.length===1&&i===1); face(el,d[i]||(i?5:6)); });
+  $('total').textContent=d.length?'= '+d.reduce(function(a,b){ return a+b; },0):''; }
+function render(){
+  if(!ST) return;
+  var box=showBox!=null?showBox:ST.box, who=showOwner!=null?showOwner:ST.turn, mine=who===0&&!ST.over;
+  // players strip (hidden solo)
+  $('players').classList.toggle('hide', ST.players<2);
+  if(ST.players>1){ var w=ST.over?S.winners(ST):[];
+    $('players').innerHTML=NAMES.slice(0,ST.players).map(function(n,p){ var s=ST.scores[p];
+      return '<div class="pl'+(p===who&&!ST.over?' turn':'')+(w.indexOf(p)>=0?' win':'')+'"><div class="n">'+n+'</div><div class="v'+(s==null?' wait':'')+'">'+(s==null?(p===who&&!ST.over?'…':'–'):s)+'</div></div>'; }).join(''); }
+  $('owner').textContent=ST.players>1?(who===0?'Your box':NAMES[who]+'’s box'):'';
+  $('owner').classList.toggle('hide', ST.players<2);
+  var h=''; for(var t=1;t<=ST.n;t++){ var bit=1<<(t-1), down=!(box&bit);
+    h+='<div class="tile'+(down?' down':'')+(sel&bit?' sel':'')+(hint&bit?' hint':'')+(!mine||ST.roll==null?' no':'')+'" data-t="'+t+'"><div class="f">'+t+'</div></div>'; }
+  $('rack').innerHTML=h;
+  if(!busy) paintDice(showDice||ST.dice);
+  var st=myStats();
+  $('info').innerHTML=(st.played?'Your best <b>'+st.best+'</b> · average <b>'+(st.total/st.played).toFixed(1)+'</b> · shut <b>'+st.shut+'</b> of '+st.played+'<br>':'')+'Perfect play averages '+S.expected(ST.n,ST.rule,S.full(ST.n)).toFixed(1)+' and shuts it '+(100*shutPct(ST.n,ST.rule)).toFixed(1)+'% of the time';
+  $('sub').textContent=(ST.players>1?'You vs '+(ST.players-1)+' bot'+(ST.players>2?'s':''):'Solo')+' · 1-'+ST.n+(ST.rule?' · one die':'')+(st.best!=null?' · best '+st.best:'');
+  // buttons
+  var myTurn=ST.turn===0&&!ST.over&&!busy&&showBox==null;
+  var canOne=myTurn&&ST.roll==null&&S.oneDieOK(ST.box,ST.rule);
+  $('oneBtn').classList.toggle('hide',!canOne);
+  $('hintBtn').disabled=!myTurn;
+  var go=$('goBtn');
+  if(ST.over){ go.disabled=false; go.textContent='Play again'; }
+  else if(!myTurn){ go.disabled=true; go.textContent=ST.turn===0?'Roll':NAMES[ST.turn]+'’s turn'; }
+  else if(ST.roll==null){ go.disabled=false; go.textContent=canOne?'Roll 2 dice':'Roll'; }
+  else { var ok=S.canShut(ST,sel); go.disabled=!ok; go.textContent=ok?'Shut '+S.tiles(sel).join(' + '):(sel?'= '+S.sum(sel)+' of '+ST.roll:'Pick tiles = '+ST.roll); }
+}
+var SC={}; function shutPct(n,r){ var k=n+':'+r; return SC[k]!=null?SC[k]:(SC[k]=S.shutChance(n,r)); }
+function say(h){ $('say').innerHTML=h; }
+function big(t,ms){ var b=$('big'); b.innerHTML=t; if(b.animate&&!reduced()) b.animate([{transform:'scale(.6)',opacity:0},{transform:'scale(1.08)',opacity:1,offset:.3},{transform:'scale(1)',opacity:1}],{duration:400});
+  clearTimeout(big.t); if(ms) big.t=setTimeout(function(){ b.innerHTML=''; },ms); }
+
+/* ---------- rolling ---------- */
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function rollAnim(count,done){
+  busy=true; render(); sfx('shuffle'); var t0=performance.now(), dur=reduced()?0:sp().roll, els=[$('d0'),$('d1')];
+  els.forEach(function(el,i){ el.classList.remove('ghost'); el.classList.toggle('hide', count===1&&i===1);
+    if(el.animate&&dur) el.animate([{transform:'translate(-30px,-14px) rotate(-200deg)'},{transform:'translate(6px,4px) rotate(30deg)',offset:.7},{transform:'none'}],{duration:dur, easing:'cubic-bezier(.2,.8,.3,1)'}); });
+  $('total').textContent='';
+  (function tick(){ if(performance.now()-t0<dur){ els.forEach(function(el){ face(el,1+Math.floor(Math.random()*6)); }); setTimeout(tick,60); return; } busy=false; done(); })();
+}
+function myRoll(count){
+  if(!ST||ST.turn!==0||ST.roll!=null||busy||ST.over) return; sel=hint=0; big('');
+  rollAnim(count,function(){ var dead=S.rollDice(ST,count); paintDice(ST.dice); save();
+    if(dead){ deadRoll(); return; }
+    sfx('select'); say('You rolled <b>'+ST.roll+'</b>. Tap tiles that add up to '+ST.roll+'.'); render(); });
+}
+function deadRoll(){
+  var who=ST.turn, box=ST.box, name=who===0?'You':NAMES[who]; lastRoll=ST.roll; showDice=ST.dice;
+  showBox=box; showOwner=who; var score=S.endTurn(ST); save(); sfx(who===0?'bad':'turn');
+  say('No way to make <b>'+lastRoll+'</b>. '+name+(who===0?' score ':' scores ')+'<b>'+score+'</b>.');
+  big(score===0?'SHUT!':String(score)); render();
+  endHold(who,score);
+}
+function endHold(who,score){
+  busy=true; render();
+  timer=setTimeout(function(){ busy=false; showBox=null; showOwner=null; showDice=null; big(''); paintDice(null); render(); next(); }, ST.over?600:sp().hold+400);
+}
+var lastRoll=0;
+function shutTiles(who,mask,done){
+  var ts=S.tiles(mask); lastRoll=ST.roll;
+  var res=S.shut(ST,mask); sel=hint=0; save();
+  // flip them down one after another
+  var k=0; (function flip(){ if(k>=ts.length){ done(res); return; }
+    var el=$('rack').querySelector('.tile[data-t="'+ts[k]+'"]'); if(el){ el.classList.remove('sel','hint'); el.classList.add('down'); } sfx('place'); k++;
+    setTimeout(flip, reduced()?0:120); })();
+}
+function myShut(){
+  if(busy||!S.canShut(ST,sel)) return; busy=true; var mask=sel;
+  shutTiles(0,mask,function(res){ busy=false;
+    if(res===0){ shutBox(0); return; }
+    say('Shut '+S.tiles(mask).join(' + ')+'. <b>Roll</b> again.'); paintDice(null); render(); });
+}
+function shutBox(who){
+  showBox=0; showOwner=who; showDice=null; sfx('win'); confetti(); big('SHUT THE BOX!');
+  say(who===0?'<b>You shut the box!</b>':'<b>'+NAMES[who]+'</b> shut the box.'); render(); endHold(who,0);
+}
+
+/* ---------- bots ---------- */
+function next(){
+  clearTimeout(timer); render();
+  if(ST.over){ finish(); return; }
+  if(ST.turn===0){ if(ST.roll==null&&!busy) say(ST.players>1&&Object.keys(ST.scores).length?'Your turn. <b>Roll</b>.':$('say').innerHTML||'Roll the dice.'); return; }
+  say('<b>'+NAMES[ST.turn]+'</b> is rolling…');
+  timer=setTimeout(botRoll, sp().think);
+}
+function botRoll(){
+  var p=ST.turn, count=S.botDice(ST,LEVEL);
+  rollAnim(count,function(){ var dead=S.rollDice(ST,count); lastRoll=ST.roll; paintDice(ST.dice); save();
+    if(dead){ deadRoll(); return; }
+    var m=S.botShut(ST,LEVEL); sel=m; render(); say('<b>'+NAMES[p]+'</b> rolled '+ST.roll+(count===1?' (one die)':'')+' and shuts '+S.tiles(m).join(' + ')+'.');
+    timer=setTimeout(function(){ busy=true; shutTiles(p,m,function(res){ busy=false; if(res===0){ shutBox(p); return; } paintDice(null); render(); timer=setTimeout(botRoll, sp().think); }); }, sp().think);
+  });
+}
+
+/* ---------- the end ---------- */
+function finish(){
+  var w=S.winners(ST), won=w.indexOf(0)>=0, st=myStats(), mine=ST.scores[0];
+  st.games++; if(mine!=null){ st.played++; st.total+=mine; if(st.best==null||mine<st.best) st.best=mine; if(mine===0) st.shut++; }
+  if(ST.players>1&&won) st.wins++; lsSet('stb_stats',stats); save();
+  if(ST.players===1){
+    $('oTitle').textContent=mine===0?'You shut the box!':'Score: '+mine;
+    $('oSub').textContent=mine===0?'Every tile down.':(st.best===mine&&st.played>1?'That ties or sets your best.':'Low is good. Zero is perfect.');
+    $('oTable').innerHTML='';
+  } else {
+    $('oTitle').textContent=ST.shutBy!=null?(ST.shutBy===0?'You shut the box!':NAMES[ST.shutBy]+' shut the box'):(won?(w.length>1?'You tie for the win':'You win!'):w.map(function(p){ return NAMES[p]; }).join(' & ')+' win'+(w.length>1?'':'s'));
+    $('oSub').textContent=ST.shutBy!=null?'Shutting the box wins on the spot.':'Lowest score wins.';
+    var order=[]; for(var p=0;p<ST.players;p++) order.push(p); order.sort(function(a,b){ return (ST.scores[a]==null?99:ST.scores[a])-(ST.scores[b]==null?99:ST.scores[b]); });
+    $('oTable').innerHTML=order.map(function(p){ return '<tr class="'+(w.indexOf(p)>=0?'best':'')+'"><td>'+NAMES[p]+'</td><td class="n">'+(ST.scores[p]==null?'didn’t roll':ST.scores[p])+'</td></tr>'; }).join('');
+  }
+  $('oStats').textContent=statLine(st);
+  if(won||mine===0){ sfx('win'); } else sfx(ST.players>1?'lose':'good');
+  setTimeout(function(){ $('overModal').classList.add('show'); }, 500);
+  render();
+}
+function statLine(st){ return 'This box: '+st.played+' played · avg '+(st.played?(st.total/st.played).toFixed(1):'–')+' · best '+(st.best==null?'–':st.best)+' · shut '+st.shut+(st.wins?' · '+st.wins+' win'+(st.wins>1?'s':'')+' vs bots':''); }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff'];
+  for(var i=0;i<50;i++){ var c=document.createElement('div'); c.className='confetti'; c.style.left=(Math.random()*100)+'vw'; c.style.background=cols[i%cols.length]; document.body.appendChild(c);
+    c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1800+Math.random()*1400, delay:Math.random()*400}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+/* ---------- input ---------- */
+$('rack').addEventListener('click',function(e){
+  var t=e.target.closest('.tile'); if(!t||!ST||busy||ST.turn!==0||ST.roll==null||showBox!=null) return;
+  var bit=1<<(+t.dataset.t-1); if(!(ST.box&bit)) return;
+  hint=0; sel^=bit; sfx('select'); render();
+  if(S.sum(sel)>ST.roll) say('That’s <b>'+S.sum(sel)+'</b> &mdash; more than '+ST.roll+'.'); else if(S.canShut(ST,sel)) say('Tap <b>Shut</b>.'); else say('You rolled <b>'+ST.roll+'</b>. Picked '+S.sum(sel)+'.');
+});
+$('goBtn').onclick=function(){ if(!ST) return; if(ST.over){ start(); return; } if(ST.roll==null) myRoll(2); else myShut(); };
+$('oneBtn').onclick=function(){ myRoll(1); };
+$('hintBtn').onclick=function(){
+  if(!ST||busy||ST.turn!==0||ST.over) return; sfx('select');
+  if(ST.roll==null){ var d=S.oneDieOK(ST.box,ST.rule)?S.diceFor(ST.n,ST.rule,ST.box):2;
+    say(S.oneDieOK(ST.box,ST.rule)?'Perfect play rolls <b>'+(d===1?'one die':'both dice')+'</b> here.':'Nothing to decide yet: <b>roll</b>.');
+    if(d===1){ var b=$('oneBtn'); if(b.animate) b.animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:500,iterations:2}); } return; }
+  hint=S.best(ST.n,ST.rule,ST.box,ST.roll); sel=hint; render();
+  say('Best: shut <b>'+S.tiles(hint).join(' + ')+'</b>. Average finish from there: '+S.expected(ST.n,ST.rule,ST.box^hint).toFixed(1)+'.');
+};
+
+/* ---------- fitting ---------- */
+function fit(){
+  if(!ST) return; var root=document.documentElement, box=$('box'), rackW=box.clientWidth-20-12, n=ST.n;
+  var tw=Math.floor(Math.min(58,(rackW-(n-1)*4)/n));
+  // the box sits in the middle of whatever's left: tall tiles and big dice on a tall phone, both shrink together on a short one
+  var info=$('info').offsetHeight, room=$('stage').clientHeight-(info?info+10:0)-20-($('owner').offsetHeight?$('owner').offsetHeight+6:0)-6-10-10-4;
+  var th=Math.round(Math.min(tw*2.9, room*0.42)), die=Math.floor(Math.min(100,(box.clientWidth-20)/3.4, (room-th)/2.1));
+  var need=th+die*2.1; if(need>room){ var k=room/need; th=Math.max(34,Math.floor(th*k)); die=Math.max(26,Math.floor(die*k)); }
+  root.style.setProperty('--tw',tw+'px'); root.style.setProperty('--th',th+'px'); root.style.setProperty('--die',die+'px');
+}
+
+/* ---------- menus ---------- */
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+function openM(id){ $(id).classList.add('show'); }
+function closeM(el){ while(el&&!el.classList.contains('modal')) el=el.parentNode; if(el) el.classList.remove('show'); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ closeM(b); }; });
+[].forEach.call(document.querySelectorAll('.modal'),function(m){ m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+function rulesOdds(){ var n=ST?ST.n:prefs.n, r=ST?ST.rule:!!prefs.rule;
+  $('odds').innerHTML='With 1-'+n+(r?' and the one-die rule':'')+', perfect play averages <b>'+S.expected(n,r,S.full(n)).toFixed(1)+'</b> and shuts the box <b>'+(100*S.shutChance(n,r)).toFixed(1)+'%</b> of the time.'; }
+$('rulesBtn').onclick=function(){ rulesOdds(); openM('rulesModal'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); rulesOdds(); openM('rulesModal'); };
+function paintMenu(){ seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn()));
+  if(ST){ var st=myStats(); $('stTitle').textContent='Your record · 1-'+ST.n+(ST.rule?' · one die':'');
+    $('stats').innerHTML='<tr><td>Boxes played</td><td class="n">'+st.played+'</td></tr><tr><td>Average score</td><td class="n">'+(st.played?(st.total/st.played).toFixed(1):'–')+'</td></tr>'
+      +'<tr><td>Best</td><td class="n">'+(st.best==null?'–':st.best)+'</td></tr><tr><td>Shut the box</td><td class="n">'+st.shut+'</td></tr>'+(st.wins||ST.players>1?'<tr><td>Wins vs bots</td><td class="n">'+st.wins+'</td></tr>':''); } }
+$('menuBtn').onclick=function(){ paintMenu(); openM('menuModal'); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); busy=false; try{ localStorage.removeItem('stb_game'); }catch(e){} showSetup(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+addEventListener('resize',function(){ fit(); });
+if(window.ResizeObserver) new ResizeObserver(function(){ fit(); }).observe($('stage'));
+
+var g0=lsGet('stb_game',null);
+if(g0&&g0.st&&!g0.st.over) resume();
+else { ST=S.newRound(prefs.n,prefs.players,!!prefs.rule); fit(); render(); say(''); showSetup(); }
+window.__STB={ get st(){ return ST; }, get busy(){ return busy; }, get showing(){ return showBox!=null; } };
+
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v145", d=new Date(document.lastModified);
+  var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>
