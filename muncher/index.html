@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Muncher</title>
+<!-- In-game asset refs point up one level, matching the suite (../manifest.webmanifest, ../icon-180.png, ../sw.js). -->
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<!-- Shared Game Night header (styles + name-fit); loaded in <head> so it's there before first paint. -->
+<script src="../gn-header.js"></script>
+<style>
+  /* ---- Felt-and-gold suite theme (shared :root vars mirrored here for the standalone build) ---- */
+  :root{
+    /* shared suite tokens (gold/cream/ink match gn-header.js + gn-setup.js) */
+    --felt:#0f4a2c; --felt2:#0b3a23; --ink:#07160f;
+    --gold:#f0c674; --gold2:#c79a3e; --cream:#f7f3e8;
+    --wall:#3fa7ff; --wall2:#1c6fd0; --door:#f5b9d6;
+    --pellet:#f7f3e8; --power:#ffe489;
+    --munch:#ffcf4d;
+    --w1:#2fe0c6; --w2:#ff5fa2; --w3:#b6ff5a; --w4:#ff8a5c; /* original wisp colors */
+    --fright:#2a46ff; --frightflash:#f7f3e8;
+    --shadow:rgba(0,0,0,.45);
+    --radius:14px;
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{
+    background:radial-gradient(130% 100% at 50% 0%, var(--felt) 0%, var(--felt2) 60%, var(--ink) 100%);
+    color:var(--cream);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    user-select:none; -webkit-user-select:none; touch-action:none;
+  }
+
+  /* Header is the shared gn-header.js standard; only the game-specific bits live here. */
+  body .gn-hdr{ max-width:560px; margin:8px auto 8px; padding:0 12px; }
+  .pad-dot{ /* controller status on the name line (suite convention: compact status in .gn-namerow) */
+    width:10px; height:10px; border-radius:50%; background:rgba(247,243,232,.35);
+    flex:0 0 auto; transition:background .2s, box-shadow .2s;
+  }
+
+  /* ---- Stage ---- */
+  .stage{
+    flex:1 1 auto; width:100%; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; min-height:0; gap:8px; padding:4px 8px 8px;
+  }
+  .hud{
+    width:100%; max-width:560px; display:flex; align-items:center; justify-content:space-between;
+    font-variant-numeric:tabular-nums; font-size:14px; letter-spacing:.3px; padding:0 4px;
+  }
+  .hud .score{font-weight:700; color:var(--cream);}
+  .hud .best{color:var(--gold); opacity:.9;}
+  .hud .lives{display:flex; gap:6px; align-items:center;}
+  .hud .life{width:14px; height:14px; border-radius:50%;
+    background:radial-gradient(circle at 60% 40%, var(--munch), #d99a1e);
+    box-shadow:0 1px 2px var(--shadow);}
+  .boardwrap{position:relative; display:flex; align-items:center; justify-content:center;
+    width:100%; min-height:0; flex:1 1 auto;}
+  canvas#board{
+    display:block; background:var(--ink); border-radius:var(--radius);
+    box-shadow:0 10px 30px var(--shadow), inset 0 0 0 2px rgba(63,167,255,.08);
+    touch-action:none;
+  }
+
+  /* ---- Overlays ---- */
+  .overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:14px; text-align:center; padding:22px;
+    background:rgba(7,22,15,.72); backdrop-filter:blur(3px); border-radius:var(--radius);
+  }
+  .overlay.hidden{display:none;}
+  .overlay h1{font-family:Georgia,serif; color:var(--gold); margin:0; font-size:26px;}
+  .overlay p{margin:0; max-width:34ch; line-height:1.45; font-size:15px; opacity:.95;}
+  .big{appearance:none; border:none; cursor:pointer; font-size:17px; font-weight:700;
+    padding:13px 26px; border-radius:999px; color:var(--ink);
+    background:linear-gradient(180deg, var(--gold), var(--gold2));
+    box-shadow:0 6px 16px rgba(0,0,0,.4);}
+  .big:active{transform:translateY(1px);}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; font-size:12px; opacity:.9;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:12px; height:12px; border-radius:50%;}
+
+  /* ---- Touch controls (shown on touch devices) ---- */
+  .touch{
+    width:100%; max-width:560px; display:none; align-items:center; justify-content:center;
+    padding:2px 0 6px;
+  }
+  body.touch-on .touch{display:flex;}
+  .dpad{
+    display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(3,56px);
+    gap:6px; touch-action:none;
+  }
+  .dbtn{
+    border:1px solid rgba(232,198,106,.3); background:rgba(0,0,0,.25); border-radius:12px;
+    color:var(--gold); font-size:22px; display:flex; align-items:center; justify-content:center;
+  }
+  .dbtn:active{background:rgba(232,198,106,.18);}
+  .dbtn.blank{visibility:hidden;}
+  .du{grid-area:1/2;} .dl{grid-area:2/1;} .dr{grid-area:2/3;} .dd{grid-area:3/2;}
+  .dc{grid-area:2/2; opacity:.35;}
+
+  /* ---- Build stamp (shared standard: centered, in flow) ---- */
+  .gn-build{text-align:center; font-size:10.5px; opacity:.5; margin:8px 0 4px; color:var(--cream);
+    font-family:ui-monospace,Menlo,monospace;}
+  @media (max-width:360px){ .dpad{grid-template-columns:repeat(3,50px); grid-template-rows:repeat(3,50px);} }
+</style>
+</head>
+<body>
+
+  <!-- Shared Game Night header standard: gn-header.js styles .gn-hdr/.gn-top/.gn-pill/.gn-name and fits the name. -->
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <div class="gn-namerow">
+      <h1 class="gn-name" id="gnName">Muncher</h1>
+      <span class="pad-dot" id="statusDot" title="controller"></span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="hud" id="hud">
+      <div class="score">Score <span id="score">0</span></div>
+      <div class="best">Best <span id="best">0</span></div>
+      <div class="lives" id="lives"></div>
+    </div>
+
+    <div class="boardwrap">
+      <canvas id="board"></canvas>
+
+      <!-- Start -->
+      <div class="overlay" id="ovStart">
+        <h1>Muncher</h1>
+        <p>Clear every berry. Grab a <b>glow-cap</b> to turn the wisps blue and chase them down. Four wisps, one maze, your call.</p>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--w1)"></i>Blink</span>
+          <span><i class="swatch" style="background:var(--w2)"></i>Shade</span>
+          <span><i class="swatch" style="background:var(--w3)"></i>Ember</span>
+          <span><i class="swatch" style="background:var(--w4)"></i>Hush</span>
+        </div>
+        <button class="big" id="btnStart">Play</button>
+        <p style="font-size:12.5px;opacity:.8">Controller, swipe, arrow keys or WASD. Pair a Bluetooth pad in iPad Settings → Bluetooth first and it just shows up.</p>
+      </div>
+
+      <!-- Ready -->
+      <div class="overlay hidden" id="ovReady"><h1 id="readyTxt">Ready</h1></div>
+
+      <!-- Paused / Menu -->
+      <div class="overlay hidden" id="ovPause">
+        <h1>Paused</h1>
+        <button class="big" id="btnResume">Resume</button>
+        <button class="big" id="btnNewGame" style="background:rgba(255,255,255,.14);color:var(--cream)">New game</button>
+      </div>
+
+      <!-- Game over / win -->
+      <div class="overlay hidden" id="ovEnd">
+        <h1 id="endTitle">Game Over</h1>
+        <p id="endMsg"></p>
+        <button class="big" id="btnAgain">Play again</button>
+      </div>
+
+      <!-- Rules -->
+      <div class="overlay hidden" id="ovRules">
+        <h1>How to play</h1>
+        <p style="text-align:left">
+          • Eat every berry to clear the board.<br>
+          • <b>Glow-caps</b> (the four big ones) make the wisps flee — eat them for bonus points, worth more each in a row.<br>
+          • A wisp touching you costs a life. Clear the maze to move up a level; the wisps get quicker and the glow wears off sooner.<br>
+          • The side tunnels wrap left↔right.
+        </p>
+        <button class="big" id="btnRulesClose">Got it</button>
+      </div>
+    </div>
+
+    <!-- On-screen D-pad for touch -->
+    <div class="touch">
+      <div class="dpad" id="dpad">
+        <div class="dbtn du" data-dir="up">▲</div>
+        <div class="dbtn dl" data-dir="left">◀</div>
+        <div class="dbtn dc">•</div>
+        <div class="dbtn dr" data-dir="right">▶</div>
+        <div class="dbtn dd" data-dir="down">▼</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gn-build" id="gnBuild"></div>
+
+<script>
+/* =======================================================================
+   MUNCHER — an original maze-muncher for Game Night
+   Single self-contained file, in the spirit of the suite's other games.
+   Genre mechanics only (maze, pellets, power-pellets, four chasers) —
+   original maze, original critter, original wisp names/colors/behaviours.
+   No trademarked names or layouts anywhere.
+   ======================================================================= */
+(function(){
+"use strict";
+
+/* ---------- build stamp (suite standard: BUILD_V + document.lastModified) ---------- */
+var BUILD_V = "v146";
+(function(){ var d=new Date(document.lastModified), w=isNaN(d)?'':d.toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}); var el=document.getElementById('gnBuild'); if(el) el.textContent='build '+BUILD_V+(w?' · '+w:''); })();
+
+/* ---------- safe localStorage (can throw in private mode / blocked site data) ---------- */
+var mem = {};
+var LS = {
+  get:function(k){ try{ var v=localStorage.getItem(k); return v==null?mem[k]:v; }catch(e){ return mem[k]; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ mem[k]=String(v); } }
+};
+
+/* ---------- sound hooks (no-op if the shared SFX layer isn't loaded) ---------- */
+function sfx(name){ try{ if(window.SFX && SFX.play) SFX.play(name); }catch(e){} }
+
+/* ========================= CONFIG (single source of truth) ========================= */
+var CFG = {
+  COLS:21, ROWS:23,
+  MUNCH_TPS:6.6,            // tiles per second
+  GHOST_TPS:6.0,
+  FRIGHT_TPS:4.2,
+  EYES_TPS:11,
+  FRIGHT_MS:7000,          // level 1 fright duration
+  FRIGHT_MIN:1500,
+  LEVEL_SPEEDUP:0.35,      // tiles/sec added to ghosts per level (capped)
+  GHOST_TPS_MAX:8.2,
+  PELLET:10, POWER:50,
+  GHOST_EAT:[200,400,800,1600],
+  FRUIT:[0,100,300,500,700,1000], // by level, index capped
+  START_LIVES:3,
+  EXTRA_LIFE:10000,
+  // scatter/chase schedule (ms), loops on the last chase forever
+  SCHEDULE:[['scatter',7000],['chase',20000],['scatter',7000],['chase',20000],
+            ['scatter',5000],['chase',20000],['scatter',5000],['chase',999999]]
+};
+
+/* ========================= MAZE =========================
+   Built from a symmetric spec so it stays DRY and we can validate
+   connectivity at load (flood fill) — any stranded berry is cleared
+   so the board is always completable.
+   Tiles: '#' wall · '.' berry · 'o' glow-cap · ' ' empty path
+          '-' house door · '=' house interior · 'T' tunnel path
+*/
+var RAW = buildMaze();
+function buildMaze(){
+  var C=CFG.COLS, R=CFG.ROWS;
+  var g=[]; for(var r=0;r<R;r++){ g.push(new Array(C).fill(' ')); }
+  // border
+  for(var x=0;x<C;x++){ g[0][x]='#'; g[R-1][x]='#'; }
+  for(var y=0;y<R;y++){ g[y][0]='#'; g[y][C-1]='#'; }
+  // lattice posts (odd,odd) → guarantees full connectivity of the open corridors
+  for(var r2=2;r2<R-2;r2++) for(var c2=2;c2<C-2;c2++){
+    if(r2%2===1 && c2%2===1) g[r2][c2]='#';
+  }
+  // thicken some posts into short symmetric walls for character (kept non-enclosing)
+  var segs=[ [3,3,'h',3],[3,15,'h',3],[7,5,'v',3],[7,13,'v',3],
+             [15,3,'h',3],[15,15,'h',3],[13,5,'v',3],[13,13,'v',3],
+             [5,9,'v',3],[17,9,'v',3],[11,2,'h',3],[11,16,'h',3] ];
+  segs.forEach(function(s){
+    var r0=s[0],c0=s[1],dir=s[2],len=s[3];
+    for(var i=0;i<len;i++){
+      var rr=dir==='v'?r0+i:r0, cc=dir==='h'?c0+i:c0;
+      if(rr>0&&rr<R-1&&cc>0&&cc<C-1) g[rr][cc]='#';
+    }
+  });
+  // central ghost house: rows 10-12, cols 8-12, door on top row 9/10 centre
+  for(var rr2=10;rr2<=12;rr2++) for(var cc2=8;cc2<=12;cc2++) g[rr2][cc2]='#';
+  for(var rr3=10;rr3<=11;rr3++) for(var cc3=9;cc3<=11;cc3++) g[rr3][cc3]='='; // interior
+  g[9][10]='-';  // door
+  g[10][10]='='; // clear below door
+  // tunnel row = row 11 (ghost house row) is blocked; use row 16 as the tunnel
+  var trow=16;
+  g[trow][0]='T'; g[trow][C-1]='T';
+  g[trow][1]=' '; g[trow][C-2]=' ';
+  // open a clear horizontal corridor on the tunnel row
+  for(var tc=1;tc<C-1;tc++){ if(g[trow][tc]==='#') g[trow][tc]=' '; }
+  // also keep an open corridor just inside the top and bottom
+  for(var tc2=1;tc2<C-1;tc2++){ if(g[1][tc2]==='#') g[1][tc2]=' '; if(g[R-2][tc2]==='#') g[R-2][tc2]=' '; }
+
+  // place berries on every open path tile, glow-caps near the four corners
+  for(var ry=1;ry<R-1;ry++) for(var cx=1;cx<C-1;cx++){
+    if(g[ry][cx]===' ') g[ry][cx]='.';
+  }
+  // clear berries from house + door approach
+  for(var hr=9;hr<=12;hr++) for(var hc=8;hc<=12;hc++){ if(g[hr][hc]==='.'||g[hr][hc]===' ') g[hr][hc]= (g[hr][hc]==='.'?' ':g[hr][hc]); }
+  g[9][10]='-'; g[10][10]='=';
+  // glow-caps
+  var caps=[[2,2],[2,C-3],[R-3,2],[R-3,C-3]];
+  caps.forEach(function(p){ if(g[p[0]][p[1]]==='.'||g[p[0]][p[1]]===' ') g[p[0]][p[1]]='o'; });
+
+  // tunnel tiles shouldn't hold berries
+  g[trow][0]='T'; g[trow][C-1]='T';
+
+  // ---- validate: flood fill from muncher start; clear any stranded berry ----
+  var start=[R-3,10]; // muncher spawn (bottom centre path)
+  if(isWall(g,start[0],start[1])){ // nudge to a nearby open tile
+    for(var d=0; d<5 && isWall(g,start[0],start[1]); d++){ start[1]= (start[1]+1)%C; }
+  }
+  var seen=flood(g,start[0],start[1]);
+  var stranded=0;
+  for(var vy=1;vy<R-1;vy++) for(var vx=1;vx<C-1;vx++){
+    var t=g[vy][vx];
+    if((t==='.'||t==='o') && !seen[vy*C+vx]){ g[vy][vx]=' '; stranded++; }
+  }
+  if(stranded) try{ console.warn("muncher: cleared "+stranded+" stranded berries"); }catch(e){}
+  return {grid:g, start:start, tunnelRow:trow, stranded:stranded};
+}
+function isWall(g,r,c){ var t=g[r] && g[r][c]; return t==='#'||t==='-'||t==='='||t==null; }
+function flood(g,r,c){
+  var C=CFG.COLS, R=CFG.ROWS, seen={}, st=[[r,c]];
+  seen[r*C+c]=true;
+  var tr=16;
+  while(st.length){
+    var cur=st.pop(), y=cur[0], x=cur[1];
+    var nb=[[y-1,x],[y+1,x],[y,x-1],[y,x+1]];
+    // tunnel wrap on the tunnel row
+    if(y===tr && x===0) nb.push([y,C-1]);
+    if(y===tr && x===C-1) nb.push([y,0]);
+    nb.forEach(function(n){
+      var ny=n[0], nx=n[1];
+      if(ny<0||ny>=R||nx<0||nx>=C) return;
+      var k=ny*C+nx;
+      if(seen[k]) return;
+      if(isWall(g,ny,nx)) return;
+      seen[k]=true; st.push([ny,nx]);
+    });
+  }
+  return seen;
+}
+
+/* ========================= STATE ========================= */
+var canvas=document.getElementById('board'), ctx=canvas.getContext('2d');
+var TILE=16, DPR=1, OX=0, OY=0; // computed on resize
+var grid, tunnelRow, startTile;
+var G = {
+  state:'start',      // start | ready | play | pause | dead | over | win | rules
+  score:0, best:+(LS.get('muncher_best')||0), lives:CFG.START_LIVES, level:1,
+  berries:0, eaten:0, comboIdx:0, extraGiven:false,
+  mode:'scatter', schedIdx:0, schedT:0, frightT:0,
+  readyT:0, deadT:0,
+  muncher:null, ghosts:[], fruit:null, fruitT:0, lastT:0
+};
+
+function newMuncher(){
+  var t=startTile;
+  return { r:t[0], c:t[1], x:cx(t[1]), y:cy(t[0]), dir:'left', want:'left',
+           moving:false, mouth:0, dead:false };
+}
+function cx(c){ return c*TILE + TILE/2; }
+function cy(r){ return r*TILE + TILE/2; }
+function tileOf(e){ return [Math.floor(e.y/TILE), Math.floor(e.x/TILE)]; }
+
+/* four original wisps — distinct chase personalities */
+function newGhosts(){
+  var home=[10,10];
+  function mk(name,color,corner,mode,delay){
+    return { name:name, color:color, corner:corner, kind:mode,
+      r:home[0], c:home[1], x:cx(10), y:cy(10),
+      dir:'up', want:'up', state:'house', // house | out | fright | eyes
+      releaseT:delay, inhouseY:cy(10) };
+  }
+  return [
+    mk('Blink', getCss('--w1'), [0,CFG.COLS-1], 'chaser',   0),     // heads straight for you
+    mk('Shade', getCss('--w2'), [0,0],          'ambush',   2200),  // aims ahead of you
+    mk('Ember', getCss('--w3'), [CFG.ROWS-1,CFG.COLS-1],'flank',5000), // flanks via a vector trick
+    mk('Hush',  getCss('--w4'), [CFG.ROWS-1,0], 'shy',      8000)   // chases far, scatters when close
+  ];
+}
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#fff'; }
+
+/* ========================= SIZING ========================= */
+function resize(){
+  var wrap=canvas.parentElement;
+  var availW = Math.min(wrap.clientWidth, 560);
+  // leave room for hud + touch pad; compute from the stage height
+  var stage=document.querySelector('.stage');
+  var otherH = document.getElementById('hud').offsetHeight + 16;
+  var touchH = document.body.classList.contains('touch-on') ? 180 : 20;
+  var availH = Math.max(160, stage.clientHeight - otherH - touchH);
+  var tile = Math.floor(Math.min(availW/CFG.COLS, availH/CFG.ROWS));
+  tile = Math.max(8, tile);
+  TILE = tile;
+  var w=CFG.COLS*TILE, h=CFG.ROWS*TILE;
+  DPR = Math.min(window.devicePixelRatio||1, 2.5);
+  canvas.style.width=w+'px'; canvas.style.height=h+'px';
+  canvas.width=Math.round(w*DPR); canvas.height=Math.round(h*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  // recompute entity pixel positions to the new tile size
+  if(G.muncher){ G.muncher.x=colFrac(G.muncher.x,oldTile)*TILE; }
+  draw();
+}
+var oldTile=16;
+function colFrac(px,t){ return px/t; }
+window.addEventListener('resize', function(){ oldTile=TILE; resize(); });
+
+/* ========================= INPUT ========================= */
+var pressedDir=null;
+function setWant(d){
+  if(!d) return;
+  if(G.state==='start'||G.state==='over'||G.state==='win'){ return; }
+  if(G.muncher){ G.muncher.want=d;
+    // instant reverse mid-corridor feels good
+    if(opp(d)===G.muncher.dir) G.muncher.dir=d;
+  }
+}
+function opp(d){ return {up:'down',down:'up',left:'right',right:'left'}[d]; }
+
+/* keyboard */
+window.addEventListener('keydown', function(e){
+  var k=e.key.toLowerCase(), d=null;
+  if(k==='arrowup'||k==='w') d='up';
+  else if(k==='arrowdown'||k==='s') d='down';
+  else if(k==='arrowleft'||k==='a') d='left';
+  else if(k==='arrowright'||k==='d') d='right';
+  else if(k===' '||k==='enter'){ e.preventDefault(); primaryAction(); return; }
+  else if(k==='p'){ togglePause(); return; }
+  if(d){ e.preventDefault(); setWant(d); }
+});
+
+/* touch: swipe on the board + on-screen d-pad */
+var tsx=0,tsy=0,tst=0;
+canvas.addEventListener('touchstart', function(e){
+  var t=e.changedTouches[0]; tsx=t.clientX; tsy=t.clientY; tst=Date.now();
+},{passive:true});
+canvas.addEventListener('touchend', function(e){
+  var t=e.changedTouches[0], dx=t.clientX-tsx, dy=t.clientY-tsy;
+  if(Math.abs(dx)<18 && Math.abs(dy)<18){ // tap
+    if(G.state==='start'||G.state==='over'||G.state==='win'||G.state==='pause') primaryAction();
+    return;
+  }
+  if(Math.abs(dx)>Math.abs(dy)) setWant(dx>0?'right':'left');
+  else setWant(dy>0?'down':'up');
+},{passive:true});
+(function(){
+  var dp=document.getElementById('dpad');
+  dp.addEventListener('touchstart', function(e){
+    var el=e.target.closest('[data-dir]'); if(el){ e.preventDefault(); setWant(el.getAttribute('data-dir')); }
+  },{passive:false});
+  dp.addEventListener('mousedown', function(e){
+    var el=e.target.closest('[data-dir]'); if(el){ setWant(el.getAttribute('data-dir')); }
+  });
+})();
+
+/* gamepad — polled each frame */
+var padPrev={}, padBlocked=false;
+function pollPad(){
+  // getGamepads() throws a SecurityError inside sandboxed iframes (e.g. an artifact
+  // preview) where the "gamepad" feature is blocked by permissions policy. Guard it
+  // so a blocked feature degrades to keyboard/touch instead of killing the loop.
+  var pads;
+  try { pads = navigator.getGamepads ? navigator.getGamepads() : []; }
+  catch(e){ pads = []; padBlocked = true; }
+  var connected=false;
+  for(var i=0;i<pads.length;i++){
+    var p=pads[i]; if(!p) continue; connected=true;
+    // d-pad buttons 12..15 (up,down,left,right) on the standard mapping
+    var b=p.buttons;
+    if(b[12]&&b[12].pressed) setWant('up');
+    if(b[13]&&b[13].pressed) setWant('down');
+    if(b[14]&&b[14].pressed) setWant('left');
+    if(b[15]&&b[15].pressed) setWant('right');
+    // left stick
+    var ax=p.axes[0]||0, ay=p.axes[1]||0, DZ=0.45;
+    if(Math.abs(ax)>Math.abs(ay)){ if(ax<-DZ) setWant('left'); else if(ax>DZ) setWant('right'); }
+    else { if(ay<-DZ) setWant('up'); else if(ay>DZ) setWant('down'); }
+    // A (0) / Start (9) = confirm/start
+    var a=(b[0]&&b[0].pressed)||(b[9]&&b[9].pressed);
+    if(a && !padPrev[i]) primaryAction();
+    padPrev[i]=a;
+    // B (1) = pause toggle
+    var bb=(b[1]&&b[1].pressed);
+    if(bb && !padPrev['b'+i]) togglePause();
+    padPrev['b'+i]=bb;
+  }
+  var dot=document.getElementById('statusDot');
+  dot.style.background = connected ? getCss('--w1') : 'rgba(244,234,210,.35)';
+  dot.style.boxShadow = connected ? ('0 0 8px '+getCss('--w1')) : 'none';
+  dot.title = connected ? 'controller connected' : (padBlocked ? 'gamepad blocked in this frame — use touch/keys' : 'no controller');
+}
+window.addEventListener('gamepadconnected', function(){ sfx('turn'); });
+
+/* ========================= GAME FLOW ========================= */
+function primaryAction(){
+  if(G.state==='start'||G.state==='over'||G.state==='win') startGame();
+  else if(G.state==='pause') togglePause();
+}
+function startGame(){
+  G.score=0; G.lives=CFG.START_LIVES; G.level=1; G.extraGiven=false;
+  loadLevel(); setState('ready'); G.readyT=1700;
+  showOverlay('ovReady'); document.getElementById('readyTxt').textContent='Ready';
+  sfx('turn');
+}
+function loadLevel(){
+  var m=buildMaze(); grid=m.grid; tunnelRow=m.tunnelRow; startTile=m.start;
+  G.berries=0;
+  for(var r=0;r<CFG.ROWS;r++) for(var c=0;c<CFG.COLS;c++){ var t=grid[r][c]; if(t==='.'||t==='o') G.berries++; }
+  G.muncher=newMuncher(); G.ghosts=newGhosts();
+  G.mode='scatter'; G.schedIdx=0; G.schedT=CFG.SCHEDULE[0][1]; G.frightT=0;
+  G.comboIdx=0; G.fruit=null; G.fruitT=8000; G.eaten=0;
+  oldTile=TILE; resize();
+}
+function setState(s){ G.state=s; updateHud(); }
+function togglePause(){
+  if(G.state==='play'){ setState('pause'); showOverlay('ovPause'); document.getElementById('statusDot').classList.add('paused'); }
+  else if(G.state==='pause'){ hideOverlays(); setState('play'); document.getElementById('statusDot').classList.remove('paused'); }
+}
+function loseLife(){
+  G.lives--; sfx('lose'); updateHud();
+  if(G.lives<=0){ endGame(false); }
+  else { setState('dead'); G.deadT=1100; }
+}
+function respawn(){
+  G.muncher=newMuncher(); G.ghosts=newGhosts();
+  G.mode='scatter'; G.schedIdx=0; G.schedT=CFG.SCHEDULE[0][1]; G.frightT=0;
+  setState('ready'); G.readyT=1300; showOverlay('ovReady'); document.getElementById('readyTxt').textContent='Ready';
+}
+function nextLevel(){
+  G.level++; sfx('win');
+  setState('win-trans'); // brief
+  loadLevel(); setState('ready'); G.readyT=1500;
+  showOverlay('ovReady'); document.getElementById('readyTxt').textContent='Level '+G.level;
+}
+function endGame(won){
+  if(G.score>G.best){ G.best=G.score; LS.set('muncher_best',G.best); }
+  setState(won?'win':'over');
+  document.getElementById('endTitle').textContent = won ? 'You cleared it!' : 'Game Over';
+  document.getElementById('endMsg').textContent =
+    (won?'Nice. ':'') + 'Score '+G.score+' · Best '+G.best+'  (level '+G.level+')';
+  showOverlay('ovEnd'); updateHud();
+}
+
+/* ========================= UPDATE ========================= */
+function canMove(r,c){
+  if(c<0||c>=CFG.COLS){ return true; } // tunnel handled on wrap
+  var t=grid[r] && grid[r][c];
+  return !(t==='#'||t==='-'||t==='=');
+}
+function ghostCanEnter(gh,r,c){
+  if(c<0||c>=CFG.COLS) return true;
+  var t=grid[r] && grid[r][c];
+  if(t==='-'){ return gh.state==='eyes' || gh.state==='house'; } // door: only to go home / leave
+  if(t==='='){ return gh.state==='eyes' || gh.state==='house'; }
+  return !(t==='#');
+}
+var DIRS={up:[-1,0],down:[1,0],left:[0,-1],right:[0,1]};
+
+function atCenter(e){
+  return Math.abs(e.x - cx(Math.floor(e.x/TILE))) < 0.6*Math.max(1,TILE*0.01+1) &&
+         Math.abs(e.y - cy(Math.floor(e.y/TILE))) < 0.6*Math.max(1,TILE*0.01+1);
+}
+function snapCenter(e){ e.x=cx(Math.floor(e.x/TILE)); e.y=cy(Math.floor(e.y/TILE)); }
+
+function stepEntity(e, tps, pickDir, dt){
+  var speed = tps*TILE*dt;
+  // decide at tile centres
+  var r=Math.floor(e.y/TILE), c=Math.floor(e.x/TILE);
+  var centred = Math.abs(e.x-cx(c))<1.2 && Math.abs(e.y-cy(r))<1.2;
+  if(centred){
+    e.x=cx(c); e.y=cy(r); e.r=r; e.c=c;
+    var nd = pickDir(e,r,c);
+    if(nd) e.dir=nd;
+  }
+  // move along dir if the next tile is open
+  var d=DIRS[e.dir]; var nr=r+d[0], nc=c+d[1];
+  var open = e._open ? e._open(e,nr,nc) : canMove(nr,nc);
+  // tunnel wrap
+  if(e.dir==='left' && c===0){ open=true; }
+  if(e.dir==='right' && c===CFG.COLS-1){ open=true; }
+  if(open){
+    e.x += d[1]*speed; e.y += d[0]*speed;
+    // wrap
+    if(e.x < -TILE/2){ e.x = CFG.COLS*TILE + TILE/2 - 1; }
+    if(e.x > CFG.COLS*TILE + TILE/2){ e.x = -TILE/2 + 1; }
+    e.moving=true;
+  } else {
+    // stop at centre
+    e.x=cx(c); e.y=cy(r); e.moving=false;
+  }
+}
+
+function muncherPick(e,r,c){
+  // prefer the buffered want if legal, else keep going if legal, else stop
+  if(e.want){
+    var d=DIRS[e.want];
+    if(canMove(r+d[0], c+d[1]) || (e.want==='left'&&c===0) || (e.want==='right'&&c===CFG.COLS-1)){
+      return e.want;
+    }
+  }
+  var cur=DIRS[e.dir];
+  if(canMove(r+cur[0], c+cur[1]) || (e.dir==='left'&&c===0) || (e.dir==='right'&&c===CFG.COLS-1)) return e.dir;
+  return null; // blocked
+}
+
+function updateMuncher(dt){
+  var m=G.muncher;
+  m._open=function(e,nr,nc){ return canMove(nr,nc) || (e.dir==='left'&&Math.floor(e.x/TILE)===0) || (e.dir==='right'&&Math.floor(e.x/TILE)===CFG.COLS-1); };
+  stepEntity(m, CFG.MUNCH_TPS, muncherPick, dt);
+  m.mouth = (m.mouth + dt*10) % (Math.PI*2);
+  // eat
+  var r=Math.floor(m.y/TILE), c=Math.floor(m.x/TILE);
+  if(grid[r] && (grid[r][c]==='.'||grid[r][c]==='o')){
+    var was=grid[r][c]; grid[r][c]=' ';
+    if(was==='.'){ G.score+=CFG.PELLET; sfx('select'); }
+    else { G.score+=CFG.POWER; sfx('chip'); enterFright(); }
+    G.berries--; checkExtra();
+    if(G.berries<=0){ nextLevel(); return; }
+    // fruit appears at thresholds
+  }
+  // fruit pickup
+  if(G.fruit && Math.abs(m.x-cx(G.fruit.c))<TILE*0.6 && Math.abs(m.y-cy(G.fruit.r))<TILE*0.6){
+    var fv=CFG.FRUIT[Math.min(G.level,CFG.FRUIT.length-1)];
+    G.score+=fv; G.fruit=null; sfx('good'); checkExtra();
+  }
+  updateHud();
+}
+function checkExtra(){
+  if(!G.extraGiven && G.score>=CFG.EXTRA_LIFE){ G.extraGiven=true; G.lives++; sfx('good'); }
+}
+
+function enterFright(){
+  var dur = Math.max(CFG.FRIGHT_MIN, CFG.FRIGHT_MS - (G.level-1)*700);
+  G.frightT=dur; G.comboIdx=0;
+  G.ghosts.forEach(function(g){ if(g.state==='out'||g.state==='fright'){ g.state='fright'; g.dir=opp(g.dir); } });
+}
+
+/* ghost targeting */
+function ghostTarget(g){
+  var m=G.muncher, mr=Math.floor(m.y/TILE), mc=Math.floor(m.x/TILE);
+  if(g.state==='eyes') return [9,10];           // the door
+  if(g.state==='house') return [8,10];          // climb out
+  if(g.state==='fright') return null;           // random
+  if(G.mode==='scatter') return g.corner;
+  // chase personalities (original)
+  var md=DIRS[m.dir];
+  if(g.kind==='chaser') return [mr,mc];
+  if(g.kind==='ambush') return [mr+md[0]*4, mc+md[1]*4];
+  if(g.kind==='flank'){
+    var blink=G.ghosts[0];
+    var ar=mr+md[0]*2, ac=mc+md[1]*2;
+    return [ar + (ar-Math.floor(blink.y/TILE)), ac + (ac-Math.floor(blink.x/TILE))];
+  }
+  // shy: chase from afar, bolt to corner when close
+  var dr=mr-g.r, dc=mc-g.c; var dist=Math.sqrt(dr*dr+dc*dc);
+  return dist>6 ? [mr,mc] : g.corner;
+}
+function ghostPick(g,r,c){
+  // at a centre, choose the legal direction (no reverse) nearest the target
+  var opts=['up','left','down','right'], best=null, bestD=1e9;
+  var tgt=ghostTarget(g);
+  var reverse=opp(g.dir);
+  // house logic: bob then exit via door
+  if(g.state==='house'){
+    // move up through the door when release timer elapsed
+    if(g.releaseT<=0){ // leave
+      if(r>8){ return 'up'; }
+      g.state='out'; return 'up';
+    } else {
+      // bob inside
+      return (r<=10)?'down':'up';
+    }
+  }
+  if(g.state==='eyes'){
+    // reached door area → become house to climb down then revive
+    if(r<=9 && Math.abs(c-10)<=0){ g.state='house'; g.releaseT=400; return 'down'; }
+  }
+  for(var i=0;i<opts.length;i++){
+    var d=opts[i]; if(d===reverse && g.state!=='fright') continue;
+    var dd=DIRS[d]; var nr=r+dd[0], nc=c+dd[1];
+    var open = ghostCanEnter(g,nr,nc) || (d==='left'&&c===0) || (d==='right'&&c===CFG.COLS-1);
+    if(!open) continue;
+    if(g.state==='fright'){ // random among legal
+      return pickRandomLegal(g,r,c,reverse);
+    }
+    var tr=tgt[0], tc=tgt[1];
+    var dist=(nr-tr)*(nr-tr)+(nc-tc)*(nc-tc);
+    if(dist<bestD){ bestD=dist; best=d; }
+  }
+  return best || reverse; // dead-end → reverse
+}
+function pickRandomLegal(g,r,c,reverse){
+  var opts=['up','left','down','right'].filter(function(d){
+    if(d===reverse) return false;
+    var dd=DIRS[d]; var nr=r+dd[0], nc=c+dd[1];
+    return ghostCanEnter(g,nr,nc) || (d==='left'&&c===0) || (d==='right'&&c===CFG.COLS-1);
+  });
+  if(!opts.length) return reverse;
+  return opts[Math.floor(Math.random()*opts.length)];
+}
+
+function updateGhost(g,dt){
+  if(g.releaseT>0 && (g.state==='house')) g.releaseT-=dt*1000;
+  var tps;
+  if(g.state==='eyes') tps=CFG.EYES_TPS;
+  else if(g.state==='fright') tps=CFG.FRIGHT_TPS;
+  else tps=Math.min(CFG.GHOST_TPS_MAX, CFG.GHOST_TPS + (G.level-1)*CFG.LEVEL_SPEEDUP);
+  g._open=function(e,nr,nc){ return ghostCanEnter(g,nr,nc) || (e.dir==='left'&&Math.floor(e.x/TILE)===0) || (e.dir==='right'&&Math.floor(e.x/TILE)===CFG.COLS-1); };
+  stepEntity(g, tps, ghostPick, dt);
+  g.r=Math.floor(g.y/TILE); g.c=Math.floor(g.x/TILE);
+  // revive at house
+  if(g.state==='house' && g.releaseT<=0 && g.r>=10){ g.state='out'; }
+  // collision with muncher
+  var m=G.muncher;
+  if(Math.abs(g.x-m.x)<TILE*0.55 && Math.abs(g.y-m.y)<TILE*0.55){
+    if(g.state==='fright'){
+      var pts=CFG.GHOST_EAT[Math.min(G.comboIdx,CFG.GHOST_EAT.length-1)];
+      G.score+=pts; G.comboIdx++; g.state='eyes'; sfx('good'); updateHud();
+    } else if(g.state==='out'){
+      loseLife();
+    }
+  }
+}
+
+function update(dt){
+  if(G.state==='ready'){ G.readyT-=dt*1000; if(G.readyT<=0){ hideOverlays(); setState('play'); } return; }
+  if(G.state==='dead'){ G.deadT-=dt*1000; if(G.deadT<=0){ respawn(); } return; }
+  if(G.state!=='play') return;
+
+  // schedule / fright
+  if(G.frightT>0){
+    G.frightT-=dt*1000;
+    if(G.frightT<=0){ G.ghosts.forEach(function(g){ if(g.state==='fright') g.state='out'; }); }
+  } else {
+    G.schedT-=dt*1000;
+    if(G.schedT<=0){
+      G.schedIdx=Math.min(G.schedIdx+1, CFG.SCHEDULE.length-1);
+      G.mode=CFG.SCHEDULE[G.schedIdx][0]; G.schedT=CFG.SCHEDULE[G.schedIdx][1];
+      // reverse on mode flip (classic tell)
+      G.ghosts.forEach(function(g){ if(g.state==='out') g.dir=opp(g.dir); });
+    }
+  }
+  updateMuncher(dt);
+  if(G.state!=='play') return; // nextLevel may have fired
+  for(var i=0;i<G.ghosts.length;i++){ updateGhost(G.ghosts[i],dt); if(G.state!=='play') return; }
+
+  // fruit lifecycle
+  if(!G.fruit){ G.fruitT-=dt*1000; if(G.fruitT<=0 && G.berries>4){ G.fruit={r:13,c:10}; G.fruitT=9000; } }
+  else { G.fruitT-=dt*1000; if(G.fruitT<=0){ G.fruit=null; G.fruitT=12000; } }
+}
+
+/* ========================= RENDER ========================= */
+function draw(){
+  if(!grid){ return; }
+  ctx.clearRect(0,0,CFG.COLS*TILE,CFG.ROWS*TILE);
+  // walls
+  for(var r=0;r<CFG.ROWS;r++) for(var c=0;c<CFG.COLS;c++){
+    var t=grid[r][c];
+    if(t==='#'){ drawWall(r,c); }
+    else if(t==='-'){ ctx.fillStyle=getCss('--door'); ctx.fillRect(c*TILE+2, r*TILE+TILE/2-2, TILE-4, 4); }
+    else if(t==='.'){ dot(r,c,Math.max(1.6,TILE*0.11), getCss('--pellet')); }
+    else if(t==='o'){ var pr=(Math.sin(performance.now()/200)+1)/2; dot(r,c,Math.max(3,TILE*0.26)*(0.75+0.25*pr), getCss('--power')); }
+  }
+  // fruit
+  if(G.fruit){ drawFruit(G.fruit.r,G.fruit.c); }
+  // ghosts
+  G.ghosts.forEach(drawGhost);
+  // muncher
+  drawMuncher();
+}
+function drawWall(r,c){
+  var x=c*TILE, y=r*TILE;
+  var grd=ctx.createLinearGradient(x,y,x,y+TILE);
+  grd.addColorStop(0,getCss('--wall')); grd.addColorStop(1,getCss('--wall2'));
+  ctx.fillStyle=grd;
+  roundRect(x+1,y+1,TILE-2,TILE-2,Math.min(5,TILE*0.28)); ctx.fill();
+}
+function dot(r,c,rad,col){ ctx.fillStyle=col; ctx.beginPath(); ctx.arc(cx(c),cy(r),rad,0,Math.PI*2); ctx.fill(); }
+function drawFruit(r,c){
+  ctx.save(); ctx.translate(cx(c),cy(r));
+  ctx.fillStyle='#ff5b5b'; ctx.beginPath(); ctx.arc(0,TILE*0.08,TILE*0.3,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle=getCss('--w3'); ctx.lineWidth=Math.max(1.5,TILE*0.08);
+  ctx.beginPath(); ctx.moveTo(0,-TILE*0.25); ctx.lineTo(TILE*0.12,-TILE*0.1); ctx.stroke();
+  ctx.restore();
+}
+function drawMuncher(){
+  var m=G.muncher; if(!m) return;
+  var a = (G.state==='play') ? (Math.abs(Math.sin(m.mouth))*0.33+0.04) : 0.25;
+  var base={left:Math.PI, right:0, up:-Math.PI/2, down:Math.PI/2}[m.dir];
+  ctx.save(); ctx.translate(m.x,m.y);
+  var grd=ctx.createRadialGradient(-TILE*0.1,-TILE*0.1,TILE*0.1, 0,0,TILE*0.5);
+  grd.addColorStop(0,'#fff0b8'); grd.addColorStop(1,getCss('--munch'));
+  ctx.fillStyle=grd;
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.arc(0,0,TILE*0.46, base+a, base+Math.PI*2-a);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawGhost(g){
+  var fr = (g.state==='fright');
+  var eyes = (g.state==='eyes');
+  var col;
+  if(eyes) col='rgba(0,0,0,0)';
+  else if(fr){
+    var flash = (G.frightT<2000 && Math.floor(G.frightT/250)%2===0);
+    col = flash ? getCss('--frightflash') : getCss('--fright');
+  } else col=g.color;
+  var x=g.x, y=g.y, R=TILE*0.46;
+  ctx.save(); ctx.translate(x,y);
+  if(!eyes){
+    ctx.fillStyle=col;
+    ctx.beginPath();
+    ctx.arc(0,-R*0.1,R,Math.PI,0);
+    ctx.lineTo(R,R*0.7);
+    // skirt
+    var n=4;
+    for(var i=0;i<n;i++){
+      var sx=R - (2*R)*((i+1)/n);
+      ctx.lineTo(sx, R*0.7 - ((i%2===0)?R*0.28:0));
+    }
+    ctx.closePath(); ctx.fill();
+  }
+  // eyes (always, even in eyes mode)
+  var d=DIRS[g.dir], ex=d[1]*R*0.18, ey=d[0]*R*0.18;
+  [-1,1].forEach(function(s){
+    ctx.fillStyle = fr ? '#dfe7ff' : '#fff';
+    ctx.beginPath(); ctx.arc(s*R*0.33, -R*0.12, R*0.26, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = fr ? '#2a46ff' : '#1b2a55';
+    ctx.beginPath(); ctx.arc(s*R*0.33+ex, -R*0.12+ey, R*0.13, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+/* ========================= HUD / OVERLAYS ========================= */
+function updateHud(){
+  document.getElementById('score').textContent=G.score;
+  document.getElementById('best').textContent=Math.max(G.best,G.score);
+  var lv=document.getElementById('lives'); lv.innerHTML='';
+  for(var i=0;i<Math.max(0,G.lives);i++){ var d=document.createElement('div'); d.className='life'; lv.appendChild(d); }
+}
+function showOverlay(id){ hideOverlays(); document.getElementById(id).classList.remove('hidden'); }
+function hideOverlays(){ ['ovStart','ovReady','ovPause','ovEnd','ovRules'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); }); }
+
+/* header + overlay buttons (header ids are the shared standard: rulesBtn / menuBtn; ‹ Games is a plain link) */
+document.getElementById('btnStart').onclick=startGame;
+document.getElementById('btnAgain').onclick=startGame;
+document.getElementById('btnResume').onclick=togglePause;
+document.getElementById('btnNewGame').onclick=startGame;
+document.getElementById('rulesBtn').onclick=function(){ if(G.state==='play') togglePause(); showOverlay('ovRules'); };
+document.getElementById('menuBtn').onclick=function(){ if(G.state==='play'||G.state==='pause') togglePause(); };
+document.getElementById('btnRulesClose').onclick=function(){
+  hideOverlays();
+  if(G.state==='start') showOverlay('ovStart');
+  else if(G.state==='pause') showOverlay('ovPause');
+  else if(G.state==='over'||G.state==='win') showOverlay('ovEnd');
+};
+
+/* ========================= LOOP ========================= */
+function frame(ts){
+  if(!G.lastT) G.lastT=ts;
+  var dt=Math.min(0.05,(ts-G.lastT)/1000); G.lastT=ts;
+  pollPad();
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+/* touch device? show the d-pad */
+if('ontouchstart' in window || (navigator.maxTouchPoints||0)>0){ document.body.classList.add('touch-on'); }
+
+/* the game name is fitted by the shared gn-header.js (GNHEADER.fit on load/resize) */
+
+/* ========================= TEST DOOR =========================
+   Exposes live state + the same handlers the inputs use, so a headless
+   harness reads truth instead of guessing from pixels (suite convention). */
+window.__MAZE={
+  get state(){ return G.state; },
+  get score(){ return G.score; },
+  get berries(){ return G.berries; },
+  get level(){ return G.level; },
+  get lives(){ return G.lives; },
+  muncherTile:function(){ var m=G.muncher; return m?[Math.floor(m.y/TILE),Math.floor(m.x/TILE)]:null; },
+  ghosts:function(){ return G.ghosts.map(function(g){ return {name:g.name,state:g.state,tile:[g.r,g.c]}; }); },
+  setDir:setWant,
+  start:startGame,
+  frightActive:function(){ return G.frightT>0; },
+  mazeOk:function(){ // flood-fill the live grid, or a fresh build before play has started
+    var gg = grid, ss = startTile;
+    if(!gg){ var b=buildMaze(); gg=b.grid; ss=b.start; }
+    var seen=flood(gg,ss[0],ss[1]), bad=0;
+    for(var r=1;r<CFG.ROWS-1;r++) for(var c=1;c<CFG.COLS-1;c++){ var t=gg[r][c]; if((t==='.'||t==='o')&&!seen[r*CFG.COLS+c]) bad++; }
+    return bad;
+  },
+  designStranded:function(){ return buildMaze().stranded; }, // berries the self-heal had to clear (want 0)
+  cfg:CFG
+};
+
+/* boot */
+resize();
+showOverlay('ovStart');
+updateHud();
+requestAnimationFrame(frame);
+
+/* register the shared service worker (offline cache + reload on a new deploy) — same as every game */
+if('serviceWorker' in navigator){
+  addEventListener('load', function(){
+    navigator.serviceWorker.register('../sw.js', {updateViaCache:'none'}).then(function(reg){ reg.update(); setInterval(function(){ reg.update(); }, 60*60*1000); }).catch(function(){});
+    var reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){ if(reloaded) return; reloaded=true; location.reload(); });
+  });
+}
+
+})();
+</script>
+<!-- shared synthesized sound layer (no-op if it fails to load) -->
+<script src="../sfx.js"></script>
+</body>
+</html>
