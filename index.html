@@ -87,11 +87,13 @@ const GAMES = [
   { title:"Spades",           emoji:"♠️", sub:"Partnership trick-taking · bid, nil & blind nil, bags · you & North vs two bots · teaching mode", href:"spades/", updated:"2026-10-22" },
   { title:"Mexican Train",    emoji:"🚂", sub:"Double-twelve dominoes · trains off the hub, cover the doubles · you vs 1 to 3 bots · teaching mode", href:"dominoes/", updated:"2026-10-22" },
   { title:"Dump",             emoji:"🎴", sub:"Shed your hand · match colour, number or symbol · stack the Draw Twos · you vs three bots", href:"dump/", updated:"2026-10-22" },
-  { title:"Putting Green",    emoji:"⛳", sub:"Birch Hollow · one pro green, nine pins cut · read the hills and the grain · drag back to putt", href:"minigolf/", updated:"2026-10-22" },
+  // hidden for now (Josh, Oct 23) - still works by its URL; headed for a beta-games list later. Uncomment to bring the tile back.
+  // { title:"Putting Green",    emoji:"⛳", sub:"Birch Hollow · one pro green, nine pins cut · read the hills and the grain · drag back to putt", href:"minigolf/", updated:"2026-10-22" },
   { title:"Chinese Checkers", emoji:"⭐", sub:"The star board · hop chains · you vs 1 to 5 bots", href:"chinesecheckers/", updated:"2026-10-10" },
   { title:"Golf Tees",        emoji:"⛳", sub:"The triangle peg puzzle · jump tees, leave just one", href:"tees/", updated:"2026-10-10" },
   { title:"Nerts",            emoji:"🏁", sub:"Racing solitaire · everybody at once onto the same piles · you vs 1 to 3 bots", href:"nerts/", updated:"2026-10-10" },
-  { title:"Corners",          emoji:"🟦", sub:"Fit your 21 pieces corner to corner · box the others out · you vs 1 or 3 bots", href:"corners/", updated:"2026-10-09" },
+  // hidden for now (Josh, Oct 23) - still works by its URL; headed for a beta-games list later. Uncomment to bring the tile back.
+  // { title:"Corners",          emoji:"🟦", sub:"Fit your 21 pieces corner to corner · box the others out · you vs 1 or 3 bots", href:"corners/", updated:"2026-10-09" },
   { title:"Stratego",         emoji:"🎖️", sub:"Take the flag · 40 pieces a side vs a bot that remembers", href:"stratego/", updated:"2026-09-15" },
   // hidden for now (Josh, Oct 4) - golf/ still works by its URL; uncomment to bring the tile back
   // { title:"Links",            emoji:"⛳", sub:"Nine holes at Birch Hollow · three-tap swing", href:"golf/", updated:"2026-09-15" },
@@ -99,7 +101,8 @@ const GAMES = [
   { title:"Horse Race",       emoji:"🏇", sub:"Lake Uffda Downs · cards & dice · one live track, everybody's in · same wallet as Pull Tabs", href:"horserace/", updated:"2026-10-03" },
   { title:"Bar Dice",         emoji:"🎲", sub:"Shake of the Day for one shared jackpot · Ship, Captain & Crew vs the regulars", href:"bardice/", updated:"2026-10-05" },
   { title:"YachtRock",        emoji:"⛵", sub:"Solo dice · thirteen boxes, three rolls a turn · chase your high score", href:"yachtrock/", updated:"2026-10-04" },
-  { title:"Muncher",          emoji:"👻", sub:"Clear the maze, flee the wisps · grab a glow-cap and chase them · gamepad, swipe or keys", href:"muncher/", updated:"2026-10-15" },
+  // hidden for now (Josh, Oct 23) - still works by its URL; headed for a beta-games list later. Uncomment to bring the tile back.
+  // { title:"Muncher",          emoji:"👻", sub:"Clear the maze, flee the wisps · grab a glow-cap and chase them · gamepad, swipe or keys", href:"muncher/", updated:"2026-10-15" },
   // { title:"New Game", emoji:"🎲", sub:"make a folder with an index.html, then add one line here", href:"newgame/" },
 ];
 
@@ -159,7 +162,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v148", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v149", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
