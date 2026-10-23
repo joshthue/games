@@ -84,6 +84,7 @@ button{font-family:inherit;cursor:pointer;border:none}
 .beat{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;white-space:nowrap;
   font-family:Georgia,serif;font-size:26px;color:var(--gold);text-shadow:0 2px 10px rgba(0,0,0,.8);z-index:5}
 .beat.on{animation:beat 1.5s ease-out forwards}
+.beat.win{font-size:clamp(28px,8vw,40px);text-shadow:0 0 20px rgba(240,198,116,.95),0 2px 10px rgba(0,0,0,.85)}
 @keyframes beat{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}30%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
 #jpBanner{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:65;background:rgba(0,0,0,.72)}
 #jpBanner .card{background:linear-gradient(180deg,#12503a,#0c3d2c);border:2px solid var(--gold);border-radius:20px;padding:18px 34px 16px;text-align:center;box-shadow:0 0 40px rgba(240,198,116,.35)}
@@ -111,6 +112,8 @@ button{font-family:inherit;cursor:pointer;border:none}
 .row.me{outline:1.5px solid var(--gold)}
 .row.turn{background:rgba(240,198,116,.14)}
 .row.win .m{color:var(--ok)}
+.row.win{animation:rowwin 1s ease-out}
+@keyframes rowwin{0%{background:rgba(240,198,116,.14)}35%{background:rgba(240,198,116,.55)}100%{background:rgba(0,0,0,.18)}}
 .row .mini{display:inline-flex;gap:2px;vertical-align:middle;margin-left:6px}
 .row .mini i{width:15px;height:15px;border-radius:4px;background:var(--cream);color:var(--ink);font-style:normal;font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
 .row .mini i.on{background:var(--gold)}
@@ -166,7 +169,7 @@ button{font-family:inherit;cursor:pointer;border:none}
   .say{padding:7px 10px;font-size:13.5px;line-height:1.3;min-height:0} #shake{gap:6px !important} .gn-build{margin:0} }
 @media (max-width:360px){ .tabs button{font-size:12px;letter-spacing:-.2px} }
 @media (min-width:700px){ .wrap{max-width:640px} .say{font-size:16px} .row{font-size:15px} }
-@media (prefers-reduced-motion:reduce){ .die,.die.tumbling,.die.hang,.die.teeter,.die.thud,.die.glow,.die.nope,.jp.bump,.cup.shake{animation:none !important} .beat.on{animation:none;opacity:1;transform:translate(-50%,-50%)} }
+@media (prefers-reduced-motion:reduce){ .die,.die.tumbling,.die.hang,.die.teeter,.die.thud,.die.glow,.die.nope,.jp.bump,.cup.shake,.row.win{animation:none !important} .beat.on{animation:none;opacity:1;transform:translate(-50%,-50%)} }
 </style>
 <style id="gn-safe">
   /* Status bar: the app draws under it (black-translucent), so the felt runs to the top edge
@@ -303,7 +306,7 @@ window.BD=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v134";
+var BUILD_V="v135";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -379,6 +382,13 @@ function toast(html){ var t=document.createElement('div'); t.className='toast'; 
 function confetti(){ if(reduced()) return; for(var i=0;i<18;i++){ var d=document.createElement('div'); d.textContent=pick(['🎉','💵','🎲','✨','🍺']);
   d.style.cssText='position:fixed;top:-30px;left:'+(Math.random()*100)+'vw;font-size:24px;z-index:70;pointer-events:none;transition:transform 2s ease-in,opacity 2s';
   document.body.appendChild(d); (function(d){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ d.style.transform='translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*540-270)+'deg)'; d.style.opacity='.2'; }); }); setTimeout(function(){ d.remove(); }, 2100); })(d); } }
+function winBurst(n){ if(reduced()) return; var em=['🎉','💵','🪙','💰','🎲','✨','🍺','⭐'];
+  for(var i=0;i<n;i++){ (function(){ var d=document.createElement('div'); d.textContent=pick(em);
+    var dur=(1.8+Math.random()*1.4).toFixed(2);
+    d.style.cssText='position:fixed;top:-30px;left:'+(Math.random()*100)+'vw;font-size:'+(18+Math.floor(Math.random()*18))+'px;z-index:70;pointer-events:none;transition:transform '+dur+'s ease-in,opacity 2.4s';
+    document.body.appendChild(d);
+    setTimeout(function(){ requestAnimationFrame(function(){ requestAnimationFrame(function(){ d.style.transform='translateY('+(innerHeight+90)+'px) rotate('+(Math.random()*720-360)+'deg)'; d.style.opacity='.12'; }); }); }, Math.random()*650);
+    setTimeout(function(){ d.remove(); }, 4200); })(); } }
 
 /* ---------- the roll: results are already decided; this only reveals them ----------
    revealRoll(box, slots, finals, opts, done)
@@ -407,7 +417,7 @@ function revealRoll(box, slots, finals, opts, done){
     var i=slots[k], el=el_(i), t=0; hung=true; clearInterval(cyc[i]);
     el.classList.remove('tumbling'); el.classList.add('hang');
     [70,85,100,120,145,175,215].forEach(function(g){ t+=g; later(function(){ setFace(el,rnd()); sfx('select'); }, t); });   // slowing down
-    later(function(){ el.classList.remove('hang'); el.classList.add('teeter'); }, t+40);                                        // teeters on an edge
+    later(function(){ el.classList.remove('hang'); el.classList.add('teeter'); setFace(el, finals[i]); }, t+40);                                        // teeters on an edge
     later(function(){ land(k); later(function(){ end(false); }, 120); }, t+380);
   }
   slots.forEach(function(i,k){
@@ -422,7 +432,8 @@ function revealRoll(box, slots, finals, opts, done){
 // tap anywhere mid-roll: skip to the results, and don't let that tap also press whatever is under it
 document.addEventListener('pointerdown', function(){ if(ROLL){ ROLL.skip(); swallowUntil=Date.now()+700; } }, true);
 document.addEventListener('click', function(e){ if(Date.now()<swallowUntil){ swallowUntil=0; e.stopPropagation(); e.preventDefault(); } }, true);
-function beat(id, html){ var b=$(id); b.innerHTML=html; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+function beat(id, html){ var b=$(id); b.classList.remove('win'); b.innerHTML=html; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+function beatBig(id, html){ var b=$(id); b.classList.add('win'); b.innerHTML=html; b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
 function nope(el){ if(!el) return; el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); }
 function glowAll(box){ Array.prototype.forEach.call(box.querySelectorAll('.die'), function(el){ el.classList.add('glow'); }); }
 
@@ -629,7 +640,7 @@ function sccStand(){
 // result - it was 0.9 s and the finished shake vanished before you could see it.
 function stepOn(){ return !!lsGet('bd_step',false); }
 function sccNext(){
-  if(SC.players.every(function(p){ return p.done; })){ sccSettle(); return; }
+  if(SC.players.every(function(p){ return p.done; })){ sccFinale(); return; }
   if(stepOn()){ SC.waitNext=true; sccRender(); return; }
   SC.waitNext=false; sccRender();
   var at=SC.cur; setTimeout(function(){ if(SC && !SC.over && SC.cur===at && !SC.waitNext){ SC.cur++; sccRender(); sccDrive(); } }, reduced()?50:1800);
@@ -641,18 +652,36 @@ function sccDrive(){
   setTimeout(function(){ if(SC) SC.pending=false; if(!SC||SC.over||cur()!==p||p.done||SC.busy) return;
     if(p.rolls>0 && BD.botStands(p.st, BD.SCC_ROLLS-p.rolls, bestSoFar())) sccStand(); else sccRoll(); }, reduced()?60:950);
 }
+function sccFinale(){
+  var p=SC.players[SC.cur];
+  SC.rolling=null; SC.busy=false;
+  // hold the last roller's shake on the tray so you can watch it land before the winner is called
+  $('sccDice').innerHTML=sccTrayHTML(p.st, holdOf(p.st), !!p.st.crew); fitScc($('sccDice'));
+  sccTableList(); renderMoney();
+  var scRef=SC;
+  setTimeout(function(){ if(SC===scRef && !SC.over) sccSettle(); }, reduced()?0:1500);
+}
 function sccSettle(){
   SC.over=true;
   var best=Math.max.apply(null, SC.players.map(function(p){ return BD.cargoOf(p.st); }));
   var winners=best>0?SC.players.filter(function(p){ return BD.cargoOf(p.st)===best; }):[];
-  if(!winners.length){ $('sccSay').innerHTML='Everybody sank! The pot of <b>'+money(SC.pot)+'</b> rides to the next round.'; SC.carry=SC.pot; sfx('bad'); sccRender(); return; }
+  if(!winners.length){ $('sccSay').innerHTML='Everybody sank! The pot of <b>'+money(SC.pot)+'</b> rides to the next round.'; SC.carry=SC.pot; sfx('bad'); sccRender(); if(!reduced()) beatBig('sccBeat','⚓ Everybody sank'); return; }
   var share=Math.round(SC.pot/winners.length*100)/100;
   winners.forEach(function(p){ p.won=share; });
   var meWon=winners.some(function(p){ return !p.bot; });
-  if(meWon){ bankAdd(share); sfx('win'); confetti(); }
-  else sfx('lose');
+  if(meWon){ bankAdd(share); }
   $('sccSay').innerHTML=(winners.length>1?winners.map(function(p){ return p.bot?esc(p.name):'You'; }).join(' & ')+' tie on <b>'+best+'</b> and split the pot':(meWon?'<b>You take it</b> with '+best:'<b>'+esc(winners[0].name)+'</b> takes it with '+best))+' — '+money(share)+(winners.length>1?' each':'')+'.';
   SC.carry=0; sccRender();
+  sccParty(winners, best, meWon);
+}
+function sccParty(winners, best, meWon){
+  var tie=winners.length>1;
+  if(reduced()){ sfx(meWon?'win':'lose'); return; }
+  var line=tie?('🤝 Split on '+best+'!'):(meWon?'🏆 You take it!':'🏆 '+esc(winners[0].name)+'!');
+  beatBig('sccBeat', line);
+  if(meWon){ glowAll($('sccDice')); sfx('win'); winBurst(44); }
+  else if(!tie){ var w=$('sccWin'); if(w && w.querySelector('.die')) glowAll(w); sfx('lose'); winBurst(18); }
+  else { sfx('win'); winBurst(30); }
 }
 function sccRender(){
   // settings
@@ -704,13 +733,15 @@ function sccRender(){
     }
   }
   // the table
+  sccTableList(); renderMoney();
+}
+function sccTableList(){
   if(SC){
     $('sccTableCap').textContent='The table · pot '+money(SC.pot);
     $('sccList').innerHTML=SC.players.map(function(q,i){ var c=BD.cargoOf(q.st);
       var status=q.done?(q.sunk?'sank':'cargo '+c):(i===SC.cur&&!SC.over?(q.rolls?'rolling…':'up'):'waiting');
       return '<div class="row'+(q.bot?'':' me')+(i===SC.cur&&!SC.over?' turn':'')+(q.won?' win':'')+'"><span>'+(q.bot?'🤖 ':'')+esc(q.bot?q.name:q.name+' (you)')+'</span><span class="k">'+status+'</span><span class="m">'+(q.won?'+'+money(q.won):(q.done&&!q.sunk?c:'—'))+'</span></div>'; }).join('');
   } else { $('sccTableCap').textContent='The table'; $('sccList').innerHTML=''; }
-  renderMoney();
 }
 
 /* ---------- menus & boot ---------- */

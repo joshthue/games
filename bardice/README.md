@@ -78,6 +78,11 @@ per try (not per shake), well under the relay's rate limit. Wins pop a toast on 
   winning-shake strip shows the winner's 6-5-4 then cargo the same way.
 
 ## Ship, Captain & Crew round end
+- When the last roller finishes, their shake **holds on the table ~1.5s** before the winner is
+  called (v135, `sccFinale`), so you can watch the deciding roll land. Then the reveal fires: a big
+  gold **“🏆 You take it!” / “🏆 Barb!” / “🤝 Split!”** beat (`beatBig`), the winning
+  dice **glow**, a **coins-and-confetti burst** (`winBurst`) rains down, and the winner’s row pulses
+  gold. Reduce Motion skips straight to the result.
 - The tray keeps **your final shake**, exactly as it landed (set-aside dice first, cargo outlined
   green). The Ship / Captain / Crew chips light only for what you actually got.
 - Caption: **"Your shake · cargo N"** or **"Your shake · sank"**. If you won: **"You take it with 12 —
@@ -96,7 +101,7 @@ Results are rolled **before** anything moves; the animation only reveals them
 - They **land one at a time, left to right** (first at 380ms, then every 190ms), each with a thud
   and a clack (`SFX "place"`). A five-die roll is done in about 1.3s.
 - **Suspense**: if the last die decides something big, it hangs about 1.3s more, slowing down and
-  teetering before it lands. Shake of the Day: the other four all show the number (one die from the
+  teetering **on its real value** before it lands (it settles onto the final face as the teeter begins, so the number no longer flickers). Shake of the Day: the other four all show the number (one die from the
   jackpot). Ship, Captain & Crew: your last roll, no crew yet, and the last die could bring one aboard.
 - **Payoff**: the jackpot glows the dice, counts the amount up on a banner, throws confetti and
   plays the win sting; five of a kind on the wrong number still glows. A hang that misses gets a

@@ -23,6 +23,9 @@ never wrapping. Since v121 the style and the shrink-to-fit live in the shared `g
   full turns on each axis on top of the target face's orientation, so every roll tumbles forward,
   plus a hop keyframe, staggered 70ms per die. Held dice sit lower with a gold ring and don't roll.
   `prefers-reduced-motion` drops both.
+- **Tap target is the flat die box**: the cube, its faces and the shadow are `pointer-events:none`,
+  so a tap resolves to the die’s own square and can’t land on a neighbour whose rotated 3D face is
+  jutting into the gap (that was a rare “wrong die toggles” bug).
 - **Initials for the top ten**: a finished game that makes the top ten asks for up to three
   letters/digits, arcade style, prefilled with the last initials used (so closing the sheet keeps
   them). Entries are `{s, d, i}`; older entries without `i` show `---`.
