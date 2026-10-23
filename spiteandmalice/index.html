@@ -72,6 +72,27 @@ body{
 .sheet p,.sheet li{font-size:14px;line-height:1.5;color:var(--cream)}
 .sheet ul{padding-left:18px;margin:.3em 0}
 .row{display:flex;align-items:center;gap:10px;margin:10px 0}
+/* who's playing (v150): one chip per player on this device; the record follows the chip */
+.who{margin:0 0 12px}
+.who .wl{display:block;font-size:12px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);margin:0 0 6px}
+.whochips{display:flex;flex-wrap:wrap;gap:6px}
+.whochips button{font:inherit;font-size:15px;font-weight:700;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:var(--cream);cursor:pointer}
+.whochips button.on{background:var(--gold);color:#1a1205;border-color:var(--gold)}
+.whochips button.add{border-style:dashed;opacity:.85}
+.whoadd{display:flex;gap:6px;margin-top:8px}
+.whoadd input{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.28);color:var(--cream)}
+.whorec{font-size:13px;opacity:.85;margin-top:7px;line-height:1.4}
+.whorec b{color:var(--gold)}
+.whorec a{color:var(--gold);text-decoration:underline;cursor:pointer}
+.winrec{font-size:14px;margin:4px 0 12px;line-height:1.45}
+.winrec b{color:var(--gold)}
+.rec{border-top:1px solid var(--line2);padding:10px 0}
+.rec .rn{display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px}
+.rec .rn span{flex:1}
+.rec .rl{font-size:13.5px;opacity:.9;margin-top:4px;line-height:1.45}
+.rec .rl b{color:var(--gold)}
+.rec button{font:inherit;font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:var(--cream);cursor:pointer}
+.rec button.danger{border-color:var(--bad);color:#f3b1ac}
 .row .lbl{flex:1;font-size:14px}
 .switch{position:relative;width:48px;height:28px;flex:0 0 auto}
 .switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
@@ -235,6 +256,12 @@ body{
   <div class="gn-setup" id="setup">
     <div class="gn-setup-body">
       <p class="gn-pitch" id="setupSub">Race the bot to empty your goal pile onto four shared centre stacks, built Ace &rarr; King.</p>
+      <div class="who" id="who">
+        <span class="wl">Who's playing</span>
+        <div class="whochips" id="whoChips"></div>
+        <div class="whoadd hidden" id="whoAdd"><input id="whoIn" maxlength="16" placeholder="Name" autocomplete="off" enterkeyhint="done"><button class="btn" id="whoOk">Add</button></div>
+        <div class="whorec" id="whoRec"></div>
+      </div>
       <div class="gn-row"><span>Goal pile</span>
         <div class="seg" id="segGoal">
           <button data-goal="13" class="on">Short · 13</button>
@@ -311,7 +338,7 @@ body{
           <div class="sides" id="youSides"></div>
         </div>
         <div class="handblock">
-          <div class="zonecap" style="text-align:center;margin-top:4px">Your hand</div>
+          <div class="zonecap" id="youCap" style="text-align:center;margin-top:4px">Your hand</div>
           <div class="hand" id="hand"></div>
         </div>
       </div>
@@ -366,6 +393,15 @@ body{
     </div>
   </div>
 
+  <!-- ===== RECORDS (win / loss tally per player on this device) ===== -->
+  <div class="overlay" id="recOv">
+    <div class="sheet">
+      <div style="display:flex;align-items:center"><h2 style="flex:1;margin:0">Records</h2><button class="iconbtn" id="recClose">✕</button></div>
+      <p style="font-size:13px;opacity:.75;margin:6px 0 4px">Wins – losses for each player on this phone or iPad. Games are counted when they finish; a game you leave halfway doesn't count.</p>
+      <div id="recList"></div>
+    </div>
+  </div>
+
   <!-- ===== MENU ===== -->
   <div class="overlay" id="menuOv">
     <div class="sheet">
@@ -373,6 +409,7 @@ body{
       <div class="row"><a class="btn ghost" href="../" style="flex:1;text-align:center;text-decoration:none">Back to all games</a></div>
       <div class="row"><button class="btn" id="menuNew" style="flex:1">New game</button></div>
       <div class="row"><button class="btn ghost" id="menuRules" style="flex:1">Rules</button></div>
+      <div class="row"><button class="btn ghost" id="menuRecords" style="flex:1">Records</button></div>
       <h3>Options</h3>
       <div class="row"><div class="lbl">Show move hints</div>
         <label class="switch"><input type="checkbox" id="menuTips"><span class="track"></span><span class="knob"></span></label>
@@ -396,6 +433,7 @@ body{
       <div class="win-emoji" id="winEmoji">🏆</div>
       <h2 id="winTitle" style="text-align:center">You win!</h2>
       <p id="winSub"></p>
+      <div class="winrec" id="winRec"></div>
       <div class="row"><button class="btn" id="winAgain" style="flex:1">🔄 Rematch</button></div>
       <div class="row"><button class="btn ghost" id="winSetup" style="flex:1">Change settings</button></div>
     </div>
@@ -792,7 +830,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v138";
+  var BUILD_V = "v150";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -812,9 +850,89 @@ window.SM = (function(){
   window.onCardSize=function(){ fitBoard(); };
 
   var $ = function(id){ return document.getElementById(id); };
+
+  // ---------- who's playing + the win / loss tally (v150) ----------
+  // Players live on this device: 'gn_players' (origin-wide, so other games can share the list) and
+  // 'sm_player' (who's at the board now; it falls back to the Pull Tabs name). The tally is
+  // 'sm_tally_v1': { lowercased name: {name, bot:{easy:{w,l,d}, normal:{w,l,d}}, vs:{lowercased opp:{name,w,l,d}}} }.
+  // Two phones: each phone sends its player's name with join / state, so each side records "vs Josh".
+  function lsJ(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+  function lsW(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function cleanName(n){ return String(n||'').replace(/\s+/g,' ').trim().slice(0,16); }
+  function keyOf(n){ return cleanName(n).toLowerCase(); }
+  var players = (lsJ('gn_players',[])||[]).map(cleanName).filter(Boolean);
+  var player = cleanName(lsJ('sm_player','') || lsJ('pt_name',''));
+  if(player && !players.some(function(x){ return keyOf(x)===keyOf(player); })){ players.push(player); lsW('gn_players',players); }
+  var tally = lsJ('sm_tally_v1',{}) || {};
+  function rec0(){ return {w:0,l:0,d:0}; }
+  function recOf(n){ var k=keyOf(n); if(!tally[k]) tally[k]={name:cleanName(n), bot:{}, vs:{}}; return tally[k]; }
+  function add(r, outcome){ r[outcome]=(r[outcome]||0)+1; }
+  function wl(r){ return r ? ((r.w||0)+'\u2013'+(r.l||0)+((r.d||0)?' \u00b7 '+r.d+' draw'+(r.d>1?'s':''):'')) : '0\u20130'; }
+  function botTotal(R){ var t=rec0(); ['easy','normal'].forEach(function(d){ var r=R.bot[d]; if(r){ t.w+=r.w||0; t.l+=r.l||0; t.d+=r.d||0; } }); return t; }
+  function played(r){ return r ? (r.w||0)+(r.l||0)+(r.d||0) : 0; }
+  var DIFFNAME={easy:'Easy', normal:'Normal'};
+  function oppName(){ return mode==='online' ? (cleanName(net.oppName)||'Opponent') : 'Bot'; }
+  // one line for the setup sheet / the win sheet: this player's record against this opponent
+  function recLine(name, vsKey){
+    var R=tally[keyOf(name)];
+    if(vsKey==='bot'){ var d=prefs.diff, r=R&&R.bot[d]; return '<b>'+esc(name)+'</b> vs the bot ('+DIFFNAME[d]+'): <b>'+wl(r)+'</b>'; }
+    var o=R&&R.vs[keyOf(vsKey)]; return '<b>'+esc(name)+'</b> vs '+esc(vsKey)+': <b>'+wl(o)+'</b>';
+  }
+  function esc(t){ return String(t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  // a finished game is counted once: for a deal we saw start (not one we joined already over)
+  var gameLive=false, gameCounted=false;
+  function gameStarted(){ gameLive=true; gameCounted=false; }
+  function countGame(){
+    if(!gameLive || gameCounted || !player || !T) return; gameCounted=true;
+    var outcome = T.draw ? 'd' : (T.winner===me() ? 'w' : 'l'), R=recOf(player);
+    if(mode==='online'){ var on=oppName(), ok=keyOf(on); if(!R.vs[ok]) R.vs[ok]={name:on,w:0,l:0,d:0}; R.vs[ok].name=on; add(R.vs[ok], outcome); }
+    else { var d=prefs.diff; if(!R.bot[d]) R.bot[d]=rec0(); add(R.bot[d], outcome); }
+    lsW('sm_tally_v1', tally);
+  }
+  function setPlayer(n){ n=cleanName(n); if(!n) return;
+    var hit=players.filter(function(x){ return keyOf(x)===keyOf(n); })[0];
+    if(!hit){ players.push(n); lsW('gn_players',players); hit=n; }
+    player=hit; lsW('sm_player',player); paintWho(); }
+  function paintWho(){
+    $('whoChips').innerHTML = players.map(function(n){ return '<button data-n="'+esc(n)+'" class="'+(keyOf(n)===keyOf(player)?'on':'')+'">'+esc(n)+'</button>'; }).join('')
+      + '<button class="add" id="whoPlus">+ Add</button>';
+    Array.prototype.forEach.call($('whoChips').querySelectorAll('button[data-n]'), function(b){ b.onclick=function(){ setPlayer(b.dataset.n); }; });
+    $('whoPlus').onclick=function(){ $('whoAdd').classList.remove('hidden'); $('whoIn').value=''; $('whoIn').focus(); };
+    if(!players.length) $('whoAdd').classList.remove('hidden');
+    var R=player&&tally[keyOf(player)], line='';
+    if(!player) line='Pick who\u2019s playing so the wins and losses go to the right person.';
+    else {
+      var bits=[], bt=R?botTotal(R):null;
+      if(bt && played(bt)) bits.push('vs the bot <b>'+wl(bt)+'</b>');
+      if(R) Object.keys(R.vs).forEach(function(k){ var o=R.vs[k]; if(played(o)) bits.push('vs '+esc(o.name)+' <b>'+wl(o)+'</b>'); });
+      line = '<b>'+esc(player)+'</b>: '+(bits.length?bits.join(' \u00b7 '):'no games yet')+(players.length&&Object.keys(tally).length?' \u00b7 <a id="whoRecs">records</a>':'');
+    }
+    $('whoRec').innerHTML=line;
+    if($('whoRecs')) $('whoRecs').onclick=openRecords;
+  }
+  function addFromInput(){ var v=cleanName($('whoIn').value); if(!v){ $('whoIn').focus(); return; } $('whoAdd').classList.add('hidden'); setPlayer(v); }
+  function openRecords(){
+    var names=players.slice(); Object.keys(tally).forEach(function(k){ if(!names.some(function(n){ return keyOf(n)===k; })) names.push(tally[k].name); });
+    $('recList').innerHTML = names.length ? names.map(function(n){ var R=tally[keyOf(n)], lines=[];
+        if(R){ ['easy','normal'].forEach(function(d){ if(played(R.bot[d])) lines.push('vs the bot ('+DIFFNAME[d]+'): <b>'+wl(R.bot[d])+'</b>'); });
+          Object.keys(R.vs).forEach(function(k){ if(played(R.vs[k])) lines.push('vs '+esc(R.vs[k].name)+': <b>'+wl(R.vs[k])+'</b>'); }); }
+        return '<div class="rec"><div class="rn"><span>'+esc(n)+'</span><button data-reset="'+esc(n)+'">Reset</button><button class="danger" data-del="'+esc(n)+'">Remove</button></div>'
+          +'<div class="rl">'+(lines.length?lines.join('<br>'):'No finished games yet.')+'</div></div>'; }).join('')
+      : '<p>No players yet. Add one on the deal screen.</p>';
+    Array.prototype.forEach.call($('recList').querySelectorAll('button[data-reset],button[data-del]'), function(b){
+      b.onclick=function(){
+        var n=b.dataset.reset||b.dataset.del, del=!!b.dataset.del;
+        if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent=del?'Remove '+n+'?':'Reset '+n+'?'; return; }
+        delete tally[keyOf(n)]; lsW('sm_tally_v1',tally);
+        if(del){ players=players.filter(function(x){ return keyOf(x)!==keyOf(n); }); lsW('gn_players',players);
+          if(keyOf(player)===keyOf(n)){ player=players[0]||''; lsW('sm_player',player); } }
+        paintWho(); openRecords(); };
+    });
+    $('recOv').classList.add('on');
+  }
   var T = null;            // game state
   var mode = 'solo';       // 'solo' | 'online'
-  var net = { online:false, role:null, seat:0, code:null, id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false };
+  var net = { online:false, role:null, seat:0, code:null, id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false, oppName:'' };
   function me(){ return mode==='online' ? net.seat : 0; }
   function opp(){ return 1 - me(); }
   var lastWinner = null;                                   // seat that won the previous game (null = none/draw)
@@ -861,7 +979,15 @@ window.SM = (function(){
 
   // Deal starts a solo game; with Two phones picked the same button creates the room (hostCreate)
   var setupMode = 'solo';
-  $('startBtn').addEventListener('click', function(){ if(setupMode==='online') hostCreate(); else startSolo(); });
+  paintWho();
+  $('whoOk').addEventListener('click', addFromInput);
+  $('whoIn').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addFromInput(); } });
+  $('segDiff').addEventListener('click', function(){ setTimeout(paintWho,0); });
+  $('menuRecords').addEventListener('click', function(){ $('menuOv').classList.remove('on'); openRecords(); });
+  $('recClose').addEventListener('click', function(){ $('recOv').classList.remove('on'); });
+  // nobody picked yet: ask before the deal, so the game lands on somebody's record
+  function needPlayer(){ if(player) return false; $('whoAdd').classList.remove('hidden'); $('whoIn').focus(); $('whoRec').innerHTML='Add your name first \u2014 that\u2019s whose record this game goes on.'; return true; }
+  $('startBtn').addEventListener('click', function(){ if(needPlayer()) return; if(setupMode==='online') hostCreate(); else startSolo(); });
   $('rulesBtn').addEventListener('click', function(){ $('rulesOv').classList.add('on'); });
   $('menuRules').addEventListener('click', function(){ $('menuOv').classList.remove('on'); $('rulesOv').classList.add('on'); });
   $('rulesClose').addEventListener('click', function(){ $('rulesOv').classList.remove('on'); });
@@ -869,7 +995,7 @@ window.SM = (function(){
   $('menuBtn').addEventListener('click', openMenu);
 
   // overlay close on backdrop tap
-  ['rulesOv','menuOv','winOv','wildOv'].forEach(function(id){
+  ['rulesOv','menuOv','winOv','wildOv','recOv'].forEach(function(id){
     $(id).addEventListener('click', function(e){ if(e.target===this && id!=='winOv') this.classList.remove('on'); });
   });
   // menu controls
@@ -888,14 +1014,15 @@ window.SM = (function(){
     paintSize(); $('menuOv').classList.add('on'); }
   function syncSeg(segId,key){ var seg=$(segId); Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ var v=b.dataset[Object.keys(b.dataset)[0]]; if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on'); }); }
 
-  function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; updateNetbar(); $('game').classList.add('hidden'); paintSize(); GNSETUP.show('setup'); }
+  function toSetup(){ netStop(); mode='solo'; net.online=false; net.joined=false; lastWinner=null; gameLive=false; updateNetbar(); $('game').classList.add('hidden'); paintSize(); paintWho(); GNSETUP.show('setup'); }
 
   // ---------- start ----------
-  function showGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); $('oppLabel').textContent = (mode==='online')?'Opponent':'Bot'; updateNetbar(); fitted=false; fitBoard(); }
+  function paintNames(){ $('oppLabel').textContent = oppName(); $('youCap').textContent = player ? player+'\u2019s hand' : 'Your hand'; }
+  function showGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); paintNames(); updateNetbar(); fitted=false; fitBoard(); }
   function startSolo(){
     mode='solo'; net.online=false; net.joined=false;
     T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
-    sel = null; busy=false; net.pending=false; passScheduled=false;
+    sel = null; busy=false; net.pending=false; passScheduled=false; gameStarted();
     showGame(); render(); sfx('shuffle');
     if(T.turn===opp()) setTimeout(botTurn, 500);   // bot won the deal
   }
@@ -1342,6 +1469,7 @@ window.SM = (function(){
   function finish(){
     busy=false; sel=null; passScheduled=false;
     lastWinner = T.draw ? null : T.winner;
+    countGame();
     sfx(T.draw ? 'bad' : (T.winner===me() ? 'win' : 'lose'));
     render();
     if(T.draw){
@@ -1350,11 +1478,12 @@ window.SM = (function(){
       $('winSub').textContent = 'The deck ran out with neither goal pile cleared.';
     } else {
       var heroWon = T.winner===me();
-      var oppWord = (mode==='online') ? 'Opponent' : 'Bot';
+      var oppWord = oppName();
       $('winEmoji').textContent = heroWon ? '\uD83C\uDFC6' : '\uD83E\uDD16';
-      $('winTitle').textContent = heroWon ? 'You win!' : (oppWord+' wins');
-      $('winSub').textContent = heroWon ? 'You cleared your goal pile first.' : (oppWord+' cleared its goal pile first. Rematch?');
+      $('winTitle').textContent = heroWon ? (player ? player+' wins!' : 'You win!') : (oppWord+' wins');
+      $('winSub').textContent = heroWon ? 'You cleared your goal pile first.' : (oppWord+' cleared '+(mode==='online'?'their':'its')+' goal pile first. Rematch?');
     }
+    $('winRec').innerHTML = player ? recLine(player, mode==='online' ? oppName() : 'bot') : '';
     $('winOv').classList.add('on');
   }
 
@@ -1377,20 +1506,22 @@ window.SM = (function(){
   function publishState(){
     if(!(mode==='online' && net.role==='host')) return;
     pubPending=true; if(pubTimer) return;
-    pubTimer=setTimeout(function(){ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:'state', view:SM.encodeState(T,1)}); } }, 80);
+    pubTimer=setTimeout(function(){ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:'state', view:SM.encodeState(T,1), name:player}); } }, 80);
   }
 
   function handleNet(obj){
     if(net.role==='host'){
       if(obj.t==='join'){
-        net.joined=true;
+        net.joined=true; if(obj.name) net.oppName=cleanName(obj.name); paintNames();
         if(!T){ dealHost(); } else { publishState(); }
         closeNetOv(); showGame(); updateNetbar(); render();
       } else if(obj.t==='act'){ handleGuestAction(obj); }
     } else if(net.role==='guest'){
       if(obj.t==='state'){
         var first=!net.joined; net.joined=true; net.pending=false;
+        if(obj.name){ net.oppName=cleanName(obj.name); paintNames(); }
         T=SM.decodeState(obj.view); sel=null;
+        if(T.winner===null && !T.draw) gameStarted();     // a deal we watched start - count it when it ends
         if(first){ closeNetOv(); showGame(); }
         render(); updateNetbar();
         if(T.winner!==null || T.draw) finish(); else $('winOv').classList.remove('on');
@@ -1405,7 +1536,7 @@ window.SM = (function(){
   }
   function dealHost(){
     T=SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
-    sel=null; net.pending=false; passScheduled=false;
+    sel=null; net.pending=false; passScheduled=false; gameStarted();
     $('winOv').classList.remove('on');
     render(); publishState();
     if(T.winner!==null||T.draw) finish(); else considerHeroPass();
@@ -1477,14 +1608,14 @@ window.SM = (function(){
 
   function hostCreate(){
     mode='online';
-    net={online:true, role:'host', seat:0, code:randCode(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false};
+    net={online:true, role:'host', seat:0, code:randCode(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false, oppName:''};
     T=null; startNet(); showHostWait();
   }
   function guestJoin(code){
     mode='online';
-    net={online:true, role:'guest', seat:1, code:String(code).toUpperCase(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false};
+    net={online:true, role:'guest', seat:1, code:String(code).toUpperCase(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false, oppName:''};
     T=null; startNet(); showGuestWait();
-    (function ping(){ if(net.online && !net.joined){ netSend({t:'join'}); setTimeout(ping, 2000); } })();
+    (function ping(){ if(net.online && !net.joined){ netSend({t:'join', name:player}); setTimeout(ping, 2000); } })();
   }
 
   // ---- room panels ----
@@ -1536,14 +1667,14 @@ window.SM = (function(){
         $('onlineNote').classList.toggle('hidden', m!=='online');
       });
     });
-    $('joinBtn').addEventListener('click', showJoinPanel);
+    $('joinBtn').addEventListener('click', function(){ if(needPlayer()) return; showJoinPanel(); });
     $('netOv').addEventListener('click', function(e){ if(e.target===this) closeNetOv(); });
   })();
 
   // expose hooks for headless tests
   window.__SMUI = { start:startSolo, state:function(){return T;}, prefs:prefs, botStep:stepBot,
                     hostCreate:hostCreate, guestJoin:guestJoin, doNewGame:doNewGame,
-                    net:function(){return net;}, me:me };
+                    net:function(){return net;}, me:me, finish:finish, publish:publishState, player:function(){return player;} };
 })();
 </script>
 </body>

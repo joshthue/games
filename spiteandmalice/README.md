@@ -36,6 +36,26 @@ on and off, plus sideways and iPads. Fixes behind it:
 Card widths at M now: 77px on a Pro Max, 68 on a 15/16, 63 on an SE, 44 on a 320-wide SE (were 51
 and 44 at M, with scrolling); sideways 71 / 57px (were 56 / 46); iPad mini 82-128px, no scroll.
 
+## Who's playing and the win / loss tally (v150)
+- The deal screen starts with **Who's playing**: a chip for each player on this phone or iPad,
+  plus **+ Add**. The gold chip is who's at the board; under it, their record
+  ("Lindsey: vs the bot 12–9 · vs Josh 3–2"). Deal and Join won't start until someone is picked,
+  so every finished game lands on somebody's record.
+- In the game the hand is captioned with their name ("Lindsey's hand"), and the win sheet says who
+  won and shows the updated record for this matchup ("Lindsey vs the bot (Normal): 13–9").
+- **Counted once per finished game** (a win, a loss or a draw). A game left halfway, or one you
+  joined after it was already over, isn't counted.
+- **vs the bot** is kept per difficulty (Easy / Normal). **Two phones**: each phone sends its
+  player's name (`join` carries `name`, the host's `state` carries `name`), so the opponent's label
+  shows their name and each side records "vs Josh" / "vs Lindsey" on its own device.
+- **Menu → Records**: every player on this device with each matchup; **Reset** or **Remove** a
+  player (each asks once more before it acts).
+- Storage, all on this device: `gn_players` (the player list - origin-wide so other games can use it),
+  `sm_player` (who's playing now; falls back to the Pull Tabs name), `sm_tally_v1`
+  (`{name: {bot:{easy|normal:{w,l,d}}, vs:{opponent:{name,w,l,d}}}}`, keyed by lowercased name).
+  Records don't travel between devices.
+- Test door additions: `__SMUI.finish`, `__SMUI.publish`, `__SMUI.player()`.
+
 ## How it plays
 
 - Two decks plus **four Jokers** (Jokers are wild; Kings are just Kings).
