@@ -83,6 +83,17 @@
   .flycard{position:fixed; z-index:45; margin:0; border-radius:7px; background:var(--cream); border:1px solid #d8d2c0;
     display:flex; align-items:center; justify-content:center; pointer-events:none; will-change:transform;
     box-shadow:0 10px 22px rgba(0,0,0,.55);}
+  /* ---- read-only board shown from a leaderboard row ---- */
+  .psboard.ro{max-width:360px; gap:4px;}
+  .psboard.ro .pscell{height:clamp(40px,11vw,54px); border-radius:6px;}
+  .psboard.ro .psscore{min-height:26px;} .psboard.ro .psscore .pts{font-size:12px;} .psboard.ro .psscore .ab{font-size:8px;}
+  .boardwrap{text-align:center;}
+  .boardwrap .bhead{display:flex; align-items:baseline; justify-content:center; gap:8px; margin:2px 0 8px; flex-wrap:wrap;}
+  .boardwrap .bhead .pts{font-size:24px; font-weight:900; color:var(--gold); line-height:1;}
+  .boardwrap .bhead .sub{font-size:13px; opacity:.8;}
+  .boardwrap .bnote{font-size:12px; opacity:.8; margin-top:8px; min-height:16px;}
+  .hs li.tap{cursor:pointer;} .hs li.tap:active{background:rgba(255,255,255,.06); border-radius:6px;}
+  .hs li .vb{font-size:10px; opacity:.55; letter-spacing:.3px;}
   .bestbar{max-width:440px; margin:12px auto 0; text-align:center;}
   .bestbar .seg button{padding:7px 14px;}
   .bestbar .note{font-size:12px; opacity:.8; margin-top:6px; min-height:16px;}
@@ -339,6 +350,32 @@ function chipHTML(h){
 }
 function miniHTML(card){
   return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>';
+}
+/* Render ANY 25-card grid read-only (for viewing a leaderboard entry's board). Reuses the
+   live board's cells and chips but touches no game state - computeLines takes the grid. */
+function viewBoardHTML(cards, sys){
+  const keep=settings.scoring; settings.scoring=sys;
+  let lines; try{ lines=computeLines(cards); } finally{ settings.scoring=keep; }
+  const {rows,cols,total}=lines;
+  let html="";
+  for(let r=0;r<5;r++){
+    for(let c=0;c<5;c++){ const card=cards[r*5+c];
+      html+=card?('<div class="pscell filled">'+miniHTML(card)+'</div>'):'<div class="pscell empty"></div>'; }
+    html+=chipHTML(rows[r]);
+  }
+  for(let c=0;c<5;c++) html+=chipHTML(cols[c]);
+  html+='<div class="psscore corner"><span class="ab">TOT</span><span class="pts">'+total+'</span></div>';
+  return {html:'<div class="psboard ro">'+html+'</div>', total};
+}
+/* Best board for an arbitrary 25-card deal, computed on demand (synchronous, short budget).
+   Same engine as the post-game solver; a few annealing runs plus a deterministic polish land
+   on the optimum for a 25-card deal well within a frame budget. */
+function bestBoardFor(cards, sys){
+  const S=makeSolver(cards.map(c=>({r:c.r,s:c.s})), SCORING[sys]);
+  const T0=2*Math.max(SCORING[sys].flush, SCORING[sys].straight), T1=T0/100;
+  let best=S.polish(cards.map((c,i)=>i));
+  for(let run=0; run<6; run++){ const a=S.anneal(300000,T0,T1), p=S.polish(a.grid); if(p.score>best.score) best=p; }
+  return {grid:best.grid.map(i=>cards[i]), score:best.score};
 }
 /* ---- the bot: Watch the bot ----------------------------------------------------------------
    Plays the deal it's given one card at a time, the same way you do: it sees the board, the card
@@ -879,7 +916,7 @@ const HS=(function(){
   function listHTML(sys, max){
     const L=board[sys];
     if(!L.length) return '<div class="muted" style="text-align:center;padding:6px 0;">No scores yet — be the first on the board.</div>';
-    const row=(e,i)=>'<li class="'+(mine===e.id?'me':'')+'"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.name)+'</span><span class="sc">'+e.score+'</span><span class="dt">'+when(e.at)+'</span></li>';
+    const row=(e,i)=>'<li class="tap '+(mine===e.id?'me':'')+'" onclick="HS.openBoard(\''+e.id+'\',\''+e.sys+'\')"><span class="rk">'+(i+1)+'</span><span class="nm">'+esc(e.name)+' <span class="vb">view ›</span></span><span class="sc">'+e.score+'</span><span class="dt">'+when(e.at)+'</span></li>';
     let rows=L.map(row);
     if(max && L.length>max){ const mi=L.findIndex(e=>e.id===mine); rows=rows.slice(0,max); if(mi>=max) rows.push(row(L[mi],mi)); }
     return '<ol>'+rows.join("")+'</ol>';
@@ -924,6 +961,40 @@ const HS=(function(){
     paint(); sync();
   }
   function setTab(t){ tab=t; paint(); }
+  // viewing one entry's board, with an "as played" vs "best possible" toggle
+  let viewing=null;   // {entry, best:{grid,score}|null, mode:"played"|"best"}
+  function entryById(id, sys){ return (board[sys]||[]).find(e=>e.id===id)||null; }
+  function openBoard(id, sys){
+    const e=entryById(id,sys); if(!e) return;
+    const cards=decCards(e.cards); if(!cards) return;
+    const cameFromScores=curOverlay.kind==="scores" || curOverlay.kind==="board";
+    viewing={entry:e, sys:sys, cards:cards, best:null, mode:"played"};
+    renderBoardPanel(cameFromScores);
+  }
+  function renderBoardPanel(cameFromScores){
+    const v=viewing; if(!v) return;
+    const sysName=v.sys==="american"?"American":"English";
+    const back='<button class="btn sec sm close" onclick="HS.backFromBoard()">‹ Back</button>';
+    let head='<h2>'+esc(v.entry.name)+'</h2><p class="muted" style="margin-top:0;">'+sysName+' · '+when(v.entry.at)+'</p>';
+    let toggle='<div style="text-align:center;margin:8px 0 10px;"><div class="seg">'
+      +'<button class="'+(v.mode==="played"?"on":"")+'" onclick="HS.boardMode(\'played\')">As played '+v.entry.score+'</button>'
+      +'<button class="'+(v.mode==="best"?"on":"")+'" onclick="HS.boardMode(\'best\')">✨ Best'+(v.best?' '+v.best.score:'')+'</button>'
+      +'</div></div>';
+    let body, note;
+    if(v.mode==="played"){
+      const b=viewBoardHTML(v.cards, v.sys); body=b.html; note="The 25 cards this player was dealt, laid out as they played them.";
+    } else {
+      if(!v.best) v.best=bestBoardFor(v.cards, v.sys);
+      const b=viewBoardHTML(v.best.grid, v.sys); body=b.html;
+      note = v.best.score>v.entry.score
+        ? "The best these same 25 cards can make: "+v.best.score+" ("+(v.best.score-v.entry.score)+" more than "+esc(v.entry.name)+" scored)."
+        : "🎯 "+esc(v.entry.name)+" found the best board these 25 cards can make.";
+    }
+    openPanel(back+head+toggle+'<div class="boardwrap">'+body+'<div class="bnote">'+note+'</div></div>', "board");
+    curOverlay.fromScores=cameFromScores!==false;
+  }
+  function boardMode(m){ if(!viewing) return; viewing.mode=m; renderBoardPanel(curOverlay.fromScores); }
+  function backFromBoard(){ viewing=null; if(curOverlay.fromScores) open(); else closeOverlay(); }
   function paint(){
     const box=document.getElementById("psHS");
     if(box && curOverlay.kind==="results"){
@@ -941,7 +1012,7 @@ const HS=(function(){
   function refresh(){ sync(); }
   // learn the board as soon as the page opens, so a finished game knows whether it qualifies
   setTimeout(sync, 400);
-  return {open, submit, setTab, refresh, resultsHTML, sync, get board(){ return board; }, _clean:clean, _enc:encCards};
+  return {open, submit, setTab, refresh, resultsHTML, sync, openBoard, boardMode, backFromBoard, get board(){ return board; }, _clean:clean, _enc:encCards, _dec:decCards};
 })();
 
 /* ---- wire up ---- */
@@ -978,7 +1049,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v138", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v148", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

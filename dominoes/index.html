@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mexican Train</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mexican Train">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --teach:#6fe39a;
+    --size:1; --th:34px; }  /* --th: tile half-size, scaled by card-size control */
+  @media (max-width:400px){ :root{ --th:30px; } }
+  @media (max-width:360px){ :root{ --th:27px; } }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:640px; margin:0 auto; padding:8px 10px 10px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  /* ---- domino tiles ---- */
+  .dom{display:inline-flex; flex-direction:row; vertical-align:middle; background:var(--cream); border-radius:calc(5px*var(--size));
+    box-shadow:0 1px 3px rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.22); overflow:hidden; flex:0 0 auto;}
+  .dom.v{flex-direction:column;}
+  .pipface{width:calc(var(--th)*var(--size)); height:calc(var(--th)*var(--size)); position:relative; display:grid;
+    grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:calc(3px*var(--size));}
+  .dom .pipface+.pipface{box-shadow:inset 1px 0 0 rgba(0,0,0,.25);}
+  .dom.v .pipface+.pipface{box-shadow:inset 0 1px 0 rgba(0,0,0,.25);}
+  .pip{width:calc(5px*var(--size)); height:calc(5px*var(--size)); border-radius:50%; background:var(--ink); align-self:center; justify-self:center;}
+  .pipface[data-c="red"] .pip{background:var(--red);}
+  .dom.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 4px,#215439 4px,#215439 8px); border:1px solid #f7f3e8;}
+  .dom.back .pipface{visibility:hidden;}
+
+  /* ---- the board: centre + a scroll row per train ---- */
+  .board{flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:2px 0 4px;}
+  .centrehub{display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 6px; padding:6px; }
+  .centrehub .lbl{font-size:12px; opacity:.8;}
+  .trainrow{margin:0 0 6px; background:rgba(0,0,0,.14); border-radius:12px; padding:5px 7px; border:1.5px solid transparent;}
+  .trainrow.open{border-color:rgba(240,198,116,.5);}
+  .trainrow.playable{border-color:var(--teach); box-shadow:0 0 0 1px var(--teach);}
+  .trainrow.must{border-color:var(--red); box-shadow:0 0 10px rgba(204,34,34,.5);}
+  .trainhead{display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:3px;}
+  .trainhead .nm{font-weight:800;} .trainhead .you{color:var(--gold);}
+  .trainhead .mk{font-size:11px; background:var(--gold); color:var(--ink); border-radius:5px; padding:0 5px; font-weight:800;}
+  .trainhead .mex{background:#7a3b8f; color:#fff; border-radius:5px; padding:0 5px; font-weight:800; font-size:11px;}
+  .trainhead .cnt{margin-left:auto; opacity:.7;}
+  .traintiles{display:flex; align-items:center; gap:3px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:2px 0; min-height:calc(var(--th)*var(--size)+6px);}
+  .traintiles::-webkit-scrollbar{height:0;}
+  .traintiles .endcap{flex:0 0 auto; width:calc(var(--th)*var(--size)*1.2); height:calc(var(--th)*var(--size)); border:2px dashed rgba(255,255,255,.25); border-radius:6px;
+    display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:rgba(255,255,255,.6);}
+  .trainrow.playable .endcap{border-color:var(--teach); color:var(--teach);}
+  .trainrow.must .endcap{border-color:var(--red); color:#ff9c9c;}
+  .emptytrain{opacity:.55; font-size:12px; padding:4px 2px;}
+
+  .say{text-align:center; font-size:14px; min-height:20px; margin:3px 2px 1px; line-height:1.3;}
+  .say b{color:var(--gold);} .say .danger{color:#ff9c9c;}
+  .coach{text-align:center; font-size:12px; min-height:15px; margin:0 2px 3px; color:var(--teach); line-height:1.3;}
+  .coach:empty{min-height:0; margin:0;}
+
+  /* ---- your hand ---- */
+  .hand{flex:0 0 auto; display:flex; gap:5px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:6px 2px 2px; min-height:calc(var(--th)*var(--size)*2+14px);}
+  .hand::-webkit-scrollbar{height:0;}
+  .hand .dom{transition:transform .1s;}
+  .hand .dom.sel{transform:translateY(calc(-8px*var(--size))); box-shadow:0 0 0 3px var(--gold), 0 6px 12px rgba(0,0,0,.45);}
+  .hand .dom.no{opacity:.4; filter:saturate(.6);}
+  .hand .dom.hint{box-shadow:0 0 0 3px var(--teach), 0 0 12px rgba(111,227,154,.8);}
+  .hand .dom.playnow{box-shadow:0 0 0 2px var(--teach);}
+  .ctl{display:flex; gap:8px; margin-top:6px;}
+  .ctl button{flex:1 1 0; min-height:46px; border:none; border-radius:12px; font-size:15px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
+  .ctl button.go{background:var(--gold); color:var(--ink);}
+  .ctl button:disabled{opacity:.4;}
+
+  .pop{position:absolute; transform:translate(-50%,-50%); font-weight:900; font-size:17px; color:var(--gold); pointer-events:none; z-index:8; white-space:nowrap;
+    text-shadow:0 2px 6px rgba(0,0,0,.6), 0 0 2px #000;}
+  .pop.bad{color:#ff8c8c;}
+  .confetti{position:fixed; top:-20px; width:9px; height:14px; z-index:90; pointer-events:none; border-radius:2px;}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+  .gn-setup .gn-row .seg{flex:1 1 200px; justify-content:flex-end;}
+  .seg.cardsize button,.seg.cardtext button{padding:6px 9px; font-size:12px; min-width:34px; flex:0 0 auto;}
+  .modal .gn-row .seg{justify-content:flex-end;}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .box{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px;
+    max-width:400px; width:100%; max-height:88vh; overflow-y:auto; overscroll-behavior:contain; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:23px; text-align:center;}
+  .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.9;}
+  .modal .sub{text-align:center; margin:0 0 10px;}
+  .modal ul{padding-left:18px; margin:0 0 8px;}
+  .modal h3{font-size:11px; letter-spacing:1.3px; text-transform:uppercase; color:var(--gold); margin:12px 0 4px;}
+  table.st{width:100%; border-collapse:collapse; font-size:14px; margin:4px 0;}
+  table.st th{font-size:11px; font-weight:700; opacity:.7; text-align:right; padding:2px 4px;} table.st th:first-child{text-align:left;}
+  table.st td{padding:6px 4px; border-bottom:1px solid rgba(255,255,255,.1); text-align:right; font-variant-numeric:tabular-nums;}
+  table.st td:first-child{text-align:left; font-weight:700;}
+  table.st td.t{font-weight:800; color:var(--gold);}
+  table.st tr.best td:first-child::after{content:" \2605"; color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink);
+    border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .teachcard{background:rgba(111,227,154,.1); border:1px solid rgba(111,227,154,.4); border-radius:10px; padding:8px 10px; margin:6px 0; font-size:12.5px; line-height:1.4;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4;
+    font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+<script src="../cardsize.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="scoreBtn">Scores</button>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Mexican Train</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">The double-twelve train game. Everyone builds off a shared hub, down their own train and the open <b>Mexican</b> one. Play a double and it has to be answered before anyone moves on. Shed your tiles &mdash; low pips win.</p>
+      <div class="gn-row"><span>Players</span><div class="seg" id="segP"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
+      <div class="gn-row"><span>Rounds</span><div class="seg" id="segR"><button data-v="4">4</button><button data-v="7">7</button><button data-v="13">13</button></div></div>
+      <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Bots</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+        <div id="sizeRowsSetup"></div>
+      </details>
+    </div>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="startBtn">Deal</button>
+      <button class="gn-alt hide" id="resumeBtn">Resume your game</button>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+  <div class="say" id="say"></div>
+  <div class="coach" id="coach"></div>
+  <div class="hand" id="hand"></div>
+  <div class="ctl">
+    <button id="drawBtn">Draw</button>
+    <button id="hintBtn">Hint</button>
+  </div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="box">
+  <h2>Menu</h2>
+  <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Red sixes</span><button class="toggle" id="redTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <div id="sizeRows"></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button>
+  <button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a>
+  <button class="bigbtn" data-close>Close</button>
+</div></div>
+
+<div class="modal" id="rulesModal"><div class="box">
+  <h2>How to play</h2>
+  <p>A double-twelve set (91 tiles). Each round opens on a <b>centre double</b> &mdash; 12-12 the first round, then 11-11, 10-10, and so on. From the hub run the <b>trains</b>: one for each player, plus one shared <b>Mexican train</b>.</p>
+  <h3>Your turn</h3>
+  <ul>
+    <li>Add <b>one</b> tile whose end matches the open end of a train you&rsquo;re allowed to use.</li>
+    <li>You may always build on <b>your own</b> train and the <b>Mexican</b> train. You may build on <b>someone else&rsquo;s</b> train only while it&rsquo;s <b>open</b> (a marker is on it).</li>
+    <li>Can&rsquo;t play? <b>Draw</b> one. If it still won&rsquo;t go, your turn passes and a marker drops on your train &mdash; now anyone can build on it until you play on it yourself.</li>
+  </ul>
+  <h3>Doubles must be answered</h3>
+  <p>Play a double and its matching end has to be covered <b>before anyone moves on</b>. If you can cover your own double the same turn, you must. If you can&rsquo;t, the next player &mdash; and the next &mdash; has to cover it before doing anything else.</p>
+  <h3>Scoring</h3>
+  <p>The round ends when someone empties their hand (or everyone&rsquo;s stuck). Everyone else counts the <b>pips still in their hand</b> &mdash; those are points, and <b>low is good</b>. Lowest total after the last round wins.</p>
+  <h3>Teaching mode</h3>
+  <p>Trains you can play on are outlined in <span style="color:var(--teach)">green</span>, a red outline shows a double waiting to be covered, <b>Hint</b> shows the tile to play and why, and the recap explains each round.</p>
+  <button class="bigbtn" data-close>Got it</button>
+</div></div>
+
+<div class="modal" id="scoreModal"><div class="box">
+  <h2>Scores</h2>
+  <table class="st" id="scoreTable"></table>
+  <p class="sub" id="scoreSub"></p>
+  <button class="bigbtn" data-close>Close</button>
+</div></div>
+
+<div class="modal" id="roundModal"><div class="box">
+  <h2 id="rTitle"></h2>
+  <p class="sub" id="rSub"></p>
+  <table class="st" id="rTable"></table>
+  <div id="rTeach"></div>
+  <button class="bigbtn" id="rNext">Next round</button>
+</div></div>
+
+<div class="modal" id="overModal"><div class="box">
+  <h2 id="oTitle"></h2>
+  <p class="sub" id="oSub"></p>
+  <table class="st" id="oTable"></table>
+  <p class="sub" id="oStats"></p>
+  <button class="bigbtn" id="oAgain">Play again</button>
+  <button class="bigbtn ghost" id="oSetup">Change settings</button>
+</div></div>
+
+<script>
+/* ============================================================
+   MEXICAN TRAIN - the engine. No DOM. window.DOMS.
+   Double-12 set (91 tiles). 2-4 players; you are seat 0. Each round opens on a centre
+   double (12-12, then 11-11, ...). Every player has a personal train from the hub, plus a
+   shared "Mexican" train anyone may use. On your turn add one matching tile to a train you
+   may use (your own, the Mexican, or an open train). A DOUBLE must be covered before play
+   moves on; you cover your own if you can, else the obligation passes down the table. Can't
+   play -> draw one; still stuck -> pass and a marker opens your train. Empty your hand (or
+   everyone blocks) to end the round; others' remaining pips are points; low total wins.
+   ============================================================ */
+(function(G){
+  var MAX=12;
+  function rng(seed){ var a=(seed>>>0)||1; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function makeSet(){ var t=[], id=0; for(var a=0;a<=MAX;a++) for(var b=a;b<=MAX;b++) t.push({a:a,b:b,id:id++}); return t; }
+  function pips(t){ return t.a+t.b; }
+  function isDouble(t){ return t.a===t.b; }
+  function otherEnd(t,val){ return t.a===val ? t.b : t.a; }
+  function has(t,val){ return t.a===val||t.b===val; }
+  function handSize(n){ return n<=2?15:(n<=4?12:10); }
+
+  function newGame(opts){ opts=opts||{};
+    return {players:opts.players||4, rounds:opts.rounds||7, scores:[], round:0, over:false, history:[]}; }
+
+  function deal(g, seed){
+    var n=g.players, rnd=rng(seed==null?Math.floor(Math.random()*4294967295):seed);
+    var set=makeSet();
+    for(var i=set.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)), t=set[i]; set[i]=set[j]; set[j]=t; }
+    var hs=handSize(n), hands=[];
+    for(var p=0;p<n;p++) hands.push(set.slice(p*hs,(p+1)*hs));
+    var boneyard=set.slice(n*hs);
+    var centre=MAX-g.round; if(centre<0) centre=0;
+    var cd=pullCentre(hands, boneyard, centre);
+    var trains=[];
+    for(var q=0;q<n;q++) trains.push({owner:q, end:centre, tiles:[], open:false, mexican:false});
+    trains.push({owner:-1, end:centre, tiles:[], open:true, mexican:true});
+    return {players:n, centre:centre, centreTile:cd, hands:hands, boneyard:boneyard, trains:trains,
+      turn:firstPlayer(hands, centre, n), phase:'play', mustDouble:null, passesInARow:0,
+      winner:-1, blocked:false, log:[]};
+  }
+  function pullCentre(hands, boneyard, centre){
+    var cd={a:centre,b:centre,id:1000+centre};
+    for(var p=0;p<hands.length;p++){ for(var i=0;i<hands[p].length;i++){ if(hands[p][i].a===centre&&hands[p][i].b===centre){ cd=hands[p].splice(i,1)[0]; return cd; } } }
+    for(var k=0;k<boneyard.length;k++){ if(boneyard[k].a===centre&&boneyard[k].b===centre){ cd=boneyard.splice(k,1)[0]; return cd; } }
+    return cd;
+  }
+  function firstPlayer(hands, centre, n){
+    var best=0, bestC=-1;
+    for(var p=0;p<n;p++){ var c=hands[p].filter(function(t){ return has(t,centre); }).length; if(c>bestC){ bestC=c; best=p; } }
+    return best;
+  }
+  function openTrains(h,p){
+    var out=[];
+    for(var i=0;i<h.trains.length;i++){ var tr=h.trains[i];
+      if(tr.mexican) out.push(i);
+      else if(tr.owner===p) out.push(i);
+      else if(tr.open) out.push(i);
+    }
+    return out;
+  }
+  function legalMoves(h,p){
+    if(h.phase!=='play'||h.turn!==p) return [];
+    var hand=h.hands[p], moves=[];
+    if(h.mustDouble!=null){
+      var tr=h.trains[h.mustDouble], need=tr.end;
+      hand.forEach(function(t){ if(has(t,need)) moves.push({tile:t, train:h.mustDouble}); });
+      return moves;
+    }
+    var allowed=openTrains(h,p);
+    allowed.forEach(function(ti){ var need=h.trains[ti].end;
+      hand.forEach(function(t){ if(has(t,need)) moves.push({tile:t, train:ti}); }); });
+    return moves;
+  }
+  function canPlay(h,p){ return legalMoves(h,p).length>0; }
+  function play(h,p,tile,trainIdx){
+    var ok=legalMoves(h,p).some(function(m){ return m.tile.id===tile.id && m.train===trainIdx; });
+    if(!ok) throw new Error('illegal play');
+    var tr=h.trains[trainIdx];
+    h.hands[p]=h.hands[p].filter(function(t){ return t.id!==tile.id; });
+    var attachVal=tr.end, open=otherEnd(tile,attachVal);
+    tr.tiles.push({a:tile.a,b:tile.b,id:tile.id, on:attachVal}); tr.end=open;
+    if(tr.owner===p) tr.open=false;
+    h.passesInARow=0;
+    if(h.mustDouble===trainIdx){ h.mustDouble=null; }
+    if(isDouble(tile)){ h.mustDouble=trainIdx; }
+    if(h.hands[p].length===0){ h.phase='done'; h.winner=p; return {win:true}; }
+    if(h.mustDouble!=null && canPlay(h,p)) return {continue:true, mustDouble:h.mustDouble};
+    h.turn=(p+1)%h.players;
+    return {};
+  }
+  function draw(h,p){ if(!h.boneyard.length) return null; var t=h.boneyard.shift(); h.hands[p].push(t); return t; }
+  function drawAndMaybePass(h,p){
+    var drew=draw(h,p);
+    if(drew && canPlay(h,p)) return {drew:drew, mustPlay:true};
+    passTurn(h,p);
+    return {drew:drew, passed:true};
+  }
+  function passTurn(h,p){
+    for(var i=0;i<h.trains.length;i++) if(h.trains[i].owner===p){ h.trains[i].open=true; }
+    h.passesInARow++;
+    h.turn=(p+1)%h.players;
+    if(h.passesInARow>=h.players){ h.phase='done'; h.blocked=true; }
+  }
+  function score(g,h){
+    var pipsLeft=h.hands.map(function(hand){ return hand.reduce(function(s,t){ return s+pips(t); },0); });
+    if(!g.scores.length) g.scores=new Array(h.players).fill(0);
+    for(var p=0;p<h.players;p++) g.scores[p]+=pipsLeft[p];
+    g.history.push({pips:pipsLeft.slice(), winner:h.winner, blocked:h.blocked, round:g.round});
+    g.round++;
+    if(g.round>=g.rounds) g.over=true;
+    return {pips:pipsLeft, winner:h.winner, blocked:h.blocked};
+  }
+  function winners(g){ var m=Math.min.apply(null,g.scores), w=[]; g.scores.forEach(function(s,p){ if(s===m) w.push(p); }); return w; }
+  function choose(h,p,level,rnd){
+    rnd=rnd||Math.random;
+    var moves=legalMoves(h,p);
+    if(!moves.length) return null;
+    if(level==='easy' && rnd()<0.4) return moves[Math.floor(rnd()*moves.length)];
+    if(h.mustDouble!=null){ return moves.slice().sort(function(a,b){ return pips(a.tile)-pips(b.tile); })[0]; }
+    function val(m){
+      var s=pips(m.tile);
+      if(isDouble(m.tile)){ var canCover=h.hands[p].some(function(t){ return t.id!==m.tile.id && has(t, m.tile.a); }); s += canCover? 4 : -8; }
+      var tr=h.trains[m.train];
+      if(tr.owner===p) s+=3; else if(tr.mexican) s+=1; else s-=1;
+      return s;
+    }
+    return moves.slice().sort(function(a,b){ return val(b)-val(a); })[0];
+  }
+  G.DOMS={MAX:MAX, makeSet:makeSet, pips:pips, isDouble:isDouble, otherEnd:otherEnd, has:has, handSize:handSize,
+    newGame:newGame, deal:deal, openTrains:openTrains, legalMoves:legalMoves, canPlay:canPlay, play:play,
+    draw:draw, drawAndMaybePass:drawAndMaybePass, passTurn:passTurn, score:score, winners:winners, choose:choose, firstPlayer:firstPlayer};
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+<script src="../sfx.js"></script>
+<script>
+/* ============================================================
+   MEXICAN TRAIN - the screen. Knows none of the rules: asks window.DOMS.
+   ============================================================ */
+(function(){
+var D=window.DOMS, $=function(id){ return document.getElementById(id); };
+var ALLNAMES=['You','Bea','Cy','Dot'];
+var SPEED={relaxed:{bot:950}, normal:{bot:620}, fast:{bot:330}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+var prefs=Object.assign({players:4, rounds:7, level:'normal', speed:'normal', teach:false, red:true}, lsGet('dom_prefs',{}));
+function savePrefs(){ lsSet('dom_prefs',prefs); }
+var stats=Object.assign({played:0, won:0, best:null}, lsGet('dom_stats',{}));
+
+var G=null, Hd=null, LEVEL='normal', N=4;
+var note='', coachMsg='', sel=null, hintMove=null, busy=false, timer=null;
+
+function names(){ return ALLNAMES.slice(0,N); }
+
+/* ---------- tiles ---------- */
+// pip layouts (index positions in a 3x3 grid)
+var PIPS={0:[],1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8],
+  7:[0,2,3,4,5,6,8],8:[0,1,2,3,5,6,7,8],9:[0,1,2,3,4,5,6,7,8],
+  10:[0,1,2,3,5,6,7,8,'x0','x8'],11:[0,1,2,3,4,5,6,7,8,'x0','x8'],12:[0,1,2,3,4,5,6,7,8,'x0','x2','x6','x8']};
+// a cleaner high-pip layout: just show the number for 10-12 to stay legible on a phone
+function faceHTML(v){
+  if(v>=10){ var redC=prefs.red&&v===6?' data-c="red"':''; return '<div class="pipface numface"'+redC+'><span class="numv">'+v+'</span></div>'; }
+  var cells=['','','','','','','','',''], list=PIPS[v]||[];
+  list.forEach(function(i){ if(typeof i==='number') cells[i]='<span class="pip"></span>'; });
+  var redC=prefs.red&&v===6?' data-c="red"':'';
+  return '<div class="pipface"'+redC+'>'+cells.map(function(c){ return '<span class="cellp">'+c+'</span>'; }).join('')+'</div>';
+}
+function domEl(t, orient){
+  var e=document.createElement('div'); e.className='dom'+(orient==='v'?' v':'');
+  e.innerHTML=faceHTML(t.a)+faceHTML(t.b); return e;
+}
+
+/* ---------- setup ---------- */
+function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){
+  seg('segP',prefs.players,function(v){ prefs.players=+v; savePrefs(); renderSetup(); });
+  seg('segR',prefs.rounds,function(v){ prefs.rounds=+v; savePrefs(); renderSetup(); });
+  seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); });
+  seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); });
+  seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
+  $('sizeRowsSetup').innerHTML=CARDSIZE.rowsHTML({textLabel:'Tile size', size:false});
+  var s=lsGet('dom_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over)); }
+function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
+function start(){ G=D.newGame({players:prefs.players, rounds:prefs.rounds}); LEVEL=prefs.level; N=prefs.players; GNSETUP.hide('setup'); closeAll(); newRound(); }
+function resume(){ var s=lsGet('dom_game',null); if(!s||!s.G||s.G.over){ start(); return; }
+  G=s.G; Hd=s.Hd; LEVEL=s.level||'normal'; N=G.players; GNSETUP.hide('setup'); closeAll(); sel=null;
+  if(!Hd||Hd.phase==='done'){ newRound(); return; } render(); loop(); }
+function save(){ if(G&&!G.over) lsSet('dom_game',{G:G, Hd:Hd, level:LEVEL}); else { try{ localStorage.removeItem('dom_game'); }catch(e){} } }
+
+/* ---------- a round ---------- */
+function newRound(){ Hd=D.deal(G); note=''; coachMsg=''; sel=null; hintMove=null; sfx('shuffle'); save(); render(); loop(); }
+function loop(){
+  clearTimeout(timer); if(!Hd||busy) return;
+  if(Hd.phase==='done'){ endRound(); return; }
+  if(Hd.turn===0){ // your turn: if you literally cannot play and the boneyard is empty, auto-pass
+    if(!D.canPlay(Hd,0) && !Hd.boneyard.length){ note='No tile to play and the boneyard is empty &mdash; you pass.'; D.passTurn(Hd,0); save(); render(); setTimeout(function(){ loop(); }, 500); return; }
+    render(); return;
+  }
+  render();
+  timer=setTimeout(botTurn, SPEED[prefs.speed].bot);
+}
+function botTurn(){
+  if(!Hd||Hd.phase==='done'||Hd.turn===0){ loop(); return; }
+  var p=Hd.turn;
+  if(D.canPlay(Hd,p)){ var m=D.choose(Hd,p,LEVEL); doPlay(p,m.tile,m.train, false); return; }
+  // bot can't: draw then maybe play, else pass
+  var r=D.drawAndMaybePass(Hd,p);
+  if(r.mustPlay){ var m2=D.choose(Hd,p,LEVEL); note='<b>'+ALLNAMES[p]+'</b> drew a tile.'; doPlay(p,m2.tile,m2.train, false); return; }
+  note='<b>'+ALLNAMES[p]+'</b> '+(r.drew?'drew, then ':'')+'passed.'; sfx('illegal'); save(); render();
+  setTimeout(function(){ loop(); }, 350);
+}
+function doPlay(p,tile,trainIdx, mine){
+  var r=D.play(Hd,p,tile,trainIdx); sel=null; hintMove=null;
+  sfx(mine?'place':'deal');
+  if(!note) note=(p===0?'You':'<b>'+ALLNAMES[p]+'</b>')+' played '+tileStr(tile)+(D.isDouble(tile)?' <span class="danger">(double!)</span>':'')+'.';
+  save(); render();
+  if(r.win){ setTimeout(endRound, 500); return; }
+  if(r.continue){ // same player must cover their double
+    if(p===0){ note='You laid a <b>double</b> &mdash; you have to cover it. '; coachMsg='Play a tile matching the double’s end on that same train.'; render(); return; }
+    setTimeout(botTurn, SPEED[prefs.speed].bot/1.4); return;
+  }
+  note=''; setTimeout(function(){ loop(); }, p===0?150:300);
+}
+function endRound(){
+  var r=D.score(G,Hd); save();
+  var low=Math.min.apply(null, r.pips);
+  sfx(r.winner===0?'win':(r.pips[0]===low?'good':'bad'));
+  if(r.winner===0) confetti();
+  $('rTitle').textContent=r.blocked?'Round blocked':(r.winner===0?'You went out!':ALLNAMES[r.winner]+' went out');
+  $('rSub').textContent=r.blocked?'Nobody could move. Everyone counts their pips.':'Everyone else counts the pips left in their hand.';
+  var totLow=Math.min.apply(null,G.scores);
+  $('rTable').innerHTML='<tr><th></th><th>This round</th><th>Total</th></tr>'+names().map(function(nm,p){
+    return '<tr class="'+(G.scores[p]===totLow?'best':'')+'"><td>'+nm+'</td><td>'+r.pips[p]+'</td><td class="t">'+G.scores[p]+'</td></tr>'; }).join('');
+  var th='';
+  if(prefs.teach){ th='<div class="teachcard">Low pips win. '+(r.winner===0?'You emptied your hand &mdash; zero this round.':'Shed your heavy tiles early (the 12-12 is 24 points sitting in your hand) and use the Mexican train to offload when your own is stuck.')+'</div>'; }
+  $('rTeach').innerHTML=th;
+  $('rNext').textContent=G.over?'See who won':'Next round';
+  setTimeout(function(){ $('roundModal').classList.add('show'); }, 350);
+}
+function gameOver(){
+  var w=D.winners(G), won=w.indexOf(0)>=0;
+  stats.played++; if(won) stats.won++; if(stats.best==null||G.scores[0]<stats.best) stats.best=G.scores[0]; lsSet('dom_stats',stats);
+  sfx(won?'win':'lose'); if(won) confetti();
+  $('oTitle').textContent=won?(w.length>1?'You tie for the win!':'You win!'):(w.map(function(p){ return ALLNAMES[p]; }).join(' & ')+' win'+(w.length>1?'':'s'));
+  $('oSub').textContent='After '+G.round+' rounds · lowest pips win';
+  var order=names().map(function(_,p){ return p; }).sort(function(a,b){ return G.scores[a]-G.scores[b]; });
+  $('oTable').innerHTML=order.map(function(p,i){ return '<tr class="'+(w.indexOf(p)>=0?'best':'')+'"><td>'+(i+1)+'. '+ALLNAMES[p]+'</td><td class="t">'+G.scores[p]+'</td></tr>'; }).join('');
+  $('oStats').textContent='You: '+stats.won+' won of '+stats.played+(stats.best!=null?' · best total '+stats.best:'');
+  save(); $('overModal').classList.add('show');
+}
+
+/* ---------- drawing the board ---------- */
+function say(h){ $('say').innerHTML=h; }
+function coach(h){ coachMsg=h; $('coach').innerHTML=prefs.teach?(h||''):''; }
+function tileStr(t){ return t.a+'–'+t.b; }
+function render(){
+  if(!G) return;
+  $('sub').textContent=G?('Round '+(G.round+1)+' of '+G.rounds+' · centre '+Hd.centre+'–'+Hd.centre):'';
+  var yourMoves=(Hd&&Hd.phase==='play'&&Hd.turn===0&&!busy)?D.legalMoves(Hd,0):[];
+  var playableTrains={}; yourMoves.forEach(function(m){ playableTrains[m.train]=true; });
+  // board
+  var board=$('board'), h='';
+  // centre hub
+  h+='<div class="centrehub"><span class="lbl">Hub</span><span id="centreTile"></span><span class="lbl">'+Hd.centre+'–'+Hd.centre+'</span></div>';
+  // each train
+  Hd.trains.forEach(function(tr,ti){
+    var mustHere=Hd.mustDouble===ti;
+    var cls='trainrow'+(tr.open&&!tr.mexican?' open':'')+(playableTrains[ti]?' playable':'')+(mustHere?' must':'');
+    var head;
+    if(tr.mexican) head='<span class="nm mex">Mexican train</span>';
+    else head='<span class="nm'+(tr.owner===0?' you':'')+'">'+(tr.owner===0?'Your train':ALLNAMES[tr.owner]+'’s train')+'</span>'+(tr.open?'<span class="mk">open</span>':'');
+    head+='<span class="cnt">end '+tr.end+(mustHere?' · cover the double!':'')+'</span>';
+    h+='<div class="'+cls+'" data-train="'+ti+'"><div class="trainhead">'+head+'</div><div class="traintiles" data-tt="'+ti+'" id="tt'+ti+'"></div></div>';
+  });
+  board.innerHTML=h;
+  // fill centre + train tiles as real elements (so pips render)
+  $('centreTile').appendChild(domEl(Hd.centreTile,'h'));
+  Hd.trains.forEach(function(tr,ti){
+    var row=$('tt'+ti);
+    if(!tr.tiles.length){ var cap=document.createElement('div'); cap.className='endcap'; cap.textContent=tr.end; row.appendChild(cap); }
+    else { tr.tiles.forEach(function(pt){ var el=domEl(pt,'h'); row.appendChild(el); });
+      var cap2=document.createElement('div'); cap2.className='endcap'; cap2.textContent=tr.end; row.appendChild(cap2); }
+    if(playableTrains[ti]||Hd.mustDouble===ti){ row.onclick=function(){ onTrainTap(ti); }; row.style.cursor='pointer'; }
+  });
+  renderHand(yourMoves);
+  // controls
+  var mine=Hd.turn===0&&Hd.phase==='play'&&!busy;
+  var canP=mine&&D.canPlay(Hd,0);
+  $('drawBtn').disabled=!(mine&&!canP&&Hd.boneyard.length);
+  $('drawBtn').textContent=(mine&&!canP&&Hd.boneyard.length)?('Draw ('+Hd.boneyard.length+' left)'):'Draw';
+  $('hintBtn').disabled=!(mine&&canP);
+  // messages
+  if(note){ say(note); }
+  else if(mine){
+    if(Hd.mustDouble!=null && Hd.trains[Hd.mustDouble]){ say('A <span class="danger">double</span> is open — you must cover it.');
+      if(prefs.teach) coach('Play a tile that matches end '+Hd.trains[Hd.mustDouble].end+' on that train. Nothing else is legal until it’s covered.'); }
+    else if(canP){ say(sel?'Tap a highlighted train to drop it.':'Your turn — tap a tile.');
+      if(prefs.teach) coach(teachPlay(yourMoves)); }
+    else { say('Nothing plays — <b>draw</b> a tile.'); if(prefs.teach) coach('No tile matches any open train end. Draw one; if it still won’t go, you pass and your train opens.'); }
+  }
+  else if(Hd.phase==='play'){ say('<b>'+ALLNAMES[Hd.turn]+'</b> is playing…'); }
+  if(!prefs.teach) coach('');
+  else if(!mine) coach('');
+}
+function teachPlay(moves){
+  if(Hd.mustDouble!=null) return '';
+  var doubles=moves.filter(function(m){ return D.isDouble(m.tile); });
+  if(doubles.length){ var safe=Hd.hands[0].some(function(t){ return !D.isDouble(t)&&D.has(t, doubles[0].tile.a); });
+    return safe?'You can play a double and cover it yourself — that sheds two tiles.':'Careful playing a double you can’t cover: it strands you and hands others a free turn.'; }
+  return 'Shed your heaviest tiles first — pips in your hand are points. Your own train and the Mexican train are always safe to use.';
+}
+function renderHand(moves){
+  var el=$('hand'); el.innerHTML=''; if(!Hd) return;
+  var playable={}; (moves||[]).forEach(function(m){ playable[m.tile.id]=true; });
+  var canAny=(Hd.turn===0&&Hd.phase==='play'&&!busy);
+  Hd.hands[0].slice().sort(function(a,b){ return D.pips(b)-D.pips(a); }).forEach(function(t){
+    var e=domEl(t,'v'); e.dataset.id=t.id;
+    if(canAny){ if(!playable[t.id]) e.classList.add('no'); else if(prefs.teach) e.classList.add('playnow'); }
+    if(sel&&sel.id===t.id) e.classList.add('sel');
+    if(hintMove&&hintMove.tile.id===t.id) e.classList.add('hint');
+    e.onclick=function(ev){ ev.stopPropagation(); tapTile(t); };
+    el.appendChild(e);
+  });
+}
+function tapTile(t){
+  if(!Hd||busy||Hd.turn!==0||Hd.phase!=='play'||anyModal()) return;
+  var moves=D.legalMoves(Hd,0).filter(function(m){ return m.tile.id===t.id; });
+  if(!moves.length){ sfx('illegal'); explainIllegal(t); return; }
+  hintMove=null;
+  if(sel&&sel.id===t.id){ sel=null; render(); return; }
+  sel=t;
+  // if only one train can take it, play immediately
+  if(moves.length===1){ doPlay(0, t, moves[0].train, true); return; }
+  // several options: highlight the trains and ask for a tap
+  render(); say('Tap a highlighted train to drop the '+tileStr(t)+'.');
+}
+function onTrainTap(ti){
+  if(!Hd||busy||Hd.turn!==0||Hd.phase!=='play') return;
+  if(sel){ var moves=D.legalMoves(Hd,0).filter(function(m){ return m.tile.id===sel.id && m.train===ti; });
+    if(moves.length){ doPlay(0, sel, ti, true); return; } sfx('illegal'); return; }
+  // no tile selected but tapped a playable train: if exactly one of our tiles fits, play it
+  var fit=D.legalMoves(Hd,0).filter(function(m){ return m.train===ti; });
+  if(fit.length===1){ doPlay(0, fit[0].tile, ti, true); return; }
+  if(fit.length>1){ say('Pick a tile, then tap this train.'); }
+}
+function explainIllegal(t){
+  if(Hd.mustDouble!=null){ say('A <span class="danger">double</span> has to be covered first — only a matching tile is legal.');
+    if(prefs.teach) coach('Nothing but a tile with a '+Hd.trains[Hd.mustDouble].end+' can play right now.'); return; }
+  say('The '+tileStr(t)+' doesn’t match any open train end.');
+  if(prefs.teach) coach('A tile can only go where one of its numbers matches a train’s open end.');
+}
+
+/* ---------- motion ---------- */
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff'];
+  for(var i=0;i<46;i++){ var c=document.createElement('div'); c.className='confetti'; c.style.left=(Math.random()*100)+'vw'; c.style.background=cols[i%cols.length]; document.body.appendChild(c);
+    c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1800+Math.random()*1400, delay:Math.random()*400}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+/* ---------- menus ---------- */
+function anyModal(){ return !!document.querySelector('.modal.show')||!$('setup').hidden; }
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+function openM(id){ $(id).classList.add('show'); }
+function closeM(el){ while(el&&!el.classList.contains('modal')) el=el.parentNode; if(el) el.classList.remove('show'); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ closeM(b); }; });
+['menuModal','rulesModal','scoreModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ openM('rulesModal'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); openM('rulesModal'); };
+$('scoreBtn').onclick=function(){ renderScores(); openM('scoreModal'); };
+function renderScores(){
+  if(!G){ $('scoreTable').innerHTML=''; return; }
+  var h='<tr><th>Round</th>'+names().map(function(nm){ return '<th>'+nm+'</th>'; }).join('')+'</tr>';
+  G.history.forEach(function(r,i){ h+='<tr><td>'+(i+1)+'</td>'+r.pips.map(function(v){ return '<td>'+v+'</td>'; }).join('')+'</tr>'; });
+  h+='<tr><td class="t">Total</td>'+G.scores.map(function(v){ return '<td class="t">'+v+'</td>'; }).join('')+'</tr>';
+  $('scoreTable').innerHTML=h;
+  $('scoreSub').textContent='Lowest pips win after '+G.rounds+' rounds.';
+}
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('redTog').classList.toggle('on',!!prefs.red); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn()));
+  seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); $('sizeRows').innerHTML=CARDSIZE.rowsHTML({textLabel:'Tile size', size:false}); }
+$('menuBtn').onclick=function(){ paintMenu(); openM('menuModal'); };
+$('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('redTog').onclick=function(){ prefs.red=!prefs.red; savePrefs(); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('dom_game'); }catch(e){} showSetup(); };
+$('drawBtn').onclick=function(){ if(!Hd||Hd.turn!==0||busy||D.canPlay(Hd,0)||!Hd.boneyard.length) return;
+  var r=D.drawAndMaybePass(Hd,0); sfx('deal');
+  if(r.passed){ note='You drew the '+tileStr(r.drew)+' but still can’t play — you pass and your train opens.'; save(); render(); setTimeout(function(){ loop(); }, 700); }
+  else { note='You drew the '+tileStr(r.drew)+'.'; save(); render(); } };
+$('hintBtn').onclick=function(){ if(!Hd||Hd.turn!==0||busy||!D.canPlay(Hd,0)) return;
+  hintMove=D.choose(Hd,0,'normal'); sel=null; render(); say('Play the '+tileStr(hintMove.tile)+'. Tap it to confirm.');
+  if(prefs.teach) coach(hintWhy(hintMove)); };
+function hintWhy(m){
+  if(Hd.mustDouble!=null) return 'Covers the open double so play can move on.';
+  var tr=Hd.trains[m.train], where=tr.mexican?'the Mexican train':(tr.owner===0?'your own train':ALLNAMES[tr.owner]+'’s open train');
+  if(D.isDouble(m.tile)) return 'A double you can cover — sheds two tiles onto '+where+'.';
+  return 'Your heaviest playable tile ('+D.pips(m.tile)+' pips) onto '+where+' — shed points while you can.';
+}
+$('rNext').onclick=function(){ $('roundModal').classList.remove('show'); if(G.over) gameOver(); else newRound(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+$('board').addEventListener('click',function(e){ if(sel && !e.target.closest('.trainrow')){ sel=null; render(); } });
+window.onCardSize=function(){ try{ render(); }catch(e){} };
+
+var s0=lsGet('dom_game',null);
+if(s0&&s0.G&&!s0.G.over){ resume(); }
+else { showSetup(); }
+
+/* test door */
+window.__DOMS={ get G(){ return G; }, get H(){ return Hd; }, get busy(){ return busy; },
+  play:function(tile,train){ doPlay(0,tile,train,true); },
+  drawPass:function(){ $('drawBtn').click(); },
+  start:start };
+
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v148", d=new Date(document.lastModified);
+  var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+<style>
+  /* pip grid cells + big-number faces */
+  .pipface .cellp{display:flex; align-items:center; justify-content:center;}
+  .pipface.numface{display:flex; align-items:center; justify-content:center;}
+  .pipface .numv{font-weight:800; font-size:calc(15px*var(--size)); color:var(--ink); font-family:Georgia,serif;}
+  .pipface.numface[data-c="red"] .numv{color:var(--red);}
+</style>
+</body>
+</html>

@@ -28,6 +28,14 @@ There's no backend. Scores ride the public ntfy topic `jtps-v1-scores` on `ntfy.
 - Offline: the score is saved locally and posted on the next load. One post per deal.
 - If the planned small Cloudflare server happens, this moves there and the board becomes permanent.
 
+**View any entry's board.** Every leaderboard row is tappable. It opens that player's actual
+5×5 board — decoded from the entry's stored 25 cards and rendered read-only with the row/column
+hands and total — with an **As played / ✨ Best** toggle. **Best** runs the same `makeSolver`
+on those 25 cards (on demand, synchronously) and shows the optimal arrangement for the deal, so
+you can see exactly how much was left on the table. `‹ Back` returns to the leaderboard.
+Rendering reuses `viewBoardHTML(cards, sys)` (a read-only board via `miniHTML`/`chipHTML`/
+`computeLines`) and `bestBoardFor(cards, sys)`; neither touches live game state.
+
 ## Best board (v103)
 After the 25th card, a search rearranges the **same 25 cards** for the highest possible total
 and the results panel says how close you came ("best these cards make scores 275 — 265 more than yours").
