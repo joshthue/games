@@ -56,9 +56,24 @@ and 44 at M, with scrolling); sideways 71 / 57px (were 56 / 46); iPad mini 82-12
   Records don't travel between devices.
 - Test door additions: `__SMUI.finish`, `__SMUI.publish`, `__SMUI.player()`.
 
+## Jokers: 4, 8 or 12 (v152)
+**More options → Jokers (wild)**: 4 (the default), 8 or 12, saved in `sm_prefs_v1.jokers`. In a
+two-phone game the host's setting deals the game (the guest just mirrors the state). Why it's there:
+in A → K only the Aces and Jokers can open a stack, so long stretches with nothing playable happen.
+Simulated with the real engine and bot (4,000 games each, A → K, goal 13), the longest run of cards
+a player saw with no legal play at all:
+
+| Jokers | a 10+ card stretch | 15+ | 20+ |
+|---|---|---|---|
+| 4  | 24% of games | 5.0% | 1.3% |
+| 8  | 16% | 3.4% | 0.6% |
+| 12 | 10% | 1.2% | 0.1% |
+
+Either way (any jokers) is lower still: about 4% / 0.3% / 0%.
+
 ## How it plays
 
-- Two decks plus **four Jokers** (Jokers are wild; Kings are just Kings).
+- Two decks plus **four Jokers** by default, or 8 or 12 (Jokers are wild; Kings are just Kings).
 - Each player has a **goal pile** (Short 13 or Standard 20 cards), a hand of **5**,
   and **four personal side stacks** to park cards on.
 - On your turn, play as many cards as you can to the four centre stacks — from your

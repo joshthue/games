@@ -284,6 +284,14 @@ body{
         <div class="gn-note hidden" id="onlineNote">One of you creates a game and reads out the 4-letter code; the other joins with it. Then you each play on your own phone. Free public relay, no accounts.</div>
       </div>
       <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Jokers (wild)</span>
+          <div class="seg" id="segJokers">
+            <button data-jokers="4" class="on">4</button>
+            <button data-jokers="8">8</button>
+            <button data-jokers="12">12</button>
+          </div>
+          <div class="gn-note">More jokers, fewer long waits for a card you can play. With 12, a 15-card dry spell goes from about 1 game in 20 to 1 in 80.</div>
+        </div>
         <div class="gn-row"><span>Bot difficulty</span>
           <div class="seg" id="segDiff">
             <button data-diff="easy">Easy</button>
@@ -372,7 +380,7 @@ body{
         <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). You can play to the centre or discard by tapping.</li>
       </ul>
       <h3>Wilds</h3>
-      <p>Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place. In <b>Either way</b> a stack usually needs one of two values, so you choose which one the Joker becomes.</p>
+      <p>Two decks plus <b>4 Jokers</b> (or 8 or 12 — <b>More options → Jokers</b> on the deal screen; in a two-phone game the player who creates it sets it). Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place. In <b>Either way</b> a stack usually needs one of two values, so you choose which one the Joker becomes.</p>
       <h3>Strategy</h3>
       <ul>
         <li>The centre is shared — advancing a stack can help the bot’s goal card too, so watch its top goal card before you play.</li>
@@ -830,7 +838,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v150";
+  var BUILD_V = "v152";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -838,7 +846,7 @@ window.SM = (function(){
   document.getElementById('buildStamp').textContent = "build " + BUILD_V + (_when ? " \u00b7 " + _when : "");
 
   var LSK = 'sm_prefs_v1';
-  var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false };
+  var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false, jokers:4 };
   try{ var raw=localStorage.getItem(LSK); if(raw) Object.assign(prefs, JSON.parse(raw)); }catch(e){}
   function savePrefs(){ try{ localStorage.setItem(LSK, JSON.stringify(prefs)); }catch(e){} }
   // v82: the old "Card text size" (prefs.fs 13/15/17/19) only changed the font inside a fixed
@@ -954,6 +962,8 @@ window.SM = (function(){
   segInit('segGoal','goal', function(v){return parseInt(v,10);});
   segInit('segDir','dir', null);
   segInit('segDiff','diff', null);
+  if([4,8,12].indexOf(+prefs.jokers)<0) prefs.jokers=4;
+  segInit('segJokers','jokers', function(v){return parseInt(v,10);});
   paintSize();
   var DIR_SUB = { up:'Ace \u2192 King', down:'King \u2192 Ace', either:'either direction' };
   var DIR_NOTE = {
@@ -1021,7 +1031,7 @@ window.SM = (function(){
   function showGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); paintNames(); updateNetbar(); fitted=false; fitBoard(); }
   function startSolo(){
     mode='solo'; net.online=false; net.joined=false;
-    T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
+    T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:prefs.jokers, first:firstSeat() });
     sel = null; busy=false; net.pending=false; passScheduled=false; gameStarted();
     showGame(); render(); sfx('shuffle');
     if(T.turn===opp()) setTimeout(botTurn, 500);   // bot won the deal
@@ -1535,7 +1545,7 @@ window.SM = (function(){
     if(r.ok){ render(); publishState(); if(T.winner!==null||T.draw) finish(); }
   }
   function dealHost(){
-    T=SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:4, first:firstSeat() });
+    T=SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:prefs.jokers, first:firstSeat() });
     sel=null; net.pending=false; passScheduled=false; gameStarted();
     $('winOv').classList.remove('on');
     render(); publishState();
