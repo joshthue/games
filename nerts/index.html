@@ -71,9 +71,9 @@
   .center .c.flash{box-shadow:0 0 0 3px var(--gold);}
   /* v153: a card that just landed in the middle wears the colour of whoever played it for a moment */
   .me-dot{display:inline-block; width:9px; height:9px; border-radius:3px; background:var(--blue); margin-right:6px; vertical-align:0;}
-  .center .c.back.done{opacity:.7; animation:flipdone .35s ease-out;}
+  .center .c.back.done{opacity:.7;} .center .c.back.done.flipnow{animation:flipdone .35s ease-out;}
   @keyframes flipdone{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
-  @media (prefers-reduced-motion:reduce){ .center .c.back.done{animation:none;} }
+  @media (prefers-reduced-motion:reduce){ .center .c.back.done.flipnow{animation:none;} }
   .center .c.land{box-shadow:0 0 0 3px var(--lc), 0 0 10px var(--lc);}
   .center .c.land.new{animation:landpop .28s ease-out;}
   @keyframes landpop{0%{transform:scale(1.18)}100%{transform:scale(1)}}
@@ -301,9 +301,13 @@
     for(var i=0;i<3 && pl.stock.length;i++) pl.waste.push(pl.stock.pop());
     return true;
   }
-  // everybody stuck: each player moves the top card of their stock to the bottom
+  // everybody stuck: each player turns the waste back over onto the stock (the whole pile, in its
+  // original order) and moves the top card to the bottom, so the next pass turns up different threes.
+  // v158: it used to leave the waste where it was and only shuffle the face-down stock, so nothing you
+  // could see changed and the same three cards came round again.
   function rotate(st){
-    st.players.forEach(function(pl){ if(!pl.stock.length && pl.waste.length){ pl.stock=pl.waste.reverse(); pl.waste=[]; }
+    st.players.forEach(function(pl){
+      if(pl.waste.length){ pl.stock=pl.stock.concat(pl.waste.reverse()); pl.waste=[]; }
       if(pl.stock.length>1) pl.stock.unshift(pl.stock.pop()); });
     st.rotations++;
   }
@@ -352,7 +356,7 @@
 var N=window.NERTS, $=function(id){ return document.getElementById(id); };
 var COLORS=['blue','yellow','red','green'], NAMES=['You','Bea','Cy','Dot'];
 var SPEED={relaxed:{ms:1700, skill:.8}, normal:{ms:1050, skill:.95}, fast:{ms:650, skill:1}};
-var STALL_MS=14000, MAX_ROT=10;
+var STALL_MS=14000, MAX_ROT=5;   // v158: 5 stuck passes (~70 s), not 10, before the round just ends
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) SFX.play(n); }
@@ -377,7 +381,7 @@ function showSetup(){ stopBots(); renderSetup(); GNSETUP.show('setup'); }
 function newGame(){ G={n:prefs.n, speed:prefs.speed, to:prefs.to, totals:new Array(prefs.n).fill(0), round:0, done:false}; lsSet('nerts_game',G); deal(); }
 function resumeGame(){ var g=lsGet('nerts_game',null); if(!g||g.done){ newGame(); return; } G=g; deal(); }
 function deal(){
-  GNSETUP.hide('setup'); G.round++; ST=N.newRound(G.n); SEL=null;LAND={}; lastMoves=0; lastProgress=Date.now(); rotSince=0;
+  GNSETUP.hide('setup'); G.round++; ST=N.newRound(G.n); SEL=null;LAND={};DONE={}; lastMoves=0; lastProgress=Date.now(); rotSince=0;
   sfx('shuffle'); fit(); render(); say(prefs.oneTap?'Go! Tap or drag your cards.':'Go! Double tap a card to send it to the middle.'); startBots();
 }
 
@@ -404,7 +408,7 @@ function checkStall(){
   if(rotSince>=MAX_ROT){ ST.over=true; ST.stalled=true; roundOver(); return; }
   N.rotate(ST); rotSince++; lastProgress=Date.now(); SEL=null; render();
   // v154: said on the line above your Nerts pile, not in a pop-up over the board; it goes when a card moves
-  say("<b>Everyone's stuck</b> · stocks rotated a card"); stuckSaid=true; sfx('shuffle');
+  say("<b>Everyone's stuck</b> · waste turned over ("+rotSince+"/"+MAX_ROT+")"); stuckSaid=true; sfx('shuffle');
 }
 function setPaused(v){ paused=v; if(!v) lastProgress=Date.now(); }
 
@@ -484,7 +488,8 @@ function render(){
   var slots=G.n*4, ch='';
   for(var i=0;i<slots;i++){ var pile=ST.center[i], la=pile?landAttr(i):'';
     // v155: a finished pile (up to its king) flips face down, once the king's landing colour is done
-    if(pile && N.top(pile).r===13 && !la){ ch+='<div class="c back done" data-ci="'+i+'"></div>'; continue; }
+    // the flip plays once, the first time it's drawn face down (v158: it re-ran on every bot move)
+    if(pile && N.top(pile).r===13 && !la){ var fresh=!DONE[i]; DONE[i]=1; ch+='<div class="c back done'+(fresh?' flipnow':'')+'" data-ci="'+i+'"></div>'; continue; }
     ch+=pile?cardHTML(N.top(pile), la?la.cls.trim():'', ' data-ci="'+i+'"'+(la?' style="'+la.style+'"':'')):'<div class="c slot"></div>'; }
   $('center').innerHTML=ch;
   $('myMid').textContent=pls[0].played+' in the middle';
@@ -515,7 +520,7 @@ function render(){
 function say(h){ $('say').innerHTML=h; }
 /* v153: who just played to the middle. The pile's top card gets that player's colour (you blue, Bea
    yellow, Cy red, Dot green) for LAND_MS, and a sound: yours a solid place, a bot's a lighter chip. */
-var LAND={}, LAND_MS=1400, landT=null;
+var LAND={}, LAND_MS=1400, landT=null, DONE={};
 function centerSnap(){ return ST.center.map(function(pl){ return pl.length; }); }
 function landed(p, before){
   var ci=-1; for(var i=0;i<ST.center.length;i++){ if(i>=before.length || ST.center[i].length!==before[i]){ ci=i; break; } }
@@ -623,7 +628,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v157", d=new Date(document.lastModified);
+(function(){ var V="v158", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();

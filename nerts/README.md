@@ -14,9 +14,10 @@ middle cards are plain (no owner colour) - except for a moment after they land (
   out, tap it again to turn the waste back over.
 - **The middle**: shared. Any ace starts a pile; then up by suit to the king, by anybody.
   A finished pile (its king played) **flips face down** once the king's landing colour fades (v155).
-- **Stuck**: if nobody moves a card for 14 s, every stock moves its top card to the bottom (the real
-  rule when everyone's stuck). The line above your Nerts pile says so (v154; it used to be a pop-up over
-  the board) and clears when the next card moves. After 10 of those in a row with no progress, the round ends where it is.
+- **Stuck**: if nobody moves a card for 14 s, everyone turns their waste back over onto the stock and
+  moves the top card to the bottom, so the next pass turns up different threes (v158: before, the waste
+  stayed put and only the face-down stock shifted, so nothing visible changed and it felt like a loop). The line above your Nerts pile says so (v154; it used to be a pop-up over
+  the board) shows the count ("waste turned over (2/5)") and clears when the next card moves. After 5 of those in a row with no progress (~70 s), the round ends where it is.
 - **Score**: +1 per card you got into the middle, −2 per card left in your Nerts pile. Game to 50 or 100.
 
 ## On the phone
@@ -75,3 +76,7 @@ alternating-colour rule nothing changes: diamonds are still red and clubs still 
 sheet and the toggle's note say so). Added because the small middle cards were hard to tell apart
 even at XL - card size tops out at M on this board, so colour is the lever. The middle cards also
 get bigger print: rank and suit each about 45% of the card width (were 27% / 32%), corner suit dropped.
+
+## Finished piles flip once (v158)
+The face-down flip of a finished pile played on every re-render, so with bots moving it spun every
+second or so. It now plays once, the first time the pile is drawn face down (`DONE`, reset each round).
