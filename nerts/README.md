@@ -88,3 +88,9 @@ light red (#f9dedb), ♠ ♣ on light grey (#d9dddb) - so the print tells the su
 or black. v160's "Dark black" (spades/clubs on dark cards) didn't land; a saved `dark` now reads as
 Four + tint, and an old `four:true` as Four. `body.four` / `body.tint` drive it from the `s0`-`s3`
 card classes.
+
+## Long work piles keep their ranks readable (v163)
+A covered card only shows a strip at its top, and a long pile squeezes that strip (down to 14px). Once
+it was shorter than the rank, the ranks were cut in half (screenshot, Oct 24). Now, when the strip is
+shorter than the rank needs (`0.05 + 0.27 x card text` of the card width, +3px), the covered cards'
+corner rank and suit shrink to fit the strip (class `tight`, `--ovf`); the top card stays full size.

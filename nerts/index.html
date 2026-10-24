@@ -89,6 +89,7 @@
   .pile{position:relative; height:100%;}
   .pile .c{position:absolute; left:0;}
   .pile .c.slot{top:0;}
+  .pile .c.tight .r{font-size:var(--ovf);} .pile .c.tight .s2{font-size:calc(var(--ovf) * .8);}
   .pile.target .c.slot, .pile.target .c:last-child{box-shadow:0 0 0 3px #6fe39a;}
 
   .say{text-align:center; font-size:13.5px; min-height:19px; margin:6px 2px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -504,12 +505,18 @@ function render(){
   $('myMid').textContent=pls[0].played+' in the middle';
   // work piles: cascade, squeezing the overlap to fit the space
   var work=$('work'), H=work.clientHeight||300, wh='';
+  // v163: a covered card shows only its top strip, and that strip has to hold the rank. When a long pile
+  // squeezes the strip below the rank's height (the ranks were cut in half), the covered cards' corner
+  // print shrinks to fit the strip instead of being clipped. The top card is always full size.
+  var ct=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cardtext'))||1;
+  var needOv=Math.ceil(CW*(0.05+0.27*ct))+3;
   for(var w=0;w<4;w++){ var cs=pls[0].work[w], n=cs.length;
     var ov=n>1?Math.max(14, Math.min(Math.round(CW*.3), Math.floor((H-CW*1.4)/(n-1)))):0;
+    var tight=ov<needOv, fs=Math.max(9, Math.floor(ov-CW*0.05-2));
     var hp='<div class="pile" data-pile="'+w+'">';
     if(!n) hp+=cardHTML(null,'',' data-pile="'+w+'"');
-    cs.forEach(function(c,k){ var sel=SEL&&SEL.from.kind==='work'&&SEL.from.i===w&&k>=SEL.from.k;
-      hp+=cardHTML(c, sel?'sel':'', ' data-src="work" data-i="'+w+'" data-k="'+k+'" style="top:'+(k*ov)+'px"'); });
+    cs.forEach(function(c,k){ var sel=SEL&&SEL.from.kind==='work'&&SEL.from.i===w&&k>=SEL.from.k, t=tight&&k<n-1;
+      hp+=cardHTML(c, (sel?'sel':'')+(t?' tight':''), ' data-src="work" data-i="'+w+'" data-k="'+k+'" style="top:'+(k*ov)+'px'+(t?';--ovf:'+fs+'px':'')+'"'); });
     wh+=hp+'</div>'; }
   work.innerHTML=wh;
   // bar
@@ -636,7 +643,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v162", d=new Date(document.lastModified);
+(function(){ var V="v163", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
