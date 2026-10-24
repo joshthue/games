@@ -438,7 +438,7 @@ window.HR=(function(){
    ============================================================ */
 (function(){
 "use strict";
-var BUILD_V="v148";
+var BUILD_V="v151";
 function $(id){ return document.getElementById(id); }
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
@@ -492,7 +492,7 @@ function hname(t,r){ return t+' · '+hn(r||race(),t); }
 // The race in play is S.cur. A race is nothing but its seed, its seats, and how many rolls
 // have happened - HR.sim() rebuilds everything else, so every phone agrees.
 var S={mode:null, races:{}, cur:null, pend:{}, sits:{}, ready:false, replaying:false, seen:{}, starting:0,
-  applied:lsGet('hr_applied',{}), waitKey:'', waitSince:0, jit:0, shownWin:{}, animK:{}, shown:{}, lastReveal:0};
+  applied:lsGet('hr_applied',{}), waitKey:'', waitSince:0, jit:0, shownWin:{}, winHold:{}, animK:{}, shown:{}, lastReveal:0};
 
 function race(){ return S.cur ? S.races[S.cur] : null; }
 // v110: bots' rolls are never sent. Roll k belongs to seat k % n, and a bot's roll k exists as soon
@@ -608,7 +608,7 @@ function drive(){
     // that if we're jumping straight to it from a catch-up so the last stride isn't a blink.
     var finishing = HR.sim(r,sh+1).phase==='done';
     if(finishing){
-      var wait = (!prefs.step && K-sh>8) ? 2600 : 1600;   // longer when we snapped up to the brink
+      var wait = (!prefs.step && K-sh>8) ? 2800 : 2200;   // a real breath before the last roll; longer when we snapped up to the brink
       if(prefs.step || Date.now()-S.lastReveal>=wait){ S.shown[r.id]=sh+1; S.lastReveal=Date.now(); afterChange(); }
       else renderRollBtn(r);
       return;
@@ -756,15 +756,20 @@ function render(){
   var potKey=r?r.id:''; showMoney('pot', st?st.pot:0, S.ready && !S.replaying && S.potKey===potKey); S.potKey=potKey;
   renderRoombar();
   // the lobby shows between races (and to anyone watching a race they're not in)
-  var watching = r && running && seatOf(r,myId)<0;
-  $('lobby').classList.toggle('hidden', running && !watching);
-  if(!running || watching) renderLobby(r, st);
-  $('raceL').classList.toggle('hidden', !r); $('raceR').classList.toggle('hidden', !r); $('raceX').classList.toggle('hidden', !r); $('gamecols').classList.toggle('norace', !r);
-  if(r){ renderRace(r, st); fitTrack(); }
   if(st && st.phase==='done' && !S.shownWin[r.id] && S.ready){
     S.shownWin[r.id]=1;
     // a race that finished before you walked up doesn't throw a party
-    if(!S.replaying && S.liveSince && r.lastAt>=S.liveSince-2) setTimeout(function(){ showWinner(r, st); }, reduced()?0:1800); }   // let the pot fly to the winners first
+    if(!S.replaying && S.liveSince && r.lastAt>=S.liveSince-2){ S.winHold[r.id]=1;
+      setTimeout(function(){ showWinner(r, st); }, reduced()?500:3400); } }   // hold on the finish: the horse home, the pot flying to the winners
+  var watching = r && running && seatOf(r,myId)<0;
+  // v151: while a finish plays out (the last roll, the payout, then the winner's sheet) the board
+  // stays put - the lobby used to drop in above the track the instant the horse crossed, shoving the
+  // board down, then the sheet covered it 1.8 s later. It shows once the sheet is closed.
+  var holding = r && st && st.phase==='done' && S.winHold[r.id];
+  $('lobby').classList.toggle('hidden', (running && !watching) || !!holding);
+  if((!running || watching) && !holding) renderLobby(r, st);
+  $('raceL').classList.toggle('hidden', !r); $('raceR').classList.toggle('hidden', !r); $('raceX').classList.toggle('hidden', !r); $('gamecols').classList.toggle('norace', !r);
+  if(r){ renderRace(r, st); fitTrack(); }
 }
 function renderRoombar(){
   var el=$('roombar');
@@ -937,8 +942,8 @@ function showWinner(r, st){
     +'<div class="say"><span class="mic">🎙️</span><span>'+(mineWon?'<b>Cash those tickets!</b> You held '+st.counts[si][n]+' of the '+n+'s.':(si>=0?'Not your race. The pot’s gone to the '+n+' holders.':'The pot’s gone to the '+n+' holders.'))+'</span></div>'
     +'<div class="menubtns"><button class="btn" id="winNext">🏁 Next race</button><button class="btn ghost" id="winClose">Back to the rail</button></div>';
   $('winOv').classList.add('on');
-  $('winNext').onclick=function(){ $('winOv').classList.remove('on'); startRace(); };
-  $('winClose').onclick=function(){ $('winOv').classList.remove('on'); render(); };
+  $('winNext').onclick=function(){ $('winOv').classList.remove('on'); delete S.winHold[r.id]; startRace(); };
+  $('winClose').onclick=function(){ $('winOv').classList.remove('on'); delete S.winHold[r.id]; render(); };
   if(mineWon) confetti();
 }
 function confetti(){ /* small and cheap: a few emoji drifting down */
@@ -977,7 +982,7 @@ function needName(){ if(myName) return true; $('nameIn').focus(); $('setupSay').
 function showGame(){ GNSETUP.hide('setup'); $('game').classList.remove('hidden'); }
 function startSolo(){ if(!needName()) return; netStop(); reset(); S.mode='solo'; S.ready=true; S.liveSince=nowSec(); loadSolo(); showGame(); afterChange(); }
 function startLive(){ if(!needName()) return; reset(); S.mode='live'; S.replaying=true; showGame(); render(); netStart(); }
-function reset(){ S.races={}; S.cur=null; S.pend={}; S.sits={}; S.ready=false; S.seen={}; S.starting=0; S.waitKey=''; S.shownWin={}; S.animK={}; S.shown={}; NET.lastTime=0; }
+function reset(){ S.races={}; S.cur=null; S.pend={}; S.sits={}; S.ready=false; S.seen={}; S.starting=0; S.waitKey=''; S.shownWin={}; S.winHold={}; S.animK={}; S.shown={}; NET.lastTime=0; }
 function becameReady(){
   S.ready=true; S.replaying=false; S.liveSince=nowSec();
   Object.keys(S.races).forEach(function(id){ S.shown[id]=Kof(S.races[id]); S.animK[id]=simNow(S.races[id]).log.length; if(simNow(S.races[id]).phase==='done') S.shownWin[id]=1; });

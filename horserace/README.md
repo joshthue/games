@@ -193,3 +193,13 @@ script outside the repo; `index.html` is what ships.
   the same instant (one race runs on both), one player never taps (the table rolls for them), a
   third phone walks up mid-race — all three end on the same race, same winner, same pot; each
   wallet moved by exactly its seat's net; the late phone is dealt into the next race.
+
+## The finish holds (v151)
+The finish used to flip through screens: the moment the winning roll landed, the lobby ("Call the
+horses to the gate") dropped in above the track and shoved the board down, then the winner's sheet
+covered it 1.8 s later. Now:
+- The roll before the last one waits 2.2 s (2.8 s after a catch-up) so the winning roll gets a beat.
+- After the horse crosses, the board **holds still for ~3.4 s** - the pot flies to the winners - then
+  the winner's sheet comes up (0.5 s with Reduce Motion).
+- The lobby stays hidden until you close the sheet (`S.winHold`), so it's one change at a time:
+  finish, sheet, then the rail. **Next race** still starts the next one straight from the sheet.
