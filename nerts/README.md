@@ -14,11 +14,15 @@ middle cards are plain (no owner colour) - except for a moment after they land (
   out, tap it again to turn the waste back over.
 - **The middle**: shared. Any ace starts a pile; then up by suit to the king, by anybody.
 - **Stuck**: if nobody moves a card for 14 s, every stock moves its top card to the bottom (the real
-  rule when everyone's stuck). After 10 of those in a row with no progress, the round ends where it is.
+  rule when everyone's stuck). The line above your Nerts pile says so (v154; it used to be a pop-up over
+  the board) and clears when the next card moves. After 10 of those in a row with no progress, the round ends where it is.
 - **Score**: +1 per card you got into the middle, −2 per card left in your Nerts pile. Game to 50 or 100.
 
 ## On the phone
-- **Tap** a card: into the middle if it fits; otherwise it's picked up (gold), then tap a work pile.
+- **Double tap** a card to send it to the middle (v154). A single **tap** picks it up (gold), then tap a
+  work pile. A double tap on a card that can't go up says why ("only the top card…" / "can't go in the
+  middle yet"). **Menu → One tap plays to the middle** restores the old way (one tap sends it if it
+  fits); with that on, the second tap of a double tap is swallowed so it can't play the card underneath.
 - **Drag** a card, or a run from a work pile, onto a work pile or the middle; where it would land
   lights green while you drag.
 - **Tap the stock** to turn three. The opponent strip shows each bot's Nerts cards left and goes gold
