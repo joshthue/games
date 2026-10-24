@@ -13,6 +13,7 @@ middle cards are plain (no owner colour) - except for a moment after they land (
 - **Stock**: turn over three at a time onto the waste; play the waste's top card. When the stock is
   out, tap it again to turn the waste back over.
 - **The middle**: shared. Any ace starts a pile; then up by suit to the king, by anybody.
+  A finished pile (its king played) **flips face down** once the king's landing colour fades (v155).
 - **Stuck**: if nobody moves a card for 14 s, every stock moves its top card to the bottom (the real
   rule when everyone's stuck). The line above your Nerts pile says so (v154; it used to be a pop-up over
   the board) and clears when the next card moves. After 10 of those in a row with no progress, the round ends where it is.

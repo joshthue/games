@@ -63,6 +63,9 @@
   .center .c.flash{box-shadow:0 0 0 3px var(--gold);}
   /* v153: a card that just landed in the middle wears the colour of whoever played it for a moment */
   .me-dot{display:inline-block; width:9px; height:9px; border-radius:3px; background:var(--blue); margin-right:6px; vertical-align:0;}
+  .center .c.back.done{opacity:.7; animation:flipdone .35s ease-out;}
+  @keyframes flipdone{0%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+  @media (prefers-reduced-motion:reduce){ .center .c.back.done{animation:none;} }
   .center .c.land{box-shadow:0 0 0 3px var(--lc), 0 0 10px var(--lc);}
   .center .c.land.new{animation:landpop .28s ease-out;}
   @keyframes landpop{0%{transform:scale(1.18)}100%{transform:scale(1)}}
@@ -464,6 +467,8 @@ function render(){
   // the middle
   var slots=G.n*4, ch='';
   for(var i=0;i<slots;i++){ var pile=ST.center[i], la=pile?landAttr(i):'';
+    // v155: a finished pile (up to its king) flips face down, once the king's landing colour is done
+    if(pile && N.top(pile).r===13 && !la){ ch+='<div class="c back done" data-ci="'+i+'"></div>'; continue; }
     ch+=pile?cardHTML(N.top(pile), la?la.cls.trim():'', ' data-ci="'+i+'"'+(la?' style="'+la.style+'"':'')):'<div class="c slot"></div>'; }
   $('center').innerHTML=ch;
   $('myMid').textContent=pls[0].played+' in the middle';
@@ -601,7 +606,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v154", d=new Date(document.lastModified);
+(function(){ var V="v155", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
