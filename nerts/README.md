@@ -80,3 +80,12 @@ get bigger print: rank and suit each about 45% of the card width (were 27% / 32%
 ## Finished piles flip once (v158)
 The face-down flip of a finished pile played on every re-render, so with bots moving it spun every
 second or so. It now plays once, the first time the pile is drawn face down (`DONE`, reset each round).
+
+## Card colors: Classic · Dark black · Four (v160)
+The v157 toggle became a three-way **Card colors** choice (Menu and the deal screen's More options),
+saved as `nerts_prefs.colors`; an old `four:true` carries over as Four. **Dark black** (Josh's pick
+after a mockup of six options): spades and clubs are dark cards (#26302c) with light print, hearts and
+diamonds stay light with red print, so red vs black - what the work piles alternate on - is the whole
+card, not just the ink. Four-colour told the suits apart but made a blue 9 hard to read as "red".
+`body.darkblk` / `body.four` drive it from the same `s0`-`s3` card classes; selection, drop-target
+and landing rings are restated for the dark cards so they still show.

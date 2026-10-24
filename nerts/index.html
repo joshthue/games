@@ -58,6 +58,12 @@
   /* v157 four-colour deck (the house palette the other card games use): spades black, hearts red,
      diamonds blue, clubs green. For building work piles diamonds still count as red, clubs as black. */
   .four .c.s1{color:#c22;} .four .c.s2{color:#1b6fb3;} .four .c.s3{color:#178a3a;} .four .c.s0{color:var(--ink);}
+  /* v160 dark black: spades and clubs are dark cards with light print, hearts and diamonds stay light
+     with red print - red vs black is the card itself, readable at a glance even on the small middle cards */
+  .darkblk .c.s0,.darkblk .c.s3{background:#26302c; color:#f3efe4; box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 1px 3px rgba(0,0,0,.5);}
+  .darkblk .c.s0.sel,.darkblk .c.s3.sel{box-shadow:0 0 0 3px var(--gold), 0 3px 8px rgba(0,0,0,.45);}
+  .darkblk .c.s0.fits,.darkblk .c.s3.fits{box-shadow:0 0 0 3px #6fe39a;}
+  .darkblk .center .c.s0.land,.darkblk .center .c.s3.land{box-shadow:0 0 0 3px var(--lc), 0 0 10px var(--lc);}
   .c.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .c.slot{background:transparent; border:1.5px dashed rgba(255,255,255,.2); box-shadow:none;}
   .c.sel{box-shadow:0 0 0 3px var(--gold), 0 3px 8px rgba(0,0,0,.45);}
@@ -164,8 +170,8 @@
       <div class="gn-row"><span>Bot speed</span><div class="seg" id="segSpeed"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
       <div class="gn-row"><span>Game to</span><div class="seg" id="segTo"><button data-v="50">50</button><button data-v="100">100</button></div></div>
       <details class="gn-more"><summary>More options</summary>
-        <div class="gn-row"><span>Four-color deck</span><button class="toggle" id="fourTogSetup" aria-label="Four-color deck"></button>
-          <div class="gn-note">♥ red, ♦ blue, ♣ green, ♠ black. Diamonds still count as red and clubs as black for building.</div></div>
+        <div class="gn-row"><span>Card colors</span><div class="seg" id="segColSetup"><button data-v="two">Classic</button><button data-v="dark">Dark black</button><button data-v="four">Four</button></div>
+          <div class="gn-note"><b>Dark black</b>: spades and clubs are dark cards, hearts and diamonds light. <b>Four</b>: ♦ blue, ♣ green (still red and black for building).</div></div>
       </details>
     </div>
     <div class="gn-setup-foot">
@@ -190,7 +196,7 @@
 
 <div class="modal" id="menuModal"><div class="card menu">
   <h2>Menu</h2>
-  <div class="switchrow"><span>Four-color deck<br><small style="opacity:.7">♦ blue and ♣ green - still red and black for building</small></span><button class="toggle" id="fourTog" aria-label="Four-color deck"></button></div>
+  <div class="switchrow"><span>Card colors<br><small style="opacity:.7">Dark black: ♠ ♣ on dark cards</small></span><div class="seg" id="segCol"><button data-v="two">Classic</button><button data-v="dark">Dark black</button><button data-v="four">Four</button></div></div>
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog" aria-label="Sound"></button></div>
   <div class="switchrow"><span>One tap plays to the middle<br><small style="opacity:.7">Off: double tap sends a card to the middle</small></span><button class="toggle" id="oneTapTog" aria-label="One tap plays to the middle"></button></div>
   <div id="menuCards"></div>
@@ -213,7 +219,7 @@
   <p>Any ace starts a pile. Then up by suit to the king, by anybody. Every card you get in there is <b>+1</b>.</p>
   <h3>Playing on the phone</h3>
   <ul>
-    <li><b>Four-color deck</b> (Menu, or More options on the deal screen): ♦ blue and ♣ green. For building your work piles diamonds still count as red and clubs as black.</li>
+    <li><b>Card colors</b> (Menu, or More options on the deal screen): <b>Dark black</b> puts spades and clubs on dark cards and hearts and diamonds on light ones; <b>Four</b> prints ♦ blue and ♣ green (for building, diamonds still count as red and clubs as black).</li>
     <li><b>Double tap</b> a card to send it to the middle. <b>Tap</b> it once to pick it up (gold), then tap a work pile to drop it. (Menu → <i>One tap plays to the middle</i> makes a single tap send it up when it fits.)</li>
     <li><b>Drag</b> a card (or a run from a work pile) to a work pile or the middle.</li>
   </ul>
@@ -361,8 +367,11 @@ function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.p
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) SFX.play(n); }
 var prefs=Object.assign({n:4, speed:'normal', to:100, oneTap:false, four:false}, lsGet('nerts_prefs',{}));
-function paintFour(){ document.body.classList.toggle('four', !!prefs.four); ['fourTog','fourTogSetup'].forEach(function(id){ var b=$(id); if(b) b.classList.toggle('on', !!prefs.four); }); }
-function toggleFour(){ prefs.four=!prefs.four; savePrefs(); paintFour(); }
+// card colours: 'two' (classic red/black), 'dark' (black suits on dark cards), 'four' (four-colour print)
+if(['two','dark','four'].indexOf(prefs.colors)<0) prefs.colors = prefs.four ? 'four' : 'two';   // v157 toggle carried over
+function setColors(v){ prefs.colors=v; savePrefs(); paintFour(); }
+function paintFour(){ document.body.classList.toggle('four', prefs.colors==='four'); document.body.classList.toggle('darkblk', prefs.colors==='dark');
+  ['segCol','segColSetup'].forEach(function(id){ if($(id)) seg(id, prefs.colors, setColors); }); }
 function savePrefs(){ lsSet('nerts_prefs',prefs); }
 
 var ST=null, G=null;          // ST: this round; G: the game {n, speed, to, totals[], round}
@@ -613,7 +622,6 @@ $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); open
 function paintMenu(){ paintFour(); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('oneTapTog').classList.toggle('on', !!prefs.oneTap); $('menuCards').innerHTML=window.CARDSIZE?CARDSIZE.rowsHTML():''; }
 $('menuBtn').onclick=function(){ paintMenu(); openM('menuModal'); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
-$('fourTog').onclick=toggleFour; $('fourTogSetup').onclick=toggleFour;
 $('oneTapTog').onclick=function(){ prefs.oneTap=!prefs.oneTap; savePrefs(); paintMenu(); };
 $('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); setPaused(false); try{ localStorage.removeItem('nerts_game'); }catch(e){} showSetup(); };
 window.onCardSize=function(){ fit(); render(); };
@@ -628,7 +636,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v158", d=new Date(document.lastModified);
+(function(){ var V="v160", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
