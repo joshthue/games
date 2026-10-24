@@ -65,3 +65,13 @@ middle cards are plain (no owner colour) - except for a moment after they land (
 - Built: `centerSnap()` before a move, `landed(p, before)` after it finds the pile that changed and
   stamps `LAND[pile]`; `render()` adds `.land` with `--lc` while it's fresh, and one timer re-renders to
   clear it. Cleared on each new round.
+
+## Four-color deck (v157)
+Menu → **Four-color deck** (also under **More options** on the deal screen), saved as
+`nerts_prefs.four`, off by default. The house palette the other card games use: ♠ black, ♥ red,
+♦ blue (#1b6fb3), ♣ green (#178a3a). Every card carries an `s0`–`s3` class and `body.four` colours
+them, so the work piles, the middle, the Nerts pile, the waste and the drag ghost all follow. For the
+alternating-colour rule nothing changes: diamonds are still red and clubs still black (the rules
+sheet and the toggle's note say so). Added because the small middle cards were hard to tell apart
+even at XL - card size tops out at M on this board, so colour is the lever. The middle cards also
+get bigger print: rank and suit each about 45% of the card width (were 27% / 32%), corner suit dropped.

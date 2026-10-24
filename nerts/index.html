@@ -55,11 +55,19 @@
   .c .s{position:absolute; bottom:calc(var(--cw) * .04); right:calc(var(--cw) * .08); line-height:1; font-size:calc(var(--cw) * .32 * var(--cardtext,1));}
   .c .s2{position:absolute; top:calc(var(--cw) * .05); right:calc(var(--cw) * .08); line-height:1; font-size:calc(var(--cw) * .2 * var(--cardtext,1));}
   .c.redc{color:var(--cardred);}
+  /* v157 four-colour deck (the house palette the other card games use): spades black, hearts red,
+     diamonds blue, clubs green. For building work piles diamonds still count as red, clubs as black. */
+  .four .c.s1{color:#c22;} .four .c.s2{color:#1b6fb3;} .four .c.s3{color:#178a3a;} .four .c.s0{color:var(--ink);}
   .c.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 6px,#155a94 6px,#155a94 12px); border:2px solid #0e3f6b;}
   .c.slot{background:transparent; border:1.5px dashed rgba(255,255,255,.2); box-shadow:none;}
   .c.sel{box-shadow:0 0 0 3px var(--gold), 0 3px 8px rgba(0,0,0,.45);}
   .c.fits{box-shadow:0 0 0 3px #6fe39a;}
   .center .c{--cw:var(--ccw);}
+  /* v157: the middle cards are small, so their print is bigger: a large rank and a large suit, no
+     little corner suit (Card text still scales them) */
+  .center .c .r{font-size:calc(var(--ccw) * .44 * var(--cardtext,1)); top:calc(var(--ccw) * .04); left:calc(var(--ccw) * .07);}
+  .center .c .s{font-size:calc(var(--ccw) * .46 * var(--cardtext,1));}
+  .center .c .s2{display:none;}
   .center .c.flash{box-shadow:0 0 0 3px var(--gold);}
   /* v153: a card that just landed in the middle wears the colour of whoever played it for a moment */
   .me-dot{display:inline-block; width:9px; height:9px; border-radius:3px; background:var(--blue); margin-right:6px; vertical-align:0;}
@@ -155,6 +163,10 @@
       <div class="gn-row"><span>Players</span><div class="seg" id="segN"><button data-v="2">You + 1</button><button data-v="3">+ 2</button><button data-v="4">+ 3</button></div></div>
       <div class="gn-row"><span>Bot speed</span><div class="seg" id="segSpeed"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
       <div class="gn-row"><span>Game to</span><div class="seg" id="segTo"><button data-v="50">50</button><button data-v="100">100</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Four-color deck</span><button class="toggle" id="fourTogSetup" aria-label="Four-color deck"></button>
+          <div class="gn-note">♥ red, ♦ blue, ♣ green, ♠ black. Diamonds still count as red and clubs as black for building.</div></div>
+      </details>
     </div>
     <div class="gn-setup-foot">
       <button class="gn-start" id="startBtn">Deal</button>
@@ -178,6 +190,7 @@
 
 <div class="modal" id="menuModal"><div class="card menu">
   <h2>Menu</h2>
+  <div class="switchrow"><span>Four-color deck<br><small style="opacity:.7">♦ blue and ♣ green - still red and black for building</small></span><button class="toggle" id="fourTog" aria-label="Four-color deck"></button></div>
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog" aria-label="Sound"></button></div>
   <div class="switchrow"><span>One tap plays to the middle<br><small style="opacity:.7">Off: double tap sends a card to the middle</small></span><button class="toggle" id="oneTapTog" aria-label="One tap plays to the middle"></button></div>
   <div id="menuCards"></div>
@@ -200,6 +213,7 @@
   <p>Any ace starts a pile. Then up by suit to the king, by anybody. Every card you get in there is <b>+1</b>.</p>
   <h3>Playing on the phone</h3>
   <ul>
+    <li><b>Four-color deck</b> (Menu, or More options on the deal screen): ♦ blue and ♣ green. For building your work piles diamonds still count as red and clubs as black.</li>
     <li><b>Double tap</b> a card to send it to the middle. <b>Tap</b> it once to pick it up (gold), then tap a work pile to drop it. (Menu → <i>One tap plays to the middle</i> makes a single tap send it up when it fits.)</li>
     <li><b>Drag</b> a card (or a run from a work pile) to a work pile or the middle.</li>
   </ul>
@@ -342,7 +356,9 @@ var STALL_MS=14000, MAX_ROT=10;
 function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) SFX.play(n); }
-var prefs=Object.assign({n:4, speed:'normal', to:100, oneTap:false}, lsGet('nerts_prefs',{}));
+var prefs=Object.assign({n:4, speed:'normal', to:100, oneTap:false, four:false}, lsGet('nerts_prefs',{}));
+function paintFour(){ document.body.classList.toggle('four', !!prefs.four); ['fourTog','fourTogSetup'].forEach(function(id){ var b=$(id); if(b) b.classList.toggle('on', !!prefs.four); }); }
+function toggleFour(){ prefs.four=!prefs.four; savePrefs(); paintFour(); }
 function savePrefs(){ lsSet('nerts_prefs',prefs); }
 
 var ST=null, G=null;          // ST: this round; G: the game {n, speed, to, totals[], round}
@@ -355,7 +371,7 @@ function renderSetup(){
   seg('segN',prefs.n,function(v){ prefs.n=+v; savePrefs(); renderSetup(); });
   seg('segSpeed',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
   seg('segTo',prefs.to,function(v){ prefs.to=+v; savePrefs(); renderSetup(); });
-  var g=lsGet('nerts_game',null); $('resumeBtn').classList.toggle('hide', !(g && !g.done));
+  paintFour(); var g=lsGet('nerts_game',null); $('resumeBtn').classList.toggle('hide', !(g && !g.done));
 }
 function showSetup(){ stopBots(); renderSetup(); GNSETUP.show('setup'); }
 function newGame(){ G={n:prefs.n, speed:prefs.speed, to:prefs.to, totals:new Array(prefs.n).fill(0), round:0, done:false}; lsSet('nerts_game',G); deal(); }
@@ -439,7 +455,7 @@ function sameFrom(a,b){ return a&&b&&a.kind===b.kind&&a.i===b.i&&a.k===b.k; }
 /* ---------- drawing ---------- */
 function cardHTML(c, extra, attrs){
   if(!c) return '<div class="c slot'+(extra?' '+extra:'')+'"'+(attrs||'')+'></div>';
-  return '<div class="c'+(N.red(c.s)?' redc':'')+(extra?' '+extra:'')+'"'+(attrs||'')+'><span class="r">'+N.rname(c.r)+'</span><span class="s2">'+N.SUITS[c.s]+'</span><span class="s">'+N.SUITS[c.s]+'</span></div>';
+  return '<div class="c s'+c.s+(N.red(c.s)?' redc':'')+(extra?' '+extra:'')+'"'+(attrs||'')+'><span class="r">'+N.rname(c.r)+'</span><span class="s2">'+N.SUITS[c.s]+'</span><span class="s">'+N.SUITS[c.s]+'</span></div>';
 }
 var CW=80, OVER=22;
 function fit(){
@@ -589,9 +605,10 @@ function closeM(el){ while(el&&!el.classList.contains('modal')) el=el.parentNode
 ['menuModal','rulesModal'].forEach(function(id){ $(id).addEventListener('click',function(e){ if(e.target===$(id)) closeM($(id).firstElementChild); }); });
 $('rulesBtn').onclick=function(){ openM('rulesModal'); };
 $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); openM('rulesModal'); };
-function paintMenu(){ $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('oneTapTog').classList.toggle('on', !!prefs.oneTap); $('menuCards').innerHTML=window.CARDSIZE?CARDSIZE.rowsHTML():''; }
+function paintMenu(){ paintFour(); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('oneTapTog').classList.toggle('on', !!prefs.oneTap); $('menuCards').innerHTML=window.CARDSIZE?CARDSIZE.rowsHTML():''; }
 $('menuBtn').onclick=function(){ paintMenu(); openM('menuModal'); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('fourTog').onclick=toggleFour; $('fourTogSetup').onclick=toggleFour;
 $('oneTapTog').onclick=function(){ prefs.oneTap=!prefs.oneTap; savePrefs(); paintMenu(); };
 $('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); setPaused(false); try{ localStorage.removeItem('nerts_game'); }catch(e){} showSetup(); };
 window.onCardSize=function(){ fit(); render(); };
@@ -606,7 +623,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v155", d=new Date(document.lastModified);
+(function(){ var V="v157", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
