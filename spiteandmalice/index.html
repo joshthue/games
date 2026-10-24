@@ -626,7 +626,7 @@ window.SM = (function(){
     endTurn(T);
   }
   function endTurn(T){
-    T._turnPlays = 0;
+    T._turnPlays = 0; T._botCover = null;
     T.turn = 1 - T.turn;
     refillHand(T, T.turn);
   }
@@ -682,15 +682,29 @@ window.SM = (function(){
       return a;
     }
 
-    // 1. play the goal card (prefer a centre that doesn't gift the opponent)
+    // 1. play the goal card (prefer a centre that doesn't gift the opponent). If the last play opened
+    //    a stack for it (step 2's covered gift), it goes THERE, so the stack moves past the gift.
     var pf=plays.filter(function(a){return a.from.kind==='payoff';});
-    if(pf.length){ var safe=pf.filter(function(a){return !gifts(a);}); return {kind:'play',action:withVal(safe[0]||pf[0])}; }
+    if(pf.length){
+      var cover=T._botCover; T._botCover=null;
+      var onCover=cover!=null ? pf.filter(function(a){ return a.to===cover; }) : [];
+      if(onCover.length) return {kind:'play',action:withVal(onCover[0])};
+      var safe=pf.filter(function(a){return !gifts(a);}); return {kind:'play',action:withVal(safe[0]||pf[0])}; }
 
     // 2. enabler: a play that makes the goal card playable this turn
     if(myRank!==null){
       var en=plays.filter(function(a){ return a.from.kind!=='payoff' && helpsMe(a) && !gifts(a); });
       en.sort(function(a,b){return srcCost(a)-srcCost(b);});
       if(en.length) return {kind:'play',action:withVal(en[0])};
+      // v159: a play that would "gift" the opponent's goal card is fine when the bot's OWN goal card
+      // goes straight on top of it - e.g. both goal piles show a Jack, stacks need a 10: play the 10,
+      // then the Jack, and the stack wants a Queen. Refusing it left the bot sitting on three 10s for
+      // turns on end while the stacks waited.
+      if(myRank!==0){
+        var cov=plays.filter(function(a){ return a.from.kind!=='payoff' && helpsMe(a); });
+        cov.sort(function(a,b){return srcCost(a)-srcCost(b);});
+        if(cov.length){ T._botCover=cov[0].to; return {kind:'play',action:withVal(cov[0])}; }
+      }
     }
 
     // 3. completions always — filling a stack to 13 sends it to the shuffler
@@ -838,7 +852,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v152";
+  var BUILD_V = "v159";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);

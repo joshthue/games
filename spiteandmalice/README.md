@@ -215,3 +215,12 @@ Open `index.html` in a browser — no build step or dependencies (it does load `
 for sound, and falls silent rather than breaking if that file is missing). Works offline
 once loaded, as part of the Game Night home-screen app. The two-phone relay needs a network
 (and the live site) — it won't connect from a `file://` copy.
+
+## The bot plays through a "gift" when its own goal card covers it (v159)
+The bot won't play a card that leaves a stack needing the opponent's goal card once the opponent is
+close (4 or fewer goal cards). That made a standoff: both goal piles showing a Jack, three stacks
+needing a 10, and the bot sitting on three 10s turn after turn (Lindsey's screenshot, Oct 24). Now,
+when no safe play opens a stack for its own goal card, it plays the "gifting" one anyway and puts its
+goal card straight onto that same stack (`T._botCover`), so the stack moves past the gift. Replaying
+that position: before, the bot discarded; now it plays 10♥ then its J♦. Over 3,000 bot-vs-bot games
+(A → K, goal 13) stalemate draws dropped from 7.1% to 1.0%; median length unchanged (47 turns).
