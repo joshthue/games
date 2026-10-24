@@ -852,7 +852,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v159";
+  var BUILD_V = "v161";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -1312,7 +1312,20 @@ window.SM = (function(){
   var DRAG_PX = 7, drag = null, swallowClick = false;
   function rectC(r){ return {x:r.left+r.width/2, y:r.top+r.height/2}; }
   function findSrcEl(kind,i){ return document.querySelector('#game [data-src="'+kind+'"][data-i="'+i+'"]'); }
+  // v161: a drag whose release never arrived (iOS Safari drops the rest of a touch once the element it
+  // started on is re-rendered away) left its ghost card frozen over the hand and blocked every later
+  // drag. The next press anywhere - or leaving the app - clears it; and once a drag really starts, the
+  // page captures the pointer so its move / release can't be lost with the old element.
+  function abortDrag(){
+    var d=drag; drag=null; if(!d || !d.on) return;
+    if(d.ghost) d.ghost.remove();
+    [].forEach.call(document.querySelectorAll('.drag-ghost'), function(x){ x.remove(); });
+    if(d.snap && d.snap.el) d.snap.el.classList.remove('snap');
+    sel=null; render();
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) abortDrag(); });
   document.addEventListener('pointerdown', function(e){
+    if(drag && e.pointerId!==drag.id) abortDrag();      // a stuck drag from a lost release
     if(drag || e.button>0 || !isHeroTurn() || busy) return;
     var el = e.target.closest && e.target.closest('[data-src]');
     if(!el || $('game').classList.contains('hidden')) return;
@@ -1333,6 +1346,7 @@ window.SM = (function(){
       return {el:t, ctr:t.dataset.ctr, side:t.dataset.side, r:t.getBoundingClientRect()};
     }).filter(function(t){ return t.ctr!=null || (t.side!=null && drag.kind==='hand'); });
     drag.snap=null;
+    try{ document.documentElement.setPointerCapture(drag.id); }catch(_){}   // keep its move / release even if the card under the finger is redrawn
     sfx('select');
   }
   document.addEventListener('pointermove', function(e){

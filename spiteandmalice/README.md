@@ -224,3 +224,12 @@ when no safe play opens a stack for its own goal card, it plays the "gifting" on
 goal card straight onto that same stack (`T._botCover`), so the stack moves past the gift. Replaying
 that position: before, the bot discarded; now it plays 10♥ then its J♦. Over 3,000 bot-vs-bot games
 (A → K, goal 13) stalemate draws dropped from 7.1% to 1.0%; median length unchanged (47 turns).
+
+## A drag can't get stuck (v161)
+A card being dragged could freeze over the hand (Josh's screenshot, Oct 24): iOS Safari drops the rest
+of a touch once the element it started on is redrawn, and dragging redraws the hand, so the release
+never arrived - the ghost stayed, the real card stayed hidden, and every later drag was ignored.
+Now the page captures the pointer as soon as a drag starts, so its moves and release can't be lost;
+and if one ever is, the next press anywhere (or leaving the app) clears the stuck drag (`abortDrag`).
+Reproduced on v159 with a release-less drag (ghost stays after the next press); on v161 it clears,
+and a normal drag onto a side stack still discards.
