@@ -94,3 +94,9 @@ A covered card only shows a strip at its top, and a long pile squeezes that stri
 it was shorter than the rank, the ranks were cut in half (screenshot, Oct 24). Now, when the strip is
 shorter than the rank needs (`0.05 + 0.27 x card text` of the card width, +3px), the covered cards'
 corner rank and suit shrink to fit the strip (class `tight`, `--ovf`); the top card stays full size.
+
+## A drag can't get stuck (v164)
+Same fix as Spite & Malice v161: starting a drag redraws the board, and iOS Safari can drop the rest of
+that touch, so the ghost card froze over the waste (screenshot, Oct 24). The page now captures the
+pointer once a drag starts, and the next press anywhere (or leaving the app) clears a stuck drag
+(`abortDrag`).

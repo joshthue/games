@@ -576,7 +576,16 @@ function srcFromEl(el){
   var s=c.dataset.src; if(s==='work') return {kind:'work', i:+c.dataset.i, k:+c.dataset.k};
   return {kind:s};
 }
+// v164: a drag whose release never arrived (iOS Safari drops the rest of a touch once the card it started
+// on is redrawn - and starting a drag redraws) left its ghost frozen over the waste (screenshot, Oct 24).
+// The next press anywhere, or leaving the app, clears it; once a drag starts the page captures the pointer.
+function abortDrag(){ var d=drag; drag=null; if(!d) return;
+  if(d.el) d.el.remove(); [].forEach.call(document.querySelectorAll('body > .drag'), function(x){ x.remove(); });
+  [].forEach.call(document.querySelectorAll('.pile.target'),function(p){ p.classList.remove('target'); }); $('center').classList.remove('target');
+  if(d.moved) render(); }
+document.addEventListener('visibilitychange', function(){ if(document.hidden) abortDrag(); });
 document.addEventListener('pointerdown', function(e){
+  if(drag && e.pointerId!==drag.id) abortDrag();
   if(!ST||ST.over||document.querySelector('.modal.show')||!$('setup').hidden) return;
   if(e.target.closest('[data-stock]')){ tapStock(); e.preventDefault(); return; }
   var from=srcFromEl(e.target);
@@ -593,7 +602,8 @@ document.addEventListener('pointermove', function(e){
     drag.moved=true; var g=document.createElement('div'); g.className='drag'; var ov=Math.round(CW*.3);
     g.innerHTML=cs.map(function(c,k){ return cardHTML(c,'',' style="top:'+(k*ov)+'px"'); }).join(''); document.body.appendChild(g); drag.el=g;
     var r=document.elementFromPoint(drag.x,drag.y), cr=r&&r.closest('.c')?r.closest('.c').getBoundingClientRect():{left:drag.x-CW/2,top:drag.y-20};
-    drag.ox=drag.x-cr.left; drag.oy=drag.y-cr.top; SEL=null; render(); }
+    drag.ox=drag.x-cr.left; drag.oy=drag.y-cr.top; SEL=null; render();
+    try{ document.documentElement.setPointerCapture(drag.id); }catch(_){} }
   drag.el.style.left=(e.clientX-drag.ox)+'px'; drag.el.style.top=(e.clientY-drag.oy)+'px';
   // light up where it would land
   var t=dropAt(e.clientX,e.clientY);
@@ -643,7 +653,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v163", d=new Date(document.lastModified);
+(function(){ var V="v164", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
