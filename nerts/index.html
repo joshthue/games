@@ -472,8 +472,23 @@ function cardHTML(c, extra, attrs){
   return '<div class="c s'+c.s+(N.red(c.s)?' redc':'')+(extra?' '+extra:'')+'"'+(attrs||'')+'><span class="r">'+N.rname(c.r)+'</span><span class="s2">'+N.SUITS[c.s]+'</span><span class="s">'+N.SUITS[c.s]+'</span></div>';
 }
 var CW=80, OVER=22;
+// v165: on the home-screen app iOS can report 100dvh short of the real screen, which left a band of
+// empty felt under the bottom bar. Size the page from the biggest honest number we have - the whole
+// screen when running as the home-screen app (no browser chrome), else the window - minus the notch
+// and home-bar insets, and never smaller than the CSS height.
+function sizeWrap(){
+  var wrap=document.querySelector('.wrap'); if(!wrap) return;
+  wrap.style.height='';
+  var bs=getComputedStyle(document.body), ins=(parseFloat(bs.paddingTop)||0)+(parseFloat(bs.paddingBottom)||0);
+  var portrait=window.matchMedia && matchMedia('(orientation: portrait)').matches;
+  var full=(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches))
+    ? (portrait ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width)) : window.innerHeight;
+  var h=Math.max(wrap.getBoundingClientRect().height, full-ins);
+  wrap.style.height=Math.floor(h)+'px';
+}
 function fit(){
   if(!ST) return;
+  sizeWrap();
   var wrap=document.querySelector('.wrap'), W=Math.min(wrap.clientWidth,560)-20;
   var size=window.CARDSIZE?Math.min(1,CARDSIZE.value()):1;
   var byW=Math.floor((W-3*8)/4);
@@ -508,11 +523,18 @@ function render(){
   // v163: a covered card shows only its top strip, and that strip has to hold the rank. When a long pile
   // squeezes the strip below the rank's height (the ranks were cut in half), the covered cards' corner
   // print shrinks to fit the strip instead of being clipped. The top card is always full size.
+  // v165: the strip never gets thinner than it is on a two-card pile (30% of the card), so the covered
+  // ranks are never smaller than that pile's (Josh: "no smaller than the king in the third column").
+  // When the longest pile won't fit at that, all four work piles get narrower cards (--cw on #work)
+  // rather than thinner strips; the middle and the bottom bar keep their size.
   var ct=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cardtext'))||1;
-  var needOv=Math.ceil(CW*(0.05+0.27*ct))+3;
+  var longest=Math.max.apply(null, pls[0].work.map(function(c){ return c.length; }));
+  var WCW=CW; if(longest>1) WCW=Math.max(40, Math.min(CW, Math.floor(H/(1.4+0.3*(longest-1)))));
+  work.style.setProperty('--cw', WCW+'px');
+  var needOv=Math.ceil(WCW*(0.05+0.27*ct))+3;
   for(var w=0;w<4;w++){ var cs=pls[0].work[w], n=cs.length;
-    var ov=n>1?Math.max(14, Math.min(Math.round(CW*.3), Math.floor((H-CW*1.4)/(n-1)))):0;
-    var tight=ov<needOv, fs=Math.max(9, Math.floor(ov-CW*0.05-2));
+    var ov=n>1?Math.round(WCW*.3):0;
+    var tight=ov<needOv, fs=Math.max(9, Math.floor(ov-WCW*0.05-2));
     var hp='<div class="pile" data-pile="'+w+'">';
     if(!n) hp+=cardHTML(null,'',' data-pile="'+w+'"');
     cs.forEach(function(c,k){ var sel=SEL&&SEL.from.kind==='work'&&SEL.from.i===w&&k>=SEL.from.k, t=tight&&k<n-1;
@@ -653,7 +675,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v164", d=new Date(document.lastModified);
+(function(){ var V="v165", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();

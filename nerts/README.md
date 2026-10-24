@@ -100,3 +100,16 @@ Same fix as Spite & Malice v161: starting a drag redraws the board, and iOS Safa
 that touch, so the ghost card froze over the waste (screenshot, Oct 24). The page now captures the
 pointer once a drag starts, and the next press anywhere (or leaving the app) clears a stuck drag
 (`abortDrag`).
+
+## Covered ranks never shrink below a two-card pile's (v165)
+v163 shrank the covered cards' print to fit a squeezed strip, which on long piles got tiny. Now the strip
+is always 30% of the card - what a two-card pile shows - so a covered rank is never smaller than that.
+When the longest pile won't fit at 30%, all four work piles get narrower cards together (`--cw` set on
+`#work`) instead of thinner strips; the middle and the bottom bar keep their size.
+
+## Using the whole screen (v165)
+On the home-screen app there was a band of empty felt under the bottom bar (screenshot, Oct 24): iOS can
+report `100dvh` short of the real screen there. `sizeWrap()` now sets the page height from the whole
+screen when running as the home-screen app (no browser chrome), else the window height, minus the notch
+and home-bar insets - never less than the CSS height - before `fit()` sizes the cards, so the extra room
+goes to the work piles.
