@@ -127,6 +127,11 @@ template string in `blackjack/`.
 They are not currently all in sync, and that's fine — a game only needs bumping
 when the commit touches it, plus the hub and `sw.js`.
 
+**Also bump that game's tile date** — `updated:"YYYY-MM-DD"` on its line in the hub's
+`GAMES` list. That's the "Updated Oct 24" under the tile on the home screen, and Josh
+reads it as "did my change land"; a stale one looks like a failed deploy (Nerts said
+Oct 10 through v153–v155). Use today's local date.
+
 **A commit that ships nothing to the browser (this file, a README on its own)
 does not bump anything and has no `vNN` on its message.** Bumping the cache name
 makes every installed phone re-download the whole app, so don't spend that on a
