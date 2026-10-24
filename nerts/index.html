@@ -61,6 +61,12 @@
   .c.fits{box-shadow:0 0 0 3px #6fe39a;}
   .center .c{--cw:var(--ccw);}
   .center .c.flash{box-shadow:0 0 0 3px var(--gold);}
+  /* v153: a card that just landed in the middle wears the colour of whoever played it for a moment */
+  .me-dot{display:inline-block; width:9px; height:9px; border-radius:3px; background:var(--blue); margin-right:6px; vertical-align:0;}
+  .center .c.land{box-shadow:0 0 0 3px var(--lc), 0 0 10px var(--lc);}
+  .center .c.land.new{animation:landpop .28s ease-out;}
+  @keyframes landpop{0%{transform:scale(1.18)}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){ .center .c.land.new{animation:none;} }
 
   /* your work piles: columns that cascade down */
   .work{flex:1 1 auto; min-height:0; display:grid; grid-template-columns:repeat(4,var(--cw)); justify-content:space-between; position:relative;}
@@ -157,7 +163,7 @@
 
   <div class="opps" id="opps"></div>
   <div class="center" id="center"></div>
-  <div class="cap"><span>Your work piles</span><span id="myMid"></span></div>
+  <div class="cap"><span><i class="me-dot" title="your colour in the middle"></i>Your work piles</span><span id="myMid"></span></div>
   <div class="work" id="work"></div>
   <div class="say" id="say"></div>
   <div class="bar" id="bar">
@@ -353,7 +359,7 @@ function showSetup(){ stopBots(); renderSetup(); GNSETUP.show('setup'); }
 function newGame(){ G={n:prefs.n, speed:prefs.speed, to:prefs.to, totals:new Array(prefs.n).fill(0), round:0, done:false}; lsSet('nerts_game',G); deal(); }
 function resumeGame(){ var g=lsGet('nerts_game',null); if(!g||g.done){ newGame(); return; } G=g; deal(); }
 function deal(){
-  GNSETUP.hide('setup'); G.round++; ST=N.newRound(G.n); SEL=null; lastMoves=0; lastProgress=Date.now(); rotSince=0;
+  GNSETUP.hide('setup'); G.round++; ST=N.newRound(G.n); SEL=null;LAND={}; lastMoves=0; lastProgress=Date.now(); rotSince=0;
   sfx('shuffle'); fit(); render(); say('Go! Tap or drag your cards.'); startBots();
 }
 
@@ -363,8 +369,8 @@ function startBots(){
   stopBots(); var sp=SPEED[G.speed]||SPEED.normal;
   for(var p=1;p<G.n;p++) (function(p){
     function tick(){ if(!ST||ST.over) return;
-      if(!paused){ var before=ST.center.length, m=N.botStep(ST,p,sp.skill);
-        if(m && m.why==='center'){ flashCenter(); flashOpp(p); }
+      if(!paused){ var before=centerSnap(), m=N.botStep(ST,p,sp.skill);
+        if(m && m.why==='center'){ landed(p, before); flashOpp(p); }
         progress(); if(ST.over){ roundOver(); return; } render(); }
       timers[p]=setTimeout(tick, sp.ms*(0.7+Math.random()*0.6)); }
     timers[p]=setTimeout(tick, 700+Math.random()*900);
@@ -385,9 +391,10 @@ function setPaused(v){ paused=v; if(!v) lastProgress=Date.now(); }
 /* ---------- your moves ---------- */
 function act(from,to){
   if(!ST||ST.over) return false;
+  var before=centerSnap();
   if(!N.move(ST,0,from,to)){ sfx('illegal'); return false; }
-  sfx(to.kind==='center'?'place':'flip'); SEL=null; progress();
-  if(to.kind==='center') flashCenter();
+  SEL=null; progress();
+  if(to.kind==='center') landed(0, before); else sfx('flip');
   if(ST.over){ render(); roundOver(); return true; }
   render(); return true;
 }
@@ -436,7 +443,8 @@ function render(){
   $('opps').innerHTML=h;
   // the middle
   var slots=G.n*4, ch='';
-  for(var i=0;i<slots;i++){ var pile=ST.center[i]; ch+=pile?cardHTML(N.top(pile),'', ' data-ci="'+i+'"'):'<div class="c slot"></div>'; }
+  for(var i=0;i<slots;i++){ var pile=ST.center[i], la=pile?landAttr(i):'';
+    ch+=pile?cardHTML(N.top(pile), la?la.cls.trim():'', ' data-ci="'+i+'"'+(la?' style="'+la.style+'"':'')):'<div class="c slot"></div>'; }
   $('center').innerHTML=ch;
   $('myMid').textContent=pls[0].played+' in the middle';
   // work piles: cascade, squeezing the overlap to fit the space
@@ -464,7 +472,20 @@ function render(){
   else say('Tap a work pile (or the middle) to drop it.');
 }
 function say(h){ $('say').innerHTML=h; }
-function flashCenter(){ var el=$('center'); el.classList.remove('target'); }
+/* v153: who just played to the middle. The pile's top card gets that player's colour (you blue, Bea
+   yellow, Cy red, Dot green) for LAND_MS, and a sound: yours a solid place, a bot's a lighter chip. */
+var LAND={}, LAND_MS=1400, landT=null;
+function centerSnap(){ return ST.center.map(function(pl){ return pl.length; }); }
+function landed(p, before){
+  var ci=-1; for(var i=0;i<ST.center.length;i++){ if(i>=before.length || ST.center[i].length!==before[i]){ ci=i; break; } }
+  $('center').classList.remove('target');
+  sfx(p===0?'place':'chip');
+  if(ci<0) return;
+  LAND[ci]={p:p, at:Date.now(), fresh:true};
+  clearTimeout(landT); landT=setTimeout(function(){ if(ST) render(); }, LAND_MS+30);   // clear the colour when it's done
+}
+function landAttr(i){ var l=LAND[i]; if(!l || Date.now()-l.at>LAND_MS) return '';
+  var cls=' land'+(l.fresh?' new':''); l.fresh=false; return {cls:cls, style:'--lc:var(--'+COLORS[l.p]+')'}; }
 function flashOpp(p){ var el=$('opp'+p); if(!el) return; el.classList.add('flash'); setTimeout(function(){ el.classList.remove('flash'); }, 250); }
 var toastT=null; function toast(t){ var el=document.querySelector('.toast'); if(!el){ el=document.createElement('div'); el.className='toast'; document.body.appendChild(el); }
   el.textContent=t; el.style.display='block'; clearTimeout(toastT); toastT=setTimeout(function(){ el.style.display='none'; }, 3200); }
@@ -561,7 +582,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v139", d=new Date(document.lastModified);
+(function(){ var V="v153", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();

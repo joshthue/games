@@ -4,7 +4,7 @@ Competitive solitaire (also called Nertz, Pounce or Racing Demon). Everybody pla
 the same time onto shared piles in the middle; nobody takes turns. You against 1 to 3 bots
 (Bea, Cy, Dot) that play in real time at a speed you pick. Laid out from mockup B (Oct 9): your work
 piles under the middle, your Nerts pile, waste and stock pinned along the bottom under your thumb;
-middle cards are plain (no owner colour).
+middle cards are plain (no owner colour) - except for a moment after they land (v153).
 
 ## How it plays
 - **Nerts pile**: 13 cards, top one face up. Empty it and you call Nerts; the round stops for everybody.
@@ -50,3 +50,13 @@ middle cards are plain (no owner colour).
 - Browser: full rounds played through the UI by tapping into the middle, dragging between piles and
   flipping the stock, at 320×568, 390×844 and 430×932 with real insets: every move lands, no scroll,
   round-over screen and Next round work, Menu/Rules pause the bots.
+
+## Who just played to the middle (v153)
+- A card that lands in the middle wears its player's colour for 1.4 s - **you blue** (the swatch by
+  "Your work piles"), Bea yellow, Cy red, Dot green, the same colours as the opponent strip - with a
+  small pop as it lands (no pop with Reduce Motion). The colour then goes; the middle stays plain.
+- Sound: your card is a solid *place*, a bot's a lighter *chip*, so you can hear the bots beating you
+  to a pile without looking. Menu -> Sound turns both off.
+- Built: `centerSnap()` before a move, `landed(p, before)` after it finds the pile that changed and
+  stamps `LAND[pile]`; `render()` adds `.land` with `--lc` while it's fresh, and one timer re-renders to
+  clear it. Cleared on each new round.
