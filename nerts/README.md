@@ -107,9 +107,9 @@ is always 30% of the card - what a two-card pile shows - so a covered rank is ne
 When the longest pile won't fit at 30%, all four work piles get narrower cards together (`--cw` set on
 `#work`) instead of thinner strips; the middle and the bottom bar keep their size.
 
-## Using the whole screen (v165)
-On the home-screen app there was a band of empty felt under the bottom bar (screenshot, Oct 24): iOS can
-report `100dvh` short of the real screen there. `sizeWrap()` now sets the page height from the whole
-screen when running as the home-screen app (no browser chrome), else the window height, minus the notch
-and home-bar insets - never less than the CSS height - before `fit()` sizes the cards, so the extra room
-goes to the work piles.
+## Using the whole screen (v165, v166)
+On the home-screen app there was a band of empty felt under the bottom bar (screenshot, Oct 24). v165
+sized the page from the whole screen in the app and pushed the bottom bar off the bottom (Oct 25).
+v166 sizes it from the window that's actually there - `innerHeight` minus the body's notch / home-bar
+padding - in `sizeWrap()`, before `fit()`. Menu shows the numbers in small print at the bottom (screen,
+window, visual viewport, insets, CSS height, height used) so a screenshot says what the phone reported.

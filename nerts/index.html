@@ -200,6 +200,7 @@
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog" aria-label="Sound"></button></div>
   <div class="switchrow"><span>One tap plays to the middle<br><small style="opacity:.7">Off: double tap sends a card to the middle</small></span><button class="toggle" id="oneTapTog" aria-label="One tap plays to the middle"></button></div>
   <div id="menuCards"></div>
+  <div id="menuSizes" style="font:10px/1.3 ui-monospace,Menlo,monospace;opacity:.45;text-align:center;margin-top:8px"></div>
   <button class="bigbtn ghost" id="menuNew">New game</button>
   <button class="bigbtn ghost" id="menuRules">Rules</button>
   <a class="bigbtn ghost" href="../">Back to all games</a>
@@ -472,19 +473,19 @@ function cardHTML(c, extra, attrs){
   return '<div class="c s'+c.s+(N.red(c.s)?' redc':'')+(extra?' '+extra:'')+'"'+(attrs||'')+'><span class="r">'+N.rname(c.r)+'</span><span class="s2">'+N.SUITS[c.s]+'</span><span class="s">'+N.SUITS[c.s]+'</span></div>';
 }
 var CW=80, OVER=22;
-// v165: on the home-screen app iOS can report 100dvh short of the real screen, which left a band of
-// empty felt under the bottom bar. Size the page from the biggest honest number we have - the whole
-// screen when running as the home-screen app (no browser chrome), else the window - minus the notch
-// and home-bar insets, and never smaller than the CSS height.
+// v166: size the page from the window that's actually there (innerHeight) minus the notch / home-bar
+// insets. v165 used the whole screen in the home-screen app and pushed the bottom bar off the bottom;
+// the CSS 100dvh alone left a band of empty felt under it. SIZES keeps the numbers for Menu -> the
+// small print at the bottom, so a screenshot shows what the phone reported.
+var SIZES='';
 function sizeWrap(){
   var wrap=document.querySelector('.wrap'); if(!wrap) return;
   wrap.style.height='';
-  var bs=getComputedStyle(document.body), ins=(parseFloat(bs.paddingTop)||0)+(parseFloat(bs.paddingBottom)||0);
-  var portrait=window.matchMedia && matchMedia('(orientation: portrait)').matches;
-  var full=(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches))
-    ? (portrait ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width)) : window.innerHeight;
-  var h=Math.max(wrap.getBoundingClientRect().height, full-ins);
-  wrap.style.height=Math.floor(h)+'px';
+  var css=wrap.getBoundingClientRect().height;
+  var bs=getComputedStyle(document.body), it=parseFloat(bs.paddingTop)||0, ib=parseFloat(bs.paddingBottom)||0;
+  var vv=window.visualViewport?Math.round(visualViewport.height):0, h=Math.floor(window.innerHeight-it-ib);
+  SIZES='screen '+screen.height+' · window '+window.innerHeight+' · view '+vv+' · insets '+Math.round(it)+'/'+Math.round(ib)+' · css '+Math.round(css)+' · used '+h;
+  if(h>100) wrap.style.height=h+'px';
 }
 function fit(){
   if(!ST) return;
@@ -658,7 +659,7 @@ function closeM(el){ while(el&&!el.classList.contains('modal')) el=el.parentNode
 ['menuModal','rulesModal'].forEach(function(id){ $(id).addEventListener('click',function(e){ if(e.target===$(id)) closeM($(id).firstElementChild); }); });
 $('rulesBtn').onclick=function(){ openM('rulesModal'); };
 $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); openM('rulesModal'); };
-function paintMenu(){ paintFour(); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('oneTapTog').classList.toggle('on', !!prefs.oneTap); $('menuCards').innerHTML=window.CARDSIZE?CARDSIZE.rowsHTML():''; }
+function paintMenu(){ paintFour(); $('menuSizes').textContent=SIZES; $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); $('oneTapTog').classList.toggle('on', !!prefs.oneTap); $('menuCards').innerHTML=window.CARDSIZE?CARDSIZE.rowsHTML():''; }
 $('menuBtn').onclick=function(){ paintMenu(); openM('menuModal'); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
 $('oneTapTog').onclick=function(){ prefs.oneTap=!prefs.oneTap; savePrefs(); paintMenu(); };
@@ -675,7 +676,7 @@ ST=N.newRound(prefs.n); fit(); render(); say(''); showSetup();
 window.__NZ={ get st(){ return ST; }, get g(){ return G; }, act:act, tapCard:tapCard, tapStock:tapStock, setPaused:setPaused, stuck:function(){ lastProgress=0; checkStall(); } };
 
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v165", d=new Date(document.lastModified);
+(function(){ var V="v166", d=new Date(document.lastModified);
   var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
