@@ -203,3 +203,9 @@ covered it 1.8 s later. Now:
   the winner's sheet comes up (0.5 s with Reduce Motion).
 - The lobby stays hidden until you close the sheet (`S.winHold`), so it's one change at a time:
   finish, sheet, then the rail. **Next race** still starts the next one straight from the sheet.
+
+## The scratch boxes keep counting (v167)
+The four scratch boxes used to freeze at the scratch: "you paid $9" was only your cards of that number.
+Now, through the whole race, "you paid" adds every time **you** roll that scratched number, a red
+corner badge counts how many times anybody has rolled it (×3), and the box pulses when it's just been
+rolled. "You're clear" only while you've paid nothing on it at all.
