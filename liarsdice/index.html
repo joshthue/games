@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Liar's Dice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Liar's Dice">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --ok:#6fe39a; --teach:#6fe39a;
+    --die:clamp(40px,12vw,54px); --mini:26px; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:620px; margin:0 auto; padding:8px 12px 14px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  .opps{display:flex; gap:7px; justify-content:center; flex-wrap:wrap; margin:2px 0 4px; flex:0 0 auto;}
+  .opp{background:rgba(0,0,0,.22); border:2px solid transparent; border-radius:12px; padding:7px 9px 8px; text-align:center; min-width:76px; position:relative;}
+  .opp .nm{font-size:12px; font-weight:800; white-space:nowrap;}
+  .opp .cups{display:flex; gap:3px; justify-content:center; margin-top:4px; min-height:var(--mini); flex-wrap:wrap; max-width:120px;}
+  .opp.turn{border-color:var(--gold); background:rgba(240,198,116,.12);}
+  .opp.out{opacity:.4;}
+  .opp.out .nm{text-decoration:line-through;}
+  .opp .says{position:absolute; top:-10px; left:50%; transform:translateX(-50%); white-space:nowrap; font-size:10px; font-weight:800; background:var(--gold); color:var(--ink); border-radius:7px; padding:1px 6px; display:none;}
+  .opp.spoke .says{display:block;}
+
+  .mini{width:var(--mini); height:var(--mini); border-radius:5px; background:var(--cream); display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); padding:3px; flex:0 0 auto; box-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .mini i{width:4px; height:4px; border-radius:50%; background:var(--ink); place-self:center;}
+  .mini.one i{background:var(--red);}
+  .mini.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 4px,#215439 4px,#215439 8px); border:1px solid rgba(247,243,232,.5);}
+  .mini.back i{visibility:hidden;}
+  .mini.match{box-shadow:0 0 0 2px var(--gold);}
+  .mini.dim{opacity:.4;}
+
+  .stage{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; position:relative; text-align:center;}
+  .bidbig{font-size:15px; opacity:.9;}
+  .bidbig b{color:var(--gold);}
+  .bidrow{display:flex; gap:6px; align-items:center; justify-content:center; font-size:30px; font-weight:900; color:var(--gold);}
+  .bidrow .d{width:46px;height:46px;border-radius:11px;background:var(--cream);display:inline-grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:7px;vertical-align:middle;box-shadow:0 3px 7px rgba(0,0,0,.4)}
+  .bidrow .d i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center}
+  .bidrow .d.one i{background:var(--red)}
+  .reveal{display:flex; flex-direction:column; gap:6px; align-items:center;}
+  .reveal .rrow{display:flex; gap:4px; align-items:center; justify-content:center; flex-wrap:wrap;}
+  .reveal .rrow .nm{font-size:11px; width:54px; text-align:right; opacity:.85;}
+  .tally{font-size:15px;} .tally b{color:var(--gold);}
+  .verdict{font-family:Georgia,serif; font-size:26px; font-weight:900;}
+  .verdict.good{color:var(--ok);} .verdict.bad{color:#ff8c8c;}
+
+  .youwrap{flex:0 0 auto; margin-top:6px;}
+  .youlab{font-size:11px; text-transform:uppercase; letter-spacing:1px; opacity:.7; text-align:center; margin-bottom:4px;}
+  .youdice{display:flex; gap:7px; justify-content:center;}
+  .die{width:var(--die); height:var(--die); border-radius:11px; background:var(--cream); display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); padding:calc(var(--die)*.15); box-shadow:0 4px 8px rgba(0,0,0,.45); position:relative;}
+  .die i{width:calc(var(--die)*.16); height:calc(var(--die)*.16); border-radius:50%; background:var(--ink); place-self:center;}
+  .die.one i{background:var(--red);}
+  .die.match{box-shadow:0 0 0 3px var(--gold),0 4px 8px rgba(0,0,0,.45);}
+  .die.roll{animation:tumbling .26s ease-in-out infinite alternate;}
+  @keyframes tumbling{0%{transform:translateY(-6px) rotate(-12deg)}100%{transform:translateY(1px) rotate(10deg)}}
+
+  .builder{flex:0 0 auto; margin-top:9px;}
+  .qline{display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px;}
+  .qline .step{width:46px; height:46px; border-radius:12px; border:none; font-size:26px; font-weight:800; background:rgba(255,255,255,.14); color:var(--cream);}
+  .qline .step:disabled{opacity:.35;}
+  .qline .qv{font-size:22px; font-weight:900; min-width:34px; text-align:center;}
+  .qline .lbl{font-size:13px; opacity:.8;}
+  .faces{display:flex; gap:6px; justify-content:center; margin-bottom:9px;}
+  .faces button{width:46px; height:46px; border-radius:11px; border:2px solid rgba(255,255,255,.15); background:rgba(255,255,255,.08); display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); padding:7px; position:relative;}
+  .faces button i{width:6px; height:6px; border-radius:50%; background:var(--cream); place-self:center;}
+  .faces button.on{border-color:var(--gold); background:rgba(240,198,116,.18);}
+  .faces button.on i{background:var(--gold);}
+  .faces button:disabled{opacity:.3;}
+  .ctl{display:flex; gap:9px;}
+  .ctl button{flex:1 1 0; min-height:50px; border:none; border-radius:13px; font-size:16px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream); transition:transform .1s;}
+  .ctl button.go{background:var(--gold); color:var(--ink);}
+  .ctl button.liar{background:#b23b3b; color:#fff;}
+  .ctl button:active{transform:translateY(1px);} .ctl button:disabled{opacity:.4;}
+  .coach{text-align:center; font-size:12px; min-height:15px; color:var(--teach); margin:6px 2px 0; line-height:1.3;} .coach:empty{min-height:0;}
+  .waiting{text-align:center; font-size:15px; min-height:50px; display:flex; align-items:center; justify-content:center; font-weight:700;} .waiting b{color:var(--gold);}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .box{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px; max-width:390px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:23px; text-align:center;}
+  .modal p,.modal li{font-size:14px; line-height:1.55; opacity:.92;}
+  .modal .sub{text-align:center; margin:0 0 10px;}
+  table.st{width:100%; border-collapse:collapse; font-size:15px; margin:6px 0;}
+  table.st td{padding:7px 4px; border-bottom:1px solid rgba(255,255,255,.1);}
+  table.st td:last-child{text-align:right; font-weight:800; color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4; font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+<script src="../sfx.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Liar's Dice</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Everyone hides five dice. Bid how many of a face are on the whole table — <b>aces are wild</b> — raising each other up, until someone smells a bluff and calls <b>Liar</b>. Guess wrong and you lose a die. Last one with dice wins.</p>
+      <div class="gn-row"><span>Opponents</span><div class="seg" id="segOpp"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
+      <div class="gn-row"><span>Bots</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+      <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+      </details>
+    </div>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="startBtn">Shake the cups</button>
+      <button class="gn-alt hide" id="resumeBtn">Resume your game</button>
+    </div>
+  </div>
+
+  <div class="opps" id="opps"></div>
+
+  <div class="stage" id="stage"></div>
+
+  <div class="youwrap">
+    <div class="youlab" id="youlab">Your dice</div>
+    <div class="youdice" id="youdice"></div>
+  </div>
+
+  <div class="coach" id="coach"></div>
+
+  <div class="builder" id="builder">
+    <div class="qline">
+      <span class="lbl">How many?</span>
+      <button class="step" id="qMinus">–</button>
+      <span class="qv" id="qv">1</span>
+      <button class="step" id="qPlus">+</button>
+    </div>
+    <div class="faces" id="faces"></div>
+    <div class="ctl">
+      <button class="liar" id="liarBtn">Liar!</button>
+      <button class="go" id="bidBtn">Bid</button>
+    </div>
+  </div>
+  <div class="waiting hide" id="waiting"></div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="box">
+  <h2>Menu</h2>
+  <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button>
+  <button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a>
+  <button class="bigbtn" data-close>Close</button>
+</div></div>
+
+<div class="modal" id="rulesModal"><div class="box">
+  <h2>How to play</h2>
+  <p>Everyone rolls five dice and hides them under a cup. You can see only your own.</p>
+  <p>Players take turns <b>bidding</b> — a quantity and a face, like "three 5s" — claiming that at least that many of that face are on the table, counting <b>everyone's</b> dice.</p>
+  <p><b>Aces (1s) are wild</b> and count as whatever face is bid.</p>
+  <p>Each bid must be higher than the last: more dice, or the same number at a higher face.</p>
+  <p>Think the last bid is a bluff? Call <b>Liar</b>. Everyone lifts their cups and the bid face (plus aces) is counted:</p>
+  <ul><li>If there are <b>enough</b>, the bid was good — <b>you</b> lose a die for the bad call.</li>
+  <li>If there <b>aren't</b>, the bidder was bluffing — <b>they</b> lose a die.</li></ul>
+  <p>Lose all five dice and you're out. Last player with dice wins.</p>
+  <button class="bigbtn" data-close>Got it</button>
+</div></div>
+
+<div class="modal" id="overModal"><div class="box">
+  <h2 id="oTitle"></h2>
+  <p class="sub" id="oSub"></p>
+  <button class="bigbtn" id="oAgain">Play again</button>
+  <button class="bigbtn ghost" id="oSetup">Change settings</button>
+</div></div>
+
+<script>
+/* ============================================================
+   LIAR'S DICE — the engine. No DOM.  window.LIARS.  (see README)
+   ============================================================ */
+(function(G){
+  function rollHand(n, rnd){ rnd=rnd||Math.random; var d=[]; for(var i=0;i<n;i++) d.push(1+Math.floor(rnd()*6)); return d; }
+  function countFace(dice, face){ var c=0; for(var i=0;i<dice.length;i++){ if(dice[i]===face || dice[i]===1) c++; } return c; }
+  function allDice(players){ var out=[]; players.forEach(function(p){ if(!p.out) out=out.concat(p.dice); }); return out; }
+  function bidLegal(prev, qty, face){ if(face<2||face>6||qty<1) return false; if(!prev) return true; return qty>prev.qty || (qty===prev.qty && face>prev.face); }
+  function challenge(players, bid){ var actual=countFace(allDice(players), bid.face); return {actual:actual, bidGood: actual>=bid.qty}; }
+  function myMatch(dice, face){ var c=0; for(var i=0;i<dice.length;i++) if(dice[i]===face || dice[i]===1) c++; return c; }
+  function botAction(myDice, bid, unknownDice, level, rnd){ rnd=rnd||Math.random; var exp3=unknownDice/3, easy=level==='easy';
+    if(!bid){ var bestF=2,bestM=-1; for(var f=2;f<=6;f++){ var m=myMatch(myDice,f); if(m>bestM){ bestM=m; bestF=f; } }
+      var q=Math.max(1, Math.round(bestM+exp3-(easy?0.3:0.6))); return {type:'bid', qty:q, face:bestF}; }
+    var curBelief=(myMatch(myDice,bid.face)+exp3)-bid.qty, cands=[], f2;
+    for(f2=bid.face+1; f2<=6; f2++) cands.push({qty:bid.qty, face:f2});
+    for(f2=2; f2<=6; f2++) cands.push({qty:bid.qty+1, face:f2});
+    var best=null, bestB=-Infinity; cands.forEach(function(c){ var b=(myMatch(myDice,c.face)+exp3)-c.qty; if(b>bestB){ bestB=b; best=c; } });
+    if(curBelief < -(easy?2.4:1.5) - rnd()*0.4) return {type:'challenge'};
+    if(best && bestB >= -(easy?1.1:0.5) - rnd()*0.3) return {type:'bid', qty:best.qty, face:best.face};
+    return {type:'challenge'}; }
+  function newGame(names, startDice){ var sd=startDice||5; return { players: names.map(function(nm,i){ return {name:nm, dice:[], n:sd, out:false, idx:i}; }), bid:null, turn:0, lastLoser:0, round:1, over:false, winner:-1, reveal:null, phase:'bid' }; }
+  function aliveCount(g){ return g.players.filter(function(p){ return !p.out; }).length; }
+  function nextAlive(g, from){ var n=g.players.length, i=(from+1)%n, guard=0; while(g.players[i].out && guard++<n) i=(i+1)%n; return i; }
+  G.LIARS={ rollHand:rollHand, countFace:countFace, allDice:allDice, bidLegal:bidLegal, challenge:challenge, botAction:botAction, myMatch:myMatch, newGame:newGame, aliveCount:aliveCount, nextAlive:nextAlive };
+})(window);
+</script>
+<script>
+/* ============================================================
+   LIAR'S DICE — the screen.
+   ============================================================ */
+(function(){
+var LD=window.LIARS, $=function(id){ return document.getElementById(id); };
+var PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+var BOTNAMES=['Dale','Marv','Arlene'];
+var SPEED={relaxed:{think:1050, reveal:1500}, normal:{think:720, reveal:1100}, fast:{think:380, reveal:700}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+var prefs=Object.assign({opp:2, level:'normal', speed:'normal', teach:false}, lsGet('liars_prefs',{}));
+function savePrefs(){ lsSet('liars_prefs', prefs); }
+var stats=Object.assign({played:0, won:0}, lsGet('liars_stats',{}));
+
+var G=null, busy=false, timer=null, bQty=1, bFace=2, spoke={};
+
+/* ---- dice html ---- */
+function pipHTML(cls,v){ var h='<div class="'+cls+(v===1?' one':'')+'">'; var on=PIPS[v]||[]; for(var i=0;i<9;i++) h+='<i'+(on.indexOf(i)>=0?'':' style="visibility:hidden"')+'></i>'; return h+'</div>'; }
+
+/* ---- setup ---- */
+function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){
+  seg('segOpp',prefs.opp,function(v){ prefs.opp=+v; savePrefs(); renderSetup(); });
+  seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); });
+  seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); });
+  seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
+  var s=lsGet('liars_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over));
+}
+function showSetup(){ clearTimeout(timer); busy=false; renderSetup(); GNSETUP.show('setup'); }
+function start(){ var names=['You']; for(var i=0;i<prefs.opp;i++) names.push(BOTNAMES[i]); G=LD.newGame(names,5); G.lastLoser=0; GNSETUP.hide('setup'); closeAll(); startRound(0); }
+function resume(){ var s=lsGet('liars_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; GNSETUP.hide('setup'); closeAll(); busy=false; spoke={};
+  if(G.phase==='reveal'){ startRound(G.lastLoser); return; }   // don't resume mid-reveal
+  render(); if(G.players[G.turn].out) G.turn=LD.nextAlive(G,G.turn); maybeBot(); }
+function save(){ if(G&&!G.over) lsSet('liars_game',{G:G}); else { try{ localStorage.removeItem('liars_game'); }catch(e){} } }
+
+/* ---- round ---- */
+function startRound(starter){ clearTimeout(timer); spoke={}; G.bid=null; G.reveal=null; G.phase='bid';
+  G.players.forEach(function(p){ if(!p.out) p.dice=LD.rollHand(p.n); else p.dice=[]; });
+  G.turn = G.players[starter] && !G.players[starter].out ? starter : LD.nextAlive(G, starter);
+  resetBuilder(); busy=false; save(); sfx('shuffle');
+  rollYourDice(function(){ render(); maybeBot(); });
+}
+function rollYourDice(cb){ render(); if(reduced()){ cb&&cb(); return; } var box=$('youdice'); [].forEach.call(box.children,function(e){ e.classList.add('roll'); });
+  var spin=setInterval(function(){ [].forEach.call($('youdice').children,function(e,i){ setFaceDie(e, 1+Math.floor(Math.random()*6)); }); },70);
+  setTimeout(function(){ clearInterval(spin); [].forEach.call($('youdice').children,function(e){ e.classList.remove('roll'); }); render(); cb&&cb(); }, 520); }
+function setFaceDie(el, v){ el.className='die'+(v===1?' one':''); var on=PIPS[v]||[]; for(var i=0;i<9;i++){ var c=el.children[i]; if(!c){ c=document.createElement('i'); el.appendChild(c);} c.style.visibility=on.indexOf(i)>=0?'':'hidden'; } }
+
+function resetBuilder(){ if(G.bid){ if(G.bid.face<6){ bQty=G.bid.qty; bFace=G.bid.face+1; } else { bQty=G.bid.qty+1; bFace=2; } } else { bQty=Math.max(1, totalDice()>0?Math.round(totalDice()/3):1); bFace=pickMyBestFace(); } clampBuilder(); }
+function pickMyBestFace(){ var me=G.players[0], bf=2, bm=-1; for(var f=2;f<=6;f++){ var m=LD.myMatch(me.dice,f); if(m>bm){ bm=m; bf=f; } } return bf; }
+function totalDice(){ return LD.allDice(G.players).length; }
+function minBidFor(face){ if(!G.bid) return 1; if(face>G.bid.face) return G.bid.qty; return G.bid.qty+1; }
+function clampBuilder(){ var mn=minBidFor(bFace); if(bQty<mn) bQty=mn; if(bQty>totalDice()) bQty=totalDice(); }
+
+/* ---- turns ---- */
+function maybeBot(){ if(!G||G.over||G.phase!=='bid') return; if(G.turn===0){ busy=false; render(); return; } busy=true; render();
+  timer=setTimeout(botMove, SPEED[prefs.speed].think); }
+function botMove(){ if(!G||G.over) return; var p=G.players[G.turn]; var unknown=totalDice()-p.dice.length;
+  var a=LD.botAction(p.dice, G.bid, unknown, prefs.level==='easy'?'easy':(G.turn===0?'normal':prefs.level));
+  if(a.type==='challenge' && G.bid){ sayBubble(G.turn,'Liar!'); render(); timer=setTimeout(doReveal, SPEED[prefs.speed].think*0.5); return; }
+  if(a.type==='challenge' && !G.bid){ a={type:'bid', qty:1, face:pickBotFace(p)}; }
+  if(!LD.bidLegal(G.bid,a.qty,a.face)){ a.qty=(G.bid? (a.face>G.bid.face?G.bid.qty:G.bid.qty+1):1); } // safety
+  placeBid(G.turn, a.qty, a.face);
+}
+function pickBotFace(p){ var bf=2,bm=-1; for(var f=2;f<=6;f++){ var m=LD.myMatch(p.dice,f); if(m>bm){ bm=m; bf=f; } } return bf; }
+function placeBid(who, qty, face){ G.bid={qty:qty, face:face, player:who}; sayBubble(who, qty+' × '+face+'s'); sfx('select'); G.turn=LD.nextAlive(G,who); resetBuilder(); save(); render();
+  if(who!==0) {} maybeBot(); }
+function sayBubble(who, txt){ spoke={}; spoke[who]=txt; }
+
+/* YOU */
+function myBid(){ if(busy||G.turn!==0||G.phase!=='bid') return; if(!LD.bidLegal(G.bid,bQty,bFace)) return; placeBid(0,bQty,bFace); }
+function myLiar(){ if(busy||G.turn!==0||G.phase!=='bid'||!G.bid) return; sayBubble(0,'Liar!'); render(); doReveal(0); }
+
+/* ---- reveal / resolve ---- */
+function doReveal(challenger){ if(challenger===undefined) challenger=G.turn; G.phase='reveal'; busy=true;
+  var res=LD.challenge(G.players, G.bid); var bidder=G.bid.player;
+  var loser = res.bidGood ? challenger : bidder;
+  G.reveal={ bid:G.bid, actual:res.actual, bidGood:res.bidGood, loser:loser, challenger:challenger };
+  sfx('turn'); render();
+  timer=setTimeout(function(){
+    // apply the loss
+    var lp=G.players[loser]; lp.n--; if(lp.dice.length) lp.dice.pop(); if(lp.n<=0){ lp.n=0; lp.out=true; }
+    sfx(loser===0?'bad':'good');
+    G.lastLoser = lp.out ? LD.nextAlive(G,loser) : loser;
+    save(); render();
+    if(LD.aliveCount(G)<=1){ timer=setTimeout(gameOver, SPEED[prefs.speed].reveal*0.7); return; }
+    timer=setTimeout(function(){ startRound(G.lastLoser); }, SPEED[prefs.speed].reveal);
+  }, SPEED[prefs.speed].reveal);
+}
+function gameOver(){ G.over=true; var w=-1; G.players.forEach(function(p){ if(!p.out) w=p.idx; }); G.winner=w;
+  stats.played++; if(w===0) stats.won++; lsSet('liars_stats',stats); sfx(w===0?'win':'lose'); if(w===0) confetti();
+  $('oTitle').textContent = w===0?'You win!':G.players[w].name+' wins';
+  $('oSub').textContent = w===0?'Everyone else is out of dice.':'You’re out of dice.';
+  save(); $('overModal').classList.add('show'); }
+
+/* ---- render ---- */
+function render(){
+  if(!G) return;
+  $('sub').textContent = 'Aces wild · '+totalDice()+' dice on the table';
+  // opponents
+  $('opps').innerHTML = G.players.map(function(p,i){ if(i===0) return '';
+    var cups=''; var rev = G.phase==='reveal' && G.reveal;
+    if(rev && !p.out){ cups=p.dice.map(function(v){ var m=(v===G.reveal.bid.face||v===1); return '<div class="mini'+(v===1?' one':'')+(m?' match':' dim')+'">'+pips(v)+'</div>'; }).join(''); }
+    else { for(var k=0;k<p.n;k++) cups+='<div class="mini back"></div>'; if(p.out) cups='<span style="font-size:11px;opacity:.7">out</span>'; }
+    return '<div class="opp'+(i===G.turn&&G.phase==='bid'?' turn':'')+(p.out?' out':'')+(spoke[i]?' spoke':'')+'">'+
+      '<span class="says">'+(spoke[i]||'')+'</span><div class="nm">'+p.name+'</div><div class="cups">'+cups+'</div></div>';
+  }).join('');
+  // stage
+  var st=$('stage');
+  if(G.phase==='reveal' && G.reveal){
+    var r=G.reveal, b=r.bid;
+    st.innerHTML='<div class="bidbig"><b>'+G.players[b.player].name+'</b> bid '+b.qty+' × '+faceWord(b.face)+'</div>'+
+      '<div class="verdict '+(r.bidGood?'good':'bad')+'">'+(r.bidGood?'True!':'Liar!')+'</div>'+
+      '<div class="tally">There '+(r.actual===1?'was':'were')+' <b>'+r.actual+'</b> '+faceWord(b.face)+' (aces wild).</div>'+
+      '<div class="bidbig">'+(G.players[r.loser].name==='You'?'You lose':G.players[r.loser].name+' loses')+' a die'+(G.players[r.loser].out?' — and is out!':'')+'.</div>';
+  } else {
+    if(!G.bid){ st.innerHTML='<div class="bidbig">'+(G.turn===0?'You open the round.':'<b>'+G.players[G.turn].name+'</b> opens the round…')+'</div>'; }
+    else { var bb=G.bid; st.innerHTML='<div class="bidbig">on the table</div>'+
+      '<div class="bidrow">'+bb.qty+' <span>×</span> '+pipBig(bb.face)+'</div>'+
+      '<div class="bidbig"><b>'+G.players[bb.player].name+'</b> bid '+bb.qty+' '+faceWord(bb.face)+'</div>'; }
+  }
+  // your dice
+  var me=G.players[0]; var box=$('youdice'); box.innerHTML=''; var revMine = G.phase==='reveal' && G.reveal;
+  (me.out?[]:me.dice).forEach(function(v){ var e=document.createElement('div'); var m=revMine && (v===G.reveal.bid.face||v===1); e.className='die'+(v===1?' one':'')+(m?' match':''); var on=PIPS[v]||[]; for(var i=0;i<9;i++) e.innerHTML+='<i'+(on.indexOf(i)>=0?'':' style="visibility:hidden"')+'></i>'; box.appendChild(e); });
+  $('youlab').textContent = me.out? 'You are out' : 'Your dice'+(revMine?' (aces wild)':'');
+  // builder vs waiting
+  var myTurn = G.turn===0 && G.phase==='bid' && !busy && !me.out;
+  $('builder').classList.toggle('hide', !myTurn);
+  $('waiting').classList.toggle('hide', myTurn);
+  if(myTurn){ renderBuilder(); }
+  else { $('waiting').innerHTML = G.phase==='reveal' ? '' : (me.out? 'You’re out — watching it play out…' : '<b>'+G.players[G.turn].name+'</b> is thinking…'); }
+  // coach
+  var co=$('coach'); if(!prefs.teach || !myTurn){ co.textContent=''; }
+  else { var exp=(LD.myMatch(me.dice, bFace) + (totalDice()-me.dice.length)/3);
+    if(!G.bid) co.innerHTML='Open with a face you hold. You have <b style="color:var(--teach)">'+LD.myMatch(me.dice,bFace)+'</b> of them; expect about '+exp.toFixed(1)+' on the table total.';
+    else { var e2=(LD.myMatch(me.dice,G.bid.face)+(totalDice()-me.dice.length)/3);
+      co.innerHTML='Bid is '+G.bid.qty+' '+faceWord(G.bid.face)+'; you’d expect about <b style="color:var(--teach)">'+e2.toFixed(1)+'</b>. '+(G.bid.qty>e2+1.3?'Looks high — calling Liar is tempting.':'Plausible — a raise is safer.'); }
+  }
+}
+function pips(v){ var on=PIPS[v]||[]; var h=''; for(var i=0;i<9;i++) h+='<i'+(on.indexOf(i)>=0?'':' style="visibility:hidden"')+'></i>'; return h; }
+function pipBig(v){ var on=PIPS[v]||[]; var h='<span class="d'+(v===1?' one':'')+'">'; for(var i=0;i<9;i++) h+='<i'+(on.indexOf(i)>=0?'':' style="visibility:hidden"')+'></i>'; return h+'</span>'; }
+function faceWord(f){ return f+'s'; }
+function renderBuilder(){
+  clampBuilder();
+  $('qv').textContent=bQty;
+  $('qMinus').disabled = bQty<=minBidFor(bFace);
+  $('qPlus').disabled = bQty>=totalDice();
+  var fh=''; for(var f=2;f<=6;f++){ var legalFace = LD.bidLegal(G.bid, Math.max(bQty, minBidFor(f)), f);
+    fh+='<button data-f="'+f+'" class="'+(f===bFace?'on':'')+'"'+(legalFace?'':' disabled')+'>'+pips(f)+'</button>'; }
+  $('faces').innerHTML=fh;
+  [].forEach.call($('faces').children,function(btn){ btn.onclick=function(){ bFace=+btn.dataset.f; if(bQty<minBidFor(bFace)) bQty=minBidFor(bFace); sfx('select'); renderBuilder(); }; });
+  $('bidBtn').disabled = !LD.bidLegal(G.bid,bQty,bFace);
+  $('bidBtn').textContent = 'Bid '+bQty+' × '+bFace+'s';
+  $('liarBtn').disabled = !G.bid;
+}
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff'];
+  for(var i=0;i<40;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c);
+    c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+/* ---- menus / wiring ---- */
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ var m=b; while(m&&!m.classList.contains('modal')) m=m.parentNode; if(m) m.classList.remove('show'); }; });
+['menuModal','rulesModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); }
+$('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
+$('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('liars_game'); }catch(e){} showSetup(); };
+$('qMinus').onclick=function(){ if(bQty>minBidFor(bFace)){ bQty--; sfx('select'); renderBuilder(); } };
+$('qPlus').onclick=function(){ if(bQty<totalDice()){ bQty++; sfx('select'); renderBuilder(); } };
+$('bidBtn').onclick=myBid; $('liarBtn').onclick=myLiar;
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+
+window.__LD={ get G(){ return G; }, get st(){ return {turn:G&&G.turn, phase:G&&G.phase, busy:busy, bid:G&&G.bid, over:G&&G.over, alive:G?LD.aliveCount(G):0}; },
+  bid:function(q,f){ bQty=q; bFace=f; myBid(); }, liar:myLiar, setB:function(q,f){ bQty=q; bFace=f; renderBuilder(); }, autoBid:function(){ myBid(); }, start:start,
+  myDice:function(){ return G.players[0].dice.slice(); }, total:totalDice };
+
+var s0=lsGet('liars_game',null);
+if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
+
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v168", d=new Date(document.lastModified);
+  var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>

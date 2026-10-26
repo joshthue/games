@@ -100,6 +100,9 @@ const GAMES = [
   // { title:"Links",            emoji:"⛳", sub:"Nine holes at Birch Hollow · three-tap swing", href:"golf/", updated:"2026-09-15" },
   { title:"Pull Tabs",        emoji:"🎟️", sub:"Lake Uffda VFW · one live booth for everybody · six boxes · big winners on the ticker", href:"pulltabs/", updated:"2026-10-02" },
   { title:"Horse Race",       emoji:"🏇", sub:"Lake Uffda Downs · cards & dice · one live track, everybody's in · same wallet as Pull Tabs", href:"horserace/", updated:"2026-10-25" },
+  { title:"Farkle",           emoji:"🎲", sub:"Push your luck · set aside the scoring dice, bank before a roll comes up empty · you vs 1 to 3 bots · teaching mode", href:"farkle/", updated:"2026-10-26" },
+  { title:"Pig",              emoji:"🐷", sub:"The simplest press-your-luck · keep rolling, but a 1 wipes your turn · first to 100 · you vs 1 to 3 bots", href:"pig/", updated:"2026-10-26" },
+  { title:"Liar's Dice",      emoji:"🤥", sub:"Bluffing dice · bid how many are on the table, aces wild, or call the bluff · you vs 1 to 3 bots · teaching mode", href:"liarsdice/", updated:"2026-10-26" },
   { title:"Bar Dice",         emoji:"🎲", sub:"Shake of the Day for one shared jackpot · Ship, Captain & Crew vs the regulars", href:"bardice/", updated:"2026-10-22" },
   { title:"YachtRock",        emoji:"⛵", sub:"Solo dice · thirteen boxes, three rolls a turn · chase your high score", href:"yachtrock/", updated:"2026-10-22" },
   // hidden for now (Josh, Oct 23) - still works by its URL; headed for a beta-games list later. Uncomment to bring the tile back.
@@ -163,7 +166,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v168", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v169", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

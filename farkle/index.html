@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Farkle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Farkle">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --ok:#6fe39a; --teach:#6fe39a;
+    --die:clamp(44px,13.5vw,60px); }
+  @media (max-height:620px){ :root{ --die:clamp(40px,12vw,52px); } }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:600px; margin:0 auto; padding:8px 12px 14px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  /* scoreboard */
+  .board{display:flex; gap:6px; margin:2px 0 6px; flex:0 0 auto;}
+  .pl{flex:1 1 0; background:rgba(0,0,0,.22); border:2px solid transparent; border-radius:11px; padding:6px 6px 7px; text-align:center; min-width:0; position:relative;}
+  .pl .nm{font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .pl .sc{font-size:17px; font-weight:900; font-variant-numeric:tabular-nums; color:var(--gold); line-height:1.1;}
+  .pl .bar{height:3px; border-radius:2px; background:rgba(255,255,255,.12); margin-top:4px; overflow:hidden;}
+  .pl .bar i{display:block; height:100%; background:var(--gold); width:0;}
+  .pl.turn{border-color:var(--gold); background:rgba(240,198,116,.12);}
+  .pl.turn::after{content:"▲"; position:absolute; top:-11px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--gold);}
+  .pl .tp{position:absolute; top:-9px; right:-4px; font-size:10px; font-weight:900; background:var(--gold); color:var(--ink); border-radius:7px; padding:0 5px; display:none;}
+  .pl.turn .tp.on{display:block;}
+
+  .stage{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; position:relative;}
+  .whose{font-size:15px; text-align:center; min-height:20px; font-weight:700;}
+  .whose b{color:var(--gold);}
+  .tray{display:flex; gap:5px; flex-wrap:wrap; justify-content:center; min-height:calc(var(--die)*.62 + 4px); align-items:center; padding:3px 6px;
+    border-radius:12px; background:rgba(0,0,0,.14); max-width:100%;}
+  .tray:empty::before{content:"set-aside dice land here"; font-size:11px; opacity:.4;}
+  .tray .die{--die:calc(clamp(44px,13.5vw,60px)*.6);}
+  .dice{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; min-height:var(--die); align-items:center;}
+  .turnline{font-size:14px; text-align:center;}
+  .turnline b{color:var(--gold); font-variant-numeric:tabular-nums;}
+  .turnline .add{color:var(--ok); font-weight:800;}
+
+  .die{width:var(--die); height:var(--die); border-radius:12px; background:var(--cream); display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr);
+    padding:calc(var(--die)*.15); box-shadow:0 4px 8px rgba(0,0,0,.45); position:relative; transition:transform .15s;}
+  .die i{width:calc(var(--die)*.17); height:calc(var(--die)*.17); border-radius:50%; background:var(--ink); place-self:center;}
+  .die.one i{background:var(--red);}
+  .die.tap{cursor:pointer;}
+  .die.sel{transform:translateY(-9px); box-shadow:0 0 0 3px var(--gold),0 10px 14px rgba(0,0,0,.45);}
+  .die.dead{opacity:.34;}
+  .die.hintkeep{box-shadow:0 0 0 3px var(--teach),0 0 14px rgba(111,227,154,.7);}
+  .die.tumbling{animation:tumbling .26s ease-in-out infinite alternate;}
+  @keyframes tumbling{0%{transform:translateY(-7px) rotate(-14deg) scale(.96)}100%{transform:translateY(1px) rotate(12deg) scale(1.02)}}
+  .die.thud{animation:thud .22s ease-out;}
+  @keyframes thud{0%{transform:scale(1.2) translateY(-4px)}55%{transform:scale(.93)}100%{transform:scale(1)}}
+  .die.nope{animation:nope .42s ease-in-out;}
+  @keyframes nope{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+  .die.blank{background:rgba(247,243,232,.22); box-shadow:none;}
+  .die.blank i{visibility:hidden;}
+
+  .beat{position:absolute; left:50%; top:46%; transform:translate(-50%,-50%) scale(.6); opacity:0; pointer-events:none; white-space:nowrap; z-index:6;
+    font-family:Georgia,serif; font-size:40px; font-weight:900; color:var(--gold); text-shadow:0 2px 12px rgba(0,0,0,.8);}
+  .beat.on{animation:beat 1.4s ease-out forwards;}
+  .beat.bad{color:#ff8c8c;}
+  @keyframes beat{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}16%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}30%{transform:translate(-50%,-50%) scale(1)}72%{opacity:1}100%{opacity:0;transform:translate(-50%,-78%) scale(1)}}
+
+  .coach{text-align:center; font-size:12px; min-height:15px; color:var(--teach); margin:2px 2px 0; line-height:1.3;}
+  .coach:empty{min-height:0;}
+  .ctl{display:flex; gap:9px; flex:0 0 auto; margin-top:8px;}
+  .ctl button{flex:1 1 0; min-height:52px; border:none; border-radius:13px; font-size:16px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream); transition:transform .1s;}
+  .ctl button.go{background:var(--gold); color:var(--ink);}
+  .ctl button.bank{background:#2f8f5f; color:#fff;}
+  .ctl button:active{transform:translateY(1px);}
+  .ctl button:disabled{opacity:.38;}
+  .mini-ctl{display:flex; gap:9px; flex:0 0 auto; margin-top:7px;}
+  .mini-ctl button{flex:1 1 0; min-height:42px; border:none; border-radius:11px; font-size:14px; font-weight:700; background:rgba(255,255,255,.1); color:var(--cream);}
+  .mini-ctl button:disabled{opacity:.4;}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .box{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px; max-width:400px; width:100%; max-height:88vh; overflow-y:auto; overscroll-behavior:contain; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:23px; text-align:center;}
+  .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.92;}
+  .modal .sub{text-align:center; margin:0 0 10px;}
+  .modal h3{font-size:11px; letter-spacing:1.3px; text-transform:uppercase; color:var(--gold); margin:12px 0 4px;}
+  .modal table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  .modal td{padding:4px 2px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .modal td:last-child{text-align:right; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  table.st{width:100%; border-collapse:collapse; font-size:15px; margin:6px 0;}
+  table.st td{padding:7px 4px; border-bottom:1px solid rgba(255,255,255,.1);}
+  table.st td:last-child{text-align:right; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums;}
+  table.st tr.win td{color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4; font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+<script src="../sfx.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top">
+      <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="rulesBtn">Rules</button>
+      <button class="gn-pill" id="menuBtn">Menu</button>
+    </div>
+    <h1 class="gn-name">Farkle</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Roll six dice, set aside the ones that score, and push your luck. Bank before a roll comes up empty — a <b>Farkle</b> wipes everything you hadn't banked. First to 10,000 wins.</p>
+      <div class="gn-row"><span>Opponents</span><div class="seg" id="segOpp"><button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
+      <div class="gn-row"><span>Bots</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+      <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Game to</span><div class="seg" id="segTarget"><button data-v="5000">5,000</button><button data-v="10000">10,000</button></div></div>
+        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+      </details>
+    </div>
+    <div class="gn-setup-foot">
+      <button class="gn-start" id="startBtn">Roll out</button>
+      <button class="gn-alt hide" id="resumeBtn">Resume your game</button>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="stage" id="stage">
+    <div class="beat" id="beat"></div>
+    <div class="whose" id="whose"></div>
+    <div class="tray" id="tray"></div>
+    <div class="dice" id="dice"></div>
+    <div class="turnline" id="turnline"></div>
+  </div>
+  <div class="coach" id="coach"></div>
+
+  <div class="ctl" id="ctl">
+    <button class="go" id="rollBtn">Roll</button>
+    <button class="bank" id="bankBtn">Bank</button>
+  </div>
+  <div class="mini-ctl">
+    <button id="hintBtn">Hint</button>
+    <button id="clearBtn">Clear picks</button>
+  </div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="box">
+  <h2>Menu</h2>
+  <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button>
+  <button class="bigbtn ghost" id="menuRules">Rules &amp; scoring</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a>
+  <button class="bigbtn" data-close>Close</button>
+</div></div>
+
+<div class="modal" id="rulesModal"><div class="box">
+  <h2>How to play</h2>
+  <p>On your turn, roll all six dice. <b>Set aside at least one scoring die</b>, then choose: roll the dice that are left to build your turn higher, or <b>bank</b> what you've got.</p>
+  <p>If a roll shows <b>no scoring dice at all</b>, that's a <b>Farkle</b> — your whole unbanked turn is lost. Bank before your luck runs out.</p>
+  <p>Clear all six dice and you've got <b>hot dice</b>: roll all six again and keep stacking.</p>
+  <h3>Scoring</h3>
+  <table>
+    <tr><td>Each 1</td><td>100</td></tr>
+    <tr><td>Each 5</td><td>50</td></tr>
+    <tr><td>Three 1s</td><td>1,000</td></tr>
+    <tr><td>Three 2s / 3s / 4s / 5s / 6s</td><td>face × 100</td></tr>
+    <tr><td>Four of a kind</td><td>1,000</td></tr>
+    <tr><td>Five of a kind</td><td>2,000</td></tr>
+    <tr><td>Six of a kind</td><td>3,000</td></tr>
+    <tr><td>Straight (1-2-3-4-5-6)</td><td>1,500</td></tr>
+    <tr><td>Three pairs</td><td>1,500</td></tr>
+    <tr><td>Two triplets</td><td>2,500</td></tr>
+  </table>
+  <h3>Winning</h3>
+  <p>First player to the target banks over. When someone gets there, everyone else gets <b>one last turn</b> to beat them — highest total wins.</p>
+  <button class="bigbtn" data-close>Got it</button>
+</div></div>
+
+<div class="modal" id="overModal"><div class="box">
+  <h2 id="oTitle"></h2>
+  <p class="sub" id="oSub"></p>
+  <table class="st" id="oTable"></table>
+  <button class="bigbtn" id="oAgain">Play again</button>
+  <button class="bigbtn ghost" id="oSetup">Change settings</button>
+</div></div>
+
+<script>
+/* ============================================================
+   FARKLE — the engine. No DOM.  window.FARKLE.  (see README)
+   ============================================================ */
+(function(G){
+  function fromDice(dice){ var c=[0,0,0,0,0,0,0]; for(var i=0;i<dice.length;i++) c[dice[i]]++; return c; }
+  function total(c){ return c[1]+c[2]+c[3]+c[4]+c[5]+c[6]; }
+  function groupValue(face, take){ if(take<3) return 0; if(take===3) return face===1?1000:face*100; if(take===4) return 1000; if(take===5) return 2000; if(take===6) return 3000; return 0; }
+  var MEMO={};
+  function solve(c){
+    var key=c[1]+','+c[2]+','+c[3]+','+c[4]+','+c[5]+','+c[6];
+    if(MEMO[key]!==undefined) return MEMO[key];
+    var n=total(c);
+    if(n===0){ return (MEMO[key]={anyPts:0, fullPts:0}); }
+    var bestAny=0, bestFull=-1, f, take, v, c2, r;
+    for(f=1;f<=6;f++){
+      if(c[f]>=3){ for(take=3;take<=c[f];take++){ v=groupValue(f,take); if(v>0){ c2=c.slice(); c2[f]-=take; r=solve(c2);
+        if(v+r.anyPts>bestAny) bestAny=v+r.anyPts; if(r.fullPts>=0 && v+r.fullPts>bestFull) bestFull=v+r.fullPts; } } }
+      if((f===1||f===5) && c[f]>=1){ v=(f===1?100:50); c2=c.slice(); c2[f]-=1; r=solve(c2);
+        if(v+r.anyPts>bestAny) bestAny=v+r.anyPts; if(r.fullPts>=0 && v+r.fullPts>bestFull) bestFull=v+r.fullPts; }
+    }
+    return (MEMO[key]={anyPts:bestAny, fullPts:bestFull});
+  }
+  function specialVal(c, n){ if(n!==6) return 0; var best=0, f;
+    var straight=true; for(f=1;f<=6;f++) if(c[f]!==1) straight=false; if(straight) best=Math.max(best,1500);
+    var allEven=true, pairs=0; for(f=1;f<=6;f++){ if(c[f]%2!==0) allEven=false; pairs+=Math.floor(c[f]/2); } if(allEven && pairs===3) best=Math.max(best,1500);
+    var trips=0, ok=true; for(f=1;f<=6;f++){ if(c[f]===3) trips++; else if(c[f]!==0) ok=false; } if(ok && trips===2) best=Math.max(best,2500);
+    return best; }
+  function scoreRoll(dice){ var c=fromDice(dice); var best=solve(c).anyPts; var sp=specialVal(c,dice.length); return sp>best?sp:best; }
+  function isFarkle(dice){ return scoreRoll(dice)===0; }
+  function scoreSelection(dice){ var c=fromDice(dice), n=dice.length, s=solve(c); var best=s.fullPts>=0?s.fullPts:-1; var sp=specialVal(c,n); if(sp>best) best=sp; return {valid:best>0, pts:best>0?best:0}; }
+  function bestKeep(dice){ var nd=dice.length, best={keepIdx:[], pts:0}, mask, i, sub, idx, sc;
+    for(mask=1; mask<(1<<nd); mask++){ sub=[]; idx=[]; for(i=0;i<nd;i++) if(mask&(1<<i)){ sub.push(dice[i]); idx.push(i); }
+      sc=scoreSelection(sub); if(sc.valid && (sc.pts>best.pts || (sc.pts===best.pts && idx.length<best.keepIdx.length))) best={keepIdx:idx, pts:sc.pts}; }
+    return best; }
+  function rollDice(n, rnd){ rnd=rnd||Math.random; var d=[]; for(var i=0;i<n;i++) d.push(1+Math.floor(rnd()*6)); return d; }
+  var PFARKLE={1:0.6667,2:0.4444,3:0.2778,4:0.1574,5:0.0772,6:0.0231};
+  function botBank(turnPts, diceLeft, myTotal, target, level){ if(myTotal+turnPts>=target) return true; if(diceLeft<=0) return false;
+    var t={easy:{6:800,5:650,4:500,3:400,2:300,1:250}, normal:{6:1200,5:900,4:650,3:500,2:400,1:300}}[level||'normal']; return turnPts>=t[diceLeft]; }
+  function newGame(target){ return {target:target||10000, scores:[], names:[], turn:0, round:1, over:false, winner:-1, lastRound:false, finalFrom:-1, log:[]}; }
+  G.FARKLE={ fromDice:fromDice, scoreRoll:scoreRoll, isFarkle:isFarkle, scoreSelection:scoreSelection, bestKeep:bestKeep, rollDice:rollDice, botBank:botBank, newGame:newGame, PFARKLE:PFARKLE };
+})(window);
+</script>
+<script>
+/* ============================================================
+   FARKLE — the screen. Knows no rules; asks window.FARKLE.
+   ============================================================ */
+(function(){
+var FK=window.FARKLE, $=function(id){ return document.getElementById(id); };
+var PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+var BOTNAMES=['Dale','Marv','Arlene'];
+var SPEED={relaxed:{roll:620,step:900,land:150}, normal:{roll:430,step:600,land:110}, fast:{roll:260,step:340,land:70}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function commas(n){ return n.toLocaleString('en-US'); }
+
+var prefs=Object.assign({opp:3, level:'normal', speed:'normal', teach:false, target:10000}, lsGet('farkle_prefs',{}));
+function savePrefs(){ lsSet('farkle_prefs', prefs); }
+var stats=Object.assign({played:0, won:0, farkles:0, best:0}, lsGet('farkle_stats',{}));
+
+var G=null;           // engine game (scores/names/target/…)
+// turn state
+var cur=0, live=[], kept=[], sel=[], turnPts=0, remaining=6, phase='idle', busy=false, timer=null, hinted=false;
+
+/* ---- dice drawing ---- */
+function dieEl(v, opts){ opts=opts||{}; var e=document.createElement('div'); e.className='die'+(v===1?' one':'');
+  if(v===0){ e.className='die blank'; }
+  for(var i=0;i<9;i++){ var on=v&&PIPS[v].indexOf(i)>=0; e.innerHTML+='<i'+(on?'':' style="visibility:hidden"')+'></i>'; }
+  return e; }
+function setFace(el, v){ el.className='die'+(v===1?' one':''); var on=PIPS[v]||[]; for(var i=0;i<9;i++){ var c=el.children[i]; if(!c){ c=document.createElement('i'); el.appendChild(c); } c.style.visibility=on.indexOf(i)>=0?'':'hidden'; } }
+
+/* ---- setup ---- */
+function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){
+  seg('segOpp',prefs.opp,function(v){ prefs.opp=+v; savePrefs(); renderSetup(); });
+  seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); });
+  seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); });
+  seg('segTarget',prefs.target,function(v){ prefs.target=+v; savePrefs(); renderSetup(); });
+  seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
+  var s=lsGet('farkle_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over));
+}
+function showSetup(){ clearTimeout(timer); busy=false; renderSetup(); GNSETUP.show('setup'); }
+function start(){
+  G=FK.newGame(prefs.target);
+  var n=prefs.opp+1; G.scores=[]; G.names=['You'];
+  for(var i=0;i<prefs.opp;i++){ G.names.push(BOTNAMES[i]); }
+  for(var k=0;k<n;k++) G.scores.push(0);
+  GNSETUP.hide('setup'); closeAll(); save(); startTurn(0);
+}
+function resume(){ var s=lsGet('farkle_game',null); if(!s||!s.G||s.G.over){ start(); return; }
+  G=s.G; cur=s.cur||0; GNSETUP.hide('setup'); closeAll(); startTurn(cur); }
+function save(){ if(G&&!G.over) lsSet('farkle_game',{G:G, cur:cur}); else { try{ localStorage.removeItem('farkle_game'); }catch(e){} } }
+
+/* ---- a turn ---- */
+function startTurn(p){ clearTimeout(timer); cur=p; live=[]; kept=[]; sel=[]; turnPts=0; remaining=6; phase='await'; busy=false; hinted=false; save(); render();
+  if(cur!==0){ busy=true; timer=setTimeout(botRoll, SPEED[prefs.speed].step*0.6); } }
+
+function rollAnim(values, cb){
+  var box=$('dice'); box.innerHTML=''; var els=values.map(function(){ var e=dieEl(1); box.appendChild(e); return e; });
+  if(reduced()){ values.forEach(function(v,i){ setFace(els[i],v); }); cb&&cb(els); return; }
+  sfx('shuffle');
+  var spin=values.map(function(el,i){ setFace(els[i], 1+Math.floor(Math.random()*6)); els[i].classList.add('tumbling'); return setInterval(function(){ setFace(els[i], 1+Math.floor(Math.random()*6)); }, 70); });
+  var dur=SPEED[prefs.speed].roll;
+  values.forEach(function(v,i){ setTimeout(function(){ clearInterval(spin[i]); els[i].classList.remove('tumbling'); setFace(els[i],v); els[i].classList.add('thud'); sfx('deal'); }, dur + i*SPEED[prefs.speed].land); });
+  setTimeout(function(){ cb&&cb(els); }, dur + values.length*SPEED[prefs.speed].land + 120);
+}
+
+function doRollLive(after){
+  phase='rolling'; render();
+  live=FK.rollDice(remaining);
+  rollAnim(live, function(){
+    if(FK.isFarkle(live)){ phase='farkle'; render(); farkleEnd(); return; }
+    phase='pick'; sel=[]; hinted=false; render(); after&&after();
+  });
+}
+
+/* YOU */
+function rollBtn(){ if(busy||cur!==0) return;
+  if(phase==='await'){ busy=true; doRollLive(function(){ busy=false; render(); }); return; }
+  if(phase==='pick'){ if(!commit()) return; if(remaining<=0){ hotDice(); } busy=true; doRollLive(function(){ busy=false; render(); }); }
+}
+function bankBtn(){ if(busy||cur!==0||phase!=='pick') return; if(!commit()) return; bank(); }
+function hotDice(){ remaining=6; kept=[]; sfx('good'); beat('🔥 Hot dice!'); }
+function commit(){ // move selected live dice into kept, add points; returns false if invalid
+  var chosen=sel.map(function(i){ return live[i]; }); var sc=FK.scoreSelection(chosen);
+  if(!sc.valid || sc.pts===0){ shakeBad(); return false; }
+  turnPts+=sc.pts; remaining-=chosen.length; kept=kept.concat(chosen); sel=[]; sfx('chip'); return true; }
+function bank(){ G.scores[cur]+=turnPts; if(turnPts>stats.best){ stats.best=turnPts; lsSet('farkle_stats',stats); }
+  sfx('good'); beat('Bank +'+commas(turnPts)); save(); phase='banked';
+  var reached = !G.lastRound && G.scores[cur]>=G.target;
+  if(reached){ G.lastRound=true; G.finalFrom=cur; }
+  render(); timer=setTimeout(nextPlayer, SPEED[prefs.speed].step); }
+function farkleEnd(){ stats.farkles++; lsSet('farkle_stats',stats); sfx('bad'); beat('FARKLE!', true); turnPts=0;
+  render(); timer=setTimeout(nextPlayer, SPEED[prefs.speed].step+200); }
+function nextPlayer(){ var np=(cur+1)%G.names.length;
+  if(G.lastRound && np===G.finalFrom){ gameOver(); return; }
+  startTurn(np); }
+
+/* BOTS */
+function botRoll(){ if(!G||G.over) return;
+  doRollLive(function(){ timer=setTimeout(botDecide, SPEED[prefs.speed].step*0.5); }); }
+function botDecide(){
+  var keep=FK.bestKeep(live);
+  // show the bot's chosen dice lifted briefly
+  sel=keep.keepIdx.slice(); render();
+  timer=setTimeout(function(){
+    if(!commit()){ farkleEnd(); return; }       // shouldn't happen (not a farkle here)
+    var hot=false; if(remaining<=0){ hotDice(); hot=true; }
+    render();
+    var decideLeft = hot?6:remaining;
+    if(FK.botBank(turnPts, decideLeft, G.scores[cur], G.target, prefs.level==='easy'?'easy':(cur===0?'normal':prefs.level))){
+      bank();
+    } else {
+      timer=setTimeout(botRoll, SPEED[prefs.speed].step*0.5);
+    }
+  }, SPEED[prefs.speed].step*0.7);
+}
+
+function gameOver(){ G.over=true; var hi=Math.max.apply(null,G.scores); G.winner=G.scores.indexOf(hi);
+  stats.played++; if(G.winner===0) stats.won++; lsSet('farkle_stats',stats);
+  sfx(G.winner===0?'win':'lose'); if(G.winner===0) confetti();
+  $('oTitle').textContent = G.winner===0?'You win!':G.names[G.winner]+' wins';
+  $('oSub').textContent='First past '+commas(G.target);
+  var order=G.names.map(function(nm,i){ return {nm:nm,sc:G.scores[i],i:i}; }).sort(function(a,b){ return b.sc-a.sc; });
+  $('oTable').innerHTML=order.map(function(o){ return '<tr class="'+(o.i===G.winner?'win':'')+'"><td>'+o.nm+(o.i===0?' (you)':'')+'</td><td>'+commas(o.sc)+'</td></tr>'; }).join('');
+  save(); $('overModal').classList.add('show'); }
+
+/* ---- render ---- */
+function render(){
+  if(!G) return;
+  // board
+  $('board').innerHTML=G.names.map(function(nm,i){
+    var pct=Math.min(100, Math.round(G.scores[i]/G.target*100));
+    var tp = (i===cur && (phase==='pick'||phase==='rolling'||phase==='farkle') && turnPts>=0) ? '<span class="tp'+(turnPts>0?' on':'')+'">+'+commas(turnPts)+'</span>' : '';
+    return '<div class="pl'+(i===cur?' turn':'')+'">'+tp+'<div class="nm">'+nm+(i===0?'':'')+'</div><div class="sc">'+commas(G.scores[i])+'</div><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+  }).join('');
+  $('sub').textContent='Game to '+commas(G.target);
+  // tray (kept this turn)
+  var tray=$('tray'); tray.innerHTML=''; kept.forEach(function(v){ tray.appendChild(dieEl(v)); });
+  // dice (live) — only (re)built outside of rolling animation
+  if(phase!=='rolling'){ var box=$('dice'); box.innerHTML='';
+    if(phase==='await'){ for(var b=0;b<6;b++) box.appendChild(dieEl(0)); }
+    else { live.forEach(function(v,i){ var e=dieEl(v); if(cur===0 && phase==='pick') e.classList.add('tap');
+        if(sel.indexOf(i)>=0) e.classList.add('sel'); e.dataset.i=i; e.onclick=function(){ tapDie(i); }; box.appendChild(e); });
+      paintPickHints(); }
+  }
+  // turn line
+  var tl=$('turnline');
+  if(phase==='pick'){ var chosen=sel.map(function(i){ return live[i]; }); var sc=FK.scoreSelection(chosen);
+    var picked = sel.length? (sc.valid?'<span class="add">+'+commas(sc.pts)+'</span> picked':'<span style="color:#ff8c8c">those dice don’t all score</span>') : 'tap the dice you want to keep';
+    tl.innerHTML='This turn <b>'+commas(turnPts)+'</b> &middot; '+picked; }
+  else if(phase==='await'){ tl.innerHTML= cur===0? 'Your roll.' : ''; }
+  else { tl.innerHTML= turnPts>0? 'This turn <b>'+commas(turnPts)+'</b>':''; }
+  // whose turn
+  $('whose').innerHTML = cur===0 ? (phase==='await'?'<b>Your turn</b>':'') : '<b>'+G.names[cur]+'</b> is rolling…';
+  if(cur===0 && phase==='await') $('whose').innerHTML='<b>Your turn</b> — go for it';
+  // buttons
+  var yourPick = cur===0 && phase==='pick' && !busy;
+  var chosen2 = sel.map(function(i){ return live[i]; }); var ok = yourPick && FK.scoreSelection(chosen2).valid;
+  $('rollBtn').classList.toggle('hide', false);
+  if(cur===0 && phase==='await' && !busy){ $('rollBtn').textContent='Roll'; $('rollBtn').disabled=false; $('bankBtn').disabled=true; }
+  else if(yourPick){ $('rollBtn').textContent = remaining-sel.length<=0 ? '🔥 Roll all 6' : 'Keep & roll'; $('rollBtn').disabled=!ok; $('bankBtn').disabled=!ok; }
+  else { $('rollBtn').disabled=true; $('bankBtn').disabled=true; }
+  $('bankBtn').textContent = (yourPick && turnPts+ (FK.scoreSelection(chosen2).valid?FK.scoreSelection(chosen2).pts:0) >0) ? 'Bank '+commas(turnPts+(FK.scoreSelection(chosen2).valid?FK.scoreSelection(chosen2).pts:0)) : 'Bank';
+  $('hintBtn').disabled=!yourPick; $('clearBtn').disabled=!(yourPick&&sel.length);
+  // coach
+  var co=$('coach'); if(!prefs.teach || cur!==0){ co.textContent=''; }
+  else if(phase==='await'){ co.textContent='Roll, then set aside your 1s, 5s and any three-of-a-kind. Bank before a roll Farkles.'; }
+  else if(phase==='pick'){ var bk=FK.bestKeep(live); co.innerHTML = bk.pts? 'Best keep here is <b style="color:var(--teach)">'+commas(bk.pts)+'</b>. '+(remaining-bk.keepIdx.length<=0?'Clears the table — hot dice!':'Fewer dice left means a higher Farkle chance.') : ''; }
+  else co.textContent='';
+}
+function paintPickHints(){ if(!hinted) return; var bk=FK.bestKeep(live); var kids=$('dice').children;
+  bk.keepIdx.forEach(function(i){ if(kids[i]) kids[i].classList.add('hintkeep'); }); }
+function tapDie(i){ if(busy||cur!==0||phase!=='pick') return; var at=sel.indexOf(i); if(at>=0) sel.splice(at,1); else sel.push(i); sfx('select'); render(); }
+function shakeBad(){ sfx('illegal'); var kids=$('dice').children; sel.forEach(function(i){ if(kids[i]){ kids[i].classList.remove('nope'); void kids[i].offsetWidth; kids[i].classList.add('nope'); } }); }
+function beat(txt, bad){ var b=$('beat'); b.textContent=txt; b.classList.toggle('bad',!!bad); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff'];
+  for(var i=0;i<40;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c);
+    c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+/* ---- menus ---- */
+function anyModal(){ return !!document.querySelector('.modal.show')||!$('setup').hidden; }
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ var m=b; while(m&&!m.classList.contains('modal')) m=m.parentNode; if(m) m.classList.remove('show'); }; });
+['menuModal','rulesModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn()));
+  seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); }
+$('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
+$('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('farkle_game'); }catch(e){} showSetup(); };
+$('rollBtn').onclick=rollBtn; $('bankBtn').onclick=bankBtn;
+$('hintBtn').onclick=function(){ if(busy||cur!==0||phase!=='pick') return; hinted=true; var bk=FK.bestKeep(live); sel=bk.keepIdx.slice(); sfx('select'); render(); };
+$('clearBtn').onclick=function(){ if(busy||cur!==0||phase!=='pick') return; sel=[]; hinted=false; sfx('select'); render(); };
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+
+/* test door */
+window.__FK={ get G(){ return G; }, get st(){ return {cur:cur, phase:phase, live:live.slice(), kept:kept.slice(), sel:sel.slice(), turnPts:turnPts, remaining:remaining, busy:busy}; },
+  roll:rollBtn, bank:bankBtn, pick:function(i){ tapDie(i); }, hint:function(){ $('hintBtn').onclick(); },
+  autoKeep:function(){ if(phase==='pick'){ var bk=FK.bestKeep(live); sel=bk.keepIdx.slice(); render(); } }, start:start };
+
+var s0=lsGet('farkle_game',null);
+if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
+
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v168", d=new Date(document.lastModified);
+  var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+  $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>
