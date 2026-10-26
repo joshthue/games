@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Oh Hell</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oh Hell">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --teach:#6fe39a;
+    --size:1; --cw:52px; --ch:73px; }
+  @media (max-width:400px){ :root{ --cw:46px; --ch:65px; } }
+  @media (max-width:360px){ :root{ --cw:41px; --ch:58px; } }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:600px; margin:0 auto; padding:8px 10px 14px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  .card{width:calc(var(--cw) * var(--size)); height:calc(var(--ch) * var(--size)); border-radius:calc(7px * var(--size)); background:var(--cream); color:var(--ink);
+    position:relative; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.18); flex:0 0 auto;}
+  .card .ix{position:absolute; top:calc(3px*var(--size)); left:calc(4px*var(--size)); display:flex; flex-direction:column; align-items:center; line-height:1;}
+  .card .ix b{font-size:calc(15px*var(--size)); font-weight:800; letter-spacing:-.04em;}
+  .card .ix i{font-style:normal; font-size:calc(12px*var(--size)); margin-top:1px;}
+  .card .pip{position:absolute; right:calc(4px*var(--size)); bottom:calc(2px*var(--size)); font-size:calc(23px*var(--size)); line-height:1;}
+  .card.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 5px,#215439 5px,#215439 10px); border:2px solid #f7f3e8;}
+  .card.sm{--size:.66;}
+
+  .stage{flex:1 1 auto; min-height:0; position:relative;}
+  .table{position:absolute; left:50%; top:50%; transform-origin:50% 50%; display:grid; grid-template-columns:auto auto auto; grid-template-rows:auto auto auto; align-items:center; justify-items:center; gap:9px 14px;}
+  .seat{display:flex; flex-direction:column; align-items:center; gap:6px;} .seat.s{flex-direction:column-reverse;}
+  .slot{width:calc(var(--cw)*var(--size)); height:calc(var(--ch)*var(--size)); border-radius:calc(7px*var(--size)); border:2px dashed rgba(255,255,255,.13); position:relative;}
+  .slot .card{position:absolute; left:-2px; top:-2px;}
+  .chip{min-width:86px; background:rgba(0,0,0,.25); border:2px solid transparent; border-radius:11px; padding:4px 8px; text-align:center; line-height:1.16; position:relative;}
+  .chip .n{font-size:12.5px; font-weight:800;}
+  .chip .v{font-size:11.5px; opacity:.92; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .chip .v .bt{color:var(--gold); font-weight:800;}
+  .chip.turn{border-color:var(--gold);}
+  .chip.dealer::after{content:"D"; position:absolute; top:-7px; left:-6px; font-size:9px; font-weight:900; background:var(--cream); color:var(--ink); border-radius:50%; width:16px; height:16px; line-height:16px;}
+  .chip.lead::before{content:"lead"; position:absolute; top:-8px; right:-6px; font-size:9px; font-weight:800; text-transform:uppercase; background:var(--gold); color:var(--ink); border-radius:6px; padding:1px 4px;}
+  .chip .sc{font-size:13px; font-weight:900; color:var(--gold); font-variant-numeric:tabular-nums;}
+  .mid{font-size:11px; text-align:center; opacity:.95; display:flex; flex-direction:column; align-items:center; gap:3px;}
+  .mid .tl{text-transform:uppercase; letter-spacing:.5px; opacity:.7;}
+
+  .say{text-align:center; font-size:14px; min-height:20px; margin:4px 2px 2px; line-height:1.3;} .say b{color:var(--gold);}
+  .coach{text-align:center; font-size:12px; min-height:15px; margin:0 2px 4px; color:var(--teach); line-height:1.3;} .coach:empty{min-height:0; margin:0;}
+
+  .bidbox{flex:0 0 auto; margin:2px auto 4px; width:100%; max-width:460px;}
+  .bidgrid{display:flex; gap:6px; justify-content:center; flex-wrap:wrap;}
+  .bidgrid button{min-width:46px; min-height:46px; border:1.5px solid rgba(255,255,255,.2); border-radius:11px; background:rgba(255,255,255,.09); color:var(--cream); font-size:17px; font-weight:800;}
+  .bidgrid button.sel{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+  .bidgrid button:disabled{opacity:.3;}
+  .bidnote{text-align:center; font-size:12px; opacity:.85; margin:7px 2px 0; line-height:1.35;}
+
+  .hand{position:relative; flex:0 0 auto; margin:0 auto; width:100%;}
+  .hand .card{position:absolute; transition:transform .12s, opacity .12s; touch-action:manipulation;}
+  .hand .card.up{transform:translateY(calc(-14px*var(--size)));}
+  .hand .card.no{opacity:.4; filter:saturate(.6);}
+  .hand .card.legalglow{box-shadow:0 0 0 2px var(--teach);}
+  .hand .card.hint{box-shadow:0 0 0 3px var(--teach), 0 0 12px rgba(111,227,154,.8);}
+  .ctl{display:flex; gap:8px; margin-top:8px;}
+  .ctl button{flex:1 1 0; min-height:44px; border:none; border-radius:12px; font-size:15px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
+  .ctl button:disabled{opacity:.4;}
+
+  .pop{position:absolute; transform:translate(-50%,-50%); font-weight:900; font-size:16px; color:var(--gold); pointer-events:none; z-index:8; white-space:nowrap; text-shadow:0 2px 6px rgba(0,0,0,.6);}
+  .confetti{position:fixed; top:-20px; width:9px; height:14px; z-index:90; pointer-events:none; border-radius:2px;}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .box{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px; max-width:400px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:22px; text-align:center;}
+  .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.92;}
+  .modal .sub{text-align:center; margin:0 0 10px;}
+  table.st{width:100%; border-collapse:collapse; font-size:14px; margin:4px 0;}
+  table.st th{font-size:11px; font-weight:700; opacity:.7; text-align:right; padding:2px 4px;} table.st th:first-child{text-align:left;}
+  table.st td{padding:6px 4px; border-bottom:1px solid rgba(255,255,255,.1); text-align:right; font-variant-numeric:tabular-nums;}
+  table.st td:first-child{text-align:left; font-weight:700;} table.st td.t{font-weight:800; color:var(--gold);}
+  table.st tr.best td:first-child::after{content:" \2605"; color:var(--gold);}
+  .trickrow{display:flex; gap:8px; justify-content:center; margin:8px 0; flex-wrap:wrap;} .trickrow .who{font-size:11px; text-align:center; opacity:.8; margin-top:3px;} .trickrow .w .card{box-shadow:0 0 0 3px var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4; font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+<script src="../cardsize.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top"><a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
+      <button class="gn-pill" id="scoreBtn">Scores</button><button class="gn-pill" id="rulesBtn">Rules</button><button class="gn-pill" id="menuBtn">Menu</button></div>
+    <h1 class="gn-name">Oh Hell</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Trick-taking with a twist: bid <b>exactly</b> how many tricks you'll win. Nail it for 10 plus your bid; miss by one and you score nothing. The hand grows a card each round, and the dealer can't make the bids add up.</p>
+      <div class="gn-row"><span>Bots</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+      <div class="gn-row"><span>Rounds</span><div class="seg" id="segR"><button data-v="5">To 5</button><button data-v="7">To 7</button><button data-v="updown">1→7→1</button></div></div>
+      <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Screw the dealer</span><div class="seg" id="segScrew"><button data-v="on">On</button><button data-v="off">Off</button></div><div class="gn-note">Bids can't total the hand size, so the dealer is forced off the safe number.</div></div>
+        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+        <div id="sizeRowsSetup"></div>
+      </details>
+    </div>
+    <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Deal</button><button class="gn-alt hide" id="resumeBtn">Resume your game</button></div>
+  </div>
+
+  <div class="stage" id="stage"><div class="table" id="table">
+    <div></div><div class="seat" data-p="2"><div class="chip" id="chip2"></div><div class="slot" id="slot2"></div></div><div></div>
+    <div class="seat" data-p="1"><div class="chip" id="chip1"></div><div class="slot" id="slot1"></div></div>
+    <div class="mid" id="mid"></div>
+    <div class="seat" data-p="3"><div class="chip" id="chip3"></div><div class="slot" id="slot3"></div></div>
+    <div></div><div class="seat s" data-p="0"><div class="chip" id="chip0"></div><div class="slot" id="slot0"></div></div><div></div>
+  </div></div>
+  <div class="say" id="say"></div>
+  <div class="coach" id="coach"></div>
+
+  <div class="bidbox hide" id="bidbox"><div class="bidgrid" id="bidgrid"></div><div class="bidnote" id="bidnote"></div></div>
+
+  <div class="hand" id="hand"></div>
+  <div class="ctl"><button id="lastBtn">Last trick</button><button id="hintBtn">Hint</button></div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="box"><h2>Menu</h2>
+  <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <div id="sizeRows"></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button><button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a><button class="bigbtn" data-close>Close</button></div></div>
+
+<div class="modal" id="rulesModal"><div class="box"><h2>How to play</h2>
+  <p>Each round everyone is dealt the same number of cards, and one more card is turned up to set the <b>trump</b> suit. The hand grows by one card every round.</p>
+  <p>Going round from the dealer's left, each player <b>bids the exact number of tricks</b> they expect to win. With <b>screw the dealer</b> on, the dealer can't bid the number that would make the bids total the hand size — someone has to be wrong.</p>
+  <p>Then play tricks: follow the led suit if you can; trumps beat everything else; highest card wins.</p>
+  <h3 style="color:var(--gold);font-size:11px;letter-spacing:1px;margin:10px 0 4px">SCORING</h3>
+  <p>Take <b>exactly</b> your bid: <b>10 + your bid</b>. Take any other number: <b>0</b>. Highest total after the last round wins.</p>
+  <button class="bigbtn" data-close>Got it</button></div></div>
+
+<div class="modal" id="lastModal"><div class="box"><h2>Last trick</h2><div class="trickrow" id="lastRow"></div><p class="sub" id="lastSub"></p><button class="bigbtn" data-close>Close</button></div></div>
+<div class="modal" id="scoreModal"><div class="box"><h2>Scores</h2><table class="st" id="scoreTable"></table><p class="sub" id="scoreSub"></p><button class="bigbtn" data-close>Close</button></div></div>
+<div class="modal" id="roundModal"><div class="box"><h2 id="rTitle"></h2><p class="sub" id="rSub"></p><table class="st" id="rTable"></table><button class="bigbtn" id="rNext">Next round</button></div></div>
+<div class="modal" id="overModal"><div class="box"><h2 id="oTitle"></h2><p class="sub" id="oSub"></p><table class="st" id="oTable"></table><button class="bigbtn" id="oAgain">Play again</button><button class="bigbtn ghost" id="oSetup">Change settings</button></div></div>
+
+<script>
+/* ============================================================
+   OH HELL — the engine. No DOM.  window.OHELL.  (see README)
+   ============================================================ */
+(function(G){
+  var SUITS=['♣','♦','♥','♠'];
+  function rng(seed){ var a=(seed>>>0)||1; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function deck(){ var d=[]; for(var s=0;s<4;s++) for(var r=2;r<=14;r++) d.push({s:s,r:r}); return d; }
+  function rname(r){ return r===14?'A':r===13?'K':r===12?'Q':r===11?'J':String(r); }
+  function same(a,b){ return a&&b&&a.s===b.s&&a.r===b.r; }
+  function roundSizes(players, maxHand, updown){ var mx=maxHand||Math.min(10,Math.floor(51/players)); var s=[]; for(var i=1;i<=mx;i++) s.push(i); if(updown){ for(var j=mx-1;j>=1;j--) s.push(j); } return s; }
+  function newGame(players, maxHand, updown, screw){ players=players||4; var sizes=roundSizes(players, maxHand, updown);
+    return { players:players, sizes:sizes, round:0, scores:new Array(players).fill(0), names:[], dealer:0, over:false, screw:screw!==false, history:[] }; }
+  function deal(g, seed){ var rnd=rng(seed==null?Math.floor(Math.random()*4294967295):seed), d=deck();
+    for(var i=d.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)), t=d[i]; d[i]=d[j]; d[j]=t; }
+    var hs=g.sizes[g.round], hands=[], k=0, p; for(p=0;p<g.players;p++){ hands.push(d.slice(k,k+hs)); k+=hs; }
+    var trumpCard=k<d.length?d[k]:null, trump=trumpCard?trumpCard.s:-1;
+    return { players:g.players, screw:g.screw, hands:hands, hs:hs, trump:trump, trumpCard:trumpCard, dealer:g.dealer, bidder:(g.dealer+1)%g.players, bids:new Array(g.players).fill(-1), won:new Array(g.players).fill(0), phase:'bid', leader:(g.dealer+1)%g.players, turn:(g.dealer+1)%g.players, trick:[], tricks:0, lastTrick:null }; }
+  function sortHand(h, trump){ return h.slice().sort(function(a,b){ var at=a.s===trump, bt=b.s===trump; if(at!==bt) return at?-1:1; return a.s-b.s || a.r-b.r; }); }
+  function bidLegal(h, p, bid){ if(h.phase!=='bid'||h.bidder!==p) return false; if(bid<0||bid>h.hs) return false;
+    if(h.screw && p===h.dealer){ var sum=0,i; for(i=0;i<h.bids.length;i++) if(i!==h.dealer&&h.bids[i]>=0) sum+=h.bids[i]; if(sum+bid===h.hs) return false; } return true; }
+  function placeBid(h, p, bid){ if(!bidLegal(h,p,bid)) throw new Error('illegal bid'); h.bids[p]=bid; if(p===h.dealer){ h.phase='play'; h.turn=h.leader; } else h.bidder=(h.bidder+1)%h.players; return h; }
+  function legal(h, p){ if(h.phase!=='play'||h.turn!==p) return []; var hand=h.hands[p]; if(!h.trick.length) return hand.slice(); var led=h.trick[0].c.s, follow=hand.filter(function(c){ return c.s===led; }); return follow.length?follow:hand.slice(); }
+  function power(c, trump, led){ if(c.s===trump) return 100+c.r; if(c.s===led) return c.r; return 0; }
+  function trickWinner(trick, trump){ var led=trick[0].c.s, win=trick[0], wp=power(trick[0].c,trump,led); for(var i=1;i<trick.length;i++){ var pw=power(trick[i].c,trump,led); if(pw>wp){ wp=pw; win=trick[i]; } } return win; }
+  function play(h, p, card){ if(!legal(h,p).some(function(x){ return same(x,card); })) throw new Error('illegal play'); var hand=h.hands[p]; for(var i=0;i<hand.length;i++) if(same(hand[i],card)){ hand.splice(i,1); break; }
+    h.trick.push({p:p, c:{s:card.s,r:card.r}}); if(h.trick.length<h.players){ h.turn=(p+1)%h.players; return null; }
+    var w=trickWinner(h.trick, h.trump); h.won[w.p]++; h.lastTrick={cards:h.trick.slice(), winner:w.p}; h.trick=[]; h.tricks++; h.leader=h.turn=w.p; if(h.tricks===h.hs) h.phase='done'; return w.p; }
+  function score(g, h){ var pts=[]; for(var p=0;p<g.players;p++){ var made=h.won[p]===h.bids[p]; var s=made?10+h.bids[p]:0; pts.push(s); g.scores[p]+=s; }
+    g.history.push({round:g.round, hs:h.hs, trump:h.trump, bids:h.bids.slice(), won:h.won.slice(), pts:pts}); g.round++; g.dealer=(g.dealer+1)%g.players; if(g.round>=g.sizes.length) g.over=true; return {pts:pts}; }
+  function expectTricks(hand, trump){ var e=0, trumps=hand.filter(function(c){ return c.s===trump; }).length;
+    hand.forEach(function(c){ if(c.s===trump){ if(c.r===14) e+=0.95; else if(c.r===13) e+=0.8; else if(c.r===12) e+=0.6; else e+=0.35; } else { if(c.r===14) e+=0.85; else if(c.r===13) e+=0.55; else if(c.r===12) e+=0.25; } }); if(trumps>=4) e+=0.5; return e; }
+  function chooseBid(h, p, level, rnd){ rnd=rnd||Math.random; var e=expectTricks(h.hands[p], h.trump); var bid=Math.round(e); if(level==='easy') bid+=(rnd()<0.5?0:(rnd()<0.5?-1:1)); bid=Math.max(0,Math.min(h.hs,bid));
+    if(h.screw && p===h.dealer){ var sum=0,i; for(i=0;i<h.bids.length;i++) if(i!==h.dealer&&h.bids[i]>=0) sum+=h.bids[i]; if(sum+bid===h.hs){ bid=bid>0?bid-1:bid+1; bid=Math.max(0,Math.min(h.hs,bid)); if(sum+bid===h.hs) bid=(bid+1<=h.hs?bid+1:bid-1); } } return bid; }
+  function choosePlay(h, p, level, rnd){ rnd=rnd||Math.random; var L=legal(h,p); if(L.length===1) return L[0];
+    var need=h.bids[p]-h.won[p], trump=h.trump, led=h.trick.length?h.trick[0].c.s:-1, curWin=h.trick.length?trickWinner(h.trick,trump):null;
+    var byPow=function(a){ return a.slice().sort(function(x,y){ return power(x,trump,led)-power(y,trump,led); }); }; var wantWin=need>0;
+    if(!h.trick.length){ if(wantWin){ var hi=byPow(L.filter(function(c){ return c.s!==trump; })); if(hi.length) return hi[hi.length-1]; return byPow(L)[L.length-1]; } return byPow(L)[0]; }
+    var canBeat=L.filter(function(c){ return power(c,trump,led)>power(curWin.c,trump,led); });
+    if(wantWin){ if(canBeat.length) return byPow(canBeat)[0]; return byPow(L)[0]; }
+    var losers=L.filter(function(c){ return power(c,trump,led)<power(curWin.c,trump,led); }); if(losers.length) return byPow(losers)[losers.length-1]; return byPow(L)[0]; }
+  G.OHELL={ SUITS:SUITS, rname:rname, same:same, roundSizes:roundSizes, newGame:newGame, deal:deal, sortHand:sortHand, bidLegal:bidLegal, placeBid:placeBid, legal:legal, power:power, trickWinner:trickWinner, play:play, score:score, expectTricks:expectTricks, chooseBid:chooseBid, choosePlay:choosePlay };
+})(window);
+</script>
+<script src="../sfx.js"></script>
+<script>
+/* ============================================================
+   OH HELL — the screen.
+   ============================================================ */
+(function(){
+var OH=window.OHELL, $=function(id){ return document.getElementById(id); };
+var NAMES=['You','West','North','East'];
+var FOURCOL=['#178a3a','#1b6fb3','#c22','#1c2a24'];
+var SPEED={relaxed:{bot:900,hold:1250,fly:330}, normal:{bot:600,hold:880,fly:250}, fast:{bot:320,hold:500,fly:180}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+var prefs=Object.assign({level:'normal', rounds:'7', speed:'normal', four:false, teach:false, screw:true}, lsGet('ohhell_prefs',{}));
+function savePrefs(){ lsSet('ohhell_prefs', prefs); }
+var stats=Object.assign({played:0, won:0}, lsGet('ohhell_stats',{}));
+
+var G=null, Hd=null, LEVEL='normal', note='', up=null, hintCard=null, busy=false, timer=null, shown=[null,null,null,null];
+
+function suitCol(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?'#c22':'#1c2a24'); }
+function cardEl(c, faceDown, sm){ var e=document.createElement('div'); if(faceDown){ e.className='card back'+(sm?' sm':''); return e; } e.className='card'+(sm?' sm':''); e.style.color=suitCol(c.s);
+  e.innerHTML='<span class="ix"><b>'+OH.rname(c.r)+'</b><i>'+OH.SUITS[c.s]+'</i></span><span class="pip">'+OH.SUITS[c.s]+'</span>'; return e; }
+function cstr(c){ return OH.rname(c.r)+OH.SUITS[c.s]; }
+
+function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){
+  seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); });
+  seg('segR',prefs.rounds,function(v){ prefs.rounds=v; savePrefs(); renderSetup(); });
+  seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); });
+  seg('segScrew',prefs.screw?'on':'off',function(v){ prefs.screw=(v==='on'); savePrefs(); renderSetup(); });
+  seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
+  $('sizeRowsSetup').innerHTML=CARDSIZE.rowsHTML();
+  var s=lsGet('ohhell_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over));
+}
+function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
+function start(){ var mx = prefs.rounds==='5'?5:7, ud = prefs.rounds==='updown'; G=OH.newGame(4, mx, ud, prefs.screw); LEVEL=prefs.level; G.names=NAMES.slice(); GNSETUP.hide('setup'); closeAll(); startRound(); }
+function resume(){ var s=lsGet('ohhell_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; Hd=s.Hd; LEVEL=s.level||'normal'; GNSETUP.hide('setup'); closeAll();
+  if(!Hd||Hd.phase==='done'){ startRound(); return; } shown=[null,null,null,null]; (Hd.trick||[]).forEach(function(t){ shown[t.p]=t.c; }); render(); loop(); }
+function save(){ if(G&&!G.over) lsSet('ohhell_game',{G:G, Hd:Hd, level:LEVEL}); else { try{ localStorage.removeItem('ohhell_game'); }catch(e){} } }
+
+function startRound(){ Hd=OH.deal(G); note=''; up=null; hintCard=null; shown=[null,null,null,null]; busy=false; sfx('shuffle'); save(); render(); dealIn(); loop(); }
+
+function loop(){ clearTimeout(timer); if(!Hd||busy) return;
+  if(Hd.phase==='bid'){ if(Hd.bidder===0){ render(); return; } render(); timer=setTimeout(botBid, SPEED[prefs.speed].bot); return; }
+  if(Hd.phase==='play'){ if(Hd.turn===0){ render(); return; } render(); timer=setTimeout(function(){ var p=Hd.turn; playCard(p, OH.choosePlay(Hd,p,LEVEL)); }, SPEED[prefs.speed].bot); return; }
+  if(Hd.phase==='done'){ roundEnd(); return; }
+}
+function botBid(){ if(!Hd||busy) return; var p=Hd.bidder; var b=OH.chooseBid(Hd,p,LEVEL); OH.placeBid(Hd,p,b); note='<b>'+NAMES[p]+'</b> bids '+b+'.'; sfx('select'); save(); loop(); }
+function myBid(b){ if(Hd.phase!=='bid'||Hd.bidder!==0||!OH.bidLegal(Hd,0,b)) return; OH.placeBid(Hd,0,b); note='You bid '+b+'.'; sfx('select'); save(); loop(); }
+
+function playCard(p,c){ var from=p===0?handCardRect(c):$('chip'+p).getBoundingClientRect(); var win=OH.play(Hd,p,c); shown[p]=c; note=''; up=null; hintCard=null; busy=true; save(); sfx(p===0?'place':'deal'); render();
+  flyIn(p,c,from,function(){ if(win==null){ busy=false; loop(); return; } render(win);
+    setTimeout(function(){ sweep(win,function(){ shown=[null,null,null,null]; busy=false; popAt($('chip'+win),'✔'); sfx(win===0?'good':'chip'); loop(); }); }, SPEED[prefs.speed].hold); }); }
+
+function roundEnd(){ var r=OH.score(G,Hd); save(); render();
+  var hi=Math.max.apply(null,G.scores);
+  $('rTitle').textContent = G.history.length? 'Round '+(G.history[G.history.length-1].round+1)+' — '+Hd.hs+' card'+(Hd.hs>1?'s':'') : 'Round';
+  $('rSub').textContent='Trump was '+OH.SUITS[Hd.trump]+'.';
+  $('rTable').innerHTML='<tr><th>Player</th><th>Bid</th><th>Took</th><th>+</th><th>Total</th></tr>'+NAMES.map(function(nm,p){
+    var made=Hd.won[p]===Hd.bids[p]; return '<tr class="'+(G.scores[p]===hi?'best':'')+'"><td>'+nm+'</td><td>'+Hd.bids[p]+'</td><td>'+Hd.won[p]+'</td><td style="color:'+(made?'var(--teach)':'#ff8c8c')+'">'+(made?'+'+r.pts[p]:'0')+'</td><td class="t">'+G.scores[p]+'</td></tr>'; }).join('');
+  $('rNext').textContent=G.over?'See who won':'Next round';
+  if(Hd.won[0]===Hd.bids[0]) sfx('good');
+  setTimeout(function(){ $('roundModal').classList.add('show'); }, 320);
+}
+function gameOver(){ var hi=Math.max.apply(null,G.scores), w=G.scores.indexOf(hi); stats.played++; if(w===0) stats.won++; lsSet('ohhell_stats',stats);
+  sfx(w===0?'win':'lose'); if(w===0) confetti();
+  $('oTitle').textContent = w===0?'You win!':NAMES[w]+' wins';
+  $('oSub').textContent='Final after '+G.sizes.length+' rounds';
+  var order=NAMES.map(function(nm,p){ return {nm:nm,sc:G.scores[p],p:p}; }).sort(function(a,b){ return b.sc-a.sc; });
+  $('oTable').innerHTML=order.map(function(o){ return '<tr class="'+(o.p===w?'best':'')+'"><td>'+o.nm+(o.p===0?' (you)':'')+'</td><td class="t">'+o.sc+'</td></tr>'; }).join('');
+  try{ localStorage.removeItem('ohhell_game'); }catch(e){} $('overModal').classList.add('show'); }
+
+function render(winner){ if(!G) return;
+  for(var p=0;p<4;p++){ var ch=$('chip'+p); var bid=Hd?Hd.bids[p]:-1; var bt = Hd&&Hd.phase!=='bid' ? '<span class="bt">'+Hd.won[p]+'</span>/'+ (bid<0?'–':bid) : (bid>=0?'bid '+bid:'');
+    ch.innerHTML='<div class="n">'+NAMES[p]+'</div><div class="v">'+bt+'</div><div class="sc">'+G.scores[p]+'</div>';
+    var active = !busy && winner==null && Hd && ((Hd.phase==='bid'&&Hd.bidder===p)||(Hd.phase==='play'&&Hd.turn===p));
+    ch.classList.toggle('turn', !!active); ch.classList.toggle('dealer', !!Hd&&Hd.dealer===p);
+    ch.classList.toggle('lead', !!Hd&&Hd.phase==='play'&&Hd.trick.length>0&&Hd.trick[0].p===p&&winner==null);
+    var sl=$('slot'+p); sl.innerHTML=''; if(shown[p]){ var ce=cardEl(shown[p]); if(winner!=null&&winner===p) ce.style.boxShadow='0 0 0 3px var(--gold)'; sl.appendChild(ce); } }
+  var mid=$('mid'); if(Hd){ mid.innerHTML='<div class="tl">Round '+(G.round+1)+'/'+G.sizes.length+'</div><div style="font-size:13px;font-weight:800">'+Hd.hs+' card'+(Hd.hs>1?'s':'')+'</div>';
+    if(Hd.trumpCard){ var tc=cardEl(Hd.trumpCard,false,true); mid.appendChild(tc); var tl=document.createElement('div'); tl.className='tl'; tl.textContent='trump '+OH.SUITS[Hd.trump]; mid.appendChild(tl); }
+    else { var nt=document.createElement('div'); nt.className='tl'; nt.textContent='no trump'; mid.appendChild(nt); } }
+  $('sub').textContent = G?('Round '+(G.round+1)+' of '+G.sizes.length+' · You '+G.scores[0]):'';
+  var yourBid = Hd && !busy && winner==null && Hd.phase==='bid' && Hd.bidder===0;
+  $('bidbox').classList.toggle('hide', !yourBid); if(yourBid) renderBidGrid();
+  renderHand();
+  var mine = Hd && Hd.phase==='play' && Hd.turn===0 && !busy;
+  $('hintBtn').disabled=!mine; $('lastBtn').disabled=!(Hd&&Hd.lastTrick);
+  // say / coach
+  var say=$('say');
+  if(!Hd){ say.innerHTML=''; }
+  else if(yourBid){ say.innerHTML='Your bid — how many tricks?'; }
+  else if(winner!=null){ say.innerHTML='<b>'+(winner===0?'You take':NAMES[winner]+' takes')+'</b> the trick.'; }
+  else if(note){ say.innerHTML=note; }
+  else if(mine){ say.innerHTML = up?'Tap it again to play it.':(Hd.trick.length?'Your turn — follow '+OH.SUITS[Hd.trick[0].c.s]+' if you can.':'Your lead.'); }
+  else if(Hd.phase==='play'&&!busy){ say.innerHTML='<b>'+NAMES[Hd.turn]+'</b> is thinking…'; }
+  else if(Hd.phase==='bid'&&!busy){ say.innerHTML='<b>'+NAMES[Hd.bidder]+'</b> is bidding…'; }
+  else say.innerHTML='';
+  var co=$('coach'); if(!prefs.teach||!Hd){ co.textContent=''; }
+  else if(yourBid){ var e=OH.expectTricks(Hd.hands[0],Hd.trump); co.innerHTML='Your hand is worth about <b style="color:var(--teach)">'+e.toFixed(1)+'</b> trick'+(e>=1.5?'s':'')+'. Count your trumps and aces.'; }
+  else if(mine){ var need=Hd.bids[0]-Hd.won[0]; co.innerHTML = need>0?'You still need <b style="color:var(--teach)">'+need+'</b> more — win tricks while you can.':(need===0?'You’ve hit your bid — <b style="color:var(--teach)">duck</b> the rest.':'You’re over — avoid taking any more.'); }
+  else co.textContent='';
+}
+function renderBidGrid(){ var g=$('bidgrid'), html=''; for(var b=0;b<=Hd.hs;b++){ var ok=OH.bidLegal(Hd,0,b); html+='<button data-b="'+b+'"'+(ok?'':' disabled')+'>'+b+'</button>'; } g.innerHTML=html;
+  [].forEach.call(g.children,function(btn){ btn.onclick=function(){ myBid(+btn.dataset.b); }; });
+  var forbidden=-1; if(Hd.screw){ var sum=0,i; for(i=0;i<Hd.bids.length;i++) if(i!==Hd.dealer&&Hd.bids[i]>=0) sum+=Hd.bids[i]; if(Hd.dealer===0) forbidden=Hd.hs-sum; }
+  $('bidnote').innerHTML = (Hd.dealer===0&&Hd.screw&&forbidden>=0&&forbidden<=Hd.hs)? 'You’re the dealer — you can’t bid <b>'+forbidden+'</b> (that would balance the table).' : 'Bid the exact tricks you’ll win.'; }
+
+function renderHand(){ var el=$('hand'); el.innerHTML=''; if(!Hd) return; var cards=OH.sortHand(Hd.hands[0], Hd.trump), n=cards.length, W=el.clientWidth, sz=CARDSIZE.value();
+  var cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw'))*sz, ch=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ch'))*sz, lift=14*sz;
+  var step=n>1?Math.min(cw+6,(W-cw)/(n-1)):0; step=Math.max(step,cw*0.42); var total=cw+step*(n-1), x0=Math.max(0,(W-total)/2); if(total>W&&n>1){ step=(W-cw)/(n-1); x0=0; }
+  el.style.height=(ch+lift+4)+'px';
+  var canPlay=Hd.phase==='play'&&Hd.turn===0&&!busy, legal=canPlay?OH.legal(Hd,0):null;
+  cards.forEach(function(c,i){ var e=cardEl(c); e.style.left=(x0+i*step)+'px'; e.style.top=lift+'px'; e.style.zIndex=i+1;
+    if(legal){ if(!legal.some(function(x){ return OH.same(x,c); })) e.classList.add('no'); else if(prefs.teach) e.classList.add('legalglow'); }
+    if(up&&OH.same(up,c)) e.classList.add('up'); if(hintCard&&OH.same(hintCard,c)) e.classList.add('hint');
+    e.onclick=function(ev){ ev.stopPropagation(); tapCard(c); }; el.appendChild(e); }); }
+function handCardRect(c){ var cards=OH.sortHand(Hd.hands[0],Hd.trump); var idx=-1; cards.forEach(function(x,i){ if(OH.same(x,c)) idx=i; }); var el=$('hand').children[idx]; return el?el.getBoundingClientRect():$('chip0').getBoundingClientRect(); }
+function tapCard(c){ if(!Hd||busy||anyModal()||Hd.phase!=='play'||Hd.turn!==0) return; if(!OH.legal(Hd,0).some(function(x){ return OH.same(x,c); })){ sfx('illegal'); var led=Hd.trick[0].c.s; say2('You must follow '+OH.SUITS[led]+'.'); return; }
+  if(up&&OH.same(up,c)){ playCard(0,c); return; } up=c; sfx('select'); render(); }
+function say2(t){ $('say').innerHTML='<b>'+t+'</b>'; }
+
+/* motion */
+var TB={sc:1};
+function flyIn(p,c,from,done){ var slot=$('slot'+p), tc=slot.querySelector('.card'); if(!tc||reduced()||!tc.animate){ done(); return; } var to=tc.getBoundingClientRect(), sx=from.width/to.width, dx=(from.left+from.width/2)-(to.left+to.width/2), dy=(from.top+from.height/2)-(to.top+to.height/2), sc=TB.sc||1; if(p) sx=0.5;
+  tc.animate([{transform:'translate('+(dx/sc)+'px,'+(dy/sc)+'px) scale('+sx+')',opacity:p?0.2:1},{transform:'none',opacity:1}],{duration:SPEED[prefs.speed].fly, easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=done; }
+function sweep(w,done){ var target=$('chip'+w).getBoundingClientRect(), sc=TB.sc||1, cards=[0,1,2,3].map(function(p){ return $('slot'+p).querySelector('.card'); }).filter(Boolean); if(reduced()||!cards.length||!cards[0].animate){ done(); return; } var left=cards.length;
+  cards.forEach(function(e){ var r=e.getBoundingClientRect(), dx=(target.left+target.width/2)-(r.left+r.width/2), dy=(target.top+target.height/2)-(r.top+r.height/2); e.animate([{transform:'none',opacity:1},{transform:'translate('+(dx/sc)+'px,'+(dy/sc)+'px) scale(.4)',opacity:0}],{duration:SPEED[prefs.speed].fly+70, easing:'ease-in', fill:'forwards'}).onfinish=function(){ if(--left===0) done(); }; }); }
+function dealIn(){ if(reduced()) return; var cs=$('hand').querySelectorAll('.card'); [].forEach.call(cs,function(e,i){ if(e.animate) e.animate([{transform:'translateY(40px)',opacity:0},{transform:'none',opacity:1}],{duration:240, delay:i*26, easing:'ease-out', fill:'backwards'}); }); }
+function popAt(el,txt){ if(!el) return; var r=el.getBoundingClientRect(), e=document.createElement('div'); e.className='pop'; e.textContent=txt; e.style.position='fixed'; e.style.left=(r.left+r.width/2)+'px'; e.style.top=(r.top+4)+'px'; document.body.appendChild(e); if(!e.animate){ setTimeout(function(){ e.remove(); },900); return; } e.animate([{transform:'translate(-50%,-30%) scale(.6)',opacity:0},{transform:'translate(-50%,-90%) scale(1.1)',opacity:1,offset:.25},{transform:'translate(-50%,-170%)',opacity:0}],{duration:1000}).onfinish=function(){ e.remove(); }; }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff']; for(var i=0;i<42;i++){ var c=document.createElement('div'); c.className='confetti'; c.style.left=(Math.random()*100)+'vw'; c.style.background=cols[i%cols.length]; document.body.appendChild(c); c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+function fit(){ var t=$('table'), st=$('stage'); t.style.transform='translate(-50%,-50%)'; var w=t.offsetWidth, h=t.offsetHeight, sc=Math.min(1.35, st.clientWidth/w, st.clientHeight/h); TB.sc=sc; t.style.transform='translate(-50%,-50%) scale('+sc+')'; }
+function relayout(){ render(); fit(); render(); }
+window.onCardSize=function(){ try{ relayout(); }catch(e){} };
+if(window.ResizeObserver) new ResizeObserver(function(){ fit(); }).observe($('stage'));
+addEventListener('resize', relayout);
+
+/* menus */
+function anyModal(){ return !!document.querySelector('.modal.show')||!$('setup').hidden; }
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ var m=b; while(m&&!m.classList.contains('modal')) m=m.parentNode; if(m) m.classList.remove('show'); }; });
+['menuModal','rulesModal','lastModal','scoreModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
+$('scoreBtn').onclick=function(){ renderScores(); $('scoreModal').classList.add('show'); };
+function renderScores(){ if(!G){ $('scoreTable').innerHTML=''; return; } var h='<tr><th>R</th><th>Cards</th><th>You</th><th>W</th><th>N</th><th>E</th></tr>';
+  G.history.forEach(function(r){ h+='<tr><td>'+(r.round+1)+'</td><td>'+r.hs+OH.SUITS[r.trump]+'</td>'+r.pts.map(function(pt,p){ return '<td>'+(r.won[p]+'/'+r.bids[p])+'<br><span style="opacity:.7">'+(pt?'+'+pt:'0')+'</span></td>'; }).join('')+'</tr>'; });
+  h+='<tr><td class="t" colspan="2">Total</td>'+G.scores.map(function(s){ return '<td class="t">'+s+'</td>'; }).join('')+'</tr>'; $('scoreTable').innerHTML=h; $('scoreSub').textContent='took/bid and points per round.'; }
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); $('sizeRows').innerHTML=CARDSIZE.rowsHTML(); }
+$('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
+$('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('ohhell_game'); }catch(e){} showSetup(); };
+$('lastBtn').onclick=function(){ if(!Hd||!Hd.lastTrick) return; var lt=Hd.lastTrick; $('lastRow').innerHTML=''; lt.cards.forEach(function(t){ var d=document.createElement('div'); if(t.p===lt.winner) d.className='w'; d.appendChild(cardEl(t.c)); var nm=document.createElement('div'); nm.className='who'; nm.textContent=NAMES[t.p]; d.appendChild(nm); $('lastRow').appendChild(d); }); $('lastSub').textContent=NAMES[lt.winner]+(lt.winner===0?' take':' takes')+' it.'; $('lastModal').classList.add('show'); };
+$('hintBtn').onclick=function(){ if(!Hd||Hd.phase!=='play'||Hd.turn!==0||busy) return; hintCard=OH.choosePlay(Hd,0,LEVEL); up=hintCard; sfx('select'); render(); };
+$('rNext').onclick=function(){ $('roundModal').classList.remove('show'); if(G.over) gameOver(); else startRound(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+$('stage').addEventListener('click',function(){ if(up&&!busy){ up=null; hintCard=null; render(); } });
+
+window.__OH={ get G(){ return G; }, get H(){ return Hd; }, get busy(){ return busy; }, bid:function(b){ myBid(b); }, play:function(c){ up=c; tapCard(c); tapCard(c); }, start:start };
+
+var s0=lsGet('ohhell_game',null);
+if(s0&&s0.G&&!s0.G.over){ resume(); fit(); } else { G=OH.newGame(4,7,false,true); render(); fit(); showSetup(); }
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v170", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>

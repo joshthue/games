@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>President</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="President">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --teach:#6fe39a; --cw:48px; --ch:67px; }
+  @media (max-width:400px){ :root{ --cw:43px; --ch:60px; } }
+  @media (max-width:340px){ :root{ --cw:39px; --ch:55px; } }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:600px; margin:0 auto; padding:8px 10px 14px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  .card{width:var(--cw); height:var(--ch); border-radius:7px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.18); flex:0 0 auto;}
+  .card .ix{position:absolute; top:3px; left:4px; display:flex; flex-direction:column; align-items:center; line-height:1;}
+  .card .ix b{font-size:14px; font-weight:800; letter-spacing:-.04em;} .card .ix i{font-style:normal; font-size:11px; margin-top:1px;}
+  .card .pip{position:absolute; right:4px; bottom:2px; font-size:20px; line-height:1;}
+  .card.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 5px,#215439 5px,#215439 10px); border:2px solid #f7f3e8;}
+
+  .stage{flex:1 1 auto; min-height:0; position:relative;}
+  .table{position:absolute; left:50%; top:50%; transform-origin:50% 50%; display:grid; grid-template-columns:auto auto auto; grid-template-rows:auto auto auto; align-items:center; justify-items:center; gap:9px 14px;}
+  .seat{display:flex; flex-direction:column; align-items:center; gap:6px;} .seat.s{flex-direction:column-reverse;}
+  .chip{min-width:92px; background:rgba(0,0,0,.25); border:2px solid transparent; border-radius:11px; padding:4px 8px; text-align:center; line-height:1.16; position:relative;}
+  .chip .n{font-size:12.5px; font-weight:800;} .chip .v{font-size:11px; opacity:.9; font-variant-numeric:tabular-nums;}
+  .chip .v .cl{color:var(--gold); font-weight:800;}
+  .chip.turn{border-color:var(--gold);} .chip.out{opacity:.5;}
+  .chip .role{display:inline-block; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.3px; border-radius:5px; padding:0 4px; margin-top:1px;}
+  .role.p{background:var(--gold); color:var(--ink);} .role.v{background:#7fc4e0; color:var(--ink);} .role.vs{background:#d8a24a; color:var(--ink);} .role.s{background:#b23b3b; color:#fff;}
+  .chip .says{position:absolute; top:-9px; left:50%; transform:translateX(-50%); white-space:nowrap; font-size:10px; font-weight:800; background:var(--cream); color:var(--ink); border-radius:7px; padding:1px 6px; display:none;}
+  .chip.spoke .says{display:block;}
+  .chip .fin{position:absolute; top:-9px; right:-6px; font-size:10px; font-weight:900; background:var(--gold); color:var(--ink); border-radius:50%; width:18px; height:18px; line-height:18px;}
+
+  .mid{display:flex; flex-direction:column; align-items:center; gap:4px; min-width:120px;}
+  .mid .pilecards{display:flex; justify-content:center;} .mid .pilecards .card{margin-left:-24px;} .mid .pilecards .card:first-child{margin-left:0;}
+  .mid .pl{font-size:11px; opacity:.8; text-align:center;} .mid .pl b{color:var(--gold);}
+  .mid .empty{font-size:11px; opacity:.45;}
+
+  .say{text-align:center; font-size:14px; min-height:20px; margin:4px 2px 2px; line-height:1.3;} .say b{color:var(--gold);}
+  .coach{text-align:center; font-size:12px; min-height:15px; margin:0 2px 4px; color:var(--teach);} .coach:empty{min-height:0; margin:0;}
+
+  .hand{position:relative; flex:0 0 auto; margin:2px auto 0; width:100%;}
+  .hand .card{position:absolute; transition:transform .12s; touch-action:manipulation;}
+  .hand .card.sel{transform:translateY(-15px); box-shadow:0 0 0 3px var(--gold), 0 8px 14px rgba(0,0,0,.4);}
+  .hand .card.no{opacity:.4;}
+  .ctl{display:flex; gap:9px; margin-top:8px;}
+  .ctl button{flex:1 1 0; min-height:48px; border:none; border-radius:13px; font-size:16px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
+  .ctl button.go{background:var(--gold); color:var(--ink);} .ctl button.pass{background:#b23b3b; color:#fff;}
+  .ctl button:disabled{opacity:.38;}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .box{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px; max-width:400px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:22px; text-align:center;} .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.92;} .modal .sub{text-align:center; margin:0 0 10px;}
+  table.st{width:100%; border-collapse:collapse; font-size:14px; margin:6px 0;} table.st td{padding:7px 4px; border-bottom:1px solid rgba(255,255,255,.1);} table.st td:last-child{text-align:right; font-weight:800; color:var(--gold);} table.st tr.win td{color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4; font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+<script src="../cardsize.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top"><a class="gn-pill" href="../">‹ Games</a><span class="sp"></span><button class="gn-pill" id="scoreBtn">Scores</button><button class="gn-pill" id="rulesBtn">Rules</button><button class="gn-pill" id="menuBtn">Menu</button></div>
+    <h1 class="gn-name">President</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Shed your whole hand first to become <b>President</b>; finish last and you're the <b>Scum</b>. Play singles, pairs or triples, each beaten only by the same number of higher cards (2 is highest). Each new round, the Scum hands their best cards up to the President. First to the points target wins.</p>
+      <div class="gn-row"><span>Bots</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+      <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Game to</span><div class="seg" id="segTarget"><button data-v="7">7 pts</button><button data-v="11">11 pts</button></div></div>
+        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+        <div id="sizeRowsSetup"></div>
+      </details>
+    </div>
+    <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Deal</button><button class="gn-alt hide" id="resumeBtn">Resume your game</button></div>
+  </div>
+
+  <div class="stage" id="stage"><div class="table" id="table">
+    <div></div><div class="seat" data-p="2"><div class="chip" id="chip2"></div></div><div></div>
+    <div class="seat" data-p="1"><div class="chip" id="chip1"></div></div>
+    <div class="mid" id="mid"></div>
+    <div class="seat" data-p="3"><div class="chip" id="chip3"></div></div>
+    <div></div><div class="seat s" data-p="0"><div class="chip" id="chip0"></div></div><div></div>
+  </div></div>
+  <div class="say" id="say"></div>
+  <div class="coach" id="coach"></div>
+
+  <div class="hand" id="hand"></div>
+  <div class="ctl"><button class="pass" id="passBtn">Pass</button><button class="go" id="playBtn">Play</button></div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="box"><h2>Menu</h2>
+  <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <div id="sizeRows"></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button><button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a><button class="bigbtn" data-close>Close</button></div></div>
+
+<div class="modal" id="rulesModal"><div class="box"><h2>How to play</h2>
+  <p>Everyone gets 13 cards. The lead plays any number of cards of one rank (a single, pair, or triple). Each player in turn must play the <b>same number of cards at a higher rank</b>, or <b>pass</b>.</p>
+  <p>Ranks run 3 (low) up through king, ace, and <b>2 is the highest</b>. Once you pass you're out until the pile clears. When everyone else passes, the last player to lay cards clears the pile and leads again.</p>
+  <p>First to empty their hand is <b>President</b>, then Vice-President, then Vice-Scum; last is the <b>Scum</b>. Next round the Scum must give the President their two best cards (the President returns two unwanted ones), and the Vice-Scum and VP swap one.</p>
+  <p>Scoring each round: President 3, VP 2, Vice-Scum 1, Scum 0. First to the target wins.</p>
+  <button class="bigbtn" data-close>Got it</button></div></div>
+
+<div class="modal" id="passModal"><div class="box"><h2 id="pTitle"></h2><p class="sub" id="pSub"></p><button class="bigbtn" id="pGo">Start the round</button></div></div>
+<div class="modal" id="roundModal"><div class="box"><h2 id="rTitle"></h2><p class="sub" id="rSub"></p><table class="st" id="rTable"></table><button class="bigbtn" id="rNext">Next round</button></div></div>
+<div class="modal" id="scoreModal"><div class="box"><h2>Scores</h2><table class="st" id="scoreTable"></table><p class="sub">First to the target wins.</p><button class="bigbtn" data-close>Close</button></div></div>
+<div class="modal" id="overModal"><div class="box"><h2 id="oTitle"></h2><p class="sub" id="oSub"></p><table class="st" id="oTable"></table><button class="bigbtn" id="oAgain">Play again</button><button class="bigbtn ghost" id="oSetup">Change settings</button></div></div>
+
+<script>
+/* ============================================================
+   PRESIDENT — the engine. No DOM.  window.PREZ.  (see README)
+   ============================================================ */
+(function(G){
+  var SUITS=['♣','♦','♥','♠'];
+  function ord(r){ return r===2?15:r; }
+  function rname(r){ return r===14?'A':r===13?'K':r===12?'Q':r===11?'J':String(r); }
+  function same(a,b){ return a&&b&&a.s===b.s&&a.r===b.r; }
+  function rng(seed){ var a=(seed>>>0)||1; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function deck(){ var d=[]; for(var s=0;s<4;s++) for(var r=2;r<=14;r++) d.push({s:s,r:r}); return d; }
+  function sortHand(h){ return h.slice().sort(function(a,b){ return ord(a.r)-ord(b.r) || a.s-b.s; }); }
+  function byRank(hand){ var m={}; hand.forEach(function(c){ (m[c.r]=m[c.r]||[]).push(c); }); return m; }
+  var ROLE=['President','Vice-President','Vice-Scum','Scum'];
+  function newGame(target){ return {target:target||11, players:4, scores:[0,0,0,0], names:['You','Dale','Marv','Arlene'], roles:null, round:0, over:false, winner:-1, history:[] }; }
+  function deal(g, seed){ var rnd=rng(seed==null?Math.floor(Math.random()*4294967295):seed), d=deck(); for(var i=d.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)), t=d[i]; d[i]=d[j]; d[j]=t; }
+    var hands=[d.slice(0,13), d.slice(13,26), d.slice(26,39), d.slice(39,52)];
+    var h={ players:4, hands:hands, pile:null, turn:0, passed:[false,false,false,false], out:[false,false,false,false], finished:[], phase:'play', roles:g.roles?g.roles.slice():null, passLog:null };
+    if(g.roles){ h.passLog=autoPass(h, g.roles); }
+    if(!g.roles){ h.turn=holderOf(h.hands, {s:0,r:3}); } else { h.turn=g.roles.indexOf('President'); }
+    h.hands=h.hands.map(sortHand); return h; }
+  function holderOf(hands, card){ for(var p=0;p<hands.length;p++) if(hands[p].some(function(c){ return same(c,card); })) return p; return 0; }
+  function highestN(hand, n){ var s=sortHand(hand); return s.slice(s.length-n); }
+  function lowestN(hand, n){ var s=sortHand(hand); return s.slice(0,n); }
+  function give(hands, from, to, cards){ cards.forEach(function(c){ for(var i=0;i<hands[from].length;i++) if(same(hands[from][i],c)){ hands[from].splice(i,1); break; } hands[to].push(c); }); }
+  function autoPass(h, roles){ var pres=roles.indexOf('President'), vp=roles.indexOf('Vice-President'), vs=roles.indexOf('Vice-Scum'), scum=roles.indexOf('Scum'), log=[];
+    var sb=highestN(h.hands[scum],2); give(h.hands,scum,pres,sb); var pb=lowestN(h.hands[pres],2); give(h.hands,pres,scum,pb); log.push({from:scum,to:pres,cards:sb},{from:pres,to:scum,cards:pb});
+    var vsb=highestN(h.hands[vs],1); give(h.hands,vs,vp,vsb); var vpb=lowestN(h.hands[vp],1); give(h.hands,vp,vs,vpb); log.push({from:vs,to:vp,cards:vsb},{from:vp,to:vs,cards:vpb}); return log; }
+  function legalPlays(h, p){ if(h.turn!==p||h.out[p]||h.passed[p]) return []; var groups=byRank(h.hands[p]), out=[], r;
+    for(r in groups){ var cards=groups[r], nn=cards.length; if(!h.pile){ for(var k=1;k<=nn;k++) out.push(cards.slice(0,k)); } else if(nn>=h.pile.n && ord(+r)>ord(h.pile.r)){ out.push(cards.slice(0,h.pile.n)); } } return out; }
+  function canPass(h, p){ return h.turn===p && !h.out[p] && !h.passed[p] && !!h.pile; }
+  function activeNotPassed(h){ var c=0; for(var p=0;p<h.players;p++) if(!h.out[p]&&!h.passed[p]) c++; return c; }
+  function nextTurn(h, from){ var i=from, guard=0; do{ i=(i+1)%h.players; guard++; }while((h.out[i]||h.passed[i]) && guard<=h.players); return i; }
+  function nextInGame(h, from){ var i=from, guard=0; do{ i=(i+1)%h.players; guard++; }while(h.out[i] && guard<=h.players); return i; }
+  function roundDone(h){ return h.finished.length>=h.players-1; }
+  function play(h, p, cards){ if(h.turn!==p||h.out[p]) throw new Error('not turn'); var r=cards[0].r; if(!cards.every(function(c){ return c.r===r; })) throw new Error('mixed'); if(h.pile && (cards.length!==h.pile.n || ord(r)<=ord(h.pile.r))) throw new Error('weak'); for(var i=0;i<cards.length;i++) if(!h.hands[p].some(function(c){ return same(c,cards[i]); })) throw new Error('nih');
+    cards.forEach(function(c){ for(var k=0;k<h.hands[p].length;k++) if(same(h.hands[p][k],c)){ h.hands[p].splice(k,1); break; } });
+    h.pile={ by:p, r:r, n:cards.length, cards:cards.slice() }; if(h.hands[p].length===0){ h.out[p]=true; h.finished.push(p); } settleAfter(h,p); return h; }
+  function pass(h, p){ if(!canPass(h,p)) throw new Error('cannot pass'); h.passed[p]=true; settleAfter(h,p); return h; }
+  function settleAfter(h, pActed){ if(roundDone(h)){ for(var q=0;q<h.players;q++) if(!h.out[q]){ h.out[q]=true; h.finished.push(q); } h.phase='done'; return; }
+    var pileBy=h.pile?h.pile.by:pActed, nxt=nextTurn(h,pActed);
+    if(activeNotPassed(h)===0 || nxt===pileBy){ h.pile=null; for(var i=0;i<h.players;i++) h.passed[i]=false; h.turn = h.out[pileBy]?nextInGame(h,pileBy):pileBy; return; }
+    h.turn=nxt; }
+  function assignRoles(h){ var roles=new Array(h.players); roles[h.finished[0]]='President'; roles[h.finished[1]]='Vice-President'; roles[h.finished[2]]='Vice-Scum'; roles[h.finished[3]]='Scum'; return roles; }
+  function score(g, h){ var roles=assignRoles(h), pts=[0,0,0,0]; for(var p=0;p<h.players;p++){ var rk=ROLE.indexOf(roles[p]); pts[p]=[3,2,1,0][rk]; g.scores[p]+=pts[p]; } g.roles=roles; g.history.push({roles:roles.slice(), pts:pts, finished:h.finished.slice()}); g.round++; if(Math.max.apply(null,g.scores)>=g.target){ g.over=true; g.winner=g.scores.indexOf(Math.max.apply(null,g.scores)); } return {roles:roles, pts:pts}; }
+  function chooseAction(h, p, level, rnd){ rnd=rnd||Math.random; var legal=legalPlays(h,p); if(!legal.length) return {pass:true};
+    if(!h.pile){ var groups=byRank(h.hands[p]), ranks=Object.keys(groups).map(Number).sort(function(a,b){ return ord(a)-ord(b); }); var lead=ranks[0]; if(lead===2&&ranks.length>1) lead=ranks[1]; return {cards:groups[lead].slice()}; }
+    legal.sort(function(a,b){ return ord(a[0].r)-ord(b[0].r); }); var best=legal[0], usesTwo=best[0].r===2, handLeft=h.hands[p].length;
+    if((usesTwo||best[0].r===14) && handLeft>6 && ord(h.pile.r)<ord(14) && rnd()<(level==='easy'?0.5:0.75)) return {pass:true};
+    if(level==='easy' && rnd()<0.25) return {pass:true}; return {cards:best}; }
+  G.PREZ={ SUITS:SUITS, ROLE:ROLE, ord:ord, rname:rname, same:same, deck:deck, sortHand:sortHand, newGame:newGame, deal:deal, legalPlays:legalPlays, canPass:canPass, play:play, pass:pass, roundDone:roundDone, assignRoles:assignRoles, score:score, chooseAction:chooseAction, autoPass:autoPass };
+})(window);
+</script>
+<script src="../sfx.js"></script>
+<script>
+/* ============================================================
+   PRESIDENT — the screen.
+   ============================================================ */
+(function(){
+var PR=window.PREZ, $=function(id){ return document.getElementById(id); };
+var ROLECLS={ 'President':'p', 'Vice-President':'v', 'Vice-Scum':'vs', 'Scum':'s' };
+var ROLESHORT={ 'President':'PRES', 'Vice-President':'VP', 'Vice-Scum':'V-SCUM', 'Scum':'SCUM' };
+var FOURCOL=['#178a3a','#1b6fb3','#c22','#1c2a24'];
+var SPEED={relaxed:{bot:900, clear:900}, normal:{bot:600, clear:650}, fast:{bot:330, clear:400}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+var prefs=Object.assign({level:'normal', speed:'normal', four:false, teach:false, target:11}, lsGet('prez_prefs',{}));
+function savePrefs(){ lsSet('prez_prefs', prefs); }
+var stats=Object.assign({played:0, won:0, pres:0}, lsGet('prez_stats',{}));
+
+var G=null, H=null, LEVEL='normal', busy=false, timer=null, sel=[], note='', spoke={};
+function key(c){ return c.s+'_'+c.r; }
+function suitCol(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?'#c22':'#1c2a24'); }
+function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){ e.className='card back'; return e; } e.className='card'; e.style.color=suitCol(c.s); e.innerHTML='<span class="ix"><b>'+PR.rname(c.r)+'</b><i>'+PR.SUITS[c.s]+'</i></span><span class="pip">'+PR.SUITS[c.s]+'</span>'; return e; }
+
+function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){ seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); }); seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); }); seg('segTarget',prefs.target,function(v){ prefs.target=+v; savePrefs(); renderSetup(); }); seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); }); $('sizeRowsSetup').innerHTML=CARDSIZE.rowsHTML();
+  var s=lsGet('prez_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over)); }
+function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
+function start(){ G=PR.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('setup'); closeAll(); startRound(); }
+function resume(){ var s=lsGet('prez_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; H=s.H; LEVEL=s.level||'normal'; GNSETUP.hide('setup'); closeAll(); if(!H||H.phase==='done'){ startRound(); return; } busy=false; sel=[]; spoke={}; render(); if(H.turn!==0) botGo(); }
+function save(){ if(G&&!G.over) lsSet('prez_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('prez_game'); }catch(e){} } }
+
+function startRound(){ H=PR.deal(G); busy=false; sel=[]; note=''; spoke={}; sfx('shuffle'); save();
+  if(H.passLog){ showPassModal(); } else { render(); if(H.turn!==0) botGo(); } }
+function showPassModal(){ var roles=H.roles; var myRole=roles[0]; var lines=[];
+  H.passLog.forEach(function(x){ lines.push(G.names[x.from]+' → '+G.names[x.to]+': '+x.cards.map(cstr).join(' ')); });
+  $('pTitle').textContent = 'You’re the '+myRole;
+  $('pSub').innerHTML = 'Cards exchanged on the new roles:<br>'+lines.join('<br>');
+  render(); $('passModal').classList.add('show'); }
+function cstr(c){ return PR.rname(c.r)+PR.SUITS[c.s]; }
+
+function render(winnerClear){ if(!G) return;
+  var roles = H&&H.roles ? H.roles : (G.roles||null);
+  var finRank={}; if(H) H.finished.forEach(function(p,i){ finRank[p]=i+1; });
+  for(var p=0;p<4;p++){ var ch=$('chip'+p); var cl = H?H.hands[p].length:13;
+    var roleBadge = roles&&roles[p] ? '<span class="role '+ROLECLS[roles[p]]+'">'+ROLESHORT[roles[p]]+'</span>' : '';
+    var fin = H&&H.out[p]&&finRank[p] ? '<span class="fin">'+finRank[p]+'</span>' : '';
+    ch.innerHTML='<span class="says">'+(spoke[p]||'')+'</span>'+fin+'<div class="n">'+G.names[p]+'</div><div class="v"><span class="cl">'+cl+'</span> card'+(cl===1?'':'s')+' · '+G.scores[p]+roleBadge+'</div>';
+    ch.classList.toggle('turn', !!H && !busy && winnerClear==null && H.phase!=='done' && H.turn===p && !H.out[p]);
+    ch.classList.toggle('out', !!H&&H.out[p]); ch.classList.toggle('spoke', !!spoke[p]); }
+  var mid=$('mid');
+  if(H && H.pile){ mid.innerHTML='<div class="pilecards"></div><div class="pl"><b>'+G.names[H.pile.by]+'</b> · '+(H.pile.n>1?H.pile.n+'× ':'')+PR.rname(H.pile.r)+'</div>';
+    var pc=mid.querySelector('.pilecards'); H.pile.cards.forEach(function(c){ pc.appendChild(cardEl(c)); }); }
+  else { mid.innerHTML='<div class="empty">'+(H&&H.phase!=='done'?'— pile clear —':'')+'</div>'; }
+  $('sub').textContent='Round '+((G.round||0)+1)+' · to '+G.target+' · You '+G.scores[0];
+  renderHand();
+  var mine = H && !busy && H.phase!=='done' && H.turn===0 && !H.out[0];
+  // controls
+  var selC=selCards(); var legalSel = mine && validSel(selC);
+  $('playBtn').disabled=!legalSel; $('passBtn').disabled=!(mine && PR.canPass(H,0));
+  $('playBtn').textContent = (mine && H.pile)? 'Play '+(H.pile.n>1?H.pile.n+' cards':'') : 'Play';
+  // say
+  var say=$('say');
+  if(!H){ say.textContent=''; }
+  else if(H.phase==='done'){ say.textContent=''; }
+  else if(busy && H.turn!==0){ say.innerHTML='<b>'+G.names[H.turn]+'</b> is thinking…'; }
+  else if(mine){ say.innerHTML = note || (H.pile? 'Beat the '+(H.pile.n>1?H.pile.n+' × ':'')+PR.rname(H.pile.r)+', or pass.' : 'Your lead — play any cards of one rank.'); }
+  else say.textContent='';
+  var co=$('coach'); if(!prefs.teach||!mine){ co.textContent=''; }
+  else if(!H.pile){ co.textContent='Lead your low cards and keep the 2s and aces for when you’re stuck.'; }
+  else { var legal=PR.legalPlays(H,0); co.innerHTML = legal.length? 'You can beat it — play your lowest option to save strong cards.' : 'Nothing beats it; you’ll have to <b style="color:var(--teach)">pass</b>.'; }
+}
+function selCards(){ return sel.map(function(k){ return H.hands[0].filter(function(c){ return key(c)===k; })[0]; }).filter(Boolean); }
+function validSel(cards){ if(!H||!cards.length) return false; var r=cards[0].r; if(!cards.every(function(c){ return c.r===r; })) return false;
+  if(!H.pile){ return true; } return cards.length===H.pile.n && PR.ord(r)>PR.ord(H.pile.r); }
+function renderHand(){ var el=$('hand'); el.innerHTML=''; if(!H) return; var hand=PR.sortHand(H.hands[0]); var n=hand.length, W=el.clientWidth||340, sz=CARDSIZE.value();
+  var cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw')), ch=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ch'));
+  var step=n>1?Math.min(cw+5,(W-cw)/(n-1)):0; step=Math.max(step, cw*0.42); var total=cw+step*(n-1), x0=Math.max(0,(W-total)/2); if(total>W&&n>1){ step=(W-cw)/(n-1); x0=0; } el.style.height=(ch+20)+'px';
+  var mine=H.turn===0&&!busy&&H.phase!=='done'&&!H.out[0];
+  // which ranks are playable (for dimming)
+  var playableRanks={}; if(mine){ PR.legalPlays(H,0).forEach(function(g){ playableRanks[g[0].r]=true; }); }
+  hand.forEach(function(c,i){ var e=cardEl(c); e.style.left=(x0+i*step)+'px'; e.style.top='10px'; e.style.zIndex=i+1;
+    if(sel.indexOf(key(c))>=0) e.classList.add('sel');
+    if(mine && H.pile && !playableRanks[c.r] && sel.indexOf(key(c))<0) e.classList.add('no');
+    e.onclick=function(ev){ ev.stopPropagation(); tapCard(c); }; el.appendChild(e); }); }
+
+function tapCard(c){ if(!H||busy||H.phase==='done'||H.turn!==0||H.out[0]||anyModal()) return; var k=key(c), at=sel.indexOf(k);
+  if(at>=0){ sel.splice(at,1); } else { // only allow same-rank multiselect
+    if(sel.length){ var r0=selCards()[0].r; if(c.r!==r0){ sel=[]; } } sel.push(k); }
+  sfx('select'); render(); }
+function myPlay(){ if(busy||H.turn!==0||H.out[0]) return; var cards=selCards(); if(!validSel(cards)) return; doPlay(0, cards); }
+function myPass(){ if(busy||!PR.canPass(H,0)) return; sayBubble(0,'Pass'); PR.pass(H,0); sel=[]; sfx('select'); afterAction(); }
+function doPlay(p, cards){ var before=H.pile; sayBubble(p, (cards.length>1?cards.length+'×':'')+PR.rname(cards[0].r)); PR.play(H,p,cards); sel=[]; sfx(p===0?'place':'deal');
+  if(H.out[p]){ sfx('good'); } afterAction(before); }
+function sayBubble(p, txt){ spoke={}; spoke[p]=txt; }
+function afterAction(prevPile){ save();
+  if(H.phase==='done'){ render(); busy=true; timer=setTimeout(roundEnd, SPEED[prefs.speed].clear); return; }
+  // pile cleared?
+  if(prevPile && H.pile===null){ render(); busy=true; timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); else render(); }, SPEED[prefs.speed].clear); return; }
+  render(); if(H.turn!==0) botGo(); else busy=false; }
+function botGo(){ if(!H||H.phase==='done') return; busy=true; render(); timer=setTimeout(botStep, SPEED[prefs.speed].bot); }
+function botStep(){ if(!H||H.phase==='done') return; var p=H.turn; var a=PR.chooseAction(H,p,LEVEL);
+  if(a.pass && PR.canPass(H,p)){ sayBubble(p,'Pass'); PR.pass(H,p); } else if(a.cards){ var before=H.pile; sayBubble(p,(a.cards.length>1?a.cards.length+'×':'')+PR.rname(a.cards[0].r)); PR.play(H,p,a.cards); if(H.out[p]) sfx('good'); else sfx('deal');
+    save(); if(H.phase==='done'){ render(); busy=true; timer=setTimeout(roundEnd, SPEED[prefs.speed].clear); return; }
+    if(before && H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; } render(); busy=false; if(H.turn!==0){ botGo(); } return;
+  } else { // couldn't pass and no cards? force a legal play
+    var L=PR.legalPlays(H,p); if(L.length){ var before2=H.pile; sayBubble(p,(L[0].length>1?L[0].length+'×':'')+PR.rname(L[0][0].r)); PR.play(H,p,L[0]); if(H.out[p]) sfx('good'); save(); if(H.phase==='done'){ render(); busy=true; timer=setTimeout(roundEnd, SPEED[prefs.speed].clear); return; } if(before2&&H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; } } }
+  save(); render();
+  if(H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; }
+  busy=false; if(H.turn!==0) botGo(); }
+
+function roundEnd(){ busy=false; var res=PR.score(G,H); save();
+  var roles=res.roles;
+  $('rTitle').textContent = roles[0]===undefined?'Round over':(H.finished[0]===0?'You’re President!':G.names[H.finished[0]]+' is President');
+  $('rSub').textContent = 'Finish order: '+H.finished.map(function(p){ return G.names[p]; }).join(' → ');
+  var hi=Math.max.apply(null,G.scores);
+  $('rTable').innerHTML=G.names.map(function(nm,p){ return '<tr class="'+(G.scores[p]===hi?'win':'')+'"><td>'+nm+(p===0?' (you)':'')+' · '+ROLESHORT[roles[p]]+'</td><td>+'+res.pts[p]+' → '+G.scores[p]+'</td></tr>'; }).join('');
+  $('rNext').textContent=G.over?'See who won':'Next round';
+  if(H.finished[0]===0){ stats.pres++; lsSet('prez_stats',stats); sfx('win'); confetti(); }
+  setTimeout(function(){ $('roundModal').classList.add('show'); }, 300); }
+function gameOver(){ var w=G.winner; stats.played++; if(w===0) stats.won++; lsSet('prez_stats',stats); sfx(w===0?'win':'lose'); if(w===0) confetti();
+  $('oTitle').textContent=w===0?'You win the game!':G.names[w]+' wins'; $('oSub').textContent='First past '+G.target+' points';
+  var order=G.names.map(function(nm,p){ return {nm:nm,sc:G.scores[p],p:p}; }).sort(function(a,b){ return b.sc-a.sc; });
+  $('oTable').innerHTML=order.map(function(o){ return '<tr class="'+(o.p===w?'win':'')+'"><td>'+o.nm+(o.p===0?' (you)':'')+'</td><td>'+o.sc+'</td></tr>'; }).join('');
+  try{ localStorage.removeItem('prez_game'); }catch(e){} $('overModal').classList.add('show'); }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff']; for(var i=0;i<42;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c); c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+function fit(){ var t=$('table'), st=$('stage'); t.style.transform='translate(-50%,-50%)'; var w=t.offsetWidth, h=t.offsetHeight, sc=Math.min(1.3, st.clientWidth/w, st.clientHeight/h); t.style.transform='translate(-50%,-50%) scale('+sc+')'; }
+function relayout(){ render(); fit(); }
+window.onCardSize=function(){ try{ relayout(); }catch(e){} };
+if(window.ResizeObserver) new ResizeObserver(function(){ fit(); }).observe($('stage'));
+addEventListener('resize', relayout);
+
+function anyModal(){ return !!document.querySelector('.modal.show')||!$('setup').hidden; }
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ var m=b; while(m&&!m.classList.contains('modal')) m=m.parentNode; if(m) m.classList.remove('show'); }; });
+['menuModal','rulesModal','scoreModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
+$('scoreBtn').onclick=function(){ renderScores(); $('scoreModal').classList.add('show'); };
+function renderScores(){ if(!G){ $('scoreTable').innerHTML=''; return; } $('scoreTable').innerHTML=G.names.map(function(nm,p){ return '<tr><td>'+nm+(p===0?' (you)':'')+'</td><td>'+G.scores[p]+'</td></tr>'; }).join(''); }
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); $('sizeRows').innerHTML=CARDSIZE.rowsHTML(); }
+$('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
+$('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('prez_game'); }catch(e){} showSetup(); };
+$('playBtn').onclick=myPlay; $('passBtn').onclick=myPass;
+$('pGo').onclick=function(){ $('passModal').classList.remove('show'); render(); if(H.turn!==0) botGo(); };
+$('rNext').onclick=function(){ $('roundModal').classList.remove('show'); if(G.over) gameOver(); else startRound(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+$('stage').addEventListener('click',function(){ if(sel.length&&!busy){ sel=[]; render(); } });
+
+window.__PZ={ get G(){ return G; }, get H(){ return H; }, get busy(){ return busy; }, play:function(cards){ sel=cards.map(key); myPlay(); }, pass:myPass, start:start,
+  legal:function(){ return PR.legalPlays(H,0); }, passModalOpen:function(){ return $('passModal').classList.contains('show'); }, closePass:function(){ $('pGo').onclick(); } };
+
+var s0=lsGet('prez_game',null);
+if(s0&&s0.G&&!s0.G.over){ resume(); fit(); } else { G=PR.newGame(11); showSetup(); }
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v170", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>

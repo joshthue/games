@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Gin Rummy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="theme-color" content="#0d5c3f">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gin Rummy">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --teach:#6fe39a; --cw:50px; --ch:70px; }
+  @media (max-width:400px){ :root{ --cw:44px; --ch:62px; } }
+  @media (max-width:340px){ :root{ --cw:40px; --ch:56px; } }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;} html{background:var(--felt);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
+    padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px); overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none;}
+  .wrap{max-width:560px; margin:0 auto; padding:8px 12px 14px; display:flex; flex-direction:column;
+    height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));}
+  button{font-family:inherit; cursor:pointer;}
+
+  .card{width:var(--cw); height:var(--ch); border-radius:7px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.18); flex:0 0 auto;}
+  .card .ix{position:absolute; top:3px; left:4px; display:flex; flex-direction:column; align-items:center; line-height:1;}
+  .card .ix b{font-size:15px; font-weight:800; letter-spacing:-.04em;}
+  .card .ix i{font-style:normal; font-size:12px; margin-top:1px;}
+  .card .pip{position:absolute; right:4px; bottom:2px; font-size:22px; line-height:1;}
+  .card.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 5px,#215439 5px,#215439 10px); border:2px solid #f7f3e8;}
+  .card.meld::before{content:""; position:absolute; left:0; right:0; top:0; height:5px; background:var(--gold);}
+  .card.dead::before{content:""; position:absolute; left:0; right:0; top:0; height:5px; background:rgba(255,255,255,.12);}
+
+  .opp{display:flex; align-items:center; justify-content:space-between; gap:10px; flex:0 0 auto; margin:2px 0 6px;}
+  .opp .who{font-weight:800; font-size:15px;} .opp .who.turn{color:var(--gold);}
+  .opp .sc{font-size:14px; font-variant-numeric:tabular-nums;} .opp .sc b{color:var(--gold);}
+  .opp .fan{display:flex;} .opp .fan .card{width:28px; height:40px; margin-left:-14px; box-shadow:0 1px 3px rgba(0,0,0,.4);} .opp .fan .card:first-child{margin-left:0;}
+
+  .stage{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;}
+  .piles{display:flex; gap:26px; align-items:center;}
+  .pile{display:flex; flex-direction:column; align-items:center; gap:5px;}
+  .pile .lab{font-size:11px; text-transform:uppercase; letter-spacing:.6px; opacity:.7;}
+  .pile .stackwrap{position:relative; width:var(--cw); height:var(--ch);}
+  .pile .stackwrap .card{position:absolute; top:0; left:0;}
+  .pile.tap .stackwrap{cursor:pointer;}
+  .pile.tap .stackwrap{box-shadow:0 0 0 3px var(--gold), 0 0 14px rgba(240,198,116,.6); border-radius:9px;}
+  .pile .ct{font-size:11px; opacity:.6;}
+  .pile.empty .stackwrap{border:2px dashed rgba(255,255,255,.2); border-radius:8px;}
+
+  .say{text-align:center; font-size:14px; min-height:20px; font-weight:700; flex:0 0 auto; margin-top:2px;} .say b{color:var(--gold);}
+  .dw{text-align:center; font-size:13px; flex:0 0 auto; min-height:16px;} .dw b{color:var(--gold); font-variant-numeric:tabular-nums;} .dw .ok{color:var(--teach);}
+  .coach{text-align:center; font-size:12px; min-height:15px; color:var(--teach); margin:1px 2px 0;} .coach:empty{min-height:0;}
+
+  .hand{position:relative; flex:0 0 auto; margin:6px auto 0; width:100%;}
+  .hand .card{position:absolute; transition:transform .12s; touch-action:manipulation;}
+  .hand .card.up{transform:translateY(-12px); box-shadow:0 0 0 3px var(--gold), 0 8px 14px rgba(0,0,0,.4);}
+
+  .ctl{display:flex; gap:9px; flex:0 0 auto; margin-top:10px;}
+  .ctl button{flex:1 1 0; min-height:48px; border:none; border-radius:13px; font-size:15px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
+  .ctl button.knock{background:var(--gold); color:var(--ink);} .ctl button.knock.gin{background:#8e5bc0; color:#fff;}
+  .ctl button.on{box-shadow:inset 0 0 0 2px var(--cream);}
+  .ctl button:disabled{opacity:.38;}
+
+  .seg{display:flex; gap:6px;}
+  .seg button{flex:1 1 0; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--cream); border:1.5px solid rgba(255,255,255,.15); border-radius:11px; padding:9px 4px;}
+  .seg button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+
+  .modal{position:fixed; inset:0; background:rgba(3,20,14,.84); display:none; align-items:center; justify-content:center; padding:18px; z-index:60;}
+  .modal.show{display:flex;}
+  .modal .box{background:linear-gradient(180deg,#12503a,#0b3c2b); border:2px solid rgba(240,198,116,.5); border-radius:18px; padding:20px; max-width:400px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:0 10px 34px rgba(0,0,0,.6);}
+  .modal h2{margin:0 0 6px; color:var(--gold); font-size:22px; text-align:center;}
+  .modal p,.modal li{font-size:13.5px; line-height:1.5; opacity:.92;} .modal .sub{text-align:center; margin:0 0 10px;}
+  .meldshow{display:flex; flex-wrap:wrap; gap:3px; margin:4px 0;}
+  .meldshow .grp{display:flex; gap:2px; padding:3px; background:rgba(255,255,255,.06); border-radius:6px;}
+  .meldshow .card{width:30px; height:42px;} .meldshow .card .ix b{font-size:11px;} .meldshow .card .ix i{font-size:9px;} .meldshow .card .pip{display:none;}
+  .meldlab{font-size:11px; opacity:.7; margin:6px 0 2px; text-transform:uppercase; letter-spacing:.5px;}
+  table.st{width:100%; border-collapse:collapse; font-size:15px; margin:6px 0;} table.st td{padding:7px 4px; border-bottom:1px solid rgba(255,255,255,.1);} table.st td:last-child{text-align:right; font-weight:800; color:var(--gold);} table.st tr.win td{color:var(--gold);}
+  .bigbtn{display:block; width:100%; text-align:center; text-decoration:none; font-weight:800; font-size:15px; background:var(--gold); color:var(--ink); border:none; border-radius:13px; padding:13px; margin-top:8px;}
+  .bigbtn.ghost{background:rgba(255,255,255,.1); color:var(--cream);}
+  .switchrow{display:flex; justify-content:space-between; align-items:center; margin:10px 0; font-size:14px; gap:10px;}
+  .toggle{width:44px; height:24px; border-radius:14px; background:rgba(0,0,0,.4); position:relative; padding:0; border:none; flex:0 0 auto;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--cream); transition:left .15s;}
+  .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
+  .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4; font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
+  .hide{display:none!important;}
+</style>
+<script src="../gn-header.js"></script>
+<script src="../gn-setup.js"></script>
+<script src="../sfx.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="gn-hdr">
+    <div class="gn-top"><a class="gn-pill" href="../">‹ Games</a><span class="sp"></span><button class="gn-pill" id="rulesBtn">Rules</button><button class="gn-pill" id="menuBtn">Menu</button></div>
+    <h1 class="gn-name">Gin Rummy</h1>
+    <div class="gn-sub" id="sub"></div>
+  </div>
+
+  <div class="gn-setup" id="setup" hidden>
+    <div class="gn-setup-body">
+      <p class="gn-pitch">Draw and discard to build <b>melds</b> — three or four of a kind, or runs in a suit. Get your leftover "deadwood" to 10 or less and <b>knock</b>; clear it all for <b>gin</b>. First to 100 wins.</p>
+      <div class="gn-row"><span>Bot</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+      <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
+      <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Game to</span><div class="seg" id="segTarget"><button data-v="50">50</button><button data-v="100">100</button></div></div>
+        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+      </details>
+    </div>
+    <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Deal</button><button class="gn-alt hide" id="resumeBtn">Resume your game</button></div>
+  </div>
+
+  <div class="opp" id="opp"></div>
+
+  <div class="stage">
+    <div class="piles">
+      <div class="pile" id="stockPile"><div class="lab">Stock</div><div class="stackwrap" id="stockStack"></div><div class="ct" id="stockCt"></div></div>
+      <div class="pile" id="discardPile"><div class="lab">Discard</div><div class="stackwrap" id="discardStack"></div><div class="ct">&nbsp;</div></div>
+    </div>
+    <div class="say" id="say"></div>
+    <div class="dw" id="dw"></div>
+    <div class="coach" id="coach"></div>
+  </div>
+
+  <div class="hand" id="hand"></div>
+  <div class="ctl">
+    <button id="knockBtn" class="knock">Knock</button>
+    <button id="sortBtn">Sort</button>
+  </div>
+</div>
+<div class="gn-build" id="build"></div>
+
+<div class="modal" id="menuModal"><div class="box"><h2>Menu</h2>
+  <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
+  <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <button class="bigbtn ghost" id="menuNew">New game</button><button class="bigbtn ghost" id="menuRules">Rules</button>
+  <a class="bigbtn ghost" href="../">Back to all games</a><button class="bigbtn" data-close>Close</button></div></div>
+
+<div class="modal" id="rulesModal"><div class="box"><h2>How to play</h2>
+  <p>Each turn: <b>draw</b> one card (from the stock, or the top of the discard pile), then <b>discard</b> one. You're building <b>melds</b>:</p>
+  <ul><li>a <b>set</b> — three or four of the same rank,</li><li>a <b>run</b> — three or more in sequence in one suit.</li></ul>
+  <p>Cards not in a meld are <b>deadwood</b> (face cards 10, ace 1). When your deadwood is <b>10 or less</b> you can <b>knock</b>: both hands are revealed, you may lay your dead cards onto the opponent's melds, and the lower deadwood wins the difference.</p>
+  <p>Zero deadwood is <b>gin</b> — a 25-point bonus and no lay-offs allowed. Beat or tie the knocker and you <b>undercut</b> them for 25 plus the difference. First to 100 wins.</p>
+  <button class="bigbtn" data-close>Got it</button></div></div>
+
+<div class="modal" id="handModal"><div class="box"><h2 id="hTitle"></h2><p class="sub" id="hSub"></p>
+  <div class="meldlab">You</div><div class="meldshow" id="hYou"></div>
+  <div class="meldlab">Bot</div><div class="meldshow" id="hBot"></div>
+  <table class="st" id="hTable"></table><button class="bigbtn" id="hNext">Next hand</button></div></div>
+
+<div class="modal" id="overModal"><div class="box"><h2 id="oTitle"></h2><p class="sub" id="oSub"></p><table class="st" id="oTable"></table><button class="bigbtn" id="oAgain">Play again</button><button class="bigbtn ghost" id="oSetup">Change settings</button></div></div>
+
+<script>
+/* ============================================================
+   GIN RUMMY — the engine. No DOM.  window.GIN.  (see README)
+   ============================================================ */
+(function(G){
+  var SUITS=['♣','♦','♥','♠'];
+  function val(r){ return r>10?10:r; }
+  function rname(r){ return r===1?'A':r===11?'J':r===12?'Q':r===13?'K':String(r); }
+  function same(a,b){ return a&&b&&a.s===b.s&&a.r===b.r; }
+  function rng(seed){ var a=(seed>>>0)||1; return function(){ a=(a+0x6D2B79F5)>>>0; var t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function deck(){ var d=[]; for(var s=0;s<4;s++) for(var r=1;r<=13;r++) d.push({s:s,r:r}); return d; }
+  function meld(hand, idxs){ var mask=0, value=0; idxs.forEach(function(i){ mask|=(1<<i); value+=val(hand[i].r); }); return {mask:mask, value:value, cards:idxs}; }
+  function genMelds(hand){ var cand=[], i, j; var byRank={}; hand.forEach(function(c,idx){ (byRank[c.r]=byRank[c.r]||[]).push(idx); });
+    Object.keys(byRank).forEach(function(r){ var idxs=byRank[r]; if(idxs.length>=3){ if(idxs.length===3){ cand.push(meld(hand,idxs)); } else { cand.push(meld(hand,idxs)); for(i=0;i<idxs.length;i++){ cand.push(meld(hand, idxs.slice(0,i).concat(idxs.slice(i+1)))); } } } });
+    for(var s=0;s<4;s++){ var suit=[]; hand.forEach(function(c,idx){ if(c.s===s) suit.push({r:c.r, idx:idx}); }); suit.sort(function(a,b){ return a.r-b.r; });
+      var k=0; while(k<suit.length){ var seg=[suit[k]]; var m=k+1; while(m<suit.length && suit[m].r===suit[m-1].r+1){ seg.push(suit[m]); m++; } if(seg.length>=3){ for(i=0;i<seg.length;i++) for(j=i+2;j<seg.length;j++){ cand.push(meld(hand, seg.slice(i,j+1).map(function(x){ return x.idx; }))); } } k=m; } }
+    return cand; }
+  function bestMelds(hand){ var cand=genMelds(hand), total=0, i; for(i=0;i<hand.length;i++) total+=val(hand[i].r); var memo={};
+    function dfs(k, used){ if(k>=cand.length) return {mv:0, pick:[]}; var key=k+':'+used; if(memo[key]!==undefined) return memo[key]; var best=dfs(k+1, used);
+      if((cand[k].mask & used)===0){ var r=dfs(k+1, used|cand[k].mask); if(cand[k].value+r.mv>best.mv) best={mv:cand[k].value+r.mv, pick:[k].concat(r.pick)}; } return memo[key]=best; }
+    var res=dfs(0,0), usedMask=0; res.pick.forEach(function(k){ usedMask|=cand[k].mask; });
+    var melds=res.pick.map(function(k){ return cand[k].cards.map(function(i){ return hand[i]; }); }); var dead=[]; for(i=0;i<hand.length;i++) if(!(usedMask&(1<<i))) dead.push(hand[i]);
+    return { melds:melds, deadwood:total-res.mv, deadCards:dead }; }
+  function deadwood(hand){ return bestMelds(hand).deadwood; }
+  function layoff(knockerMelds, defenderDead){ var melds=knockerMelds.map(function(m){ return m.slice(); }), dead=defenderDead.slice(), changed=true;
+    function isSet(m){ return m.length>=3 && m.every(function(c){ return c.r===m[0].r; }); } function isRun(m){ return m.length>=3 && m.every(function(c){ return c.s===m[0].s; }); }
+    while(changed){ changed=false; for(var d=0; d<dead.length; d++){ var c=dead[d], placed=false; for(var k=0;k<melds.length;k++){ var m=melds[k];
+      if(isSet(m)){ if(c.r===m[0].r && m.length<4){ m.push(c); placed=true; break; } } else if(isRun(m)){ if(c.s===m[0].s){ var lo=m[0].r, hi=m[m.length-1].r; if(c.r===lo-1){ m.unshift(c); placed=true; break; } if(c.r===hi+1){ m.push(c); placed=true; break; } } } }
+      if(placed){ dead.splice(d,1); changed=true; break; } } }
+    var dw=0; dead.forEach(function(c){ dw+=val(c.r); }); return dw; }
+  function newGame(target){ return {target:target||100, scores:[0,0], over:false, winner:-1, hand:0, names:['You','Bot'], history:[] }; }
+  function deal(g, seed){ var rnd=rng(seed==null?Math.floor(Math.random()*4294967295):seed), d=deck(); for(var i=d.length-1;i>0;i--){ var j=Math.floor(rnd()*(i+1)), t=d[i]; d[i]=d[j]; d[j]=t; }
+    var hands=[d.slice(0,10), d.slice(10,20)], stock=d.slice(20), up=stock.shift(), discard=[up], first=g.hand%2;
+    return { hands:hands, stock:stock, discard:discard, turn:first, phase:'draw', firstTurn:true, over:false, result:null, knocker:-1 }; }
+  function drawStock(h, p){ if(h.phase!=='draw'||h.turn!==p) throw new Error('nd'); if(!h.stock.length){ h.over=true; h.result={type:'draw'}; return null; } var c=h.stock.shift(); h.hands[p].push(c); h.phase='discard'; h.firstTurn=false; return c; }
+  function drawDiscard(h, p){ if(h.phase!=='draw'||h.turn!==p) throw new Error('nd'); var c=h.discard.pop(); h.hands[p].push(c); h.phase='discard'; h.firstTurn=false; return c; }
+  function discard(h, p, card){ if(h.phase!=='discard'||h.turn!==p) throw new Error('ndi'); discardNoPass(h,p,card); h.turn=p===0?1:0; h.phase='draw'; return h; }
+  function discardNoPass(h, p, card){ var hand=h.hands[p], i=-1; for(var k=0;k<hand.length;k++) if(same(hand[k],card)){ i=k; break; } if(i<0) throw new Error('nih'); h.discard.push(hand.splice(i,1)[0]); }
+  function canKnock(hand){ return deadwood(hand)<=10; }
+  function knock(h, p, card){ discardNoPass(h,p,card); var bm=bestMelds(h.hands[p]); if(bm.deadwood>10) throw new Error('dw>10'); h.over=true; h.knocker=p; var opp=p===0?1:0; var oppBM=bestMelds(h.hands[opp]);
+    var gin=bm.deadwood===0, defDead=gin?oppBM.deadwood:layoff(bm.melds, oppBM.deadCards), res;
+    if(gin){ res={type:'gin', knocker:p, knockDead:0, defDead:defDead, points:defDead+25, winner:p}; }
+    else if(defDead>bm.deadwood){ res={type:'knock', knocker:p, knockDead:bm.deadwood, defDead:defDead, points:defDead-bm.deadwood, winner:p}; }
+    else { res={type:'undercut', knocker:p, knockDead:bm.deadwood, defDead:defDead, points:(bm.deadwood-defDead)+25, winner:opp}; }
+    h.result=res; h.knockMelds={me:bm, opp:oppBM}; return res; }
+  function applyResult(g, h){ if(h.result){ if(h.result.type!=='draw') g.scores[h.result.winner]+=h.result.points; g.history.push(h.result); } g.hand++; if(Math.max(g.scores[0],g.scores[1])>=g.target){ g.over=true; g.winner=g.scores[0]>g.scores[1]?0:1; } return g; }
+  function bestDiscard(hand){ var best=null; for(var i=0;i<hand.length;i++){ var rest=hand.slice(0,i).concat(hand.slice(i+1)), dw=deadwood(rest); if(!best||dw<best.deadwood||(dw===best.deadwood&&val(hand[i].r)>val(best.card.r))) best={card:hand[i], deadwood:dw, keep:rest}; } return best; }
+  function botDraw(h){ var p=h.turn, hand=h.hands[p], top=h.discard[h.discard.length-1], cur=deadwood(hand), bd=bestDiscard(hand.concat([top])); return bd.deadwood<cur?'discard':'stock'; }
+  function botTurnDiscard(h){ var bd=bestDiscard(h.hands[h.turn]); return { card:bd.card, knock:bd.deadwood<=10, gin:bd.deadwood===0 }; }
+  G.GIN={ SUITS:SUITS, val:val, rname:rname, same:same, deck:deck, genMelds:genMelds, bestMelds:bestMelds, deadwood:deadwood, layoff:layoff, newGame:newGame, deal:deal, drawStock:drawStock, drawDiscard:drawDiscard, discard:discard, canKnock:canKnock, knock:knock, applyResult:applyResult, bestDiscard:bestDiscard, botDraw:botDraw, botTurnDiscard:botTurnDiscard };
+})(window);
+</script>
+<script>
+/* ============================================================
+   GIN RUMMY — the screen.
+   ============================================================ */
+(function(){
+var GN=window.GIN, $=function(id){ return document.getElementById(id); };
+var SPEED={relaxed:{bot:950}, normal:{bot:620}, fast:{bot:330}};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
+function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+var prefs=Object.assign({level:'normal', speed:'normal', teach:false, target:100}, lsGet('gin_prefs',{}));
+function savePrefs(){ lsSet('gin_prefs', prefs); }
+var stats=Object.assign({played:0, won:0}, lsGet('gin_stats',{}));
+
+var G=null, H=null, LEVEL='normal', busy=false, timer=null, up=null, knockArmed=false, note='';
+
+function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){ e.className='card back'; return e; } e.className='card'; e.style.color=(c.s===1||c.s===2)?'#c22':'#1c2a24';
+  e.innerHTML='<span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span><span class="pip">'+GN.SUITS[c.s]+'</span>'; return e; }
+
+function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
+function renderSetup(){ seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); }); seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); }); seg('segTarget',prefs.target,function(v){ prefs.target=+v; savePrefs(); renderSetup(); }); seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
+  var s=lsGet('gin_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over)); }
+function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
+function start(){ G=GN.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('setup'); closeAll(); startHand(); }
+function resume(){ var s=lsGet('gin_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; H=s.H; LEVEL=s.level||'normal'; GNSETUP.hide('setup'); closeAll(); if(!H||H.over){ startHand(); return; } busy=false; up=null; knockArmed=false; render(); if(H.turn!==0) botGo(); }
+function save(){ if(G&&!G.over) lsSet('gin_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('gin_game'); }catch(e){} } }
+
+function startHand(){ H=GN.deal(G); busy=false; up=null; knockArmed=false; note=''; sfx('shuffle'); save(); render(); if(H.turn!==0) botGo(); }
+
+function render(){ if(!G) return;
+  // opponent
+  var oc = H?H.hands[1].length:10;
+  var fan=''; for(var i=0;i<oc;i++) fan+='<div class="card back"></div>';
+  $('opp').innerHTML='<div><span class="who'+(H&&H.turn===1&&!H.over?' turn':'')+'">Bot</span> <span class="sc">to '+G.target+' · <b>'+G.scores[1]+'</b></span></div><div class="fan">'+fan+'</div>';
+  $('sub').textContent='You '+G.scores[0]+' · Bot '+G.scores[1]+' · to '+G.target;
+  // piles
+  var stockN=H?H.stock.length:0; $('stockCt').textContent=stockN+' left';
+  var ss=$('stockStack'); ss.innerHTML = stockN? '' : ''; if(stockN){ ss.appendChild(cardEl(null,true)); } $('stockPile').classList.toggle('empty', stockN===0);
+  var canDraw = H && !busy && !H.over && H.turn===0 && H.phase==='draw';
+  $('stockPile').classList.toggle('tap', !!canDraw && stockN>0);
+  var ds=$('discardStack'); ds.innerHTML=''; var top=H&&H.discard.length?H.discard[H.discard.length-1]:null; if(top) ds.appendChild(cardEl(top)); $('discardPile').classList.toggle('empty', !top);
+  $('discardPile').classList.toggle('tap', !!canDraw && !!top);
+  // hand
+  renderHand();
+  // say
+  var say=$('say');
+  if(!H){ say.textContent=''; }
+  else if(H.over){ say.textContent=''; }
+  else if(busy && H.turn===1){ say.innerHTML='<b>Bot</b> is thinking…'; }
+  else if(H.turn===0 && H.phase==='draw'){ say.innerHTML= note||'Draw — <b>stock</b> or the <b>discard</b>.'; }
+  else if(H.turn===0 && H.phase==='discard'){ say.innerHTML= knockArmed?'<b>Knock:</b> tap the card to throw.':'Tap a card to discard.'; }
+  else say.textContent='';
+  // deadwood readout
+  var dwEl=$('dw');
+  if(H && H.turn===0 && !H.over){ var bd=GN.bestDiscard(H.phase==='discard'?H.hands[0]:H.hands[0]); var best=bd.deadwood;
+    if(H.phase==='discard'){ dwEl.innerHTML = best<=10? 'Best deadwood if you knock: <b class="ok">'+best+'</b>'+(best===0?' — gin!':'') : 'Deadwood: <b>'+best+'</b> (need ≤10 to knock)'; }
+    else { dwEl.innerHTML='Deadwood: <b>'+GN.deadwood(H.hands[0])+'</b>'; }
+  } else dwEl.innerHTML='';
+  // knock button
+  var kb=$('knockBtn'); var minDead = (H&&H.turn===0&&H.phase==='discard'&&!busy)?GN.bestDiscard(H.hands[0]).deadwood : 99;
+  var canKn = H&&H.turn===0&&H.phase==='discard'&&!busy&&minDead<=10;
+  kb.disabled=!canKn; kb.classList.toggle('on', knockArmed); kb.classList.toggle('gin', canKn&&minDead===0); kb.textContent = (canKn&&minDead===0)?'Gin!':'Knock';
+  // coach
+  var co=$('coach'); if(!prefs.teach||!H||H.turn!==0||H.over){ co.textContent=''; }
+  else if(H.phase==='draw'){ var topc=H.discard[H.discard.length-1]; var withTop=GN.bestDiscard(H.hands[0].concat([topc])).deadwood; co.innerHTML = withTop<GN.deadwood(H.hands[0])? 'Taking the <b style="color:var(--teach)">'+GN.rname(topc.r)+GN.SUITS[topc.s]+'</b> would lower your deadwood.' : 'That discard doesn’t help — draw from the stock.'; }
+  else { co.textContent='Melded cards wear a gold bar. Ditch your biggest unmatched card.'; }
+}
+function renderHand(){ var el=$('hand'); el.innerHTML=''; if(!H){ return; } var hand=H.hands[0].slice().sort(function(a,b){ return a.s-b.s||a.r-b.r; });
+  var bm=GN.bestMelds(H.hands[0]); var meldSet={}; bm.melds.forEach(function(m){ m.forEach(function(c){ meldSet[c.s+'_'+c.r]=true; }); });
+  var n=hand.length, W=el.clientWidth||340, cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw')), ch=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ch'));
+  var step=n>1?Math.min(cw+5,(W-cw)/(n-1)):0; step=Math.max(step, cw*0.5); var total=cw+step*(n-1), x0=Math.max(0,(W-total)/2); if(total>W&&n>1){ step=(W-cw)/(n-1); x0=0; }
+  el.style.height=(ch+16)+'px';
+  var canDiscard = H.turn===0 && H.phase==='discard' && !busy && !H.over;
+  hand.forEach(function(c,i){ var e=cardEl(c); e.style.left=(x0+i*step)+'px'; e.style.top='6px'; e.style.zIndex=i+1;
+    e.classList.add(meldSet[c.s+'_'+c.r]?'meld':'dead'); if(up&&GN.same(up,c)) e.classList.add('up');
+    e.onclick=function(ev){ ev.stopPropagation(); tapHand(c); }; el.appendChild(e); }); }
+
+function tapHand(c){ if(!H||busy||H.over||H.turn!==0||H.phase!=='discard') return;
+  if(knockArmed){ var rest=H.hands[0].filter(function(x){ return !GN.same(x,c); }); if(GN.deadwood(rest)>10){ sfx('illegal'); note=''; $('say').innerHTML='<b>That still leaves more than 10.</b> Pick another.'; return; } doKnock(c); return; }
+  if(up&&GN.same(up,c)){ doDiscard(c); return; } up=c; sfx('select'); render(); }
+function stockTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.stock.length) return; GN.drawStock(H,0); sfx('deal'); up=null; note=''; save(); render(); }
+function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.discard.length) return; GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render(); }
+function doDiscard(c){ GN.discard(H,0,c); sfx('place'); up=null; knockArmed=false; save(); render(); if(!H.over) botGo(); }
+function doKnock(c){ var res=GN.knock(H,0,c); sfx(res.winner===0?'win':'lose'); knockArmed=false; up=null; save(); handEnd(); }
+
+function botGo(){ if(!H||H.over) return; busy=true; render(); timer=setTimeout(function(){ botDraw(); }, SPEED[prefs.speed].bot); }
+function botDraw(){ if(!H||H.over) return; var d=GN.botDraw(H); if(d==='discard'){ GN.drawDiscard(H,1); } else { if(!GN.drawStock(H,1)){ save(); handEnd(); return; } } sfx('deal'); save(); render();
+  timer=setTimeout(function(){ var dec=GN.botTurnDiscard(H); if(dec.knock){ GN.knock(H,1,dec.card); sfx(H.result.winner===0?'win':'lose'); save(); handEnd(); return; } GN.discard(H,1,dec.card); sfx('place'); busy=false; save(); render(); }, SPEED[prefs.speed].bot); }
+
+function handEnd(){ busy=false; var r=H.result; GN.applyResult(G,H); save();
+  if(r.type==='draw'){ $('hTitle').textContent='Stock exhausted'; $('hSub').textContent='No knock — the hand is a wash.'; $('hYou').innerHTML=''; $('hBot').innerHTML=''; $('hTable').innerHTML=''; }
+  else { var km=H.knockMelds; var youBM = r.knocker===0?km.me:km.opp, botBM = r.knocker===0?km.opp:km.me;
+    $('hTitle').textContent = r.type==='gin'?(r.winner===0?'Gin! You win the hand':'Bot goes gin'):(r.type==='undercut'?(r.winner===0?'Undercut! You steal it':'Bot undercuts you'):(r.winner===0?'You knock and win':'Bot knocks and wins'));
+    $('hSub').textContent = (r.type==='gin'?'Gin bonus +25. ':'')+(r.type==='undercut'?'Undercut bonus +25. ':'')+'Deadwood — knocker '+r.knockDead+', defender '+r.defDead+'.';
+    $('hYou').innerHTML=meldHTML(youBM); $('hBot').innerHTML=meldHTML(botBM);
+    var hi=Math.max(G.scores[0],G.scores[1]);
+    $('hTable').innerHTML='<tr class="'+(G.scores[0]===hi?'win':'')+'"><td>You</td><td>'+G.scores[0]+'</td></tr><tr class="'+(G.scores[1]===hi?'win':'')+'"><td>Bot</td><td>'+G.scores[1]+'</td></tr>';
+  }
+  $('hNext').textContent=G.over?'See result':'Next hand';
+  setTimeout(function(){ $('handModal').classList.add('show'); }, 300);
+}
+function meldHTML(bm){ var h=''; bm.melds.forEach(function(m){ h+='<div class="grp">'+m.map(function(c){ return cardMini(c); }).join('')+'</div>'; });
+  if(bm.deadCards.length){ h+='<div class="grp" style="background:rgba(226,70,58,.12)">'+bm.deadCards.map(function(c){ return cardMini(c); }).join('')+'</div>'; } return h||'<span style="opacity:.6;font-size:12px">—</span>'; }
+function cardMini(c){ return '<div class="card" style="color:'+((c.s===1||c.s===2)?'#c22':'#1c2a24')+'"><span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span></div>'; }
+
+function gameOver(){ var w=G.winner; stats.played++; if(w===0) stats.won++; lsSet('gin_stats',stats); sfx(w===0?'win':'lose'); if(w===0) confetti();
+  $('oTitle').textContent=w===0?'You win!':'Bot wins'; $('oSub').textContent='Final · first to '+G.target;
+  $('oTable').innerHTML='<tr class="'+(w===0?'win':'')+'"><td>You</td><td>'+G.scores[0]+'</td></tr><tr class="'+(w===1?'win':'')+'"><td>Bot</td><td>'+G.scores[1]+'</td></tr>';
+  try{ localStorage.removeItem('gin_game'); }catch(e){} $('overModal').classList.add('show'); }
+function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff']; for(var i=0;i<40;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c); c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
+
+function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
+[].forEach.call(document.querySelectorAll('[data-close]'),function(b){ b.onclick=function(){ var m=b; while(m&&!m.classList.contains('modal')) m=m.parentNode; if(m) m.classList.remove('show'); }; });
+['menuModal','rulesModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
+$('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
+$('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); }
+$('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
+$('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('gin_game'); }catch(e){} showSetup(); };
+$('stockStack').onclick=stockTap; $('discardStack').onclick=discardTap;
+$('knockBtn').onclick=function(){ if($('knockBtn').disabled) return; knockArmed=!knockArmed; sfx('select'); render(); };
+$('sortBtn').onclick=function(){ sfx('select'); render(); };
+$('hNext').onclick=function(){ $('handModal').classList.remove('show'); if(G.over) gameOver(); else startHand(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+$('startBtn').onclick=start; $('resumeBtn').onclick=resume;
+addEventListener('resize', function(){ render(); });
+
+window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return busy; }, drawStock:stockTap, drawDiscard:discardTap, discard:function(c){ up=c; tapHand(c); tapHand(c); }, knock:function(c){ knockArmed=true; tapHand(c); }, start:start };
+
+var s0=lsGet('gin_game',null);
+if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
+if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
+(function(){ var V="v170", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+})();
+</script>
+</body>
+</html>
