@@ -91,6 +91,9 @@ const GAMES = [
   // hidden for now (Josh, Oct 23) - still works by its URL; headed for a beta-games list later. Uncomment to bring the tile back.
   // { title:"Putting Green",    emoji:"⛳", sub:"Birch Hollow · one pro green, nine pins cut · read the hills and the grain · drag back to putt", href:"minigolf/", updated:"2026-10-22" },
   { title:"Chinese Checkers", emoji:"⭐", sub:"The star board · hop chains · you vs 1 to 5 bots", href:"chinesecheckers/", updated:"2026-10-10" },
+  { title:"Connect Four",      emoji:"🔴", sub:"Drop discs, line up four · three bot levels with real game-tree search · you’re red", href:"connectfour/", updated:"2026-10-26" },
+  { title:"Reversi",           emoji:"⚫", sub:"Othello · flank to flip · corner-savvy bot with a perfect endgame · hints & teaching mode", href:"reversi/", updated:"2026-10-26" },
+  { title:"Checkers",          emoji:"🟤", sub:"English draughts · forced jumps, chained doubles, kings · three bot levels · teaching mode", href:"checkers/", updated:"2026-10-26" },
   { title:"Golf Tees",        emoji:"⛳", sub:"The triangle peg puzzle · jump tees, leave just one", href:"tees/", updated:"2026-10-10" },
   { title:"Nerts",            emoji:"🏁", sub:"Racing solitaire · everybody at once onto the same piles · you vs 1 to 3 bots", href:"nerts/", updated:"2026-10-24" },
   // hidden for now (Josh, Oct 23) - still works by its URL; headed for a beta-games list later. Uncomment to bring the tile back.
@@ -166,7 +169,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v169", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v170", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
