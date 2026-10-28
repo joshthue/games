@@ -1,7 +1,8 @@
 # Gin Rummy
 
-Two-handed, you vs the bot. Draw and discard to build melds (sets and runs); get your
-leftover deadwood to 10 or less and knock, or clear it for gin. First to 100.
+Two-handed. Draw and discard to build melds (sets and runs); get your leftover deadwood
+to 10 or less and knock, or clear it for gin. First to 100. Play **vs the bot** or **two
+phones** online.
 
 Single-file PWA. Pure engine (`window.GIN`, no DOM) + separate UI, sharing `gn-header`,
 `gn-setup`, `sfx`.
@@ -31,12 +32,26 @@ to tell the suits apart at a glance, plus **Card size** and **Card text** (S/M/L
 the hand re-fans to fit, so it never overflows. On the start screen all options show at once (no
 "More options" fold), and on a tablet the sheet centers instead of stranding Deal at the bottom.
 
+## Online — two phones
+Pick **Two phones** on the start screen. One player taps **Create game** and reads out the
+4-letter code; the other taps **Join with code**. Host-authoritative over the free `ntfy`
+relay (`jtgin-v1-<code>`, no accounts), the same transport Spite & Malice uses. The host
+runs the engine (seat 0) and publishes a **per-seat view** that carries only the receiver's
+hand plus the opponent's card count and the stock count — the opponent's hand and the stock
+order never go on the wire. The guest renders that view and sends its moves (`drawStock`,
+`drawDiscard`, `discard`, `knock`, `next`) back for the host to apply. No bot in online mode;
+a netbar shows the room code and connection. An injected `window.__GIN_TX` replaces the relay
+for headless tests.
+
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
 undercut scoring, + a 120-game bot soak all reaching 100 with a winner.
 `scratchpad/gin-pw.js` — Playwright full game to a winner across four viewports, no
 overflow, no console errors.
+`scratchpad/gin-online-pw.js` — solo regression + a two-page online game over a mocked
+relay: connect, hidden-hand deal, turn/stock/discard sync, a knock to a consistent result on
+both pages, and a check that no host-hand ever appears in a published message.
 
 ## Test door
 `window.__GIN` exposes `G`, `H`, `drawStock()`, `drawDiscard()`, `discard(c)`, `knock(c)`,
-`start()`.
+`start()`, plus `hostCreate()`, `guestJoin(code)`, `net()`, `mode()`, `encodeView`/`decodeView`.

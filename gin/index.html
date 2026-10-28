@@ -88,6 +88,11 @@
   .toggle.on{background:var(--gold);} .toggle.on::after{left:22px;}
   .gn-build{position:fixed; left:0; right:0; bottom:calc(1px + env(safe-area-inset-bottom,0px)); text-align:center; font-size:9.5px; opacity:.4; font-family:ui-monospace,Menlo,monospace; pointer-events:none;}
   .hide{display:none!important;}
+  .netbar{text-align:center; font-size:12.5px; padding:5px 12px; margin:2px auto 0; max-width:560px; color:var(--cream); background:rgba(0,0,0,.2); border-radius:10px;}
+  .netbar b{color:var(--gold); letter-spacing:1px;}
+  .gn-note{font-size:12.5px; line-height:1.4; opacity:.82; margin:0 0 10px;}
+  .roomcode{font-size:40px; font-weight:900; letter-spacing:10px; text-align:center; color:var(--gold); margin:10px 0;}
+  .codein{width:100%; box-sizing:border-box; text-transform:uppercase; font-size:26px; letter-spacing:8px; text-align:center; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:rgba(0,0,0,.25); color:var(--cream); margin:4px 0 12px;}
 </style>
 <script src="../gn-header.js"></script>
 <script src="../gn-setup.js"></script>
@@ -101,18 +106,21 @@
     <h1 class="gn-name">Gin Rummy</h1>
     <div class="gn-sub" id="sub"></div>
   </div>
+  <div class="netbar hide" id="netbar"></div>
 
   <div class="gn-setup" id="setup" hidden>
     <div class="gn-setup-body">
       <p class="gn-pitch">Draw and discard to build <b>melds</b> — three or four of a kind, or runs in a suit. Get your leftover "deadwood" to 10 or less and <b>knock</b>; clear it all for <b>gin</b>. First to 100 wins.</p>
-      <div class="gn-row"><span>Bot</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
+      <div class="gn-row"><span>Play</span><div class="seg" id="segMode"><button data-v="solo" class="on">Vs bot</button><button data-v="online">Two phones</button></div></div>
+      <div class="gn-note hide" id="onlineNote">One of you taps <b>Create game</b> and reads out the 4-letter code; the other taps <b>Join with code</b> and types it in. Then you each play on your own phone — free public relay, no accounts.</div>
+      <div class="gn-row" id="rowBot"><span>Bot</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
       <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
       <div class="gn-row"><span>Game to</span><div class="seg" id="segTarget"><button data-v="50">50</button><button data-v="100">100</button></div></div>
       <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
       <div class="gn-row"><span>Four-color deck</span><button class="toggle" id="fourTogS"></button></div>
       <div id="setupSizeRows"></div>
     </div>
-    <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Deal</button><button class="gn-alt hide" id="resumeBtn">Resume your game</button></div>
+    <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Deal</button><button class="gn-alt hide" id="joinBtn">Join with code</button><button class="gn-alt hide" id="resumeBtn">Resume your game</button></div>
   </div>
 
   <div class="opp" id="opp"></div>
@@ -152,11 +160,13 @@
   <button class="bigbtn" data-close>Got it</button></div></div>
 
 <div class="modal" id="handModal"><div class="box"><h2 id="hTitle"></h2><p class="sub" id="hSub"></p>
-  <div class="meldlab">You</div><div class="meldshow" id="hYou"></div>
-  <div class="meldlab">Bot</div><div class="meldshow" id="hBot"></div>
+  <div class="meldlab" id="hYouLab">You</div><div class="meldshow" id="hYou"></div>
+  <div class="meldlab" id="hBotLab">Bot</div><div class="meldshow" id="hBot"></div>
   <table class="st" id="hTable"></table><button class="bigbtn" id="hNext">Next hand</button></div></div>
 
 <div class="modal" id="overModal"><div class="box"><h2 id="oTitle"></h2><p class="sub" id="oSub"></p><table class="st" id="oTable"></table><button class="bigbtn" id="oAgain">Play again</button><button class="bigbtn ghost" id="oSetup">Change settings</button></div></div>
+
+<div class="modal" id="netModal"><div class="box" id="netBox"></div></div>
 
 <script>
 /* ============================================================
@@ -228,6 +238,7 @@ function savePrefs(){ lsSet('gin_prefs', prefs); }
 var stats=Object.assign({played:0, won:0}, lsGet('gin_stats',{}));
 
 var G=null, H=null, LEVEL='normal', busy=false, timer=null, up=null, knockArmed=false, note='', justDrew=null;
+var mode='solo', net={online:false};
 
 function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){ e.className='card back'; return e; } e.className='card'; e.style.color=suitCol(c.s);
   e.innerHTML='<span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span><span class="pip">'+GN.SUITS[c.s]+'</span>'; return e; }
@@ -238,18 +249,18 @@ function renderSetup(){ seg('segL',prefs.level,function(v){ prefs.level=v; saveP
   if(window.CARDSIZE) $('setupSizeRows').innerHTML=CARDSIZE.rowsHTML();
   var s=lsGet('gin_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over)); }
 function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
-function start(){ G=GN.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('setup'); closeAll(); startHand(); }
+function start(){ mode='solo'; net={online:false}; updateNetbar(); G=GN.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('setup'); closeAll(); startHand(); }
 function resume(){ var s=lsGet('gin_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; H=s.H; LEVEL=s.level||'normal'; GNSETUP.hide('setup'); closeAll(); if(!H||H.over){ startHand(); return; } busy=false; up=null; knockArmed=false; render(); if(H.turn!==0) botGo(); }
-function save(){ if(G&&!G.over) lsSet('gin_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('gin_game'); }catch(e){} } }
+function save(){ if(mode==='online') return; if(G&&!G.over) lsSet('gin_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('gin_game'); }catch(e){} } }
 
-function startHand(){ H=GN.deal(G); busy=false; up=null; knockArmed=false; note=''; justDrew=null; sfx('shuffle'); save(); render(); if(H.turn!==0) botGo(); }
+function startHand(){ H=GN.deal(G); busy=false; up=null; knockArmed=false; note=''; justDrew=null; sfx('shuffle'); save(); render(); if(mode==='online'){ publishState(); } else if(H.turn!==0){ botGo(); } }
 
 function render(){ if(!G) return;
   // opponent
   var oc = H?H.hands[1].length:10;
   var fan=''; for(var i=0;i<oc;i++) fan+='<div class="card back"></div>';
-  $('opp').innerHTML='<div><span class="who'+(H&&H.turn===1&&!H.over?' turn':'')+'">Bot</span> <span class="sc">to '+G.target+' · <b>'+G.scores[1]+'</b></span></div><div class="fan">'+fan+'</div>';
-  $('sub').textContent='You '+G.scores[0]+' · Bot '+G.scores[1]+' · to '+G.target;
+  $('opp').innerHTML='<div><span class="who'+(H&&H.turn===1&&!H.over?' turn':'')+'">'+oppLabel()+'</span> <span class="sc">to '+G.target+' · <b>'+G.scores[1]+'</b></span></div><div class="fan">'+fan+'</div>';
+  $('sub').textContent='You '+G.scores[0]+' · '+oppLabel()+' '+G.scores[1]+' · to '+G.target;
   // piles
   var stockN=H?H.stock.length:0; $('stockCt').textContent=stockN+' left';
   var ss=$('stockStack'); ss.innerHTML = stockN? '' : ''; if(stockN){ ss.appendChild(cardEl(null,true)); } $('stockPile').classList.toggle('empty', stockN===0);
@@ -263,6 +274,8 @@ function render(){ if(!G) return;
   var say=$('say');
   if(!H){ say.textContent=''; }
   else if(H.over){ say.textContent=''; }
+  else if(mode==='online' && net.pending){ say.textContent='Sending…'; }
+  else if(mode==='online' && H.turn===1){ say.innerHTML='Waiting for <b>them</b>…'; }
   else if(busy && H.turn===1){ say.innerHTML='<b>Bot</b> is thinking…'; }
   else if(H.turn===0 && H.phase==='draw'){ say.innerHTML= note||'Draw — <b>stock</b> or the <b>discard</b>.'; }
   else if(H.turn===0 && H.phase==='discard'){ say.innerHTML= knockArmed?'<b>Knock:</b> tap the card to throw.':'Tap a card to discard.'; }
@@ -304,16 +317,24 @@ function tapHand(c){ if(!H||busy||H.over||H.turn!==0||H.phase!=='discard') retur
   if(H.tookFromDiscard && GN.same(c,H.tookFromDiscard)){ sfx('illegal'); $('say').innerHTML='<b>Can’t discard that</b> — you just took it from the pile.'; return; }
   if(knockArmed){ var rest=H.hands[0].filter(function(x){ return !GN.same(x,c); }); if(GN.deadwood(rest)>10){ sfx('illegal'); note=''; $('say').innerHTML='<b>That still leaves more than 10.</b> Pick another.'; return; } doKnock(c); return; }
   if(up&&GN.same(up,c)){ doDiscard(c); return; } up=c; sfx('select'); render(); }
-function stockTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.stock.length) return; justDrew=GN.drawStock(H,0); sfx('deal'); up=null; note=''; save(); render(); }
-function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.discard.length) return; justDrew=GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render(); }
-function doDiscard(c){ GN.discard(H,0,c); sfx('place'); up=null; justDrew=null; knockArmed=false; save(); render(); if(!H.over) botGo(); }
-function doKnock(c){ var res=GN.knock(H,0,c); sfx(res.winner===0?'win':'lose'); knockArmed=false; up=null; save(); handEnd(); }
+function stockTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.stock.length||(mode==='online'&&net.pending)) return;
+  if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'drawStock'}); net.pending=true; render(); return; }
+  justDrew=GN.drawStock(H,0); sfx('deal'); up=null; note=''; save(); render(); if(mode==='online') publishState(); }
+function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.discard.length||(mode==='online'&&net.pending)) return;
+  if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'drawDiscard'}); net.pending=true; render(); return; }
+  justDrew=GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render(); if(mode==='online') publishState(); }
+function doDiscard(c){ if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'discard',card:{s:c.s,r:c.r}}); net.pending=true; up=null; justDrew=null; knockArmed=false; render(); return; }
+  GN.discard(H,0,c); sfx('place'); up=null; justDrew=null; knockArmed=false; save(); render(); if(mode==='online'){ publishState(); } else if(!H.over){ botGo(); } }
+function doKnock(c){ if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'knock',card:{s:c.s,r:c.r}}); net.pending=true; knockArmed=false; up=null; render(); return; }
+  var res=GN.knock(H,0,c); sfx(res.winner===0?'win':'lose'); knockArmed=false; up=null; save(); handEnd(); }
 
 function botGo(){ if(!H||H.over) return; busy=true; render(); timer=setTimeout(function(){ botDraw(); }, SPEED[prefs.speed].bot); }
 function botDraw(){ if(!H||H.over) return; var d=GN.botDraw(H); if(d==='discard'){ GN.drawDiscard(H,1); } else { if(!GN.drawStock(H,1)){ save(); handEnd(); return; } } sfx('deal'); save(); render();
   timer=setTimeout(function(){ var dec=GN.botTurnDiscard(H); if(dec.knock){ GN.knock(H,1,dec.card); sfx(H.result.winner===0?'win':'lose'); save(); handEnd(); return; } GN.discard(H,1,dec.card); sfx('place'); busy=false; save(); render(); }, SPEED[prefs.speed].bot); }
 
 function handEnd(){ busy=false; var r=H.result; GN.applyResult(G,H); save();
+  if(mode==='online'){ publishState(); $('hYouLab').textContent='You'; $('hBotLab').textContent='Them'; showEndFromView(encodeView(G,H,0).result); return; }
+  $('hYouLab').textContent='You'; $('hBotLab').textContent='Bot';
   if(r.type==='draw'){ $('hTitle').textContent='Stock exhausted'; $('hSub').textContent='No knock — the hand is a wash.'; $('hYou').innerHTML=''; $('hBot').innerHTML=''; $('hTable').innerHTML=''; }
   else { var km=H.knockMelds; var youBM = r.knocker===0?km.me:km.opp, botBM = r.knocker===0?km.opp:km.me;
     $('hTitle').textContent = r.type==='gin'?(r.winner===0?'Gin! You win the hand':'Bot goes gin'):(r.type==='undercut'?(r.winner===0?'Undercut! You steal it':'Bot undercuts you'):(r.winner===0?'You knock and win':'Bot knocks and wins'));
@@ -330,8 +351,8 @@ function meldHTML(bm){ var h=''; bm.melds.forEach(function(m){ h+='<div class="g
 function cardMini(c){ return '<div class="card" style="color:'+suitCol(c.s)+'"><span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span></div>'; }
 
 function gameOver(){ var w=G.winner; stats.played++; if(w===0) stats.won++; lsSet('gin_stats',stats); sfx(w===0?'win':'lose'); if(w===0) confetti();
-  $('oTitle').textContent=w===0?'You win!':'Bot wins'; $('oSub').textContent='Final · first to '+G.target;
-  $('oTable').innerHTML='<tr class="'+(w===0?'win':'')+'"><td>You</td><td>'+G.scores[0]+'</td></tr><tr class="'+(w===1?'win':'')+'"><td>Bot</td><td>'+G.scores[1]+'</td></tr>';
+  $('oTitle').textContent=w===0?'You win!':(oppLabel()+' wins'); $('oSub').textContent='Final · first to '+G.target;
+  $('oTable').innerHTML='<tr class="'+(w===0?'win':'')+'"><td>You</td><td>'+G.scores[0]+'</td></tr><tr class="'+(w===1?'win':'')+'"><td>'+oppLabel()+'</td><td>'+G.scores[1]+'</td></tr>';
   try{ localStorage.removeItem('gin_game'); }catch(e){} $('overModal').classList.add('show'); }
 function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff']; for(var i=0;i<40;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c); c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
 
@@ -346,22 +367,115 @@ $('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show
 $('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
 $('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
-$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('gin_game'); }catch(e){} showSetup(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); if(mode==='online'){ netStop(); mode='solo'; net={online:false}; updateNetbar(); } try{ localStorage.removeItem('gin_game'); }catch(e){} showSetup(); };
 $('stockStack').onclick=stockTap; $('discardStack').onclick=discardTap;
 $('knockBtn').onclick=function(){ if($('knockBtn').disabled) return; knockArmed=!knockArmed; sfx('select'); render(); };
 $('sortBtn').onclick=function(){ prefs.sortMode = prefs.sortMode==='suit'?'rank':(prefs.sortMode==='rank'?'meld':'suit'); savePrefs(); sfx('select'); render(); };
-$('hNext').onclick=function(){ $('handModal').classList.remove('show'); if(G.over) gameOver(); else startHand(); };
-$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); start(); };
+$('hNext').onclick=function(){ $('handModal').classList.remove('show'); if(mode==='online'&&net.role==='guest'){ if(G.over){ gameOver(); } else { netSend({t:'act',kind:'next'}); } return; } if(G.over) gameOver(); else startHand(); };
+$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); if(mode==='online'){ netStop(); mode='solo'; net={online:false}; updateNetbar(); showSetup(); return; } start(); };
 $('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
 $('startBtn').onclick=start; $('resumeBtn').onclick=resume;
 addEventListener('resize', function(){ render(); });
 
-window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return busy; }, drawStock:stockTap, drawDiscard:discardTap, discard:function(c){ up=c; tapHand(c); tapHand(c); }, knock:function(c){ knockArmed=true; tapHand(c); }, start:start };
+/* ============================================================
+   TWO-PHONE ONLINE — host-authoritative over ntfy (ported from Spite & Malice).
+   Host runs the engine (seat 0 = host, seat 1 = guest) and publishes a per-seat
+   view with the opponent's hand and the stock order hidden; the guest renders that
+   view and sends its moves back. No bot in online mode. See README.
+   ============================================================ */
+var RELAYS=['https://ntfy.sh/','https://ntfy.envs.net/'];
+function ntfyTopic(){ return 'jtgin-v1-'+String(net.code).toLowerCase(); }
+function randCode(){ var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s=''; for(var i=0;i<4;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
+function newId(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function tx(){ return window.__GIN_TX||null; }
+function oppLabel(){ return mode==='online'?'Them':'Bot'; }
+function netPublish(obj){ obj.from=net.id; obj.mid=newId(); var body=JSON.stringify(obj), t=tx(); if(t){ try{ t.publish(ntfyTopic(),body); }catch(e){} return; } RELAYS.forEach(function(base){ try{ fetch(base+ntfyTopic(),{method:'POST',body:body}); }catch(e){} }); }
+function netSend(obj){ netPublish(obj); }
+var pubTimer=null, pubPending=false;
+function publishState(){ if(!(mode==='online'&&net.role==='host')) return; pubPending=true; if(pubTimer) return; pubTimer=setTimeout(function(){ pubTimer=null; if(pubPending){ pubPending=false; netPublish({t:'state', view:encodeView(G,H,1)}); } }, 70); }
+
+function encMelds(bm){ return { melds:bm.melds.map(function(m){ return m.map(function(c){ return {s:c.s,r:c.r}; }); }), deadCards:bm.deadCards.map(function(c){ return {s:c.s,r:c.r}; }) }; }
+function encodeView(g,h,seat){ var o={ sc:[g.scores[seat], g.scores[1-seat]], target:g.target, over:!!g.over, win:g.over?(g.winner===seat?1:0):null, handNo:g.hand,
+    turn:(h.turn===seat?0:1), phase:h.phase, stockN:h.stock.length,
+    top:h.discard.length?{s:h.discard[h.discard.length-1].s,r:h.discard[h.discard.length-1].r}:null,
+    you:h.hands[seat].map(function(c){ return {s:c.s,r:c.r}; }), oppN:h.hands[1-seat].length,
+    took:(h.turn===seat&&h.tookFromDiscard)?{s:h.tookFromDiscard.s,r:h.tookFromDiscard.r}:null, result:null };
+  if(h.result){ var r=h.result, km=h.knockMelds;
+    o.result={ type:r.type, iWon:r.type==='draw'?null:(r.winner===seat), iKnocked:r.knocker===seat, knockDead:r.knockDead, defDead:r.defDead, points:r.points,
+      youMelds:km?encMelds(r.knocker===seat?km.me:km.opp):null, oppMelds:km?encMelds(r.knocker===seat?km.opp:km.me):null,
+      sc:[g.scores[seat], g.scores[1-seat]], over:!!g.over }; }
+  return o; }
+function phArr(n){ var a=[]; for(var i=0;i<n;i++) a.push({}); return a; }
+function decodeView(v){ var g={ scores:[v.sc[0],v.sc[1]], target:v.target, over:v.over, winner:v.win===1?0:(v.win===0?1:-1), hand:v.handNo, names:['You','Them'], history:[] };
+  var h={ hands:[ v.you.map(function(c){ return {s:c.s,r:c.r}; }), phArr(v.oppN) ], stock:phArr(v.stockN), discard:v.top?[{s:v.top.s,r:v.top.r}]:[], turn:v.turn, phase:v.phase, over:v.over, tookFromDiscard:v.took||null, result:v.result||null, knocker:-1 };
+  return {G:g, H:h}; }
+
+function handleNet(obj){
+  if(net.role==='host'){
+    if(obj.t==='join'){ net.joined=true; closeNet(); if(!H){ startHand(); } else { publishState(); } updateNetbar(); render(); }
+    else if(obj.t==='act'){ hostApply(obj); }
+  } else if(net.role==='guest'){
+    if(obj.t==='state'){ var first=!net.joined; net.joined=true; net.pending=false;
+      var d=decodeView(obj.view); G=d.G; H=d.H; up=null; knockArmed=false;
+      if(first){ closeNet(); GNSETUP.hide('setup'); }
+      render(); updateNetbar();
+      if(obj.view.result){ $('hYouLab').textContent='You'; $('hBotLab').textContent='Them'; showEndFromView(obj.view.result); }
+      else { $('handModal').classList.remove('show'); $('overModal').classList.remove('show'); } } } }
+function hostApply(obj){ if(!H) return;
+  try{
+    if(obj.kind==='drawStock'){ if(H.over||H.turn!==1||H.phase!=='draw') return; if(!GN.drawStock(H,1)){ handEnd(); return; } }
+    else if(obj.kind==='drawDiscard'){ if(H.over||H.turn!==1||H.phase!=='draw'||!H.discard.length) return; GN.drawDiscard(H,1); }
+    else if(obj.kind==='discard'){ if(H.over||H.turn!==1||H.phase!=='discard') return; GN.discard(H,1,obj.card); }
+    else if(obj.kind==='knock'){ if(H.over||H.turn!==1||H.phase!=='discard') return; GN.knock(H,1,obj.card); handEnd(); return; }
+    else if(obj.kind==='next'){ if(!H.over) return; if(G.over){ publishState(); return; } startHand(); return; }
+  }catch(e){ return; }
+  sfx('deal'); render(); publishState(); }
+
+function meldHTMLv(bm){ if(!bm) return '<span style="opacity:.6;font-size:12px">—</span>'; var h=''; bm.melds.forEach(function(m){ h+='<div class="grp">'+m.map(function(c){ return cardMini(c); }).join('')+'</div>'; }); if(bm.deadCards.length){ h+='<div class="grp" style="background:rgba(226,70,58,.12)">'+bm.deadCards.map(function(c){ return cardMini(c); }).join('')+'</div>'; } return h||'<span style="opacity:.6;font-size:12px">—</span>'; }
+function showEndFromView(r){ if(!r) return;
+  if(r.type==='draw'){ $('hTitle').textContent='Stock exhausted'; $('hSub').textContent='No knock — the hand is a wash.'; $('hYou').innerHTML=''; $('hBot').innerHTML=''; $('hTable').innerHTML=''; }
+  else { $('hTitle').textContent = r.type==='gin'?(r.iWon?'Gin! You win the hand':'They go gin'):(r.type==='undercut'?(r.iWon?'Undercut! You steal it':'They undercut you'):(r.iWon?'You knock and win':'They knock and win'));
+    $('hSub').textContent = (r.type==='gin'?'Gin bonus +25. ':'')+(r.type==='undercut'?'Undercut bonus +25. ':'')+'Deadwood — knocker '+r.knockDead+', defender '+r.defDead+'.';
+    $('hYou').innerHTML=meldHTMLv(r.youMelds); $('hBot').innerHTML=meldHTMLv(r.oppMelds);
+    var hi=Math.max(r.sc[0],r.sc[1]); $('hTable').innerHTML='<tr class="'+(r.sc[0]===hi?'win':'')+'"><td>You</td><td>'+r.sc[0]+'</td></tr><tr class="'+(r.sc[1]===hi?'win':'')+'"><td>Them</td><td>'+r.sc[1]+'</td></tr>'; }
+  $('hNext').textContent=r.over?'See result':'Next hand';
+  setTimeout(function(){ $('handModal').classList.add('show'); }, 300); }
+
+function startNet(){ net.id=newId(); net.seen={}; net.since={}; net.ctrls=[]; var t=tx(); if(t){ net.connOk=true; updateNetbar(); pollLoop(t); return; } RELAYS.forEach(streamLoop); }
+function netStop(){ net.online=false; (net.ctrls||[]).forEach(function(c){ try{ c&&c.abort(); }catch(e){} }); if(pubTimer){ clearTimeout(pubTimer); pubTimer=null; } }
+function onMsg(obj){ if(!net.online) return; if(obj.from===net.id) return; if(obj.mid){ if(net.seen[obj.mid]) return; net.seen[obj.mid]=1; } handleNet(obj); }
+function pollLoop(t){ (async function(){ var cursor=0; while(net.online){ try{ var msgs=await t.poll(ntfyTopic(),cursor); for(var i=0;i<msgs.length;i++){ cursor=Math.max(cursor,msgs[i].idx+1); var o; try{ o=JSON.parse(msgs[i].body); }catch(e){ continue; } onMsg(o); } }catch(e){} await new Promise(function(r){ setTimeout(r,50); }); } })(); }
+function streamLoop(base){ (async function(){ while(net.online){ var ctrl=(typeof AbortController!=='undefined')?new AbortController():null; net.ctrls.push(ctrl); try{ var since=net.since[base]?('?since='+encodeURIComponent(net.since[base])):'?since=all'; var res=await fetch(base+ntfyTopic()+'/json'+since, ctrl?{signal:ctrl.signal}:{}); if(!res.ok||!res.body) throw 0; var reader=res.body.getReader(), dec=new TextDecoder(), buf=''; net.connOk=true; updateNetbar(); while(net.online){ var rd=await reader.read(); if(rd.done) break; buf+=dec.decode(rd.value,{stream:true}); var nl; while((nl=buf.indexOf('\n'))>=0){ var line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(!line) continue; var ev; try{ ev=JSON.parse(line); }catch(e){ continue; } if(ev.id) net.since[base]=ev.id; if(ev.event!=='message'||!ev.message) continue; var o; try{ o=JSON.parse(ev.message); }catch(e){ continue; } onMsg(o); } } }catch(e){ net.connOk=false; updateNetbar(); } if(!net.online) break; await new Promise(function(r){ setTimeout(r,1200); }); } })(); }
+
+function hostCreate(){ mode='online'; net={online:true, role:'host', code:randCode(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false}; G=GN.newGame(prefs.target); H=null; LEVEL=prefs.level; startNet(); showHostWait(); }
+function guestJoin(code){ mode='online'; net={online:true, role:'guest', code:String(code).toUpperCase(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false}; G=null; H=null; startNet(); showGuestWait(); (function ping(){ if(net.online&&!net.joined){ netSend({t:'join'}); setTimeout(ping,2000); } })(); }
+
+function openNet(html){ $('netBox').innerHTML=html; $('netModal').classList.add('show'); }
+function closeNet(){ $('netModal').classList.remove('show'); }
+function showHostWait(){ openNet('<h2>Your game is ready</h2><p class="sub">Read this code to the other player:</p><div class="roomcode">'+net.code+'</div><p id="netWait" class="sub" style="text-align:center">Connecting…</p><button class="bigbtn ghost" id="netCancel">Cancel</button>');
+  $('netCancel').onclick=function(){ netStop(); mode='solo'; net={online:false}; updateNetbar(); closeNet(); showSetup(); };
+  var iv=setInterval(function(){ var w=$('netWait'); if(!w||net.joined){ clearInterval(iv); return; } w.textContent=net.connOk?'Waiting for the other player to join…':'Connecting…'; }, 500); }
+function showGuestWait(){ openNet('<h2>Joining '+net.code+'…</h2><p id="netWait" class="sub" style="text-align:center">Connecting…</p><button class="bigbtn ghost" id="netCancel">Cancel</button>');
+  $('netCancel').onclick=function(){ netStop(); mode='solo'; net={online:false}; updateNetbar(); closeNet(); showSetup(); };
+  var iv=setInterval(function(){ var w=$('netWait'); if(!w||net.joined){ clearInterval(iv); return; } w.textContent=net.connOk?'Connected — waiting for the host to deal…':'Connecting…'; }, 500); }
+function showJoinPanel(){ openNet('<h2>Join a game</h2><p class="sub">Enter the 4-character code your friend read to you.</p><input id="codeInput" maxlength="4" autocapitalize="characters" autocomplete="off" placeholder="ABCD" class="codein"><button class="bigbtn" id="joinGo">Join</button><button class="bigbtn ghost" id="joinCancel">Cancel</button>');
+  $('joinGo').onclick=function(){ var v=($('codeInput').value||'').trim().toUpperCase(); if(v.length!==4){ $('codeInput').style.borderColor='#e2463a'; return; } guestJoin(v); };
+  $('joinCancel').onclick=closeNet;
+  setTimeout(function(){ var i=$('codeInput'); if(i) i.focus(); }, 80); }
+function updateNetbar(){ var nb=$('netbar'); if(!nb) return; if(mode!=='online'){ nb.classList.add('hide'); return; } nb.classList.remove('hide'); var conn=net.joined?'connected':(net.connOk?'waiting…':'connecting…'); nb.innerHTML='Room <b>'+(net.code||'----')+'</b> · '+conn+' · you are '+(net.role==='host'?'Host':'Guest'); }
+
+(function(){ var sm=$('segMode'); if(sm){ [].forEach.call(sm.children,function(b){ b.onclick=function(){ [].forEach.call(sm.children,function(x){ x.classList.remove('on'); }); b.classList.add('on'); var m=b.dataset.v; $('startBtn').textContent=m==='online'?'Create game':'Deal'; $('joinBtn').classList.toggle('hide', m!=='online'); $('onlineNote').classList.toggle('hide', m!=='online'); var rb=$('rowBot'); if(rb) rb.classList.toggle('hide', m==='online'); }; }); }
+  $('startBtn').onclick=function(){ var on=$('segMode')&&$('segMode').querySelector('.on'); if(on&&on.dataset.v==='online'){ hostCreate(); } else { start(); } };
+  $('joinBtn').onclick=function(){ showJoinPanel(); };
+  $('netModal').addEventListener('click',function(e){ if(e.target===this && !net.online) closeNet(); }); }());
+
+window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return busy; }, drawStock:stockTap, drawDiscard:discardTap, discard:function(c){ up=c; tapHand(c); tapHand(c); }, knock:function(c){ knockArmed=true; tapHand(c); }, start:start,
+  hostCreate:hostCreate, guestJoin:guestJoin, net:function(){ return net; }, mode:function(){ return mode; }, hNext:function(){ $('hNext').onclick(); }, encodeView:encodeView, decodeView:decodeView };
 
 var s0=lsGet('gin_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v179", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v180", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
