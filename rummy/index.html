@@ -26,7 +26,7 @@
 
   .card{width:var(--cw); height:var(--ch); border-radius:7px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.18); flex:0 0 auto;}
   .card .ix{position:absolute; top:3px; left:4px; display:flex; flex-direction:column; align-items:center; line-height:1;}
-  .card .ix b{font-size:calc(14px*var(--size,1)*var(--cardtext,1)); font-weight:800; letter-spacing:-.04em;} .card .ix i{font-style:normal; font-size:calc(11px*var(--size,1)*var(--cardtext,1)); margin-top:1px;}
+  .card .ix b{font-size:calc(14px*var(--size,1)*var(--cardtext,1)); font-weight:800; letter-spacing:-.04em;} .card .ix i{font-style:normal; font-size:calc(11px*var(--size,1)*var(--cardtext,1)); margin-top:1px; display:none;}
   .card .pip{position:absolute; right:4px; bottom:2px; font-size:calc(20px*var(--size,1)*var(--cardtext,1)); line-height:1;}
   .card.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 5px,#215439 5px,#215439 10px); border:2px solid #f7f3e8;}
 
@@ -44,6 +44,7 @@
   .table:empty::before{content:"melds laid down appear here"; font-size:12px; opacity:.4; align-self:center; margin:auto;}
   .grp{display:flex; padding:4px; background:rgba(0,0,0,.18); border-radius:8px; border:2px solid transparent;}
   .grp .card{width:calc(var(--cw)*.74); height:calc(var(--ch)*.74); margin-left:-10px;} .grp .card:first-child{margin-left:0;}
+  .grp .card .ix i{display:block;}  /* laid-down melds overlap, hiding the pip — keep the index suit here */
   .grp.glow{border-color:var(--teach); box-shadow:0 0 12px rgba(111,227,154,.55); cursor:pointer;}
   .grp .by{position:absolute;}
 
@@ -324,7 +325,7 @@ window.__RUM={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('rummy_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v177", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v178", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
