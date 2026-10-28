@@ -66,7 +66,12 @@
    +".gn-alt{width:100%;min-height:42px;border:1px solid rgba(255,255,255,.3);border-radius:12px;background:transparent;"
    +  "color:var(--cream,#f7f3e8);font:700 15px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;cursor:pointer;margin:0}"
    +"@media (max-height:600px){.gn-pitch{margin-bottom:8px;font-size:13px}.gn-row{min-height:36px;margin-bottom:6px}"
-   +  ".gn-field{margin-bottom:8px}.gn-field input{padding:8px 10px}.gn-start{min-height:46px}.gn-alt{min-height:38px}}";
+   +  ".gn-field{margin-bottom:8px}.gn-field input{padding:8px 10px}.gn-start{min-height:46px}.gn-alt{min-height:38px}}"
+   // on a tablet there's room to spare, so stop the body filling the screen (which stranded
+   // the footer at the very bottom with a big gap and a floating shadow band). Center the
+   // options + Start as one group and drop the footer's scrim.
+   +"@media (min-width:640px){.gn-setup{justify-content:center}.gn-setup-body{flex:0 1 auto}"
+   +  ".gn-setup-foot{background:none;padding-top:6px}}";
   var st=document.createElement("style"); st.id="gn-setup-css"; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
 

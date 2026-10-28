@@ -107,10 +107,10 @@
       <p class="gn-pitch">Draw and discard to build <b>melds</b> — three or four of a kind, or runs in a suit. Get your leftover "deadwood" to 10 or less and <b>knock</b>; clear it all for <b>gin</b>. First to 100 wins.</p>
       <div class="gn-row"><span>Bot</span><div class="seg" id="segL"><button data-v="easy">Easy</button><button data-v="normal">Normal</button></div></div>
       <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
-      <details class="gn-more"><summary>More options</summary>
-        <div class="gn-row"><span>Game to</span><div class="seg" id="segTarget"><button data-v="50">50</button><button data-v="100">100</button></div></div>
-        <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
-      </details>
+      <div class="gn-row"><span>Game to</span><div class="seg" id="segTarget"><button data-v="50">50</button><button data-v="100">100</button></div></div>
+      <div class="gn-row"><span>Speed</span><div class="seg" id="segS"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+      <div class="gn-row"><span>Four-color deck</span><button class="toggle" id="fourTogS"></button></div>
+      <div id="setupSizeRows"></div>
     </div>
     <div class="gn-setup-foot"><button class="gn-start" id="startBtn">Deal</button><button class="gn-alt hide" id="resumeBtn">Resume your game</button></div>
   </div>
@@ -234,6 +234,8 @@ function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){
 
 function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
 function renderSetup(){ seg('segL',prefs.level,function(v){ prefs.level=v; savePrefs(); renderSetup(); }); seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); }); seg('segTarget',prefs.target,function(v){ prefs.target=+v; savePrefs(); renderSetup(); }); seg('segS',prefs.speed,function(v){ prefs.speed=v; savePrefs(); renderSetup(); });
+  var ft=$('fourTogS'); if(ft){ ft.classList.toggle('on',!!prefs.four); ft.onclick=function(){ prefs.four=!prefs.four; savePrefs(); renderSetup(); }; }
+  if(window.CARDSIZE) $('setupSizeRows').innerHTML=CARDSIZE.rowsHTML();
   var s=lsGet('gin_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.G&&!s.G.over)); }
 function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
 function start(){ G=GN.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('setup'); closeAll(); startHand(); }
@@ -359,7 +361,7 @@ window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('gin_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v178", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v179", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

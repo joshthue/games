@@ -87,7 +87,7 @@ const GAMES = [
   { title:"Spades",           emoji:"♠️", sub:"Partnership trick-taking · bid, nil & blind nil, bags · you & North vs two bots · teaching mode", href:"spades/", updated:"2026-10-22" },
   { title:"Euchre",           emoji:"🃏", sub:"The Midwest classic · bowers, order it up, go alone, stick the dealer · you & North vs two bots · teaching mode", href:"euchre/", updated:"2026-10-25" },
   { title:"Oh Hell",          emoji:"🎯", sub:"Exact-bid trick-taking · nail your bid or score zero · growing hands, screw the dealer · you vs three bots", href:"ohhell/", updated:"2026-10-26" },
-  { title:"Gin Rummy",        emoji:"🍸", sub:"You vs the bot · build melds, knock under 10 or go gin · undercuts · live deadwood & teaching mode", href:"gin/", updated:"2026-10-27" },
+  { title:"Gin Rummy",        emoji:"🍸", sub:"You vs the bot · build melds, knock under 10 or go gin · undercuts · live deadwood & teaching mode", href:"gin/", updated:"2026-10-28" },
   { title:"Rummy",            emoji:"🎴", sub:"Lay sets & runs on the table, lay off, go out first · you vs 1 to 3 bots · teaching mode", href:"rummy/", updated:"2026-10-27" },
   { title:"President",        emoji:"👑", sub:"Scum · shed your hand first, dodge last · role swaps & card passing each round · you vs three bots", href:"president/", updated:"2026-10-26" },
   { title:"Mexican Train",    emoji:"🚂", sub:"Double-twelve dominoes · trains off the hub, cover the doubles · you vs 1 to 3 bots · teaching mode", href:"dominoes/", updated:"2026-10-22" },
@@ -188,7 +188,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v178", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v179", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
