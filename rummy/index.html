@@ -244,7 +244,8 @@ function render(){ if(!G) return;
 }
 function findSel(k){ return H.hands[0].filter(function(c){ return key(c)===k; })[0]; }
 function renderHand(){ var el=$('hand'); el.innerHTML=''; if(!H) return; var hand=H.hands[0].slice().sort(function(a,b){ return a.s-b.s||a.r-b.r; });
-  var n=hand.length, W=el.clientWidth||340, cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw')), ch=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ch'));
+  var _pb=document.createElement('div'); _pb.className='card'; _pb.style.position='absolute'; _pb.style.visibility='hidden'; el.appendChild(_pb);
+  var n=hand.length, W=el.clientWidth||340, cw=_pb.offsetWidth, ch=_pb.offsetHeight; el.removeChild(_pb);
   var step=n>1?Math.min(cw+5,(W-cw)/(n-1)):0; step=Math.max(step, cw*0.5); var total=cw+step*(n-1), x0=Math.max(0,(W-total)/2); if(total>W&&n>1){ step=(W-cw)/(n-1); x0=0; } el.style.height=(ch+18)+'px';
   var canSel = H.turn===0&&H.phase==='act'&&!busy&&!H.over;
   hand.forEach(function(c,i){ var e=cardEl(c); e.style.left=(x0+i*step)+'px'; e.style.top='8px'; e.style.zIndex=i+1; if(sel.indexOf(key(c))>=0) e.classList.add('sel'); e.onclick=function(ev){ ev.stopPropagation(); tapHand(c); }; el.appendChild(e); }); }
@@ -323,7 +324,7 @@ window.__RUM={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('rummy_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v176", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v177", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
