@@ -24,7 +24,8 @@ hand through three orderings — by suit (spot runs), by rank (spot sets), and m
 (your melds grouped, then deadwood). The card you just **drew lifts up** so you can spot it in
 your sorted hand — teal ring for a stock draw, red for the upcard you took off the discard.
 When you draw that upcard you **can't discard it the same turn** (the standard Gin rule): it
-shows raised in red, taps on it are refused, and the knock/deadwood readouts exclude it.
+shows raised in red, taps on it are refused, and the knock/deadwood readouts exclude it. The
+menu has a **four-color deck** (clubs green, diamonds blue) to tell the suits apart at a glance.
 
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,

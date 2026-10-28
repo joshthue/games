@@ -136,6 +136,7 @@
 
 <div class="modal" id="menuModal"><div class="box"><h2>Menu</h2>
   <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
+  <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
   <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
   <button class="bigbtn ghost" id="menuNew">New game</button><button class="bigbtn ghost" id="menuRules">Rules</button>
@@ -218,13 +219,15 @@ function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.p
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
 function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
-var prefs=Object.assign({level:'normal', speed:'normal', teach:false, target:100, sortMode:'suit'}, lsGet('gin_prefs',{}));
+var prefs=Object.assign({level:'normal', speed:'normal', teach:false, target:100, sortMode:'suit', four:false}, lsGet('gin_prefs',{}));
+var FOURCOL=['#178a3a','#1b6fb3','#c22','#1c2a24'];
+function suitCol(s){ return prefs.four?FOURCOL[s]:((s===1||s===2)?'#c22':'#1c2a24'); }
 function savePrefs(){ lsSet('gin_prefs', prefs); }
 var stats=Object.assign({played:0, won:0}, lsGet('gin_stats',{}));
 
 var G=null, H=null, LEVEL='normal', busy=false, timer=null, up=null, knockArmed=false, note='', justDrew=null;
 
-function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){ e.className='card back'; return e; } e.className='card'; e.style.color=(c.s===1||c.s===2)?'#c22':'#1c2a24';
+function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){ e.className='card back'; return e; } e.className='card'; e.style.color=suitCol(c.s);
   e.innerHTML='<span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span><span class="pip">'+GN.SUITS[c.s]+'</span>'; return e; }
 
 function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.children,function(b){ b.classList.toggle('on',b.dataset.v===String(val)); b.onclick=function(){ on(b.dataset.v); }; }); }
@@ -319,7 +322,7 @@ function handEnd(){ busy=false; var r=H.result; GN.applyResult(G,H); save();
 }
 function meldHTML(bm){ var h=''; bm.melds.forEach(function(m){ h+='<div class="grp">'+m.map(function(c){ return cardMini(c); }).join('')+'</div>'; });
   if(bm.deadCards.length){ h+='<div class="grp" style="background:rgba(226,70,58,.12)">'+bm.deadCards.map(function(c){ return cardMini(c); }).join('')+'</div>'; } return h||'<span style="opacity:.6;font-size:12px">—</span>'; }
-function cardMini(c){ return '<div class="card" style="color:'+((c.s===1||c.s===2)?'#c22':'#1c2a24')+'"><span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span></div>'; }
+function cardMini(c){ return '<div class="card" style="color:'+suitCol(c.s)+'"><span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span></div>'; }
 
 function gameOver(){ var w=G.winner; stats.played++; if(w===0) stats.won++; lsSet('gin_stats',stats); sfx(w===0?'win':'lose'); if(w===0) confetti();
   $('oTitle').textContent=w===0?'You win!':'Bot wins'; $('oSub').textContent='Final · first to '+G.target;
@@ -332,9 +335,10 @@ function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),fu
 ['menuModal','rulesModal'].forEach(function(id){ var m=$(id); m.addEventListener('click',function(e){ if(e.target===m) m.classList.remove('show'); }); });
 $('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
 $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
-function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); }
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); }
 $('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
 $('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
+$('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
 $('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); try{ localStorage.removeItem('gin_game'); }catch(e){} showSetup(); };
 $('stockStack').onclick=stockTap; $('discardStack').onclick=discardTap;
@@ -351,7 +355,7 @@ window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('gin_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v173", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v174", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

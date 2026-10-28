@@ -17,7 +17,8 @@ can, lay off, and discard their highest loose card.
 ## UI
 Tap cards to select; lay a selected set/run, or select one card and lay it off onto a
 glowing table meld; discard to end your turn. A one-tap **Lay all melds** convenience lays
-every meld the solver finds plus any lay-offs.
+every meld the solver finds plus any lay-offs. The menu has a **four-color deck** (clubs
+green, diamonds blue) to tell the suits apart at a glance.
 
 ## Testing
 `scratchpad/rummy-test.js` — meld/run validation, lay-off legality, lay down & go out, round
