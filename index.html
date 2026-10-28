@@ -152,17 +152,32 @@ window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferred=
   if(isiOS && !standalone) document.getElementById("iosHint").classList.add("show");
 })();
 
-// keep the app current: never let the browser serve a cached sw.js, and reload
-// once when a new worker takes over
+// keep the app current: never let the browser serve a cached sw.js, and when a
+// new worker takes over, offer a tap-to-refresh instead of reloading mid-game
 if("serviceWorker" in navigator){
   addEventListener("load", function(){
+    var hadController=!!navigator.serviceWorker.controller;
     navigator.serviceWorker.register("sw.js", {updateViaCache:"none"}).then(function(reg){
       reg.update();
-      setInterval(function(){ reg.update(); }, 60*60*1000);
+      setInterval(function(){ reg.update(); }, 30*60*1000);
     }).catch(function(){});
-    var reloaded=false;
+    // re-check on resume so a backgrounded tab picks up new builds without a force-close
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden && navigator.serviceWorker.getRegistration)
+        navigator.serviceWorker.getRegistration().then(function(r){ if(r&&r.update) r.update().catch(function(){}); }).catch(function(){});
+    });
+    // when a new worker takes over an already-running page, offer a tap-to-refresh
+    // (not an auto-reload), matching every game's gn-header behavior
+    var shown=false;
     navigator.serviceWorker.addEventListener("controllerchange", function(){
-      if(reloaded) return; reloaded=true; location.reload();
+      if(!hadController){ hadController=true; return; }
+      if(shown || document.getElementById("gn-update")) return; shown=true;
+      var btn=document.createElement("button"); btn.type="button"; btn.id="gn-update";
+      btn.setAttribute("aria-live","polite");
+      btn.textContent="New version — tap to refresh";
+      btn.style.cssText="position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483646;max-width:calc(100vw - 28px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f0c674;color:#14241c;border:none;border-radius:999px;padding:12px 20px;font:700 14px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;";
+      btn.onclick=function(){ btn.textContent="Updating…"; btn.disabled=true; setTimeout(function(){ location.reload(); }, 60); };
+      (document.body||document.documentElement).appendChild(btn);
     });
   });
 }
@@ -173,7 +188,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v174", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v175", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

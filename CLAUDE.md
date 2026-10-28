@@ -185,6 +185,25 @@ dots go in Menu or on the name line, never as header pills.
 
 ---
 
+## Getting a new build onto an open phone — v175
+
+`gn-header.js` owns the service-worker update UX for every game that loads it.
+The SW `skipWaiting()`s on install and `clients.claim()`s on activate, so a new
+build takes over an open tab and fires `controllerchange`. On that, the header
+shows a one-tap **"New version — tap to refresh"** pill (`id="gn-update"`, gold,
+bottom-center) rather than reloading out from under a hand in progress. It
+ignores the first-install `controllerchange` (no pill on a brand-new install)
+and calls `e.stopImmediatePropagation()` so the older inline "auto-reload on
+controllerchange" that 10 games + the hub still carry never fires — the header
+loads first, so it runs first and wins. It re-checks for a new worker via
+`reg.update()` on load, on `visibilitychange`, and every 30 min. **The
+`visibilitychange` check is what removes the force-close**: a backgrounded PWA
+that iOS resumes without a navigation re-checks on resume, finds the new build,
+and offers the pill. The hub has no `gn-header.js`, so it carries the same logic
+inline (with the same first-install guard).
+
+---
+
 ## The start screen — every game uses the same sheet
 
 `gn-setup.js` (in `sw.js` ASSETS, keep it there). A game with a pre-game screen renders

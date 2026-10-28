@@ -45,3 +45,45 @@
   addEventListener("load",fit); addEventListener("resize",fit);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 })();
+
+/* ============================================================
+   Auto-update: when a new version activates while the app is
+   open (including after it resumes from the background), show a
+   tap-to-refresh pill instead of reloading mid-game. Each game
+   registers its own sw.js; this just watches for the hand-off and
+   nudges the browser to re-check on resume so you never have to
+   force-close to get the latest build.
+   ============================================================ */
+(function(){
+  if(window.__gnUpdate) return;
+  if(!("serviceWorker" in navigator)) return;
+  window.__gnUpdate=1;
+  var sw=navigator.serviceWorker, shown=false, hadController=!!sw.controller;
+  function toast(){
+    if(shown || document.getElementById("gn-update")) return; shown=true;
+    var b=document.createElement("button");
+    b.id="gn-update"; b.type="button"; b.setAttribute("aria-live","polite");
+    b.textContent="New version — tap to refresh";
+    b.style.cssText="position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));"
+      +"transform:translateX(-50%);z-index:2147483646;max-width:calc(100vw - 28px);"
+      +"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+      +"background:#f0c674;color:#14241c;border:none;border-radius:999px;padding:12px 20px;"
+      +"font:700 14px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;"
+      +"box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;";
+    b.onclick=function(){ b.textContent="Updating…"; b.disabled=true; setTimeout(function(){ location.reload(); }, 60); };
+    function add(){ if(document.body) document.body.appendChild(b); else addEventListener("DOMContentLoaded", add); }
+    add();
+  }
+  window.__gnShowUpdate=toast;   // test hook
+  sw.addEventListener("controllerchange", function(e){
+    // this header owns the update UX for every game, so suppress any page's older
+    // inline "auto-reload on controllerchange" (we loaded first, so we run first)
+    if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+    if(hadController) toast();   // a new worker took over an already-running page = genuine update
+    hadController=true;
+  });
+  function check(){ if(!sw.getRegistration) return; sw.getRegistration().then(function(r){ if(r && r.update) r.update().catch(function(){}); }).catch(function(){}); }
+  addEventListener("load", function(){ setTimeout(check, 2500); });
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) check(); });
+  setInterval(check, 30*60*1000);
+})();
