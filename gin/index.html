@@ -57,6 +57,8 @@
   .hand .card{position:absolute; transition:transform .12s; touch-action:manipulation;}
   .hand .card.up{transform:translateY(-12px); box-shadow:0 0 0 3px var(--gold), 0 8px 14px rgba(0,0,0,.4);}
   .hand .card.no{opacity:.4; filter:saturate(.55);}
+  .hand .card.fresh{transform:translateY(-14px); box-shadow:0 0 0 3px #6fb8e0, 0 10px 16px rgba(0,0,0,.45);}
+  .hand .card.freshlock{transform:translateY(-14px); box-shadow:0 0 0 3px #e06f6f, 0 10px 16px rgba(0,0,0,.45);}
 
   .ctl{display:flex; gap:9px; flex:0 0 auto; margin-top:10px;}
   .ctl button{flex:1 1 0; min-height:48px; border:none; border-radius:13px; font-size:15px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
@@ -220,7 +222,7 @@ var prefs=Object.assign({level:'normal', speed:'normal', teach:false, target:100
 function savePrefs(){ lsSet('gin_prefs', prefs); }
 var stats=Object.assign({played:0, won:0}, lsGet('gin_stats',{}));
 
-var G=null, H=null, LEVEL='normal', busy=false, timer=null, up=null, knockArmed=false, note='';
+var G=null, H=null, LEVEL='normal', busy=false, timer=null, up=null, knockArmed=false, note='', justDrew=null;
 
 function cardEl(c, faceDown){ var e=document.createElement('div'); if(faceDown){ e.className='card back'; return e; } e.className='card'; e.style.color=(c.s===1||c.s===2)?'#c22':'#1c2a24';
   e.innerHTML='<span class="ix"><b>'+GN.rname(c.r)+'</b><i>'+GN.SUITS[c.s]+'</i></span><span class="pip">'+GN.SUITS[c.s]+'</span>'; return e; }
@@ -233,7 +235,7 @@ function start(){ G=GN.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('s
 function resume(){ var s=lsGet('gin_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; H=s.H; LEVEL=s.level||'normal'; GNSETUP.hide('setup'); closeAll(); if(!H||H.over){ startHand(); return; } busy=false; up=null; knockArmed=false; render(); if(H.turn!==0) botGo(); }
 function save(){ if(G&&!G.over) lsSet('gin_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('gin_game'); }catch(e){} } }
 
-function startHand(){ H=GN.deal(G); busy=false; up=null; knockArmed=false; note=''; sfx('shuffle'); save(); render(); if(H.turn!==0) botGo(); }
+function startHand(){ H=GN.deal(G); busy=false; up=null; knockArmed=false; note=''; justDrew=null; sfx('shuffle'); save(); render(); if(H.turn!==0) botGo(); }
 
 function render(){ if(!G) return;
   // opponent
@@ -284,17 +286,19 @@ function renderHand(){ var el=$('hand'); el.innerHTML=''; if(!H){ return; } var 
   el.style.height=(ch+16)+'px';
   var canDiscard = H.turn===0 && H.phase==='discard' && !busy && !H.over; var forbid=H.tookFromDiscard;
   hand.forEach(function(c,i){ var e=cardEl(c); e.style.left=(x0+i*step)+'px'; e.style.top='6px'; e.style.zIndex=i+1;
-    e.classList.add(meldSet[c.s+'_'+c.r]?'meld':'dead'); if(up&&GN.same(up,c)) e.classList.add('up');
-    if(canDiscard && forbid && GN.same(c,forbid)) e.classList.add('no');
+    e.classList.add(meldSet[c.s+'_'+c.r]?'meld':'dead');
+    if(up&&GN.same(up,c)) e.classList.add('up');
+    else if(canDiscard && forbid && GN.same(c,forbid)) e.classList.add('freshlock');
+    else if(canDiscard && justDrew && GN.same(c,justDrew)) e.classList.add('fresh');
     e.onclick=function(ev){ ev.stopPropagation(); tapHand(c); }; el.appendChild(e); }); }
 
 function tapHand(c){ if(!H||busy||H.over||H.turn!==0||H.phase!=='discard') return;
   if(H.tookFromDiscard && GN.same(c,H.tookFromDiscard)){ sfx('illegal'); $('say').innerHTML='<b>Can’t discard that</b> — you just took it from the pile.'; return; }
   if(knockArmed){ var rest=H.hands[0].filter(function(x){ return !GN.same(x,c); }); if(GN.deadwood(rest)>10){ sfx('illegal'); note=''; $('say').innerHTML='<b>That still leaves more than 10.</b> Pick another.'; return; } doKnock(c); return; }
   if(up&&GN.same(up,c)){ doDiscard(c); return; } up=c; sfx('select'); render(); }
-function stockTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.stock.length) return; GN.drawStock(H,0); sfx('deal'); up=null; note=''; save(); render(); }
-function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.discard.length) return; GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render(); }
-function doDiscard(c){ GN.discard(H,0,c); sfx('place'); up=null; knockArmed=false; save(); render(); if(!H.over) botGo(); }
+function stockTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.stock.length) return; justDrew=GN.drawStock(H,0); sfx('deal'); up=null; note=''; save(); render(); }
+function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.discard.length) return; justDrew=GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render(); }
+function doDiscard(c){ GN.discard(H,0,c); sfx('place'); up=null; justDrew=null; knockArmed=false; save(); render(); if(!H.over) botGo(); }
 function doKnock(c){ var res=GN.knock(H,0,c); sfx(res.winner===0?'win':'lose'); knockArmed=false; up=null; save(); handEnd(); }
 
 function botGo(){ if(!H||H.over) return; busy=true; render(); timer=setTimeout(function(){ botDraw(); }, SPEED[prefs.speed].bot); }
@@ -347,7 +351,7 @@ window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('gin_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v172", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v173", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
