@@ -19,7 +19,11 @@ Single-file PWA. Pure engine (`window.GIN`, no DOM) + separate UI, sharing `gn-h
 
 ## UI
 Melded cards wear a gold bar; a live deadwood readout shows what you'd knock with; the Knock
-button lights (and reads "Gin!") only when a discard gets you to ≤10 (0).
+button lights (and reads "Gin!") only when a discard gets you to ≤10 (0). **Sort** cycles the
+hand through three orderings — by suit (spot runs), by rank (spot sets), and melds-first
+(your melds grouped, then deadwood). When you draw the upcard you **can't discard it the same
+turn** (the standard Gin rule): that card is dimmed, taps on it are refused, and the
+knock/deadwood readouts exclude it.
 
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
