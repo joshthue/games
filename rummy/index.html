@@ -12,9 +12,9 @@
 <meta name="apple-mobile-web-app-title" content="Rummy">
 <meta name="mobile-web-app-capable" content="yes">
 <style>
-  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --teach:#6fe39a; --cw:48px; --ch:67px; }
-  @media (max-width:400px){ :root{ --cw:43px; --ch:60px; } }
-  @media (max-width:340px){ :root{ --cw:39px; --ch:55px; } }
+  :root{ --felt:#0d5c3f; --gold:#f0c674; --cream:#f7f3e8; --ink:#1c2a24; --red:#c22; --teach:#6fe39a; --cw:calc(48px*var(--size,1)); --ch:calc(67px*var(--size,1)); }
+  @media (max-width:400px){ :root{ --cw:calc(43px*var(--size,1)); --ch:calc(60px*var(--size,1)); } }
+  @media (max-width:340px){ :root{ --cw:calc(39px*var(--size,1)); --ch:calc(55px*var(--size,1)); } }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0;} html{background:var(--felt);}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--felt); color:var(--cream);
@@ -26,8 +26,8 @@
 
   .card{width:var(--cw); height:var(--ch); border-radius:7px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.18); flex:0 0 auto;}
   .card .ix{position:absolute; top:3px; left:4px; display:flex; flex-direction:column; align-items:center; line-height:1;}
-  .card .ix b{font-size:14px; font-weight:800; letter-spacing:-.04em;} .card .ix i{font-style:normal; font-size:11px; margin-top:1px;}
-  .card .pip{position:absolute; right:4px; bottom:2px; font-size:20px; line-height:1;}
+  .card .ix b{font-size:calc(14px*var(--size,1)*var(--cardtext,1)); font-weight:800; letter-spacing:-.04em;} .card .ix i{font-style:normal; font-size:calc(11px*var(--size,1)*var(--cardtext,1)); margin-top:1px;}
+  .card .pip{position:absolute; right:4px; bottom:2px; font-size:calc(20px*var(--size,1)*var(--cardtext,1)); line-height:1;}
   .card.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 5px,#215439 5px,#215439 10px); border:2px solid #f7f3e8;}
 
   .opp{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; flex:0 0 auto; margin:2px 0 6px;}
@@ -80,6 +80,7 @@
 <script src="../gn-header.js"></script>
 <script src="../gn-setup.js"></script>
 <script src="../sfx.js"></script>
+<script src="../cardsize.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -121,6 +122,7 @@
   <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
   <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
+  <div id="sizeRows"></div>
   <button class="bigbtn ghost" id="menuNew">New game</button><button class="bigbtn ghost" id="menuRules">Rules</button>
   <a class="bigbtn ghost" href="../">Back to all games</a><button class="bigbtn" data-close>Close</button></div></div>
 
@@ -303,7 +305,8 @@ $('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
 $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
 $('scoreBtn').onclick=function(){ renderScores(); $('scoreModal').classList.add('show'); };
 function renderScores(){ if(!G){ $('scoreTable').innerHTML=''; return; } $('scoreTable').innerHTML=G.names.map(function(nm,p){ return '<tr><td>'+nm+(p===0?' (you)':'')+'</td><td>'+G.scores[p]+'</td></tr>'; }).join(''); }
-function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); }
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); if(window.CARDSIZE) $('sizeRows').innerHTML=CARDSIZE.rowsHTML(); }
+window.onCardSize=function(){ render(); };
 $('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
 $('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); render(); };
 $('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
@@ -320,7 +323,7 @@ window.__RUM={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('rummy_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v174", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v176", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
