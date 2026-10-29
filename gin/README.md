@@ -22,10 +22,13 @@ Single-file PWA. Pure engine (`window.GIN`, no DOM) + separate UI, sharing `gn-h
 Melded cards wear a gold bar; a live deadwood readout shows what you'd knock with; the Knock
 button lights (and reads "Gin!") only when a discard gets you to ≤10 (0). **Sort** cycles the
 hand through three orderings — by suit (spot runs), by rank (spot sets), and melds-first
-(your melds grouped, then deadwood). The card you just **drew lifts up** so you can spot it in
-your sorted hand — teal ring for a stock draw, red for the upcard you took off the discard.
-When you draw that upcard you **can't discard it the same turn** (the standard Gin rule): it
-shows raised in red, taps on it are refused, and the knock/deadwood readouts exclude it. The
+(your melds grouped, then deadwood). The card you just drew wears a **ring** so you can spot it
+in your sorted hand — teal for a stock draw, red for the upcard you took off the discard — and
+sits flat in the hand. **Tap** a card to select it (it rises); tap it again, or **flick it up**,
+to throw it to the discard — the card flies to the pile. When you draw that upcard you
+**can't discard it the same turn** (the standard Gin rule): it wears a red ring, taps and flicks
+on it are refused, and the knock/deadwood readouts exclude it. Hand cards slide to their new
+spots as the hand reorders; animations honor `prefers-reduced-motion`. The
 start screen and the in-game menu both carry a **four-color deck** (clubs green, diamonds blue)
 to tell the suits apart at a glance, plus **Card size** and **Card text** (S/M/L/XL, the shared
 `cardsize.js` control used across the card games) that scale the cards and the printed rank/pip —
