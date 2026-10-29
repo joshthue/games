@@ -322,14 +322,20 @@ function stockTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.stock
   justDrew=GN.drawStock(H,0); sfx('deal'); up=null; note=''; save(); render(); if(mode==='online') publishState(); }
 function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.discard.length||(mode==='online'&&net.pending)) return;
   if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'drawDiscard'}); net.pending=true; render(); return; }
-  justDrew=GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render(); if(mode==='online') publishState(); }
+  justDrew=GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render();
+  /* online: don't publish the card you just uncovered — the other phone keeps seeing your last
+     discard until you lay one down (your discard publishes then), so no buried card flashes there. */ }
 function doDiscard(c){ if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'discard',card:{s:c.s,r:c.r}}); net.pending=true; up=null; justDrew=null; knockArmed=false; render(); return; }
   GN.discard(H,0,c); sfx('place'); up=null; justDrew=null; knockArmed=false; save(); render(); if(mode==='online'){ publishState(); } else if(!H.over){ botGo(); } }
 function doKnock(c){ if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'knock',card:{s:c.s,r:c.r}}); net.pending=true; knockArmed=false; up=null; render(); return; }
   var res=GN.knock(H,0,c); sfx(res.winner===0?'win':'lose'); knockArmed=false; up=null; save(); handEnd(); }
 
 function botGo(){ if(!H||H.over) return; busy=true; render(); timer=setTimeout(function(){ botDraw(); }, SPEED[prefs.speed].bot); }
-function botDraw(){ if(!H||H.over) return; var d=GN.botDraw(H); if(d==='discard'){ GN.drawDiscard(H,1); } else { if(!GN.drawStock(H,1)){ save(); handEnd(); return; } } sfx('deal'); save(); render();
+function botDraw(){ if(!H||H.over) return; var d=GN.botDraw(H); if(d==='discard'){ GN.drawDiscard(H,1); } else { if(!GN.drawStock(H,1)){ save(); handEnd(); return; } } sfx('deal'); save();
+  // when the bot lifts the top discard, don't re-render yet: that would flash the card buried
+  // underneath (an old discard, not takeable) until the bot lays its own card down. Leave the
+  // pile showing your last discard until the bot discards — same as a stock-draw turn looks.
+  if(d!=='discard') render();
   timer=setTimeout(function(){ var dec=GN.botTurnDiscard(H); if(dec.knock){ GN.knock(H,1,dec.card); sfx(H.result.winner===0?'win':'lose'); save(); handEnd(); return; } GN.discard(H,1,dec.card); sfx('place'); busy=false; save(); render(); }, SPEED[prefs.speed].bot); }
 
 function handEnd(){ busy=false; var r=H.result; GN.applyResult(G,H); save();
@@ -429,7 +435,9 @@ function hostApply(obj){ if(!H) return;
     else if(obj.kind==='knock'){ if(H.over||H.turn!==1||H.phase!=='discard') return; GN.knock(H,1,obj.card); handEnd(); return; }
     else if(obj.kind==='next'){ if(!H.over) return; if(G.over){ publishState(); return; } startHand(); return; }
   }catch(e){ return; }
-  sfx('deal'); render(); publishState(); }
+  // skip the host's own re-render when the guest lifted the discard, so the buried card doesn't
+  // flash on the host's screen; still publish so the guest (who drew it) sees their new card.
+  sfx('deal'); if(obj.kind!=='drawDiscard') render(); publishState(); }
 
 function meldHTMLv(bm){ if(!bm) return '<span style="opacity:.6;font-size:12px">—</span>'; var h=''; bm.melds.forEach(function(m){ h+='<div class="grp">'+m.map(function(c){ return cardMini(c); }).join('')+'</div>'; }); if(bm.deadCards.length){ h+='<div class="grp" style="background:rgba(226,70,58,.12)">'+bm.deadCards.map(function(c){ return cardMini(c); }).join('')+'</div>'; } return h||'<span style="opacity:.6;font-size:12px">—</span>'; }
 function showEndFromView(r){ if(!r) return;
@@ -475,7 +483,7 @@ window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bu
 var s0=lsGet('gin_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v180", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v181", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
