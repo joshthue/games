@@ -99,6 +99,10 @@
   .gn-note{font-size:12.5px; line-height:1.4; opacity:.82; margin:0 0 10px;}
   .roomcode{font-size:40px; font-weight:900; letter-spacing:10px; text-align:center; color:var(--gold); margin:10px 0;}
   .codein{width:100%; box-sizing:border-box; text-transform:uppercase; font-size:26px; letter-spacing:8px; text-align:center; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,.3); background:rgba(0,0,0,.25); color:var(--cream); margin:4px 0 12px;}
+  /* Fill the tall-phone setup screen: with every option shown (no fold), spread the rows down
+     the body so Deal doesn't float under a big empty felt gap. Phones with room only; tablets
+     keep their centered sheet and short screens stay top-aligned and scrollable. */
+  @media (max-width:639px) and (min-height:740px){ #setup .gn-setup-body{display:flex; flex-direction:column; justify-content:space-between;} }
 </style>
 <script src="../gn-header.js"></script>
 <script src="../gn-setup.js"></script>
@@ -563,7 +567,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v187", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v188", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

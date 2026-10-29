@@ -36,7 +36,8 @@ start screen and the in-game menu both carry a **four-color deck** (clubs green,
 to tell the suits apart at a glance, plus **Card size** and **Card text** (S/M/L/XL, the shared
 `cardsize.js` control used across the card games) that scale the cards and the printed rank/pip —
 the hand re-fans to fit, so it never overflows. On the start screen all options show at once (no
-"More options" fold), and on a tablet the sheet centers instead of stranding Deal at the bottom.
+"More options" fold), and on a tablet the sheet centers; on a tall phone the rows spread down the body to fill the
+screen rather than leaving a gap above Deal (short screens stay top-aligned and scrollable).
 
 ## Online — two phones
 Pick **Two phones** on the start screen. One player taps **Create game** and reads out the
