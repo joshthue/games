@@ -38,6 +38,19 @@
   .meta .s{font-size:12.5px; opacity:.8; margin-top:2px; line-height:1.35;}
   .meta .u{font-size:11px; opacity:.5; margin-top:3px; letter-spacing:.3px;}
   .arrow{opacity:.5; font-size:22px;}
+  .applabel{display:none;}
+  .viewtog{display:flex; gap:6px; justify-content:center; margin:2px 0 18px;}
+  .viewtog button{font-family:inherit; font-size:13px; font-weight:700; color:var(--cream); background:rgba(255,255,255,.08);
+    border:1.5px solid rgba(240,198,116,.28); border-radius:11px; padding:7px 15px; cursor:pointer; letter-spacing:.3px;}
+  .viewtog button.on{background:var(--gold); color:var(--ink); border-color:var(--gold);}
+  .grid.view-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:18px 8px; align-items:start;}
+  .grid.view-grid .tile{flex-direction:column; align-items:center; gap:7px; background:none; border:none; border-radius:14px; padding:4px 2px; text-align:center;}
+  .grid.view-grid .tile:hover{background:none; border:none;}
+  .grid.view-grid .tile:active{transform:scale(.94);}
+  .grid.view-grid .meta, .grid.view-grid .arrow{display:none;}
+  .grid.view-grid .emoji{width:60px; height:60px; font-size:34px; border-radius:15px; box-shadow:0 2px 6px rgba(0,0,0,.35);}
+  .grid.view-grid .applabel{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    font-size:11px; line-height:1.18; color:var(--cream); opacity:.9; max-width:76px; word-break:break-word;}
   .ext{font-size:10px; letter-spacing:1px; opacity:.6; margin-left:6px; border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:1px 5px; vertical-align:middle;}
   .install{margin:18px 0 4px; text-align:center;}
   .install button{font-family:inherit; font-weight:700; background:var(--gold); color:var(--ink); border:none;
@@ -55,6 +68,11 @@
       <p>PICK A GAME</p>
     </header>
 
+    <div class="viewtog" id="viewTog" role="group" aria-label="Layout">
+      <button type="button" data-view="list">&#9776; List</button>
+      <button type="button" data-view="grid">&#9638; Grid</button>
+    </div>
+
     <div class="grid" id="grid"></div>
 
     <div class="install">
@@ -70,6 +88,8 @@
    GAME NIGHT — hub / launcher.
    TO ADD A GAME: drop its .html file into this repo, then add one
    line to the GAMES array below. That's it.
+   (Optional: add short:"…" to a game to set the label shown in the
+   compact Grid view; the full title is used when it's omitted.)
    ============================================================ */
 const GAMES = [
   { title:"I'm out, Jerry!", emoji:"🐭", sub:"The Leech Lake Game · trick-taking, last one standing", href:"theleechlakegame/", updated:"2026-09-18" },
@@ -127,7 +147,8 @@ GAMES.forEach(g=>{
   if(g.external){ a.target="_blank"; a.rel="noopener"; }
   a.innerHTML=`<div class="emoji">${g.emoji}</div>
     <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div>${g.updated?`<div class="u">Updated ${fmtDate(g.updated)}</div>`:''}</div>
-    <div class="arrow">›</div>`;
+    <div class="arrow">›</div>
+    <div class="applabel">${g.short||g.title}</div>`;
   grid.appendChild(a);
   // Keep the tile date honest: fetch the real last-commit date from GitHub (best-effort; the baked date shows offline).
   const uEl=a.querySelector(".u");
@@ -139,6 +160,17 @@ GAMES.forEach(g=>{
       .catch(()=>{});
   }
 });
+
+// Home-screen layout: a compact app-grid or the detailed list, remembered per device.
+(function(){
+  var grid=document.getElementById("grid"), tog=document.getElementById("viewTog");
+  var view="list"; try{ var v=localStorage.getItem("gn_hubview"); if(v==="grid"||v==="list") view=v; }catch(e){}
+  function apply(v){ view=v; grid.classList.toggle("view-grid", v==="grid"); grid.classList.toggle("view-list", v==="list");
+    [].forEach.call(tog.children, function(b){ b.classList.toggle("on", b.dataset.view===v); });
+    try{ localStorage.setItem("gn_hubview", v); }catch(e){} }
+  [].forEach.call(tog.children, function(b){ b.onclick=function(){ apply(b.dataset.view); }; });
+  apply(view);
+})();
 
 // Install support: Android/Chrome shows a real button; iOS gets a hint.
 let deferred=null;
@@ -188,7 +220,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v187", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v188", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
