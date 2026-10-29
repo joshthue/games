@@ -44,8 +44,11 @@ runs the engine (seat 0) and publishes a **per-seat view** that carries only the
 hand plus the opponent's card count and the stock count — the opponent's hand and the stock
 order never go on the wire. The guest renders that view and sends its moves (`drawStock`,
 `drawDiscard`, `discard`, `knock`, `next`) back for the host to apply. No bot in online mode;
-a netbar shows the room code and connection. An injected `window.__GIN_TX` replaces the relay
-for headless tests.
+a netbar shows the room code and connection. **Reconnect:** both seats persist the live
+session (`gin_online`), so if a phone reloads or iOS discards the backgrounded PWA mid-game it
+rejoins the same room and re-syncs from the host instead of dropping to the menu — the host
+restores its authoritative game and re-publishes; the guest re-pings `join` and takes the next
+state. An injected `window.__GIN_TX` replaces the relay for headless tests.
 
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
@@ -55,6 +58,9 @@ overflow, no console errors.
 `scratchpad/gin-online-pw.js` — solo regression + a two-page online game over a mocked
 relay: connect, hidden-hand deal, turn/stock/discard sync, a knock to a consistent result on
 both pages, and a check that no host-hand ever appears in a published message.
+`scratchpad/gin-reconnect-pw.js` — host and guest in isolated contexts (independent
+localStorage); the host reloads right after the deal (iOS-discard scenario) and must restore the
+game — not the menu — then both sides re-converge and keep syncing; a guest reload recovers too.
 
 ## Test door
 `window.__GIN` exposes `G`, `H`, `drawStock()`, `drawDiscard()`, `discard(c)`, `knock(c)`,
