@@ -261,10 +261,22 @@ function render(winnerClear){ if(!G) return;
   else if(busy && H.turn!==0){ say.innerHTML='<b>'+G.names[H.turn]+'</b> is thinking…'; }
   else if(mine){ say.innerHTML = note || (H.pile? 'Beat the '+(H.pile.n>1?H.pile.n+' × ':'')+PR.rname(H.pile.r)+', or pass.' : 'Your lead — play any cards of one rank.'); }
   else say.textContent='';
-  var co=$('coach'); if(!prefs.teach||!mine){ co.textContent=''; }
-  else if(!H.pile){ co.textContent='Lead your low cards and keep the 2s and aces for when you’re stuck.'; }
-  else { var legal=PR.legalPlays(H,0); co.innerHTML = legal.length? 'You can beat it — play your lowest option to save strong cards.' : 'Nothing beats it; you’ll have to <b style="color:var(--teach)">pass</b>.'; }
+  var co=$('coach'); if(!prefs.teach||!mine){ co.textContent=''; } else { co.innerHTML=coachHint(); }
 }
+function coachHint(){ var hand=H.hands[0], m={}; hand.forEach(function(c){ (m[c.r]=m[c.r]||[]).push(c); });
+  function grp(r,n){ return (n>1?n+' ':'')+PR.rname(r)+(n>1?'s':''); }
+  function pileName(){ return (H.pile.n>1?H.pile.n+' ':'')+PR.rname(H.pile.r)+(H.pile.n>1?'s':''); }
+  if(!H.pile){ var ranks=Object.keys(m).map(Number).sort(function(a,b){ return PR.ord(a)-PR.ord(b); });
+    var lead=ranks[0]; if(lead===2 && ranks.length>1) lead=ranks[1]; var cnt=m[lead].length;
+    var tip='Lead your <b>'+grp(lead,cnt)+'</b> — clear low cards first'+(cnt>1?', and a '+(cnt===2?'pair':'triple')+' makes everyone match it':'')+'.';
+    var keep=[]; if(lead!==2&&m[2]) keep.push('2s'); if(lead!==14&&m[14]) keep.push('aces');
+    if(keep.length) tip+=' Hold your '+keep.join(' and ')+' for when you’re stuck.'; return tip; }
+  var legal=PR.legalPlays(H,0);
+  if(!legal.length) return 'Nothing in your hand beats the <b>'+pileName()+'</b> — you’ll have to <b>pass</b>.';
+  legal.sort(function(a,b){ return PR.ord(a[0].r)-PR.ord(b[0].r); }); var best=legal[0], r=best[0].r, n=best.length;
+  if(r===2) return 'Your only play over the <b>'+pileName()+'</b> is a <b>2</b> — the highest card there is. Unless you’re nearly out, <b>pass</b> and save it.';
+  if(r===14 && hand.length>5) return 'You can take the <b>'+pileName()+'</b> with your <b>'+grp(14,n)+'</b>, but aces are worth saving — a <b>pass</b> is often smarter.';
+  return 'Play your <b>'+grp(r,n)+'</b> to beat the <b>'+pileName()+'</b>'+(legal.length>1?' — it’s your lowest winner, so your bigger cards stay in hand':'')+'.'; }
 function selCards(){ return sel.map(function(k){ return H.hands[0].filter(function(c){ return key(c)===k; })[0]; }).filter(Boolean); }
 function validSel(cards){ if(!H||!cards.length) return false; var r=cards[0].r; if(!cards.every(function(c){ return c.r===r; })) return false;
   if(!H.pile){ return true; } return cards.length===H.pile.n && PR.ord(r)>PR.ord(H.pile.r); }
@@ -297,12 +309,12 @@ function botGo(){ if(!H||H.phase==='done') return; busy=true; render(); timer=se
 function botStep(){ if(!H||H.phase==='done') return; var p=H.turn; var a=PR.chooseAction(H,p,LEVEL);
   if(a.pass && PR.canPass(H,p)){ sayBubble(p,'Pass'); PR.pass(H,p); } else if(a.cards){ var before=H.pile; sayBubble(p,(a.cards.length>1?a.cards.length+'×':'')+PR.rname(a.cards[0].r)); PR.play(H,p,a.cards); if(H.out[p]) sfx('good'); else sfx('deal');
     save(); if(H.phase==='done'){ render(); busy=true; timer=setTimeout(roundEnd, SPEED[prefs.speed].clear); return; }
-    if(before && H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; } render(); busy=false; if(H.turn!==0){ botGo(); } return;
+    if(before && H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; } busy=false; if(H.turn!==0){ botGo(); } else { render(); } return;
   } else { // couldn't pass and no cards? force a legal play
     var L=PR.legalPlays(H,p); if(L.length){ var before2=H.pile; sayBubble(p,(L[0].length>1?L[0].length+'×':'')+PR.rname(L[0][0].r)); PR.play(H,p,L[0]); if(H.out[p]) sfx('good'); save(); if(H.phase==='done'){ render(); busy=true; timer=setTimeout(roundEnd, SPEED[prefs.speed].clear); return; } if(before2&&H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; } } }
   save(); render();
   if(H.pile===null){ render(); timer=setTimeout(function(){ spoke={}; busy=false; render(); if(H.turn!==0) botGo(); }, SPEED[prefs.speed].clear); return; }
-  busy=false; if(H.turn!==0) botGo(); }
+  busy=false; if(H.turn!==0) botGo(); else render(); }
 
 function roundEnd(){ busy=false; var res=PR.score(G,H); save();
   var roles=res.roles;
@@ -354,7 +366,7 @@ window.__PZ={ get G(){ return G; }, get H(){ return H; }, get busy(){ return bus
 var s0=lsGet('prez_game',null);
 if(s0&&s0.G&&!s0.G.over){ resume(); fit(); } else { G=PR.newGame(11); showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v170", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v171", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

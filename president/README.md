@@ -23,6 +23,13 @@ Tap same-rank cards to select; Play (must match the pile's count and beat it) or
 badges, finish-order numbers, a pile readout, and a round-start summary of the card
 exchange.
 
+**Teaching mode** (toggle in setup or the menu) shows a coach line on every turn of yours —
+not just the opening lead. On a lead it names the lowest cards to shed and which 2s/aces to
+hold; facing a pile it names the exact lowest winning play, or says to pass when nothing beats
+it (or when your only beat is a 2 — the top card — worth saving). The line is driven off the
+engine's own `legalPlays`, so it never suggests an illegal play. (It renders only on your turn;
+the coach is cleared while the bots act, where the status line already narrates.)
+
 ## Testing
 `scratchpad/prez-test.js` — rank order, legal follows, pass/clear, finishing order + roles,
 card passing, + a 120-game/535-round bot soak with exactly four finishers every round.
