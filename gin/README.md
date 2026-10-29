@@ -26,7 +26,9 @@ hand through three orderings — by suit (spot runs), by rank (spot sets), and m
 in your sorted hand — teal for a stock draw, red for the upcard you took off the discard — and
 **rides raised** until you select another card. **Tap** a card to select it (it rises and the
 just-drawn card drops out of the way); tap it again, or **flick it up**, to throw it to the
-discard — the card flies to the pile. When you draw that upcard you
+discard — the card flies to the pile. The discard pile sits **hand-tossed** — the top card at a
+slight angle with a card or two peeking out beneath, so it never looks machine-stacked; the tilt
+is derived from the card itself, so it holds steady between redraws. When you draw that upcard you
 **can't discard it the same turn** (the standard Gin rule): it wears a red ring, taps and flicks
 on it are refused, and the knock/deadwood readouts exclude it. Hand cards slide to their new
 spots as the hand reorders; animations honor `prefers-reduced-motion`. The

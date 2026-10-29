@@ -44,6 +44,7 @@
   .pile .lab{font-size:11px; text-transform:uppercase; letter-spacing:.6px; opacity:.7;}
   .pile .stackwrap{position:relative; width:var(--cw); height:var(--ch);}
   .pile .stackwrap .card{position:absolute; top:0; left:0;}
+  .pile .stackwrap .discback{position:absolute; top:0; left:0; width:var(--cw); height:var(--ch); border-radius:7px; background:var(--cream); border:1px solid rgba(0,0,0,.18); box-shadow:0 2px 5px rgba(0,0,0,.4);}
   .pile.tap .stackwrap{cursor:pointer;}
   .pile.tap .stackwrap{box-shadow:0 0 0 3px var(--gold), 0 0 14px rgba(240,198,116,.6); border-radius:9px;}
   .pile .ct{font-size:11px; opacity:.6;}
@@ -271,7 +272,7 @@ function render(){ if(!G) return;
   var ss=$('stockStack'); ss.innerHTML = stockN? '' : ''; if(stockN){ ss.appendChild(cardEl(null,true)); } $('stockPile').classList.toggle('empty', stockN===0);
   var canDraw = H && !busy && !H.over && H.turn===0 && H.phase==='draw';
   $('stockPile').classList.toggle('tap', !!canDraw && stockN>0);
-  var ds=$('discardStack'); ds.innerHTML=''; var top=H&&H.discard.length?H.discard[H.discard.length-1]:null; if(top) ds.appendChild(cardEl(top)); $('discardPile').classList.toggle('empty', !top);
+  var ds=$('discardStack'); ds.innerHTML=''; var top=H&&H.discard.length?H.discard[H.discard.length-1]:null; if(top) renderDiscardPile(ds, top, H.discard.length); $('discardPile').classList.toggle('empty', !top);
   $('discardPile').classList.toggle('tap', !!canDraw && !!top);
   // hand
   renderHand();
@@ -309,6 +310,17 @@ function handCardEl(c){ return c?document.querySelector('#hand .card[data-id="'+
 function rectOf(sel){ var e=typeof sel==='string'?$(sel):sel; return e?e.getBoundingClientRect():null; }
 function cardRect(c){ return rectOf(handCardEl(c)); }
 function discardCardEl(){ var s=$('discardStack'); return s?s.querySelector('.card'):null; }
+// a tossed-looking discard: the top card sits at a small stable angle, with a card or two
+// peeking out underneath, so the pile never looks perfectly square. Jitter is derived from the
+// card's own suit+rank, so it's steady across re-renders (no twitching on every repaint).
+function discJit(s,r,salt){ var n=((s*13+r*7+(salt||0)*101+1)*2654435761)>>>0; return n/4294967296; }
+function renderDiscardPile(ds, top, count){
+  var backs=Math.min(2, Math.max(0,(count||1)-1));
+  for(var i=backs;i>=1;i--){ var d=document.createElement('div'); d.className='discback';
+    var a=(discJit(top.s,top.r,i)*10-5), dx=(discJit(top.r,top.s,i)*6-3);
+    d.style.transform='rotate('+a.toFixed(1)+'deg) translate('+dx.toFixed(1)+'px,0)'; ds.appendChild(d); }
+  var el=cardEl(top); var ang=(discJit(top.s,top.r,0)*12-6), ox=(discJit(top.r,top.s,0)*3-1.5), oy=(discJit(top.s,top.r,9)*3-1.5);
+  el.style.transform='rotate('+ang.toFixed(1)+'deg) translate('+ox.toFixed(1)+'px,'+oy.toFixed(1)+'px)'; ds.appendChild(el); }
 // fly a throwaway card from one on-screen rect to another, hiding revealEl until it lands, so the
 // motion reads as the card itself flicking across. Decorative only — the real UI is already correct.
 function fly(card, fromR, toR, faceDown, revealEl){
@@ -551,7 +563,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v186", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v187", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
