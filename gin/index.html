@@ -256,7 +256,7 @@ function renderSetup(){ seg('segL',prefs.level,function(v){ prefs.level=v; saveP
 function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
 function start(){ mode='solo'; net={online:false}; updateNetbar(); try{ localStorage.removeItem('gin_online'); }catch(e){} G=GN.newGame(prefs.target); LEVEL=prefs.level; GNSETUP.hide('setup'); closeAll(); startHand(); }
 function resume(){ var s=lsGet('gin_game',null); if(!s||!s.G||s.G.over){ start(); return; } G=s.G; H=s.H; LEVEL=s.level||'normal'; GNSETUP.hide('setup'); closeAll(); if(!H||H.over){ startHand(); return; } busy=false; up=null; knockArmed=false; render(); if(H.turn!==0) botGo(); }
-function save(){ if(mode==='online'){ try{ if(net&&net.online&&G&&!G.over) lsSet('gin_online',{role:net.role, code:net.code, G:G, H:H, level:LEVEL}); else localStorage.removeItem('gin_online'); }catch(e){} return; } if(G&&!G.over) lsSet('gin_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('gin_game'); }catch(e){} } }
+function save(){ if(mode==='online'){ try{ if(net&&net.online&&!(G&&G.over)) lsSet('gin_online',{role:net.role, code:net.code, G:G||null, H:H||null, level:LEVEL}); else localStorage.removeItem('gin_online'); }catch(e){} return; } if(G&&!G.over) lsSet('gin_game',{G:G, H:H, level:LEVEL}); else { try{ localStorage.removeItem('gin_game'); }catch(e){} } }
 
 function startHand(){ H=GN.deal(G); busy=false; up=null; knockArmed=false; note=''; justDrew=null; sfx('shuffle'); save(); render(); if(mode==='online'){ publishState(); } else if(H.turn!==0){ botGo(); } }
 
@@ -490,8 +490,8 @@ function onMsg(obj){ if(!net.online) return; if(obj.from===net.id) return; if(ob
 function pollLoop(t){ (async function(){ var cursor=0; while(net.online){ try{ var msgs=await t.poll(ntfyTopic(),cursor); for(var i=0;i<msgs.length;i++){ cursor=Math.max(cursor,msgs[i].idx+1); var o; try{ o=JSON.parse(msgs[i].body); }catch(e){ continue; } onMsg(o); } }catch(e){} await new Promise(function(r){ setTimeout(r,50); }); } })(); }
 function streamLoop(base){ (async function(){ while(net.online){ var ctrl=(typeof AbortController!=='undefined')?new AbortController():null; net.ctrls.push(ctrl); try{ var since=net.since[base]?('?since='+encodeURIComponent(net.since[base])):'?since=all'; var res=await fetch(base+ntfyTopic()+'/json'+since, ctrl?{signal:ctrl.signal}:{}); if(!res.ok||!res.body) throw 0; var reader=res.body.getReader(), dec=new TextDecoder(), buf=''; net.connOk=true; updateNetbar(); while(net.online){ var rd=await reader.read(); if(rd.done) break; buf+=dec.decode(rd.value,{stream:true}); var nl; while((nl=buf.indexOf('\n'))>=0){ var line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1); if(!line) continue; var ev; try{ ev=JSON.parse(line); }catch(e){ continue; } if(ev.id) net.since[base]=ev.id; if(ev.event!=='message'||!ev.message) continue; var o; try{ o=JSON.parse(ev.message); }catch(e){ continue; } onMsg(o); } } }catch(e){ net.connOk=false; updateNetbar(); } if(!net.online) break; await new Promise(function(r){ setTimeout(r,1200); }); } })(); }
 
-function hostCreate(){ mode='online'; net={online:true, role:'host', code:randCode(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false}; G=GN.newGame(prefs.target); H=null; LEVEL=prefs.level; startNet(); showHostWait(); }
-function guestJoin(code){ mode='online'; net={online:true, role:'guest', code:String(code).toUpperCase(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false}; G=null; H=null; startNet(); showGuestWait(); (function ping(){ if(net.online&&!net.joined){ netSend({t:'join'}); setTimeout(ping,2000); } })(); }
+function hostCreate(){ mode='online'; net={online:true, role:'host', code:randCode(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false}; G=GN.newGame(prefs.target); H=null; LEVEL=prefs.level; startNet(); save(); showHostWait(); }
+function guestJoin(code){ mode='online'; net={online:true, role:'guest', code:String(code).toUpperCase(), id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false}; G=null; H=null; startNet(); save(); showGuestWait(); (function ping(){ if(net.online&&!net.joined){ netSend({t:'join'}); setTimeout(ping,2000); } })(); }
 
 function openNet(html){ $('netBox').innerHTML=html; $('netModal').classList.add('show'); }
 function closeNet(){ $('netModal').classList.remove('show'); }
@@ -535,17 +535,23 @@ function flickCard(c){ if(!c||!H||busy||H.over||H.turn!==0||H.phase!=='discard'|
 window.__GIN={ get G(){ return G; }, get H(){ return H; }, get busy(){ return busy; }, drawStock:stockTap, drawDiscard:discardTap, discard:function(c){ up=c; tapHand(c); tapHand(c); }, knock:function(c){ knockArmed=true; tapHand(c); }, flick:function(c){ flickCard(c); }, start:start,
   hostCreate:hostCreate, guestJoin:guestJoin, net:function(){ return net; }, mode:function(){ return mode; }, hNext:function(){ $('hNext').onclick(); }, encodeView:encodeView, decodeView:decodeView };
 
-function resumeOnline(o){ mode='online'; net={online:true, role:o.role, code:o.code, id:null, seen:null, since:null, ctrls:null, joined:(o.role==='host'), connOk:false, pending:false};
-  G=o.G; H=o.H; LEVEL=o.level||'normal'; busy=false; up=null; knockArmed=false; justDrew=null;
-  closeAll(); closeNet(); GNSETUP.hide('setup'); startNet(); updateNetbar(); render();
-  if(H && H.over && H.result){ $('hYouLab').textContent='You'; $('hBotLab').textContent='Them'; showEndFromView(net.role==='host'?encodeView(G,H,0).result:H.result); }
-  if(net.role==='host'){ publishState(); }
-  else { (function ping(){ if(net.online&&!net.joined){ netSend({t:'join'}); setTimeout(ping,2000); } })(); } }
+function onlineLive(o){ return !!(o && o.code && o.role && !(o.G && o.G.over)); }
+function resumeOnline(o){ mode='online'; net={online:true, role:o.role, code:o.code, id:null, seen:null, since:null, ctrls:null, joined:false, connOk:false, pending:false};
+  G=o.G||null; H=o.H||null; LEVEL=o.level||'normal'; busy=false; up=null; knockArmed=false; justDrew=null;
+  closeAll(); closeNet(); GNSETUP.hide('setup'); startNet();
+  if(net.role==='host'){
+    if(H){ net.joined=true; updateNetbar(); render(); if(H.over&&H.result){ $('hYouLab').textContent='You'; $('hBotLab').textContent='Them'; showEndFromView(encodeView(G,H,0).result); } publishState(); }
+    else { if(!G) G=GN.newGame(prefs.target); updateNetbar(); showHostWait(); }
+  } else {
+    if(H){ updateNetbar(); render(); if(H.over&&H.result){ $('hYouLab').textContent='You'; $('hBotLab').textContent='Them'; showEndFromView(H.result); } }
+    else { updateNetbar(); showGuestWait(); }
+    (function ping(){ if(net.online&&!net.joined){ netSend({t:'join'}); setTimeout(ping,2000); } })();
+  } }
 var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
-if(o0&&o0.G&&!o0.G.over&&o0.code&&o0.role){ resumeOnline(o0); }
+if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v185", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v186", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

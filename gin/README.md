@@ -44,11 +44,14 @@ runs the engine (seat 0) and publishes a **per-seat view** that carries only the
 hand plus the opponent's card count and the stock count — the opponent's hand and the stock
 order never go on the wire. The guest renders that view and sends its moves (`drawStock`,
 `drawDiscard`, `discard`, `knock`, `next`) back for the host to apply. No bot in online mode;
-a netbar shows the room code and connection. **Reconnect:** both seats persist the live
-session (`gin_online`), so if a phone reloads or iOS discards the backgrounded PWA mid-game it
-rejoins the same room and re-syncs from the host instead of dropping to the menu — the host
-restores its authoritative game and re-publishes; the guest re-pings `join` and takes the next
-state. An injected `window.__GIN_TX` replaces the relay for headless tests.
+a netbar shows the room code and connection. **Reconnect:** both seats persist the session
+(`gin_online`) from the moment you create or join — the host's code-sharing wait included — so
+if a phone reloads or iOS discards the backgrounded PWA it rejoins the same room instead of
+dropping to the menu. A host with a hand in progress restores its authoritative game and
+re-publishes; before the deal it reopens the same room code and keeps waiting. The guest re-pings
+`join` and takes the next state. (The one exception is the update that first installs this: the
+previous build saved nothing, so that single reload can still land on the menu.) An injected
+`window.__GIN_TX` replaces the relay for headless tests.
 
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
