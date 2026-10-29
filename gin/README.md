@@ -24,8 +24,9 @@ button lights (and reads "Gin!") only when a discard gets you to ≤10 (0). **So
 hand through three orderings — by suit (spot runs), by rank (spot sets), and melds-first
 (your melds grouped, then deadwood). The card you just drew wears a **ring** so you can spot it
 in your sorted hand — teal for a stock draw, red for the upcard you took off the discard — and
-sits flat in the hand. **Tap** a card to select it (it rises); tap it again, or **flick it up**,
-to throw it to the discard — the card flies to the pile. When you draw that upcard you
+**rides raised** until you select another card. **Tap** a card to select it (it rises and the
+just-drawn card drops out of the way); tap it again, or **flick it up**, to throw it to the
+discard — the card flies to the pile. When you draw that upcard you
 **can't discard it the same turn** (the standard Gin rule): it wears a red ring, taps and flicks
 on it are refused, and the knock/deadwood readouts exclude it. Hand cards slide to their new
 spots as the hand reorders; animations honor `prefers-reduced-motion`. The
