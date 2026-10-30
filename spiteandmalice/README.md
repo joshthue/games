@@ -184,6 +184,7 @@ through `onCenterTap` / `onSideTap` and the same legality checks:
   so a drag doesn't scroll the page. The click a drag release generates is swallowed so it
   can't re-select the card.
 - Works the same in two-phone games — a drop just commits the move like a tap would.
+- v198: let go while flicking upward and the card carries on to a legal centre stack (see below).
 
 ## How it's put together
 
@@ -238,3 +239,29 @@ Now the page captures the pointer as soon as a drag starts, so its moves and rel
 and if one ever is, the next press anywhere (or leaving the app) clears the stuck drag (`abortDrag`).
 Reproduced on v159 with a release-less drag (ghost stays after the next press); on v161 it clears,
 and a normal drag onto a side stack still discards.
+
+## Hand above your piles, and flick to play (v198)
+- **Portrait order is now** the bot's piles, the centre stacks, the turn bar, **your hand**, then
+  **your goal pile and side stacks** along the bottom. The hand sits right under the centre stacks,
+  where most cards go. The goal pile is still bottom-left. Side by side (landscape tablet, phone
+  sideways) nothing moves: piles on the left, hand on the right (`order:2` on `.handblock`). The
+  hand gets a 14px row gap above the piles so the goal pile's count badge doesn't touch it. That
+  costs one pixel of card width on a 320-wide SE (46 → 45px). Re-checked with the real notch and
+  home-bar insets at every card size: no scrolling on a 15 Pro Max, 13/14, SE or 320-wide SE.
+- **Flick a card up and it plays.** Let go of a drag away from any stack while still moving
+  upward fast (at least 0.55 px/ms over the last ~100ms, within ~66° of straight up). The card
+  carries on to a legal centre stack. With more than one legal stack, the throw's line is extended
+  up to the centre row and the stack nearest that point wins. Straight up picks the stack
+  physically closest to the card. An angled throw picks the one it was aimed at, and 66° is wide
+  enough to reach the far stack from the end of the hand. No legal stack, or a flick that stopped
+  before you let go: the card flies home as before. Works from the hand, the goal-pile top and a
+  side-stack top. A flicked Joker on an Either-way stack still asks which value it takes.
+- **Only the centre stacks catch a flick.** A side stack takes any hand card, so a discard still
+  has to be dropped (or tapped) on the stack you mean. A fast flick downward does nothing.
+- Snapping still wins: a release inside a stack's snap zone plays there, flick or not.
+- Tested in Chrome with real touch events at 390×844, 430×932 and 320×568:
+  - a straight-up flick from the leftmost card lands on stack 1, and from the rightmost on stack 4;
+  - an angled flick from the leftmost card aimed at stack 4 lands on stack 4;
+  - with one legal stack, a flick from the far side still finds it;
+  - no legal stack, a slow drag, or a flick that stopped before release → nothing plays;
+  - a downward flick doesn't discard; a real drag onto a side stack still does.

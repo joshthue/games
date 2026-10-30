@@ -108,6 +108,7 @@ body{
 /* Board */
 .board{display:flex;flex-direction:column;gap:8px;flex:1}
 .side-area{display:flex;flex-direction:column;gap:6px}
+.side-area.you{row-gap:14px}   /* v198: clears the goal pile's count badge under the hand */
 .zonecap{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);opacity:.8}
 .oppline,.youline{display:flex;align-items:flex-start;gap:8px}
 .payoff-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 auto}
@@ -161,6 +162,7 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
   box-shadow:0 12px 24px rgba(0,0,0,.5);transform:scale(1.08) rotate(-2deg);transition:transform .12s}
 .card.drag-ghost.snapped{transform:scale(1.03);transition:left .09s ease-out,top .09s ease-out,transform .09s}
 .card.drag-ghost.flying{transition:left .16s ease-out,top .16s ease-out,transform .16s}
+.card.drag-ghost.flung{transition:left .22s cubic-bezier(.2,.7,.3,1),top .22s cubic-bezier(.2,.7,.3,1),transform .22s}
 .card.target.snap{outline:3px solid var(--ok);box-shadow:0 0 0 6px rgba(80,200,120,.35),0 2px 5px rgba(0,0,0,.3)}
 .stack .count{position:absolute;top:-7px;right:-6px;background:var(--gold);color:#22180a;border-radius:999px;
   font-size:max(10px, calc(var(--cw) * .17));font-weight:800;padding:1px 5px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
@@ -199,6 +201,7 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
 @media (min-width:900px) and (orientation:landscape){
   .side-area.you{flex-direction:row;align-items:flex-end;justify-content:center;gap:4vw}
   .side-area.you .hand{flex-wrap:nowrap}
+  .side-area.you .handblock{order:2}   /* side by side, the piles stay left of the hand */
   .oppline{justify-content:center} .oppline .sides{flex:0 0 auto}
 }
 /* Phone held sideways (v109): an iPhone in landscape is ~390px tall, and the four-row board
@@ -221,6 +224,7 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
   #tip{display:none}
   .side-area.you{grid-area:you;flex-direction:row;align-items:flex-end;justify-content:center;gap:28px}
   .side-area.you .hand{flex-wrap:nowrap}
+  .side-area.you .handblock{order:2}
   .side-area.you .zonecap{margin-top:0 !important}
   .actions{grid-area:act;padding-top:0;justify-content:flex-end;min-height:0}   /* clear of the build stamp, which sits bottom-centre */
   .actions .btn{padding:6px 16px;font-size:14px}
@@ -342,17 +346,19 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
       <div class="tip-block" id="tip"></div>
 
       <!-- you -->
+      <!-- v198: the hand sits right under the centre stacks (cards get flicked up to them);
+           your goal pile and side stacks are the bottom row -->
       <div class="side-area you">
+        <div class="handblock">
+          <div class="zonecap" id="youCap" style="text-align:center;margin-top:4px">Your hand</div>
+          <div class="hand" id="hand"></div>
+        </div>
         <div class="youline">
           <div class="payoff-col">
             <div class="stack" id="youPayoff"></div>
             <div class="payoff-lbl">goal <b id="youPayoffN">0</b></div>
           </div>
           <div class="sides" id="youSides"></div>
-        </div>
-        <div class="handblock">
-          <div class="zonecap" id="youCap" style="text-align:center;margin-top:4px">Your hand</div>
-          <div class="hand" id="hand"></div>
         </div>
       </div>
 
@@ -382,7 +388,7 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
         <li>You start each turn with <b>5 cards</b> in hand.</li>
         <li>Play cards to the centre from three places: the <b>top of your goal pile</b>, your <b>hand</b>, or the <b>top of any side stack</b>.</li>
         <li>Empty your hand by playing? You immediately draw back up to 5 and keep going.</li>
-        <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). You can play to the centre or discard by tapping.</li>
+        <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). Drag or tap a card onto a centre stack, or <b>flick it up</b> and it lands on the nearest stack it can go on. A discard is always dragged or tapped onto the side stack you choose.</li>
       </ul>
       <h3>Wilds</h3>
       <p>Two decks plus <b>4 Jokers</b> (or 8 or 12 — <b>More options → Jokers</b> on the deal screen; in a two-phone game the player who creates it sets it). Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place. In <b>Either way</b> a stack usually needs one of two values, so you choose which one the Joker becomes.</p>
@@ -860,7 +866,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v197";
+  var BUILD_V = "v198";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -1285,7 +1291,7 @@ window.SM = (function(){
     } else if(sel){
       el.textContent = 'Tap a highlighted centre to play it there.';
     } else {
-      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Drag a card onto a green centre, or tap it to pick it up.';
+      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Drag or flick a card up onto a green centre, or tap it to pick it up.';
     }
   }
 
@@ -1359,7 +1365,7 @@ window.SM = (function(){
     drag.targets=[].map.call(document.querySelectorAll('#game .card.target'), function(t){
       return {el:t, ctr:t.dataset.ctr, side:t.dataset.side, r:t.getBoundingClientRect()};
     }).filter(function(t){ return t.ctr!=null || (t.side!=null && drag.kind==='hand'); });
-    drag.snap=null;
+    drag.snap=null; drag.trail=[];
     try{ document.documentElement.setPointerCapture(drag.id); }catch(_){}   // keep its move / release even if the card under the finger is redrawn
     sfx('select');
   }
@@ -1370,6 +1376,7 @@ window.SM = (function(){
       dragBegin(e);
     }
     e.preventDefault();
+    trailAdd(drag, e);
     var g=drag.ghost, w=drag.home.width, h=drag.home.height;
     var cx=e.clientX-drag.dx+w/2, cy=e.clientY-drag.dy+h/2;
     // nearest legal drop within reach; a little stickier once snapped so it doesn't flicker
@@ -1398,6 +1405,7 @@ window.SM = (function(){
     if(!d.on) return;                        // a tap: let the click handler have it
     swallowClick=true; setTimeout(function(){ swallowClick=false; }, 0);   // only the click this release itself generates
     var g=d.ghost, t=cancelled ? null : d.snap;
+    if(!t && !cancelled){ trailAdd(d, e); t=flingTarget(d, e); if(t) g.classList.add('flung'); }
     g.classList.remove('snapped'); g.classList.add('flying');
     if(t){
       g.style.left=(t.r.left+(t.r.width-d.home.width)/2)+'px'; g.style.top=(t.r.top+(t.r.height-d.home.height)/2)+'px';
@@ -1407,11 +1415,40 @@ window.SM = (function(){
         busy=false; g.remove();
         sel={kind:d.kind, i:d.i};
         if(t.ctr!=null) onCenterTap(+t.ctr); else onSideTap(+t.side);
-      }, 110);
+      }, g.classList.contains('flung') ? 200 : 110);
     } else {
       g.style.left=d.home.left+'px'; g.style.top=d.home.top+'px'; g.style.transform='scale(1)';
       setTimeout(function(){ g.remove(); sel=null; render(); }, 170);
     }
+  }
+  // ---- fling (v198) ----
+  // Released away from any drop but moving fast and mostly upward: the card carries on to a
+  // legal centre stack. Only the centre stacks catch a fling - a side stack takes any hand
+  // card, so a discard still has to be dropped on the one you mean. With several legal stacks
+  // the throw's line is extended to the centre row and the stack nearest where it crosses
+  // wins: straight up lands on the stack physically closest to the card, an angled throw on
+  // the one it was aimed at.
+  var FLING_V = 0.55;    // px/ms upward at release (550 px/s); a deliberate flick is 1-3
+  function trailAdd(d, e){
+    var t=e.timeStamp||Date.now();
+    d.trail.push({x:e.clientX, y:e.clientY, t:t});
+    while(d.trail.length>2 && t-d.trail[0].t>100) d.trail.shift();   // the last ~100ms only
+  }
+  function flingTarget(d, e){
+    var tr=d.trail; if(tr.length<2) return null;
+    var a=tr[0], b=tr[tr.length-1], dt=b.t-a.t;
+    if(dt<=0 || dt>160) return null;                              // the finger stopped before letting go
+    var vx=(b.x-a.x)/dt, vy=(b.y-a.y)/dt;
+    if(vy>-FLING_V || Math.abs(vx)>-vy*2.2) return null;          // not fast, or not upward enough: within ~66° of straight up, enough to reach the far stack from the end of the hand
+    var w=d.home.width, h=d.home.height;
+    var cx=e.clientX-d.dx+w/2, cy=e.clientY-d.dy+h/2, best=null, bd=1e9;
+    d.targets.forEach(function(t){
+      if(t.ctr==null) return;
+      var c=rectC(t.r); if(c.y>=cy) return;                      // only stacks above the card
+      var px=cx + vx*(c.y-cy)/vy, dist=Math.abs(c.x-px);
+      if(dist<bd){ bd=dist; best=t; }
+    });
+    return best;
   }
   document.addEventListener('pointerup', function(e){ dragEnd(e, false); });
   document.addEventListener('pointercancel', function(e){ dragEnd(e, true); });
