@@ -126,4 +126,14 @@
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",layout); else layout();
   addEventListener("load",layout); addEventListener("resize",layout);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  /* The header can move or grow with no resize event. In a native iOS web view (the App
+     Store build) the notch inset arrives a beat after first layout: the header drops 59px
+     and the sheet stayed where the header used to end, over the name. A zero-width probe
+     sized to the top inset, plus the header itself, re-measure whenever either changes. */
+  function observe(){ if(!window.ResizeObserver) return; var ro=new ResizeObserver(function(){ layout(); });
+    var probe=document.createElement("div"); probe.setAttribute("aria-hidden","true");
+    probe.style.cssText="position:fixed;top:0;left:0;width:0;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none";
+    document.body.appendChild(probe); ro.observe(probe);
+    var h=document.querySelector(".gn-hdr"); if(h) ro.observe(h); }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",observe); else observe();
 })();
