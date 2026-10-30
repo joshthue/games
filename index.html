@@ -196,7 +196,7 @@ ordered.forEach(g=>{
   if(g.external){ a.target="_blank"; a.rel="noopener"; }
   a.addEventListener("click",()=>notePlay(g.href));
   const n=rawCount(plays[g.href]);
-  a.innerHTML=`<div class="emoji">${g.emoji}${n?`<span class="badge" aria-label="played ${n} times">${n>99?'99+':n}</span>`:''}</div>
+  a.innerHTML=`<div class="emoji">${g.emoji}${n>1?`<span class="badge" aria-label="played ${n} times">${n>99?'99+':n}</span>`:''}</div>
     <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div>${g.updated?`<div class="u">Updated ${fmtDate(g.updated)}</div>`:''}</div>
     <div class="arrow">›</div>
     <div class="applabel">${g.short||g.title}</div>`;
@@ -271,7 +271,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v193", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v194", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
