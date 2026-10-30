@@ -33,6 +33,10 @@
   .tile:active{transform:scale(.98);}
   .emoji{font-size:34px; width:56px; height:56px; flex:0 0 auto; display:flex; align-items:center; justify-content:center;
     background:linear-gradient(180deg,#12503a,#0c3d2c); border-radius:14px; border:1px solid rgba(240,198,116,.25);}
+  /* play count, drawn like an unread badge on the icon */
+  .emoji{position:relative;}
+  .badge{position:absolute; top:-7px; right:-7px; min-width:22px; height:22px; padding:0 6px; border-radius:11px; background:#ff3b30; color:#fff;
+    font:700 13px/22px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; text-align:center; box-shadow:0 0 0 2px var(--felt), 0 1px 3px rgba(0,0,0,.4); letter-spacing:-.2px;}
   .meta{flex:1; min-width:0;}
   .meta .t{font-size:19px; font-weight:800; color:var(--gold);}
   .meta .s{font-size:12.5px; opacity:.8; margin-top:2px; line-height:1.35;}
@@ -162,7 +166,9 @@ const grid=document.getElementById("grid");
 const PLAYS_KEY="gn_plays", HALF_LIFE=30*864e5;
 function readPlays(){ try{ return JSON.parse(localStorage.getItem(PLAYS_KEY))||{}; }catch(e){ return {}; } }
 function decayed(p,now){ return p ? p.s*Math.pow(0.5,(now-p.t)/HALF_LIFE) : 0; }
-function notePlay(href){ const all=readPlays(), now=Date.now(), p=all[href]; all[href]={s:decayed(p,now)+1, t:now}; try{ localStorage.setItem(PLAYS_KEY,JSON.stringify(all)); }catch(e){} }
+// n is the raw count for the badge (never decays); s is what the sort uses. Entries written by v192 had no n.
+function rawCount(p){ return p ? (p.n!=null ? p.n : Math.round(p.s)) : 0; }
+function notePlay(href){ const all=readPlays(), now=Date.now(), p=all[href]; all[href]={s:decayed(p,now)+1, t:now, n:rawCount(p)+1}; try{ localStorage.setItem(PLAYS_KEY,JSON.stringify(all)); }catch(e){} }
 const plays=readPlays(), NOW=Date.now();
 const ordered=GAMES.map((g,i)=>({g,i,sc:decayed(plays[g.href],NOW)}))
   .sort((a,b)=> b.sc-a.sc || a.i-b.i).map(x=>x.g);
@@ -189,7 +195,8 @@ ordered.forEach(g=>{
   a.className="tile"; a.href=g.href;
   if(g.external){ a.target="_blank"; a.rel="noopener"; }
   a.addEventListener("click",()=>notePlay(g.href));
-  a.innerHTML=`<div class="emoji">${g.emoji}</div>
+  const n=rawCount(plays[g.href]);
+  a.innerHTML=`<div class="emoji">${g.emoji}${n?`<span class="badge" aria-label="played ${n} times">${n>99?'99+':n}</span>`:''}</div>
     <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div>${g.updated?`<div class="u">Updated ${fmtDate(g.updated)}</div>`:''}</div>
     <div class="arrow">›</div>
     <div class="applabel">${g.short||g.title}</div>`;
@@ -264,7 +271,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v192", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v193", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
