@@ -12,11 +12,16 @@ The standard Game Night header: **‹ Games**, **Rules**, **Menu**, the name, an
 dedication line *Grandma Jo's game*, on flat felt like the other games (no glow
 behind the header — removed in v132). The deal screen is the shared setup sheet
 (`gn-setup.js`): goal pile, centre stacks (with a one-line explainer of the chosen
-direction) and opponent up front; bot difficulty, move hints, sound, card size and card
-text under **More options**; **Deal** pinned at the bottom. With **Two phones** picked the
+direction) and opponent up front; bot difficulty, move hints, four-color deck, sound, card
+size and card text under **More options**; **Deal** pinned at the bottom. With **Two phones** picked the
 button becomes **Create game** and a **Join with code** button appears under it, both
 opening the existing room panels. **Menu** has Back to all games, New game (back to the
 sheet), Rules, and the in-game options.
+
+**Four-color deck (v197)**, in Menu and More options, saved in `sm_prefs_v1` as `four`: ♣ green
+`#178a3a`, ♦ blue `#1b6fb3`, ♥ red, ♠ black, the same colors as every other Game Night card game.
+It's a class on `<html>` (`four-color`) plus a `su0`–`su3` suit class on each card from `cardEl()`,
+so turning it on recolors the table at once without a re-render. Wild cards keep their gold.
 
 ## Never scrolls (v138)
 Checked with the real iPhone notch and home-bar insets injected (Chromium reports them as 0, which

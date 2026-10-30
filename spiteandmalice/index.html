@@ -138,6 +138,8 @@ body{
 .card .r{font-size:1em}
 .card .s{align-self:flex-end;font-size:1em}
 .card.red{color:var(--red)}
+/* Four-color deck (Menu): ♣ green, ♦ blue, ♥ red, ♠ black, same as the other card games */
+html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3}
 .card.wild{background:linear-gradient(135deg,#f7f1e2 0%,#ffe9b0 50%,#f7f1e2 100%);color:#7a5a12}
 .card.wild .r{font-size:.9em}
 /* "WILD" is 4 wide letters in a 34px-wide card: at 1em it ran edge to edge and spilled past
@@ -301,6 +303,9 @@ body{
         <div class="gn-row"><span>Show move hints</span>
           <label class="switch"><input type="checkbox" id="optTips"><span class="track"></span><span class="knob"></span></label>
         </div>
+        <div class="gn-row"><span>Four-color deck</span>
+          <label class="switch"><input type="checkbox" id="optFour"><span class="track"></span><span class="knob"></span></label>
+        </div>
         <div class="gn-row"><span>Sound</span>
           <label class="switch"><input type="checkbox" id="optSound"><span class="track"></span><span class="knob"></span></label>
         </div>
@@ -421,6 +426,9 @@ body{
       <h3>Options</h3>
       <div class="row"><div class="lbl">Show move hints</div>
         <label class="switch"><input type="checkbox" id="menuTips"><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="row"><div class="lbl">Four-color deck</div>
+        <label class="switch"><input type="checkbox" id="menuFour"><span class="track"></span><span class="knob"></span></label>
       </div>
       <div class="row"><div class="lbl">Sound</div>
         <label class="switch"><input type="checkbox" id="menuSound"><span class="track"></span><span class="knob"></span></label>
@@ -852,7 +860,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v161";
+  var BUILD_V = "v197";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -860,9 +868,11 @@ window.SM = (function(){
   document.getElementById('buildStamp').textContent = "build " + BUILD_V + (_when ? " \u00b7 " + _when : "");
 
   var LSK = 'sm_prefs_v1';
-  var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false, jokers:4 };
+  var prefs = { goal:13, dir:'up', diff:'normal', fs:15, tips:false, jokers:4, four:false };
   try{ var raw=localStorage.getItem(LSK); if(raw) Object.assign(prefs, JSON.parse(raw)); }catch(e){}
   function savePrefs(){ try{ localStorage.setItem(LSK, JSON.stringify(prefs)); }catch(e){} }
+  function applyFour(){ document.documentElement.classList.toggle('four-color', !!prefs.four); }
+  applyFour();
   // v82: the old "Card text size" (prefs.fs 13/15/17/19) only changed the font inside a fixed
   // 44px card, so the steps were barely visible. Card size is now the shared origin-wide
   // cardsize.js setting. Carry an old pick across once, if no other game has set one yet.
@@ -996,6 +1006,8 @@ window.SM = (function(){
 
   $('optTips').checked = prefs.tips;
   $('optTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); });
+  $('optFour').checked = !!prefs.four;
+  $('optFour').addEventListener('change', function(){ prefs.four=this.checked; savePrefs(); applyFour(); });
   $('optSound').checked = !!(window.SFX && SFX.isOn());
   $('optSound').addEventListener('change', function(){
     if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
@@ -1024,6 +1036,7 @@ window.SM = (function(){
   });
   // menu controls
   $('menuTips').addEventListener('change', function(){ prefs.tips=this.checked; savePrefs(); render(); fitBoard(); });
+  $('menuFour').addEventListener('change', function(){ prefs.four=this.checked; savePrefs(); applyFour(); $('optFour').checked=prefs.four; });
   $('menuSound').addEventListener('change', function(){
     if(!window.SFX) return; SFX.setOn(this.checked); if(this.checked) SFX.play('select');
   });
@@ -1034,7 +1047,7 @@ window.SM = (function(){
   $('winAgain').addEventListener('click', function(){ $('winOv').classList.remove('on'); doNewGame(); });
   $('winSetup').addEventListener('click', function(){ $('winOv').classList.remove('on'); toSetup(); });
 
-  function openMenu(){ $('menuTips').checked=prefs.tips; $('menuSound').checked=!!(window.SFX && SFX.isOn());
+  function openMenu(){ $('menuTips').checked=prefs.tips; $('menuFour').checked=!!prefs.four; $('menuSound').checked=!!(window.SFX && SFX.isOn());
     paintSize(); $('menuOv').classList.add('on'); }
   function syncSeg(segId,key){ var seg=$(segId); Array.prototype.forEach.call(seg.querySelectorAll('button'),function(b){ var v=b.dataset[Object.keys(b.dataset)[0]]; if(String(prefs[key])===String(v)) setOn(seg,b); else b.classList.remove('on'); }); }
 
@@ -1123,6 +1136,7 @@ window.SM = (function(){
       d.innerHTML = '<div class="r">\u2605</div><div class="s">WILD</div>';
     } else {
       if(SM.isRed(card.s)) d.classList.add('red');
+      d.classList.add('su'+card.s);
       d.innerHTML = '<div class="r">'+SM.rname(card.r)+'</div><div class="s">'+SM.SUITS[card.s]+'</div>';
     }
     return d;
