@@ -51,6 +51,16 @@
   .grid.view-grid .emoji{width:60px; height:60px; font-size:34px; border-radius:15px; box-shadow:0 2px 6px rgba(0,0,0,.35);}
   .grid.view-grid .applabel{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     font-size:11px; line-height:1.18; color:var(--cream); opacity:.9; max-width:76px; word-break:break-word;}
+  /* New & updated: a one-row strip of shortcuts above the list, only games you haven't opened since they changed */
+  .fresh{margin:0 0 16px;} .fresh[hidden]{display:none;}
+  .sect{font-size:11px; font-weight:800; letter-spacing:1.4px; color:var(--gold); opacity:.85; margin:0 2px 7px;}
+  .strip{display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch;} .strip::-webkit-scrollbar{display:none;}
+  .chip{flex:0 0 auto; display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--cream); background:rgba(255,255,255,.07);
+    border:1.5px solid rgba(240,198,116,.4); border-radius:13px; padding:6px 11px 6px 6px; max-width:190px;}
+  .chip:active{transform:scale(.97);}
+  .chip .e{font-size:22px; width:36px; height:36px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#12503a,#0c3d2c); border-radius:10px;}
+  .chip .n{font-size:13.5px; font-weight:800; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .chip .w{font-size:10.5px; opacity:.7; white-space:nowrap;} .chip .w b{color:#8fe3a8; font-weight:800;}
   .ext{font-size:10px; letter-spacing:1px; opacity:.6; margin-left:6px; border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:1px 5px; vertical-align:middle;}
   .install{margin:18px 0 4px; text-align:center;}
   .install button{font-family:inherit; font-weight:700; background:var(--gold); color:var(--ink); border:none;
@@ -72,6 +82,8 @@
       <button type="button" data-view="list">&#9776; List</button>
       <button type="button" data-view="grid">&#9638; Grid</button>
     </div>
+
+    <div class="fresh" id="fresh" hidden><div class="sect">NEW &amp; UPDATED</div><div class="strip" id="strip"></div></div>
 
     <div class="grid" id="grid"></div>
 
@@ -142,10 +154,41 @@ function fmtDate(iso){ if(!iso) return ""; const p=iso.split("-").map(Number); c
 function fmtLocal(iso){ try{ return new Date(iso).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }catch(e){ return ""; } }
 const REPO="joshthue/games";
 const grid=document.getElementById("grid");
-GAMES.forEach(g=>{
+
+/* Per-device play counts, so the games you actually play float to the top.
+   gn_plays = { href: {s:score, t:lastOpenedMs} }. A tap from the hub is one play. The score
+   halves every 30 days of not playing, so a game you binged in August doesn't hold first
+   place forever. Order is fixed when the page loads; it never reshuffles under your finger. */
+const PLAYS_KEY="gn_plays", HALF_LIFE=30*864e5;
+function readPlays(){ try{ return JSON.parse(localStorage.getItem(PLAYS_KEY))||{}; }catch(e){ return {}; } }
+function decayed(p,now){ return p ? p.s*Math.pow(0.5,(now-p.t)/HALF_LIFE) : 0; }
+function notePlay(href){ const all=readPlays(), now=Date.now(), p=all[href]; all[href]={s:decayed(p,now)+1, t:now}; try{ localStorage.setItem(PLAYS_KEY,JSON.stringify(all)); }catch(e){} }
+const plays=readPlays(), NOW=Date.now();
+const ordered=GAMES.map((g,i)=>({g,i,sc:decayed(plays[g.href],NOW)}))
+  .sort((a,b)=> b.sc-a.sc || a.i-b.i).map(x=>x.g);
+
+/* New & updated: games whose tile date is in the last 7 days AND that this device hasn't
+   opened since that date. Open one and it drops out of the strip (it's still in the list).
+   gn_seen_since is the first time this device ran this code (less a day): updates before it
+   aren't news, so a phone meeting the strip for the first time isn't handed every game. Max 6. */
+function localDay(iso){ const p=iso.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]).getTime(); }
+let SINCE=NOW-864e5; try{ const v=+localStorage.getItem("gn_seen_since"); if(v) SINCE=v; else localStorage.setItem("gn_seen_since",String(SINCE)); }catch(e){}
+const fresh=GAMES.filter(g=>{ if(!g.updated||g.external) return false; const d=localDay(g.updated);
+    return NOW-d<7*864e5 && d>=SINCE-864e5 && !(plays[g.href] && plays[g.href].t>=d); })
+  .sort((a,b)=> b.updated.localeCompare(a.updated)).slice(0,6);
+if(fresh.length){
+  const strip=document.getElementById("strip");
+  fresh.forEach(g=>{ const a=document.createElement("a"); a.className="chip"; a.href=g.href;
+    a.innerHTML=`<div class="e">${g.emoji}</div><div><div class="n">${g.short||g.title}</div><div class="w">${plays[g.href]?'Updated':'<b>New to you</b>'} · ${fmtDate(g.updated).replace(/, \d+$/,'')}</div></div>`;
+    a.addEventListener("click",()=>notePlay(g.href)); strip.appendChild(a); });
+  document.getElementById("fresh").hidden=false;
+}
+
+ordered.forEach(g=>{
   const a=document.createElement("a");
   a.className="tile"; a.href=g.href;
   if(g.external){ a.target="_blank"; a.rel="noopener"; }
+  a.addEventListener("click",()=>notePlay(g.href));
   a.innerHTML=`<div class="emoji">${g.emoji}</div>
     <div class="meta"><div class="t">${g.title}${g.external?'<span class="ext">EXISTING</span>':''}</div><div class="s">${g.sub}</div>${g.updated?`<div class="u">Updated ${fmtDate(g.updated)}</div>`:''}</div>
     <div class="arrow">›</div>
@@ -221,7 +264,7 @@ if("serviceWorker" in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v191", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v192", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
