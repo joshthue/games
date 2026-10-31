@@ -56,6 +56,14 @@ re-publishes; before the deal it reopens the same room code and keeps waiting. T
 previous build saved nothing, so that single reload can still land on the menu.) An injected
 `window.__GIN_TX` replaces the relay for headless tests.
 
+**The host's setup sheet (v203).** When the guest's first `join` arrives, the host closes the
+wait dialog *and* hides the setup sheet (`GNSETUP.hide`). Until v203 only the guest hid it, so
+the host's hand was dealt underneath the start screen: connected, game running, but the host saw
+the menu, and tapping Deal there started a solo game and abandoned the room. The two reconnect
+commits above looked like fixes because a reload goes through `resumeOnline`, which does hide
+the sheet. The online tests below checked state on both pages, not what was on screen. They now
+have to assert that `#setup` is hidden on both phones after the join.
+
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
 undercut scoring, + a 120-game bot soak all reaching 100 with a winner.

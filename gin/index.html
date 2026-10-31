@@ -469,7 +469,7 @@ function decodeView(v){ var g={ scores:[v.sc[0],v.sc[1]], target:v.target, over:
 
 function handleNet(obj){
   if(net.role==='host'){
-    if(obj.t==='join'){ net.joined=true; closeNet(); if(!H){ startHand(); } else { publishState(); } updateNetbar(); render(); }
+    if(obj.t==='join'){ var first=!net.joined; net.joined=true; closeNet(); if(first){ closeAll(); GNSETUP.hide('setup'); } if(!H){ startHand(); } else { publishState(); } updateNetbar(); render(); }
     else if(obj.t==='act'){ hostApply(obj); }
   } else if(net.role==='guest'){
     if(obj.t==='state'){ var first=!net.joined; net.joined=true; net.pending=false;
@@ -567,7 +567,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v188", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v203", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
