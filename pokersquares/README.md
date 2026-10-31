@@ -140,3 +140,34 @@ trade-off XL is for.
 A second row, **Card text** (S / M / L / XL, origin-wide key `gn_cardtext`), scales just the
 printed rank and suit on the face (the 5×5 grid's mini cards included) — bigger print without a bigger card. Cards clip
 their contents, so XL text on an XL card stays inside the card.
+
+## The 2030 cabinet (v201)
+A visual pass: same felt, header, cards, rules, bot, solver and high scores. Only how the board looks
+and moves changed. All of it is CSS plus a little UI code; nothing in the scoring reads it.
+- **The tray is a dark glass console**: a radial-lit panel with a gold hairline edge and a slow sheen
+  across it every 7s.
+  - The next card sits in a lit slot and slides in from the left, like it came out of a dealer's shoe.
+  - The score is a glowing gold counter that rolls up to its new value (ease-out, up to 0.7s) and
+    pops when it rises.
+  - **25 lights** under "Card N of 25" show progress; the current card's light breathes.
+- **The squares are recessed glass** instead of dashed boxes. The open ones breathe while you have a
+  card to place.
+- **A placed card flies from the tray to its square** (0.24s), shrinking from the tray card's size.
+  This happens for the bot's moves too.
+- **Line chips are lit pills, brighter by hand.** Tier 1 is pairs; 2 is trips, straight, flush; 3 is
+  full house, four of a kind; 4 is straight and royal flush, which get an animated gold-foil pill.
+  The total is a gold bar.
+- **A finished row or column sweeps light across its five cards and calls the hand out**
+  ("FLUSH +20") in a pill over the line. Size and sound scale with the tier: chip, good, good + chip,
+  win. A line that makes nothing says "No hand" quietly. If one card finishes a row and a column,
+  the two calls come 0.38s apart.
+- **The results screen waits 1.5s after the 25th card** so the last callouts play, unless a new game
+  has started in the meantime. `__PS.deal()` and reduced motion open it at once, as before.
+- `prefers-reduced-motion`: no flight, sweep, sheen, breathing or roll. Callouts just fade.
+- Tested in Chrome at 390×844, 320×568 and 430×932 with a stacked deck:
+  - a spade flush on row 1 calls "Flush +20" (tier 2) with all five cells sweeping, and lights its chip;
+  - the meter reads 5 lit + 1 breathing;
+  - the score rolls to 20;
+  - the results open only after the pause;
+  - no card is left mid-flight or hidden, the page doesn't scroll, Undo still empties the square;
+  - no page errors.
