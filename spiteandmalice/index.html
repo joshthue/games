@@ -108,7 +108,6 @@ body{
 /* Board */
 .board{display:flex;flex-direction:column;gap:8px;flex:1}
 .side-area{display:flex;flex-direction:column;gap:6px}
-.side-area.you{row-gap:14px}   /* v198: clears the goal pile's count badge under the hand */
 .zonecap{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--gold);opacity:.8}
 .oppline,.youline{display:flex;align-items:flex-start;gap:8px}
 .payoff-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:0 0 auto}
@@ -163,6 +162,39 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
 .card.drag-ghost.snapped{transform:scale(1.03);transition:left .09s ease-out,top .09s ease-out,transform .09s}
 .card.drag-ghost.flying{transition:left .16s ease-out,top .16s ease-out,transform .16s}
 .card.drag-ghost.flung{transition:left .22s cubic-bezier(.2,.7,.3,1),top .22s cubic-bezier(.2,.7,.3,1),transform .22s}
+/* v200 spice: the chain count over a stack, Spite!, a fresh five, a scooped stack sweeping off.
+   All overlays are fixed-position and pointer-events:none, so they never block a tap or a drag. */
+.fx-pop{position:fixed;z-index:70;pointer-events:none;font:800 22px/1 Georgia,serif;color:var(--gold);
+  background:rgba(12,30,20,.82);border:1px solid rgba(217,180,91,.55);border-radius:999px;padding:.18em .5em;
+  box-shadow:0 4px 12px rgba(0,0,0,.45);white-space:nowrap;animation:fxPop .85s ease-out forwards}
+@keyframes fxPop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}
+  18%{opacity:1;transform:translate(-50%,-70%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-170%) scale(1)}}
+.fx-spite{position:fixed;z-index:72;pointer-events:none;left:50%;text-align:center;white-space:nowrap;
+  font:italic 800 46px/1 Georgia,serif;color:#e8553f;text-shadow:0 3px 12px rgba(0,0,0,.75),0 0 2px #000;
+  animation:fxSpite 1.5s ease-out forwards}
+.fx-spite.them{color:var(--warn)}
+.fx-spite small{display:block;margin-top:7px;font:700 15px/1.3 -apple-system,system-ui,sans-serif;color:var(--cream)}
+@keyframes fxSpite{0%{opacity:0;transform:translate(-50%,-50%) scale(2.3) rotate(-9deg)}
+  12%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-4deg)}
+  19%{transform:translate(-53%,-50%) rotate(-2deg)} 26%{transform:translate(-47%,-50%) rotate(-6deg)}
+  33%{transform:translate(-50%,-50%) rotate(-4deg)} 80%{opacity:1;transform:translate(-50%,-50%) rotate(-4deg)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(.96) rotate(-4deg)}}
+.card.fx-stuck{animation:fxStuck .55s}
+@keyframes fxStuck{0%,100%{transform:none}20%{transform:translateX(-5px) rotate(-3deg)}40%{transform:translateX(5px) rotate(3deg)}
+  60%{transform:translateX(-3px) rotate(-2deg)}80%{transform:translateX(3px) rotate(1deg)}}
+.card.fx-sweep{position:fixed;margin:0;z-index:65;pointer-events:none;
+  transition:left .45s cubic-bezier(.5,0,.8,.6),top .45s cubic-bezier(.5,0,.8,.6),transform .45s,opacity .45s}
+.fx-bump{display:inline-block;animation:fxBump .45s}
+@keyframes fxBump{40%{transform:scale(1.6);color:#fff}}
+.hand .card.fx-dealt{animation:fxDeal .38s backwards}
+@keyframes fxDeal{from{opacity:0;transform:translateY(-36px) rotate(-7deg)}}
+@media (prefers-reduced-motion:reduce){
+  .fx-spite,.fx-pop{animation-name:fxFade} .card.fx-stuck,.hand .card.fx-dealt,.fx-bump{animation:none}
+  .card.fx-sweep{transition:opacity .2s}
+}
+@keyframes fxFade{0%,70%{opacity:1}100%{opacity:0}}
+.winspite{text-align:center;margin:-4px 0 10px;color:var(--cream);opacity:.85}
+.winspite b{color:#e8553f}
 .card.target.snap{outline:3px solid var(--ok);box-shadow:0 0 0 6px rgba(80,200,120,.35),0 2px 5px rgba(0,0,0,.3)}
 .stack .count{position:absolute;top:-7px;right:-6px;background:var(--gold);color:#22180a;border-radius:999px;
   font-size:max(10px, calc(var(--cw) * .17));font-weight:800;padding:1px 5px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
@@ -201,7 +233,6 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
 @media (min-width:900px) and (orientation:landscape){
   .side-area.you{flex-direction:row;align-items:flex-end;justify-content:center;gap:4vw}
   .side-area.you .hand{flex-wrap:nowrap}
-  .side-area.you .handblock{order:2}   /* side by side, the piles stay left of the hand */
   .oppline{justify-content:center} .oppline .sides{flex:0 0 auto}
 }
 /* Phone held sideways (v109): an iPhone in landscape is ~390px tall, and the four-row board
@@ -224,7 +255,6 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
   #tip{display:none}
   .side-area.you{grid-area:you;flex-direction:row;align-items:flex-end;justify-content:center;gap:28px}
   .side-area.you .hand{flex-wrap:nowrap}
-  .side-area.you .handblock{order:2}
   .side-area.you .zonecap{margin-top:0 !important}
   .actions{grid-area:act;padding-top:0;justify-content:flex-end;min-height:0}   /* clear of the build stamp, which sits bottom-centre */
   .actions .btn{padding:6px 16px;font-size:14px}
@@ -346,19 +376,17 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
       <div class="tip-block" id="tip"></div>
 
       <!-- you -->
-      <!-- v198: the hand sits right under the centre stacks (cards get flicked up to them);
-           your goal pile and side stacks are the bottom row -->
       <div class="side-area you">
-        <div class="handblock">
-          <div class="zonecap" id="youCap" style="text-align:center;margin-top:4px">Your hand</div>
-          <div class="hand" id="hand"></div>
-        </div>
         <div class="youline">
           <div class="payoff-col">
             <div class="stack" id="youPayoff"></div>
             <div class="payoff-lbl">goal <b id="youPayoffN">0</b></div>
           </div>
           <div class="sides" id="youSides"></div>
+        </div>
+        <div class="handblock">
+          <div class="zonecap" id="youCap" style="text-align:center;margin-top:4px">Your hand</div>
+          <div class="hand" id="hand"></div>
         </div>
       </div>
 
@@ -388,13 +416,14 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
         <li>You start each turn with <b>5 cards</b> in hand.</li>
         <li>Play cards to the centre from three places: the <b>top of your goal pile</b>, your <b>hand</b>, or the <b>top of any side stack</b>.</li>
         <li>Empty your hand by playing? You immediately draw back up to 5 and keep going.</li>
-        <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). Drag or tap a card onto a centre stack, or <b>flick it up</b> and it lands on the nearest stack it can go on. A discard is always dragged or tapped onto the side stack you choose.</li>
+        <li><b>End your turn by moving one hand card to a side stack</b> (your four discard piles). Drag or tap a card onto a centre stack, <b>flick it up</b>, or <b>double-tap it</b> and it lands on the nearest stack it can go on. A discard is always dragged or tapped onto the side stack you choose.</li>
       </ul>
       <h3>Wilds</h3>
       <p>Two decks plus <b>4 Jokers</b> (or 8 or 12 — <b>More options → Jokers</b> on the deal screen; in a two-phone game the player who creates it sets it). Jokers are <b>wild</b> — play one on any stack and it becomes whatever value that stack needs (or an Ace to start a stack). Save them for the cards you can’t place. In <b>Either way</b> a stack usually needs one of two values, so you choose which one the Joker becomes.</p>
       <h3>Strategy</h3>
       <ul>
         <li>The centre is shared — advancing a stack can help the bot’s goal card too, so watch its top goal card before you play.</li>
+        <li><b>Spite!</b> Play so the bot’s goal card has nowhere to go and you’ll hear about it. It can do the same to you. The win screen keeps score.</li>
         <li>Organise your side stacks in descending order (low cards on top) so you can dig them back out.</li>
         <li>In <b>Either way</b> you can no longer read how close a stack is from its top card — watch the card count instead. It turns red at 11, two from scooping. A scoop drops it to 1, not 0.</li>
       </ul>
@@ -455,6 +484,7 @@ html.four-color .card.su3{color:#178a3a} html.four-color .card.su2{color:#1b6fb3
       <div class="win-emoji" id="winEmoji">🏆</div>
       <h2 id="winTitle" style="text-align:center">You win!</h2>
       <p id="winSub"></p>
+      <p class="winspite hidden" id="winSpite"></p>
       <div class="winrec" id="winRec"></div>
       <div class="row"><button class="btn" id="winAgain" style="flex:1">🔄 Rematch</button></div>
       <div class="row"><button class="btn ghost" id="winSetup" style="flex:1">Change settings</button></div>
@@ -866,7 +896,7 @@ window.SM = (function(){
 <!-- ============================================================= -->
 <script>
 (function(){
-  var BUILD_V = "v198";
+  var BUILD_V = "v200";
   // GitHub Pages sends Last-Modified = the deploy time, so the date tracks the build
   // actually running instead of a constant somebody has to remember to bump.
   var _d = new Date(document.lastModified);
@@ -1065,7 +1095,7 @@ window.SM = (function(){
   function startSolo(){
     mode='solo'; net.online=false; net.joined=false;
     T = SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:prefs.jokers, first:firstSeat() });
-    sel = null; busy=false; net.pending=false; passScheduled=false; gameStarted();
+    fxReset(); sel = null; busy=false; net.pending=false; passScheduled=false; gameStarted();
     showGame(); render(); sfx('shuffle');
     if(T.turn===opp()) setTimeout(botTurn, 500);   // bot won the deal
   }
@@ -1291,16 +1321,44 @@ window.SM = (function(){
     } else if(sel){
       el.textContent = 'Tap a highlighted centre to play it there.';
     } else {
-      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Drag or flick a card up onto a green centre, or tap it to pick it up.';
+      el.textContent = SM.legalPlays(T).some(function(a){return a.from.kind==='payoff';}) ? 'You can play your goal card — do it!' : 'Drag, flick or double-tap a card to play it, or tap it to pick it up.';
     }
   }
 
   // ---------- interaction ----------
   function isHeroTurn(){ return T && T.winner===null && !T.draw && T.turn===me() && !busy && !(mode==='online' && (net.pending || !net.joined)); }
+  var lastTap=null, DTAP_MS=350;
   function selectSource(kind,i){
     if(!isHeroTurn()||busy) return;
+    var now=Date.now(), dbl=lastTap && lastTap.kind===kind && lastTap.i===i && now-lastTap.t<DTAP_MS;
+    lastTap = dbl ? null : {kind:kind, i:i, t:now};
+    if(dbl && doubleTapPlay(kind,i)) return;
     if(sel && sel.kind===kind && sel.i===i){ sel=null; } else { sel={kind:kind,i:i}; }
     render();
+  }
+  // Double-tap a card (v199): it flies to the legal centre stack physically closest to it. Never
+  // a side stack - a discard is always a deliberate choice of stack. Nothing legal: the second
+  // tap just deselects, as before.
+  function doubleTapPlay(kind,i){
+    sel={kind:kind, i:i}; render();                       // lights up the legal centres
+    var src=findSrcEl(kind,i); if(!src) return false;
+    var r=src.getBoundingClientRect(), c0=rectC(r), best=null, bd=1e9;
+    [].forEach.call(document.querySelectorAll('#centers .card.target'), function(t){
+      var tr=t.getBoundingClientRect(), c=rectC(tr), d=Math.hypot(c.x-c0.x, c.y-c0.y);
+      if(d<bd){ bd=d; best={ctr:+t.dataset.ctr, r:tr}; }
+    });
+    if(!best) return false;
+    var g=src.cloneNode(true);
+    g.classList.remove('selected','selectable','target'); g.classList.add('drag-ghost');
+    g.style.setProperty('--cw', r.width+'px');
+    g.style.width=r.width+'px'; g.style.height=r.height+'px'; g.style.left=r.left+'px'; g.style.top=r.top+'px';
+    document.body.appendChild(g); src.classList.add('drag-src');
+    void g.offsetWidth;                                   // start the flight from the card's spot
+    g.classList.add('flying','flung');
+    g.style.left=(best.r.left+(best.r.width-r.width)/2)+'px'; g.style.top=(best.r.top+(best.r.height-r.height)/2)+'px'; g.style.transform='scale(1)';
+    busy=true;
+    setTimeout(function(){ busy=false; g.remove(); sel={kind:kind, i:i}; onCenterTap(best.ctr); }, 200);
+    return true;
   }
   function onSideTap(si){
     if(!isHeroTurn()) return;
@@ -1405,7 +1463,12 @@ window.SM = (function(){
     if(!d.on) return;                        // a tap: let the click handler have it
     swallowClick=true; setTimeout(function(){ swallowClick=false; }, 0);   // only the click this release itself generates
     var g=d.ghost, t=cancelled ? null : d.snap;
-    if(!t && !cancelled){ trailAdd(d, e); t=flingTarget(d, e); if(t) g.classList.add('flung'); }
+    // a fling is never a discard: thrown up from the hand across your side stacks, it goes on to
+    // a centre stack (or home) even if it was snapped to a side stack when you let go (v199)
+    if(!cancelled && (!t || t.side!=null)){
+      trailAdd(d, e); var v=flingVel(d);
+      if(v){ t=flingTarget(d, e, v); if(t) g.classList.add('flung'); }
+    }
     g.classList.remove('snapped'); g.classList.add('flying');
     if(t){
       g.style.left=(t.r.left+(t.r.width-d.home.width)/2)+'px'; g.style.top=(t.r.top+(t.r.height-d.home.height)/2)+'px';
@@ -1422,9 +1485,9 @@ window.SM = (function(){
     }
   }
   // ---- fling (v198) ----
-  // Released away from any drop but moving fast and mostly upward: the card carries on to a
-  // legal centre stack. Only the centre stacks catch a fling - a side stack takes any hand
-  // card, so a discard still has to be dropped on the one you mean. With several legal stacks
+  // Let go while still moving fast and mostly upward: the card carries on to a legal centre
+  // stack. Only the centre stacks catch a fling - a side stack takes any hand card, so a
+  // discard has to be dropped on the one you mean, slowly enough not to count as a throw. With several legal stacks
   // the throw's line is extended to the centre row and the stack nearest where it crosses
   // wins: straight up lands on the stack physically closest to the card, an angled throw on
   // the one it was aimed at.
@@ -1434,13 +1497,17 @@ window.SM = (function(){
     d.trail.push({x:e.clientX, y:e.clientY, t:t});
     while(d.trail.length>2 && t-d.trail[0].t>100) d.trail.shift();   // the last ~100ms only
   }
-  function flingTarget(d, e){
+  // release velocity in px/ms if this release is a fling, else null
+  function flingVel(d){
     var tr=d.trail; if(tr.length<2) return null;
     var a=tr[0], b=tr[tr.length-1], dt=b.t-a.t;
     if(dt<=0 || dt>160) return null;                              // the finger stopped before letting go
     var vx=(b.x-a.x)/dt, vy=(b.y-a.y)/dt;
     if(vy>-FLING_V || Math.abs(vx)>-vy*2.2) return null;          // not fast, or not upward enough: within ~66° of straight up, enough to reach the far stack from the end of the hand
-    var w=d.home.width, h=d.home.height;
+    return {vx:vx, vy:vy};
+  }
+  function flingTarget(d, e, v){
+    var vx=v.vx, vy=v.vy, w=d.home.width, h=d.home.height;
     var cx=e.clientX-d.dx+w/2, cy=e.clientY-d.dy+h/2, best=null, bd=1e9;
     d.targets.forEach(function(t){
       if(t.ctr==null) return;
@@ -1473,7 +1540,100 @@ window.SM = (function(){
   }
   function closeWild(){ $('wildOv').classList.remove('on'); wildCB=null; render(); }
   // Sound is best-effort: if sfx.js didn't load, the game plays on in silence.
-  function sfx(n){ if(window.SFX) SFX.play(n); }
+  function sfx(n, arg){ if(window.SFX) SFX.play(n, 0, arg); }
+
+  // ---------- spice (v200): the chain count, Spite!, a fresh five, a scoop sweeping off ----------
+  // Every move goes through fxBefore() / fxAfter(), which compare the state either side of it.
+  // That covers solo, the bot and both ends of a two-phone game the same way (a guest sees the
+  // effects when the host's state arrives), and keeps all of it out of the engine.
+  //   Chain: your plays to the centre this turn. From the 2nd, a rising x2, x3 ... over the
+  //     stack and a note that climbs a scale. Resets when the turn passes.
+  //   Spite: a play that leaves the other side's goal card with nowhere to go, when it had
+  //     somewhere before. Yours stings; theirs gloats. Tallied for the win sheet.
+  //   Fresh five: emptying your hand mid-turn draws five; they deal in.
+  //   Scoop: a stack that hits 13 sweeps off to the done count.
+  var chainN=0, malice=[0,0];
+  function fxReset(){ chainN=0; malice=[0,0]; }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function goalLive(i){
+    var c=SM.topPayoff(T,i);
+    return !!c && T.centers.some(function(st){ return SM.canPlayOn(c, st, T.dir); });
+  }
+  function fxBefore(){
+    if(!T) return null;
+    return { turn:T.turn, done:T.done.length,
+      cl:T.centers.map(function(st){ return st.length; }),
+      top:T.centers.map(function(st){ return st.length ? st[st.length-1].val : 0; }),
+      hand:T.players.map(function(p){ return p.hand.length; }),
+      pay:T.players[0].payoff.length + T.players[1].payoff.length,
+      live:[goalLive(0), goalLive(1)] };
+  }
+  function fxAfter(b){
+    if(!b || !T) return;
+    if(T.players[0].payoff.length + T.players[1].payoff.length > b.pay){ fxReset(); return; }   // a new deal
+    if(T.winner!==null || T.draw) return;                       // the win sheet has the floor
+    var c=-1;
+    for(var k=0;k<4;k++){ var st=T.centers[k];
+      if(st.length!==b.cl[k] || (st.length ? st[st.length-1].val : 0)!==b.top[k]){ c=k; break; } }
+    var mover=b.turn, mine=mover===me();
+    if(c>=0){
+      if(mine) chainN++;
+      if(T.done.length>b.done){ sfx('good'); sweepFx(c, b.cl[c]); }
+      else if(mine && chainN>=2) sfx('chain', chainN);
+      else sfx('place');
+      if(mine && chainN>=2) popFx(stackRect(c), '\u00d7'+chainN, chainN);
+      if(mine && T.players[me()].hand.length>b.hand[me()]) freshFive();
+      var victim=1-mover;
+      if(b.live[victim] && !goalLive(victim)){ malice[mover]++; spiteFx(mine, victim); }
+    }
+    if(T.turn!==b.turn) chainN=0;
+  }
+  function stackRect(c){ var el=document.querySelector('#centers [data-ctr="'+c+'"]'); return el ? el.getBoundingClientRect() : null; }
+  function popFx(r, text, n){
+    if(!r) return;
+    [].forEach.call(document.querySelectorAll('.fx-pop'), function(x){ x.remove(); });   // one at a time: the new count replaces the last
+    var d=document.createElement('div'); d.className='fx-pop'; d.textContent=text;
+    d.style.left=(r.left+r.width/2)+'px'; d.style.top=(r.top+r.height/2)+'px';
+    if(n) d.style.fontSize=(18+Math.min(n,9)*3)+'px';
+    document.body.appendChild(d); setTimeout(function(){ d.remove(); }, 900);
+  }
+  function spiteFx(mine, victim){
+    [].forEach.call(document.querySelectorAll('.fx-spite'), function(x){ x.remove(); });
+    var card=SM.topPayoff(T,victim), rn=card ? SM.rname(card.r) : 'card', who=oppName();
+    var d=document.createElement('div'); d.className='fx-spite'+(mine?'':' them');
+    var line = mine ? pick([who+'\u2019s '+rn+' is stuck', who+' needed that '+rn, 'No home for '+who+'\u2019s '+rn])
+                    : pick([who+' blocked your '+rn, 'Your '+rn+' has nowhere to go', who+': Sorry. Not sorry.']);
+    d.textContent = mine ? 'Spite!' : pick(['Spite!','Malice!','Ha!']);
+    var sm=document.createElement('small'); sm.textContent=line; d.appendChild(sm);
+    var cr=$('centers').getBoundingClientRect(); d.style.top=(cr.top+cr.height/2)+'px';
+    document.body.appendChild(d); setTimeout(function(){ d.remove(); }, 1600);
+    var g=document.querySelector((victim===me() ? '#youPayoff' : '#oppPayoff')+' .card');
+    if(g){ g.classList.remove('fx-stuck'); void g.offsetWidth; g.classList.add('fx-stuck'); }
+    sfx(mine ? 'spite' : 'gloat');
+  }
+  function sweepFx(c, n){
+    var r=stackRect(c), dn=$('doneN'); if(!r || !dn) return;
+    var to=dn.getBoundingClientRect(), k=Math.min(n||5, 5), ghosts=[];
+    for(var i=0;i<k;i++){
+      var g=document.createElement('div'); g.className='card back fx-sweep';
+      g.style.setProperty('--cw', r.width+'px'); g.style.width=r.width+'px'; g.style.height=r.height+'px';
+      g.style.left=(r.left-i*2)+'px'; g.style.top=(r.top-i*2)+'px';
+      document.body.appendChild(g); ghosts.push(g);
+    }
+    void document.body.offsetWidth;
+    ghosts.forEach(function(g,i){ setTimeout(function(){
+      g.style.left=(to.left+to.width/2-r.width/2)+'px'; g.style.top=(to.top+to.height/2-r.height/2)+'px';
+      g.style.transform='scale(.25) rotate('+(12+i*9)+'deg)'; g.style.opacity='0';
+    }, 60+i*45); });
+    setTimeout(function(){ ghosts.forEach(function(g){ g.remove(); });
+      dn.classList.remove('fx-bump'); void dn.offsetWidth; dn.classList.add('fx-bump'); }, 60+k*45+460);
+    if(window.SFX) SFX.play('sweep', 0.12);
+  }
+  function freshFive(){
+    [].forEach.call(document.querySelectorAll('#hand .card'), function(el,i){ el.style.animationDelay=(i*60)+'ms'; el.classList.add('fx-dealt'); });
+    if(window.SFX) SFX.play('refill', 0.05);
+    var h=$('hand'); if(h) popFx(h.getBoundingClientRect(), 'Fresh five!', 3);
+  }
   // ---- move commits: solo/host apply locally; guest sends an intent to the host ----
   function commitPlay(action){
     if(mode==='online' && net.role==='guest'){
@@ -1481,9 +1641,9 @@ window.SM = (function(){
       netSend({t:'act', kind:'play', src:action.from.kind, i:action.from.i, to:action.to, val:action.val});
       render(); return;
     }
-    var res = SM.applyPlay(T, action);
-    sfx(res && res.cleared ? 'good' : 'place');
-    afterLocal();
+    var b=fxBefore();
+    SM.applyPlay(T, action);
+    afterLocal(); fxAfter(b);
   }
   function commitDiscard(cardIndex, sideIndex){
     if(mode==='online' && net.role==='guest'){
@@ -1491,13 +1651,15 @@ window.SM = (function(){
       netSend({t:'act', kind:'discard', cardIndex:cardIndex, sideIndex:sideIndex});
       render(); return;
     }
-    SM.applyDiscard(T, {cardIndex:cardIndex, sideIndex:sideIndex}); sfx('flip'); afterLocal();
+    var b=fxBefore();
+    SM.applyDiscard(T, {cardIndex:cardIndex, sideIndex:sideIndex}); sfx('flip'); afterLocal(); fxAfter(b);
   }
   function commitPass(){
     if(mode==='online' && net.role==='guest'){
       net.pending=true; netSend({t:'act', kind:'pass'}); render(); return;
     }
-    SM.pass(T); afterLocal();
+    var b=fxBefore();
+    SM.pass(T); afterLocal(); fxAfter(b);
   }
   function afterLocal(){
     render();
@@ -1520,22 +1682,21 @@ window.SM = (function(){
   function stepBot(){
     if(T.winner!==null || T.draw){ busy=false; return finish(); }
     if(T.turn!==opp()){ busy=false; render(); return considerHeroPass(); }
-    var mv = SM.botAction(T, prefs.diff);
+    var mv = SM.botAction(T, prefs.diff), b=fxBefore();
     if(mv.kind==='play'){
       var res=SM.applyPlay(T, mv.action);
-      sfx(res && res.cleared ? 'good' : 'place');
-      render();
+      render(); fxAfter(b);
       if(res.win){ busy=false; return finish(); }
       setTimeout(stepBot, 400);
     } else if(mv.kind==='discard'){
       SM.applyDiscard(T, mv.action);   // ends bot turn
       sfx('flip');
-      busy=false; render();
+      busy=false; render(); fxAfter(b);
       if(T.draw) return finish();
       considerHeroPass();
     } else { // pass
       SM.pass(T);
-      busy=false; render();
+      busy=false; render(); fxAfter(b);
       if(T.draw) return finish();
       considerHeroPass();
     }
@@ -1573,6 +1734,9 @@ window.SM = (function(){
       $('winSub').textContent = heroWon ? 'You cleared your goal pile first.' : (oppWord+' cleared '+(mode==='online'?'their':'its')+' goal pile first. Rematch?');
     }
     $('winRec').innerHTML = player ? recLine(player, mode==='online' ? oppName() : 'bot') : '';
+    var ws=$('winSpite');
+    if(malice[0]+malice[1]){ ws.innerHTML='Spite: you <b>'+malice[me()]+'</b> \u00b7 '+esc(oppName())+' <b>'+malice[opp()]+'</b>'; ws.classList.remove('hidden'); }
+    else ws.classList.add('hidden');
     $('winOv').classList.add('on');
   }
 
@@ -1609,10 +1773,11 @@ window.SM = (function(){
       if(obj.t==='state'){
         var first=!net.joined; net.joined=true; net.pending=false;
         if(obj.name){ net.oppName=cleanName(obj.name); paintNames(); }
+        var fb=fxBefore();
         T=SM.decodeState(obj.view); sel=null;
         if(T.winner===null && !T.draw) gameStarted();     // a deal we watched start - count it when it ends
         if(first){ closeNetOv(); showGame(); }
-        render(); updateNetbar();
+        render(); updateNetbar(); fxAfter(fb);
         if(T.winner!==null || T.draw) finish(); else $('winOv').classList.remove('on');
       }
     }
@@ -1620,12 +1785,13 @@ window.SM = (function(){
   function handleGuestAction(obj){
     if(!T) return;
     if(obj.kind==='newGame'){ dealHost(); return; }
+    var fb=fxBefore();
     var r=SM.applyGuestAct(T, {kind:obj.kind, src:obj.src, i:obj.i, to:obj.to, val:obj.val, cardIndex:obj.cardIndex, sideIndex:obj.sideIndex}, 1);
-    if(r.ok){ render(); publishState(); if(T.winner!==null||T.draw) finish(); }
+    if(r.ok){ render(); fxAfter(fb); publishState(); if(T.winner!==null||T.draw) finish(); }
   }
   function dealHost(){
     T=SM.newGame({ goal:prefs.goal, dir:prefs.dir, decks:2, jokers:prefs.jokers, first:firstSeat() });
-    sel=null; net.pending=false; passScheduled=false; gameStarted();
+    fxReset(); sel=null; net.pending=false; passScheduled=false; gameStarted();
     $('winOv').classList.remove('on');
     render(); publishState();
     if(T.winner!==null||T.draw) finish(); else considerHeroPass();

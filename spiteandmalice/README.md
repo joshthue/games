@@ -240,28 +240,66 @@ and if one ever is, the next press anywhere (or leaving the app) clears the stuc
 Reproduced on v159 with a release-less drag (ghost stays after the next press); on v161 it clears,
 and a normal drag onto a side stack still discards.
 
-## Hand above your piles, and flick to play (v198)
-- **Portrait order is now** the bot's piles, the centre stacks, the turn bar, **your hand**, then
-  **your goal pile and side stacks** along the bottom. The hand sits right under the centre stacks,
-  where most cards go. The goal pile is still bottom-left. Side by side (landscape tablet, phone
-  sideways) nothing moves: piles on the left, hand on the right (`order:2` on `.handblock`). The
-  hand gets a 14px row gap above the piles so the goal pile's count badge doesn't touch it. That
-  costs one pixel of card width on a 320-wide SE (46 → 45px). Re-checked with the real notch and
-  home-bar insets at every card size: no scrolling on a 15 Pro Max, 13/14, SE or 320-wide SE.
-- **Flick a card up and it plays.** Let go of a drag away from any stack while still moving
-  upward fast (at least 0.55 px/ms over the last ~100ms, within ~66° of straight up). The card
-  carries on to a legal centre stack. With more than one legal stack, the throw's line is extended
-  up to the centre row and the stack nearest that point wins. Straight up picks the stack
-  physically closest to the card. An angled throw picks the one it was aimed at, and 66° is wide
-  enough to reach the far stack from the end of the hand. No legal stack, or a flick that stopped
-  before you let go: the card flies home as before. Works from the hand, the goal-pile top and a
-  side-stack top. A flicked Joker on an Either-way stack still asks which value it takes.
-- **Only the centre stacks catch a flick.** A side stack takes any hand card, so a discard still
-  has to be dropped (or tapped) on the stack you mean. A fast flick downward does nothing.
-- Snapping still wins: a release inside a stack's snap zone plays there, flick or not.
+## Flick or double-tap a card to play it (v198, v199)
+- **Flick a card up and it plays.** Let go while it's still moving upward fast (at least 0.55 px/ms
+  over the last ~100ms, within ~66° of straight up). The card carries on to a legal centre stack.
+  With more than one legal stack, the throw's line is extended up to the centre row and the stack
+  nearest that point wins. Straight up picks the stack physically closest to the card. An angled
+  throw picks the one it was aimed at, and 66° reaches the far stack from the end of the hand. No
+  legal stack, or a flick that stopped before you let go: the card flies home. Works from the hand,
+  the goal-pile top and a side-stack top. A flicked Joker on an Either-way stack still asks which
+  value it takes.
+- **A flick never lands on a side stack.** A side stack takes any hand card, so a discard has to be
+  placed: dropped (slowing down as you get there) or tapped. A hand card thrown up across your side
+  stacks goes on to a centre stack, or home. That holds even if it was snapped to a side stack at
+  the moment you let go: a fling beats a side-stack snap. A centre-stack snap still wins over a fling.
+- **Double-tap a card to play it (v199).** Two taps on the same card within 350ms: it flies to the
+  legal centre stack physically closest to it. Works on a hand card, the goal-pile top and a
+  side-stack top. Never a side stack, same as a flick. Nothing legal: the second tap just deselects,
+  as a second tap always did. Two slower taps are still select-then-deselect. (Tapping a hand card
+  then a side stack is still a discard; that's two different cards, not a double-tap.)
+- **Layout:** v198 tried the hand directly under the centre stacks with your goal pile and side
+  stacks along the bottom. v199 puts the rows back in the v197 order: goal pile and side stacks,
+  then your hand.
 - Tested in Chrome with real touch events at 390×844, 430×932 and 320×568:
   - a straight-up flick from the leftmost card lands on stack 1, and from the rightmost on stack 4;
   - an angled flick from the leftmost card aimed at stack 4 lands on stack 4;
   - with one legal stack, a flick from the far side still finds it;
   - no legal stack, a slow drag, or a flick that stopped before release → nothing plays;
-  - a downward flick doesn't discard; a real drag onto a side stack still does.
+  - a fast flick let go right on a side stack plays to a centre stack, or flies home if none is
+    legal, and never discards;
+  - a drag that slows onto a side stack still discards and ends the turn.
+  - double-tap: the rightmost hand card goes to stack 4 and the leftmost to stack 1. With one legal
+    stack it finds that one. With none, nothing plays and the card is deselected. Two slow taps
+    don't play. A side-stack top plays too.
+
+## Spice: chains, Spite!, a fresh five, the scoop (v200)
+All in the UI layer, none in the engine. Every move goes through `fxBefore()` / `fxAfter()`, which
+compare the state either side of it. So solo, the bot and both ends of a two-phone game get the same
+effects (a guest sees them when the host's state arrives) without anything new on the wire.
+- **Chain.** Your plays to the centre in one turn. From the second one, a rising **×2, ×3 …** pops
+  over the stack (a gold count on a dark pill, the new one replacing the last). The sound is a
+  card-down thump under a note that climbs a major scale, so a long run audibly builds. Resets
+  when the turn passes. Only yours; the bot's turns stay quiet.
+- **Spite!** A play that leaves the other side's goal card with nowhere to go, when it had
+  somewhere to go before. Yours: a red **Spite!** over the centre with a line ("Bot needed that 5"),
+  their goal card shakes, and a sting. Theirs: the same in gold with a nyah-nyah. Wilds can't be
+  stuck, so they never trigger it. Counted per game and shown on the win sheet
+  ("Spite: you 3 · Bot 1") whenever either side scored one.
+- **Fresh five.** Empty your hand mid-turn and the new five deal in one after another, with
+  "Fresh five!" and a quick five-card riffle.
+- **Scoop.** A stack that hits 13 sweeps off to the **done** count (five card backs, staggered),
+  which bumps when they land, and plays a whoosh after the chord.
+- `prefers-reduced-motion`: pops and Spite! just fade, nothing shakes, deals in or sweeps.
+- New sounds in the shared `../sfx.js`: `chain` (takes the run length: `SFX.play("chain", 0, n)`),
+  `spite`, `gloat`, `sweep`, `refill`. `SFX.play` passes a third argument through to the sound;
+  every existing call is unchanged.
+- Tested in Chrome by driving real double-taps and a bot step:
+  - three plays in a row: no badge on the first, then ×2 and ×3, with sounds place, chain:2, chain:3;
+  - Spite! when your 5 takes the bot's only home for its 5, and none when its 5 still had another stack;
+  - the bot's version (gold, gloat) when it takes yours;
+  - fresh five: five cards dealt in, plus the pop and the sound;
+  - a King on 12 sweeps five ghosts to done (all gone 0.8s later; done +13);
+  - the win sheet shows the tally;
+  - no page errors. The flick, double-tap and layout suite still passes.
+  - Not covered: two-phone games. The guest and host paths only wrap the existing state updates.

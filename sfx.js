@@ -101,15 +101,33 @@
                               tone(f, t + i * 0.085, 0.30, "triangle", 0.30); });
                             noise(t + 0.34, 0.5, 5000, 0.7, 0.10, 2000); },
     lose:    function (t) { [440, 392, 349.23, 293.66].forEach(function (f, i) {
-                              tone(f, t + i * 0.105, 0.26, "sine", 0.22); }); }
+                              tone(f, t + i * 0.105, 0.26, "sine", 0.22); }); },
+    // the Nth card in a run: a card-down thump under a note that climbs a major scale, so a
+    // long run audibly builds. SFX.play("chain", 0, n), n >= 2.
+    chain:   function (t, n) { var st = [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24];
+                              var k = Math.max(0, Math.min(st.length - 1, (n || 2) - 2));
+                              noise(t, 0.07, 900, 1.0, 0.22, 380);
+                              tone(392 * Math.pow(2, st[k] / 12), t, 0.14, "triangle", 0.24); },
+    // you blocked their card: a slap and a falling sting
+    spite:   function (t) { noise(t, 0.06, 2500, 1.0, 0.28);
+                            tone(466.16, t, 0.09, "square", 0.11);
+                            tone(349.23, t + 0.10, 0.24, "square", 0.11, 311.13); },
+    // they blocked yours: nyah-nyah
+    gloat:   function (t) { [783.99, 659.25, 880, 783.99, 659.25].forEach(function (f, i) {
+                              tone(f, t + i * 0.11, 0.10, "triangle", 0.16); }); },
+    // a pile swept off the table
+    sweep:   function (t) { noise(t, 0.38, 500, 0.9, 0.22, 4200); },
+    // a fresh hand dealt in one go
+    refill:  function (t) { for (var i = 0; i < 5; i++) noise(t + i * 0.06, 0.09, 1900, 0.8, 0.22, 700); }
   };
 
-  function play(name, when) {
+  // arg is passed through to sounds that take one (chain: the run length)
+  function play(name, when, arg) {
     if (!enabled()) return;
     var c = ensure(); if (!c) return;
     if (c.state === "suspended") { c.resume(); }      // Safari parks it between gestures
     var fn = KIT[name]; if (!fn) return;
-    try { fn(c.currentTime + (when || 0)); } catch (e) { /* never break a game over audio */ }
+    try { fn(c.currentTime + (when || 0), arg); } catch (e) { /* never break a game over audio */ }
   }
 
   // First real gesture unlocks audio on iOS. Harmless everywhere else.
