@@ -257,3 +257,10 @@ jackpot beam hold steady instead of pulsing, so you still see them.
 - A full board: the results are not open at 1 s, are open by 4.2 s, and "First Board" is stored.
 - A bot board plays through and earns no trophies. The best-board flight still runs.
 - No page scroll at 320×568, 390×844 or 430×932 at every card size, mid-draw. No page errors.
+
+**Native haptics hook (v205).** `NG`'s `hap(n, gap, kind)` calls `window.GN_HAPTICS(kind, n, gap)` when a
+host page defines it, instead of the web fallbacks. The kinds are light, medium, heavy, success, beat
+and select. The heartbeat and the drag-over tick use it too. The website never defines it, so nothing
+changes there. The iOS app does (see `pokersquares-app/app/app-shim.js`), which gives every effect the
+Taptic Engine, including bot moves and the delayed effects that the iPhone web workaround can't reach.
+Menu → Haptics still gates it.

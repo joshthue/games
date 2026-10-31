@@ -1374,7 +1374,10 @@ var NG=(function(){
   /* ---- haptics: vibrate() where it exists; on iPhone, Safari's switch control ticks the
      Taptic Engine when it's toggled from a tap (iOS 18+). Best effort, silent otherwise. ---- */
   let hapLab=null;
-  function hap(n,gap){ if(!ngs.haptics) return; n=n||1; gap=gap||70;
+  // kind: light | medium | heavy | success | beat | select. A native host (the iOS app) can set
+  // window.GN_HAPTICS(kind, n, gap) and every effect gets the real Taptic Engine, not just taps.
+  function hap(n,gap,kind){ if(!ngs.haptics) return; n=n||1; gap=gap||70;
+    if(typeof window.GN_HAPTICS==="function"){ try{ window.GN_HAPTICS(kind||"light",n,gap); }catch(e){} return; }
     if(navigator.vibrate){ const pat=[]; for(let k=0;k<n;k++){ pat.push(12); if(k<n-1) pat.push(gap); } try{ navigator.vibrate(pat); }catch(e){} return; }
     if(!hapLab){ hapLab=document.createElement("label"); hapLab.setAttribute("aria-hidden","true");
       hapLab.style.cssText="position:fixed;left:-60px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
@@ -1420,16 +1423,16 @@ var NG=(function(){
   function land(i,user){ const el=cellEl(i); if(!el) return; const c=center(el), pan=panOfCol(i%5);
     ring(c.x,c.y,c.w*.45,c.w*1.05,"rgba(255,226,160,.85)",420);
     emit(c.x,c.y+c.h*.4,{n:7,dir:-Math.PI/2,spread:2.6,sp:90,g:120,s:5,life:520,colors:["#fff2c8","#f0c674"]});
-    snd("thud",pan); if(user) hap(1);
+    snd("thud",pan); if(user||window.GN_HAPTICS) hap(1,0,user?"medium":"light");
     const b=document.getElementById("psboard"); if(b && !RM()){ b.classList.remove("ngthump"); void b.offsetWidth; b.classList.add("ngthump"); } }
   /* ---- a row or column is finished ---- */
   function lineBurst(d,els,t){ const h=d.h; if(t<1) return;
     const cols=[null,["#fff2c8","#f0c674"],["#ffe29a","#f0c674","#ffffff"],["#ffe29a","#ffffff","#ffd36b","#ff9a3d"],["#ffffff","#7cc4ff","#a98bff","#ffd36b"]][t];
     els.forEach(function(el,k){ const c=center(el); emit(c.x,c.y,{n:[0,5,9,14,20][t],sp:[0,120,170,230,300][t],s:[0,5,6,7,8][t],life:[0,600,750,900,1100][t],colors:cols,delay:k*45}); });
     if(t>=3) shake(t===4?2:1);
-    if(t>=2) hap(t>=3?3:2,60);
+    if(t>=2) hap(t>=3?3:2,60,t>=3?"heavy":"medium");
     if(t===4) cinema(h.key==="royal"?"ROYAL FLUSH":"STRAIGHT FLUSH","+"+h.pts,h.key==="royal"); }
-  function cinema(title,sub,royal){ snd("boom"); hap(4,90); confetti(royal?180:120,royal); if(RM()) return;
+  function cinema(title,sub,royal){ snd("boom"); hap(4,90,"success"); confetti(royal?180:120,royal); if(RM()) return;
     const el=document.createElement("div"); el.className="ngcine"+(royal?" royal":""); el.innerHTML='<div class="rays"></div><div class="ttl">'+title+'</div><div class="sub">'+sub+'</div>';
     document.body.appendChild(el); setTimeout(function(){ el.remove(); },2700); }
 
@@ -1474,7 +1477,7 @@ var NG=(function(){
     if(jack) startBeat(); else stopBeat(); }
   let prev={}, quiet=false, tok=0, beat=null;
   function startBeat(){ if(beat) return; beat=setInterval(function(){ if(curOverlay.kind||over) return; snd("heart");
-    if(navigator.vibrate && ngs.haptics){ try{ navigator.vibrate([14,170,10]); }catch(e){} } },1100); }
+    if(window.GN_HAPTICS) hap(1,0,"beat"); else if(navigator.vibrate && ngs.haptics){ try{ navigator.vibrate([14,170,10]); }catch(e){} } },1100); }
   function stopBeat(){ if(beat){ clearInterval(beat); beat=null; } }
   function lineMid(h){ const els=h.cells.map(cellEl).filter(Boolean); if(els.length<5) return null; const a=els[0].getBoundingClientRect(), b=els[4].getBoundingClientRect();
     return {x:(a.left+b.right)/2, y:(a.top+b.bottom)/2}; }
@@ -1483,11 +1486,11 @@ var NG=(function(){
     el.style.left=m.x+"px"; el.style.top=m.y+"px"; document.body.appendChild(el); setTimeout(function(){ el.remove(); },ms||2300); return m; }
   function fire(e,myTok){ if(myTok!==tok) return; const h=e.h, pan=h.type==="col"?panOfCol(h.idx):0, need=h.outs.map(cname).join(" or ");
     if(e.k==="draw"){ callout(h,"draw"+(h.royal?" royal":""),(h.royal?"Royal flush draw":"Straight flush draw")+'<small>need '+need+' · '+pct(h.p)+'</small>',2300);
-      snd("shimmer",pan); if(h.royal) snd("riser"); hap(2,80);
+      snd("shimmer",pan); if(h.royal) snd("riser"); hap(2,80,"medium");
       const m=lineMid(h); if(m) emit(m.x,m.y,{n:h.royal?26:18,dir:-Math.PI/2,spread:1.4,sp:120,g:-40,drag:.97,s:6,life:1300,colors:h.royal?["#ffd36b","#ff9a3d","#fff1c4"]:["#7cc4ff","#a98bff","#e4f2ff"],jx:120,jy:20}); }
     else if(e.k==="warm"){ callout(h,"warm"+(h.royal?" royal":""),h.royal?"Three to a royal":"Straight flush alive",1700); snd("glint",pan); }
     else if(e.k==="jack"){ callout(h,"jack"+(h.trayRoyal?" royal":""),"It's here!"+'<small>'+cname(current)+(h.trayRoyal?" makes the royal":" makes the straight flush")+'</small>',2400);
-      snd("riser"); setTimeout(function(){ snd("heart"); },500); hap(3,90);
+      snd("riser"); setTimeout(function(){ snd("heart"); },500); hap(3,90,"heavy");
       const c=document.querySelector("#psCurrent .card"); if(c){ const p=center(c); ring(p.x,p.y,p.w*.5,p.w*1.6,h.trayRoyal?"rgba(255,207,90,.95)":"rgba(160,170,255,.95)",700);
         emit(p.x,p.y,{n:24,sp:200,s:7,life:900,g:60,colors:h.trayRoyal?["#ffd36b","#fff1c4","#ff9a3d"]:["#7cc4ff","#a98bff","#ffffff"]}); } }
     else if(e.k==="dead"){ callout(h,"dead",'<s>'+(h.royal?"Royal":"Straight flush")+' draw</s> dead',1500); snd("fizzle",pan); } }
@@ -1536,7 +1539,7 @@ var NG=(function(){
       DR.saved.push({el:el,cls:el.className,html:el.innerHTML}); const tmp=document.createElement("div"); tmp.innerHTML=chipHTML(p[1]); const n=tmp.firstChild;
       el.className=n.className+" preview"; el.innerHTML=n.innerHTML; });
     const d=document.getElementById("ngDelta"), delta=L2.total-base; if(d && delta>0){ d.textContent="+"+delta; d.classList.add("on"); }
-    snd("hover",panOfCol(c)); if(navigator.vibrate && ngs.haptics){ try{ navigator.vibrate(4); }catch(e){} } }
+    snd("hover",panOfCol(c)); if(window.GN_HAPTICS) hap(1,0,"select"); else if(navigator.vibrate && ngs.haptics){ try{ navigator.vibrate(4); }catch(e){} } }
   function frame(){ if(!DR) return; DR.vx*=.82;
     const rot=Math.max(-16,Math.min(16,DR.vx*.012)); DR.rot+=(rot-DR.rot)*.3;
     const cxp=DR.px-DR.ox, cyp=DR.py-DR.oy-DR.lift;
@@ -1565,7 +1568,7 @@ var NG=(function(){
     DR={f:f,c:c,r:r,br:document.getElementById("psboard").getBoundingClientRect(),ox:e.clientX-(r.left+r.width/2),oy:e.clientY-(r.top+r.height/2),
       lift:e.pointerType==="touch"?Math.round(r.height*.45):0,px:e.clientX,py:e.clientY,lt:performance.now(),vx:0,rot:0,moved:false,target:-1,x0:e.clientX,y0:e.clientY,saved:[],raf:0};
     document.addEventListener("pointermove",onMove,{passive:false}); document.addEventListener("pointerup",onUp); document.addEventListener("pointercancel",onCancel);
-    snd("whoosh",0); hap(1); frame(); onMove(e); });
+    snd("whoosh",0); hap(1,0,"light"); frame(); onMove(e); });
 
   /* ---- end of the board: each scoring line lights in turn, then the results ---- */
   function tally(g,cb){
@@ -1620,7 +1623,7 @@ var NG=(function(){
     return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Trophies</h2><p class="muted" style="margin-top:0;">'+n+' of '+TRO.length+' on this device. Bot boards don\'t count.</p><ul class="trolist">'
       +TRO.map(t=>'<li class="'+(T[t.id]?'':'lock')+'">'+cup(t.g)+'<div><div class="tn">'+t.n+'</div><div class="td">'+t.d+'</div></div><span class="tw">'+(T[t.id]?new Date(T[t.id]).toLocaleDateString([],{month:"short",day:"numeric"}):GN[t.g])+'</span></li>').join("")+'</ul>'; }
   function openTrophies(){ openPanel(trophiesHTML(),"trophies"); }
-  function toggleHaptics(){ ngs.haptics=!ngs.haptics; saveNg(); if(ngs.haptics) hap(1); }
+  function toggleHaptics(){ ngs.haptics=!ngs.haptics; saveNg(); if(ngs.haptics) hap(1,0,"medium"); }
 
   return {after:after, reset:reset, quiet:function(){ quiet=true; }, land:land, lineBurst:lineBurst, tally:tally, trophies:trophies, perfect:perfect,
     openTrophies:openTrophies, clearCalls:clearCalls, toggleHaptics:toggleHaptics, get haptics(){ return ngs.haptics; }, snd:snd, heat:heat, panOfCol:panOfCol, _earn:earn, _P:function(){ return P.length; }};
@@ -1660,7 +1663,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v204", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v205", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
