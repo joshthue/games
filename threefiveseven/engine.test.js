@@ -88,12 +88,40 @@ t(r.losers.join()==='0' && r.pays[0]===50 && m.pot===150,'forced loser pays half
 t(T.botIn(m,0,'normal')===true || true,'');
 m.phase='decide'; m.forced=[2]; t(T.botIn(m,2,'normal')===true && T.botIn(m,2,'easy')===true,'forced bot always in');
 
+// --- carry: keep your hand and draw it up 3 -> 5 -> 7, fresh 3 opens the next run ---
+(function(){
+  const seed=T.rng(12345);
+  const cm=T.newMatch({players:4, carry:true, cap:0, ante:25}); T.startGame(cm);
+  T.deal(cm, seed); const three=cm.hands.map(h=>h.slice());
+  t(cm.hands.every(h=>h.length===3),'carry: run opens with 3');
+  T.resolve(cm,[false,false,false,false]);                       // nobody in -> advance to the 5 deal
+  T.deal(cm, seed);
+  t(cm.hands.every(h=>h.length===5),'carry: drew up to 5');
+  t(cm.hands.every((h,p)=> three[p].every((c,i)=> c.s===h[i].s && c.r===h[i].r)),'carry: the 3 are kept as a prefix of the 5');
+  const five=cm.hands.map(h=>h.slice());
+  T.resolve(cm,[false,false,false,false]);                       // advance to the 7 deal
+  T.deal(cm, seed);
+  t(cm.hands.every(h=>h.length===7),'carry: drew up to 7');
+  t(cm.hands.every((h,p)=> five[p].every((c,i)=> c.s===h[i].s && c.r===h[i].r)),'carry: the 5 are kept as a prefix of the 7');
+  const flat=cm.hands.flat().map(c=>c.s+'_'+c.r); t(new Set(flat).size===flat.length,'carry: no duplicate cards across the carried hands');
+  T.resolve(cm,[false,false,false,false]); t(cm.di===0,'carry: run wraps back to 3');
+  T.deal(cm, seed);
+  t(cm.hands.every(h=>h.length===3),'carry: the next run opens with a fresh 3');
+  t(!cm.hands.every((h,p)=> five[p].slice(0,3).every((c,i)=> c.s===h[i].s && c.r===h[i].r)),'carry: the fresh 3 is a new deal, not the old hand');
+  // control: fresh mode re-deals and keeps nothing
+  const fm=T.newMatch({players:4, carry:false, cap:0, ante:25}); T.startGame(fm);
+  T.deal(fm, seed); const f3=fm.hands.map(h=>h.slice());
+  T.resolve(fm,[false,false,false,false]); T.deal(fm, seed);
+  t(fm.hands.every(h=>h.length===5),'fresh: the 5 deal is 5 cards');
+  t(!fm.hands.every((h,p)=> f3[p].every((c,i)=> h[i] && c.s===h[i].s && c.r===h[i].r)),'fresh: does NOT keep the prior 3');
+})();
+
 // --- soak: bot vs bot sessions, every option combination ---
-const opts=[]; for(const players of [4,5,6]) for(const legs of [3,4,5]) for(const wilds of ['round','all','none']) for(const lone of ['leg','none']) for(const forced of [false,true])
-  opts.push({players,legs,wilds,lone,forced,three:Math.random()<.5?'plain':'sf',cap:[0,200,500,1000][Math.floor(Math.random()*4)],ante:25});
+const opts=[]; for(const players of [4,5,6]) for(const legs of [3,4,5]) for(const wilds of ['round','all','none']) for(const lone of ['leg','none']) for(const forced of [false,true]) for(const carry of [false,true])
+  opts.push({players,legs,wilds,lone,forced,carry,three:Math.random()<.5?'plain':'sf',cap:[0,200,500,1000][Math.floor(Math.random()*4)],ante:25});
 let games=0, deals=0, maxDeals=0, nones=0;
 const rnd=T.rng(357);
-for(const o of opts){ for(let g=0; g<4; g++){ const mm=T.newMatch(o); T.startGame(mm); let n=0;
+for(const o of opts){ for(let g=0; g<2; g++){ const mm=T.newMatch(o); T.startGame(mm); let n=0;
   while(mm.phase!=='gameover' && n<400){ T.deal(mm,rnd); const ins=[]; for(let p=0;p<mm.n;p++) ins.push(T.botIn(mm,p,p%2?'easy':'normal',rnd));
     const rr=T.resolve(mm,ins); n++; if(rr.kind==='none') nones++;
     t(mm.legs.every(x=>x>=0 && x<=o.legs),'legs in range');

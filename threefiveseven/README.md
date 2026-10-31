@@ -1,7 +1,8 @@
 # 3-5-7
 
 The bar-table poker game, you vs 3 to 5 bots. Everybody antes, then the deals go **3 cards,
-5 cards, 7 cards** and around again. After each deal everyone drops **in** or **out** at once
+5 cards, 7 cards** and around again — you **carry** your hand up through a run by default
+(your 3 grow to 5, then 7; a fresh 3 opens each new run). After each deal everyone drops **in** or **out** at once
 (at the table: a chip in a closed fist, "1, 2, 3, drop"). The best hand still in wins a
 **leg**; everyone else who stayed in **matches the pot**, so it grows. Alone in wins a free
 leg; nobody in, next deal. First to the legs target takes the whole pot, and a new game
@@ -12,6 +13,8 @@ Your net carries across games for the session (Menu → New session resets it).
 
 ## House-rule toggles (setup → More options)
 - **Players** 4 / 5 / 6 · **Legs to win** 3 / 4 / 5 (key rows)
+- **Carry cards** — on by default: keep your hand and draw it up through a run (3 → 5 → 7).
+  Off deals a fresh hand every deal. Either way a new run opens with a fresh 3.
 - **Wild cards** — the deal's own number / 3s, 5s & 7s every deal / none
 - **3-card deal** — pairs & trips only (default) / also straights & flushes, ranked the
   Three-Card Poker way (straight above flush)
@@ -30,7 +33,9 @@ the same deal they split the pot.
 ## Engine — `window.TFS`, no DOM
 Money is integer cents. `newMatch(opts)` → `startGame` (ante) → `deal` → `resolve(M, ins)`
 returns the showdown (`evals`, `legWinners`, `losers`, `pays`, `gameWinners`, `won`) and
-advances the deal size. `resolve` forces `ins` on for forced players itself, so a caller
+advances the deal size. `deal` reshuffles each deal by default; with `carry` on it keeps
+each hand and draws it up to the new size from the same remaining deck (`M.deck`), reshuffling
+only at the 3-card deal that opens a run. `resolve` forces `ins` on for forced players itself, so a caller
 can't let one slip out.
 
 **Hand evaluation with wilds** (`best`). A wild can copy any card, so using every wild you
@@ -75,8 +80,10 @@ you whether a drop was right.
   the 7→3 wrap, and money conservation.
 - Forced checks: the high upcard (ties included) is forced, a forced player can't drop, a
   forced loser pays half, and forced bots always stay in.
+- Carry checks: the hand is kept and drawn up 3 → 5 → 7 with the earlier cards as a prefix
+  and no duplicates across a run, a fresh 3 opens the next run, and fresh mode re-deals.
 - A soak of 432 bot sessions across every combination of players × legs × wilds × alone-in
-  × forced, with random cap and 3-card mode. Every game ended (avg 12 deals, max ~40, ~5%
+  × forced × carry, with random cap and 3-card mode. Every game ended (avg 12 deals, max ~40, ~5%
   all-out deals) with no duplicate cards, legs in range, money conserved every deal and the
   pot paid out exactly.
 

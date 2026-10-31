@@ -119,6 +119,7 @@
       <div class="gn-row"><span>Legs to win</span><div class="seg" id="segLegs"><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div></div>
       <div class="gn-row"><span>Teaching mode</span><div class="seg" id="segTeach"><button data-v="off">Off</button><button data-v="on">On</button></div></div>
       <details class="gn-more"><summary>More options</summary>
+        <div class="gn-row"><span>Carry cards</span><div class="seg" id="segCarry"><button data-v="on">Keep &amp; draw up</button><button data-v="off">Fresh each deal</button></div></div>
         <div class="gn-row"><span>Wild cards</span><div class="seg" id="segWild"><button data-v="round">Deal's own</button><button data-v="all">3s, 5s &amp; 7s</button><button data-v="none">None</button></div></div>
         <div class="gn-row"><span>3-card deal</span><div class="seg" id="segThree"><button data-v="plain">Pairs &amp; trips</button><button data-v="sf">+ straights, flushes</button></div></div>
         <div class="gn-row"><span>Alone in</span><div class="seg" id="segLone"><button data-v="leg">Wins a leg</button><button data-v="none">Wins nothing</button></div></div>
@@ -164,6 +165,7 @@
     <li><b>Nobody in:</b> nothing happens; on to the next deal.</li>
     <li><b>Tie:</b> everyone tied for best gets a leg and nobody tied pays.</li>
   </ul>
+  <p><b>Carry cards</b> (More options, on by default): you keep your hand and draw it up through a run — your 3 become 5, then 7 — instead of a fresh deal each time. Turn it off for a fresh shuffle every deal. Either way a new run opens with a fresh 3.</p>
   <p><b>Forced</b> (optional, in More options): each player's first card is dealt face up, and whoever shows the highest upcard — everyone tied for it — must stay in. A forced player who loses pays only <b>half</b> the match.</p>
   <p>First to the legs target (4 by default) takes the whole pot, and a new game starts with a fresh ante.</p>
   <h3>Wild cards</h3>
@@ -184,7 +186,7 @@
 (function(G){
   var SUITS=['♣','♦','♥','♠'], SIZES=[3,5,7];
   var NAMES=['You','Dale','Marv','Arlene','Butch','Deb'];
-  var DEFAULTS={ players:4, legs:4, wilds:'round', three:'plain', lone:'leg', cap:500, ante:25, forced:false };
+  var DEFAULTS={ players:4, legs:4, wilds:'round', three:'plain', lone:'leg', cap:500, ante:25, forced:false, carry:false };
   function rname(r){ return r===14?'A':r===13?'K':r===12?'Q':r===11?'J':String(r); }
   function rword(r){ return r===14?'Ace':r===13?'King':r===12?'Queen':r===11?'Jack':String(r); }
   function rplural(r){ return r===14?'Aces':r===13?'Kings':r===12?'Queens':r===11?'Jacks':r+'s'; }
@@ -268,12 +270,24 @@
   /* ---- the match: a session of games, each played to the legs target ---- */
   function newMatch(opts){ var o=Object.assign({}, DEFAULTS, opts||{}), n=o.players;
     return { o:o, n:n, names:NAMES.slice(0,n), net:zeros(n), legs:zeros(n), pot:0, di:0, deals:0, gameNo:0, gameDeals:0,
-      hands:null, phase:'idle', last:null, log:[], won:zeros(n) }; }
+      hands:null, deck:null, phase:'idle', last:null, log:[], won:zeros(n) }; }
   function startGame(M){ M.legs=zeros(M.n); M.pot=0; for(var p=0;p<M.n;p++){ M.net[p]-=M.o.ante; M.pot+=M.o.ante; } M.di=0; M.gameNo++; M.gameDeals=0; M.phase='ante'; M.last=null; return M; }
-  function deal(M, rnd){ rnd=rnd||Math.random; var d=shuffle(deck(),rnd), sz=SIZES[M.di]; M.hands=[];
-    for(var p=0;p<M.n;p++) M.hands.push(d.splice(0,sz));
+  // Deal. Default: a fresh shuffle every deal. Carry (house rule): keep each hand and draw
+  // it up to the new size from the SAME deck, so a 3 grows into 5 then 7; a fresh shuffle
+  // only opens each 3-5-7 run (di===0). The guard falls back to a fresh deal if the carried
+  // state isn't there (a resumed old game, or carry flipped on mid-run).
+  function deal(M, rnd){ rnd=rnd||Math.random; var sz=SIZES[M.di], p, k;
+    if(M.o.carry && M.di>0 && M.hands && M.deck && M.hands.length===M.n && M.hands[0] && M.hands[0].length===SIZES[M.di-1]){
+      var add=sz-SIZES[M.di-1];
+      for(p=0;p<M.n;p++) for(k=0;k<add;k++) M.hands[p].push(M.deck.shift());
+    } else {
+      var d=shuffle(deck(),rnd); M.hands=[];
+      for(p=0;p<M.n;p++) M.hands.push(d.splice(0,sz));
+      M.deck=d;
+    }
     // Forced: each player's first card is dealt face up; the highest upcard (every one tied
-    // for it) must stay in, and pays only half the match if it loses.
+    // for it) must stay in, and pays only half the match if it loses. With carry the first
+    // card is kept all run, so the same player stays forced through 3, 5 and 7.
     M.up=null; M.forced=[];
     if(M.o.forced){ M.up=M.hands.map(function(h){ return h[0]; }); var hi=Math.max.apply(null, M.up.map(function(c){ return c.r; }));
       for(p=0;p<M.n;p++) if(M.up[p].r===hi) M.forced.push(p); }
@@ -342,7 +356,7 @@ function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.p
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
 function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
-var prefs=Object.assign({players:4, legs:4, wilds:'round', three:'plain', lone:'leg', cap:500, ante:25, forced:false, level:'normal', speed:'normal', four:false, teach:false}, lsGet('tfs_prefs',{}));
+var prefs=Object.assign({players:4, legs:4, wilds:'round', three:'plain', lone:'leg', cap:500, ante:25, forced:false, carry:true, level:'normal', speed:'normal', four:false, teach:false}, lsGet('tfs_prefs',{}));
 function savePrefs(){ lsSet('tfs_prefs', prefs); }
 var stats=Object.assign({games:0, won:0, bestPot:0}, lsGet('tfs_stats',{}));
 
@@ -363,11 +377,12 @@ function seg(id,val,on){ var el=$(id); if(!el) return; [].forEach.call(el.childr
 function renderSetup(){ function bind(id,key,num){ seg(id,prefs[key],function(v){ prefs[key]=num?+v:v; savePrefs(); renderSetup(); }); }
   bind('segP','players',1); bind('segLegs','legs',1); bind('segWild','wilds'); bind('segThree','three'); bind('segLone','lone'); bind('segCap','cap',1); bind('segAnte','ante',1); bind('segL','level'); bind('segS','speed');
   seg('segForced',prefs.forced?'on':'off',function(v){ prefs.forced=(v==='on'); savePrefs(); renderSetup(); });
+  seg('segCarry',prefs.carry?'on':'off',function(v){ prefs.carry=(v==='on'); savePrefs(); renderSetup(); });
   seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); });
   $('sizeRowsSetup').innerHTML=CARDSIZE.rowsHTML();
   var s=lsGet('tfs_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.M)); }
 function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
-function start(){ M=T.newMatch({players:prefs.players, legs:prefs.legs, wilds:prefs.wilds, three:prefs.three, lone:prefs.lone, cap:prefs.cap, ante:prefs.ante, forced:prefs.forced}); LEVEL=prefs.level;
+function start(){ M=T.newMatch({players:prefs.players, legs:prefs.legs, wilds:prefs.wilds, three:prefs.three, lone:prefs.lone, cap:prefs.cap, ante:prefs.ante, forced:prefs.forced, carry:prefs.carry}); LEVEL=prefs.level;
   GNSETUP.hide('setup'); closeAll(); newGame(); }
 function newGame(){ T.startGame(M); sfx('chip'); dealNext(); }
 function dealNext(){ T.deal(M); myPick=null; busy=false; coachMemo=null; sfx('shuffle'); save(); render(); }
@@ -506,7 +521,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v191", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v202", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
