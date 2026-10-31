@@ -5,7 +5,7 @@
 <title>Poker Squares</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="../manifest.webmanifest">
-<meta name="theme-color" content="#0d5c3f">
+<meta name="theme-color" content="#0b3f2b">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -247,16 +247,153 @@
   }
   @keyframes psCallFade{0%,75%{opacity:1}100%{opacity:0}}
   @media(max-width:360px){ .pstray-score .num{font-size:25px;} .pstray{gap:10px; padding:10px;} }
+
+  /* ================= v204: next-gen =================
+     Presentation only, like v201: no rule reads any of it. Deeper table light, glossy cards with a
+     light that follows your finger, holo foil on big hands, drag-to-place with a preview, particles,
+     and the draw excitement: a line that can still make a straight flush glows blue, a royal draw
+     glows gold, the open square shows the card it needs, and the square beams when that card comes. */
+  :root{ --lx:28%; --ly:16%; --pl:#7cc4ff; --pl2:#a98bff; --fire:#ffcf5a; --fire2:#ff8a3d; }
+  body{background:radial-gradient(130% 60% at 50% -8%,#13573c 0%,rgba(19,87,60,0) 62%),radial-gradient(120% 70% at 50% 120%,#020a06 0%,rgba(2,10,6,0) 60%),linear-gradient(180deg,#0b3f2b,#072a1d 60%,#04170f);}
+  .wrap{z-index:1;}
+  .ngamb{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;}
+  .ngamb i{position:absolute; border-radius:50%; background:radial-gradient(closest-side,rgba(255,226,160,.09),rgba(255,226,160,0)); animation:ngDrift 34s ease-in-out infinite alternate;}
+  @keyframes ngDrift{to{transform:translate(var(--dx),var(--dy)) scale(1.3)}}
+  #ngfx{position:fixed; left:0; top:0; width:100%; height:100%; pointer-events:none; z-index:44;}
+
+  /* the HUD: dark glass with a gold-to-plasma edge */
+  .pstray{border:1px solid transparent;
+    background:radial-gradient(130% 150% at 50% 0%,#15402f 0%,#08201a 55%,#04110c 100%) padding-box,
+      linear-gradient(120deg,rgba(240,198,116,.75),rgba(124,196,255,.45) 50%,rgba(240,198,116,.75)) border-box;}
+  .pstray-score{position:relative;}
+  .ngdelta{position:absolute; right:-6px; top:-8px; font:800 11px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#c9f7d2;
+    background:rgba(0,0,0,.6); border:1px solid rgba(201,247,210,.45); border-radius:999px; padding:3px 6px; opacity:0; transform:translateY(4px); transition:opacity .15s,transform .15s; pointer-events:none;}
+  .ngdelta.on{opacity:1; transform:none;}
+  #psCurrent{perspective:700px;}
+  #psCurrent .card{touch-action:none; cursor:grab; background:linear-gradient(165deg,#fffef9 0%,#f6efdc 60%,#ece1c4 100%);}
+  #psCurrent .card.dealin{animation:ngDeal .52s cubic-bezier(.2,.9,.25,1) both;}
+  @keyframes ngDeal{0%{transform:translate(-64px,-8px) rotateY(-180deg) rotateZ(-14deg) scale(.8)}
+    62%{transform:translate(3px,0) rotateY(8deg) rotateZ(1deg) scale(1.05)} 100%{transform:none}}
+  #psCurrent .card.dealin::after{content:""; position:absolute; inset:0; border-radius:inherit;
+    background:repeating-linear-gradient(45deg,#3a2a0e 0 5px,#1d1606 5px 10px); box-shadow:inset 0 0 0 3px #c9a24e;
+    animation:ngBack .52s step-end both;}
+  @keyframes ngBack{0%{opacity:1} 30%{opacity:0} 100%{opacity:0}}
+
+  /* glossy cards: a specular highlight at the light's position (--lx/--ly follow your finger) */
+  .pscell.filled{background:linear-gradient(165deg,#fffef9 0%,#f6efdc 60%,#ece1c4 100%); border:0;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.75),inset 0 -2px 0 rgba(0,0,0,.08),0 1px 0 rgba(0,0,0,.25),0 4px 10px rgba(0,0,0,.45);}
+  .pscell.filled::before,#psCurrent .card::before,.ngdrag::before{content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background:radial-gradient(120% 90% at var(--lx) var(--ly),rgba(255,255,255,.85),rgba(255,255,255,0) 46%); mix-blend-mode:soft-light;}
+  /* holo foil on the cards of a full house or better */
+  .pscell.holo::before{background:linear-gradient(115deg,rgba(255,255,255,0) 18%,rgba(255,110,200,.30) 36%,rgba(110,220,255,.32) 50%,rgba(255,236,120,.30) 64%,rgba(255,255,255,0) 82%);
+    background-size:280% 100%; mix-blend-mode:normal; animation:ngHolo 3.2s linear infinite;}
+  @keyframes ngHolo{from{background-position:100% 0} to{background-position:-180% 0}}
+  .psboard{transform-origin:50% 50%; transition:transform .35s cubic-bezier(.3,1.3,.5,1);}
+  .psboard.ngthump{animation:ngThump .18s ease-out;}
+  @keyframes ngThump{40%{transform:translateY(1.5px)}}
+
+  /* ---- draws: blue = straight flush still possible, gold = royal still possible ---- */
+  .pscell.h1{box-shadow:0 0 0 1.5px rgba(124,196,255,.7),0 0 10px rgba(124,196,255,.35);}
+  .pscell.h1.royal{box-shadow:0 0 0 1.5px rgba(255,207,90,.8),0 0 12px rgba(255,170,60,.45);}
+  .pscell.h2,.pscell.empty.live.h2{animation:ngPlasma 1.15s ease-in-out infinite;}
+  .pscell.h2.royal,.pscell.empty.live.h2.royal{animation-name:ngFire;}
+  @keyframes ngPlasma{0%,100%{box-shadow:0 0 0 2px var(--pl),0 0 10px rgba(124,196,255,.55)} 50%{box-shadow:0 0 0 2px #e4f2ff,0 0 24px rgba(169,139,255,.9),0 0 4px #fff}}
+  @keyframes ngFire{0%,100%{box-shadow:0 0 0 2px var(--fire),0 0 12px rgba(255,140,60,.6)} 50%{box-shadow:0 0 0 2px #fff4d0,0 0 28px rgba(255,170,60,.95),0 0 6px #fff}}
+  .pscell.target{background:radial-gradient(closest-side,rgba(124,196,255,.26),rgba(0,0,0,.22));}
+  .pscell.target.royal{background:radial-gradient(closest-side,rgba(255,207,90,.30),rgba(0,0,0,.22));}
+  .ng-ghost{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:3px; font-weight:900; line-height:1; pointer-events:none;
+    font-size:calc(clamp(11px,3.4vw,15px) * var(--cardtext,1)); animation:ngGhost 1.6s ease-in-out infinite;}
+  .ng-ghost b{display:block; padding:3px 4px 2px; border-radius:5px; background:rgba(255,253,246,.92); box-shadow:0 0 8px rgba(124,196,255,.8);}
+  .ng-ghost b.ro{box-shadow:0 0 10px var(--fire),0 0 2px #fff;}
+  @keyframes ngGhost{0%,100%{opacity:.5; transform:scale(.93)} 50%{opacity:1; transform:scale(1)}}
+  /* the card it needs is in the tray: that square beams, the rest go quiet */
+  .pscell.jack,.pscell.empty.live.jack{animation:ngJack .55s ease-in-out infinite alternate; background:radial-gradient(closest-side,rgba(220,240,255,.6),rgba(124,160,255,.16));}
+  .pscell.jack.royal,.pscell.empty.live.jack.royal{animation-name:ngJackR; background:radial-gradient(closest-side,rgba(255,240,190,.65),rgba(255,180,60,.18));}
+  .pscell.jack .ng-ghost{animation:none; opacity:1;}
+  @keyframes ngJack{from{box-shadow:0 0 0 2px #fff,0 0 14px var(--pl)} to{box-shadow:0 0 0 3px #fff,0 0 32px var(--pl2),0 0 56px rgba(124,196,255,.6)}}
+  @keyframes ngJackR{from{box-shadow:0 0 0 2px #fff,0 0 14px var(--fire)} to{box-shadow:0 0 0 3px #fff,0 0 34px var(--fire),0 0 60px rgba(255,140,60,.65)}}
+  .psboard.jackpot .pscell.empty:not(.jack){opacity:.35; animation:none;}
+  .pstray.jackpot #psCurrent .card:not(.dealin){animation:ngTrayJack .55s ease-in-out infinite alternate;}
+  .pstray.jackpot.royal #psCurrent .card:not(.dealin){animation-name:ngTrayJackR;}
+  @keyframes ngTrayJack{to{box-shadow:0 0 0 2px #fff,0 0 24px var(--pl2),0 0 46px rgba(124,196,255,.6); transform:translateY(-3px)}}
+  @keyframes ngTrayJackR{to{box-shadow:0 0 0 2px #fff,0 0 26px var(--fire),0 0 50px rgba(255,160,60,.65); transform:translateY(-3px)}}
+  .psscore.ngdraw{border-color:var(--pl); background:linear-gradient(180deg,rgba(124,196,255,.24),rgba(169,139,255,.14)); box-shadow:0 0 10px rgba(124,196,255,.45); animation:ngChip 1.15s ease-in-out infinite;}
+  .psscore.ngdraw .ab{color:#d8ecff; opacity:1;} .psscore.ngdraw .pts{color:#fff; font-size:11px;}
+  .psscore.ngdraw.royal{border-color:var(--fire); background:linear-gradient(180deg,rgba(255,207,90,.32),rgba(255,138,61,.16)); box-shadow:0 0 12px rgba(255,170,60,.55);}
+  .psscore.ngdraw.royal .ab{color:#ffe7ae;}
+  .psscore.ngdraw.n3{animation:none; box-shadow:none;}
+  @keyframes ngChip{50%{filter:brightness(1.4)}}
+
+  /* callouts for draws */
+  .pscall small{display:block; font-size:10px; letter-spacing:1px; margin-top:4px; opacity:.9; font-weight:800;}
+  .pscall.draw{font-size:16px; color:#e4f2ff; border-color:var(--pl); background:linear-gradient(120deg,rgba(20,30,70,.94),rgba(42,22,84,.94));
+    box-shadow:0 0 22px rgba(124,196,255,.65),0 6px 16px rgba(0,0,0,.5); animation-duration:2.2s;}
+  .pscall.draw.royal,.pscall.jack.royal{color:#2a1503; border-color:#fff0bf; background:linear-gradient(120deg,#ff9a3d,#ffe08a,#ffb347); box-shadow:0 0 30px rgba(255,170,60,.9);}
+  .pscall.draw.royal b,.pscall.jack.royal b{color:#2a1503;}
+  .pscall.warm{font-size:12px; color:#cfe6ff; border-color:rgba(124,196,255,.65); box-shadow:0 0 12px rgba(124,196,255,.4); animation-duration:1.6s;}
+  .pscall.warm.royal{color:#ffe7ae; border-color:var(--fire); box-shadow:0 0 12px rgba(255,170,60,.45);}
+  .pscall.jack{font-size:24px; letter-spacing:2px; color:#fff; border-color:#fff; background:linear-gradient(120deg,#3b5bff,#9b6bff,#3b8bff); box-shadow:0 0 34px rgba(150,140,255,.95); animation-duration:2.3s;}
+  .pscall.dead{font-size:13px; color:rgba(247,243,232,.75); border-color:rgba(247,243,232,.3); background:rgba(18,18,18,.9); box-shadow:none; animation-duration:1.5s;}
+  .pscall.dead s{text-decoration-thickness:2px;}
+
+  /* drag to place */
+  .ngdrag{position:fixed !important; z-index:46; margin:0; pointer-events:none; will-change:transform;
+    box-shadow:0 18px 34px rgba(0,0,0,.55),0 0 0 1px rgba(240,198,116,.65) !important; animation:none !important;}
+  .pscell.xhair{filter:brightness(1.12);} .pscell.empty.xhair{background:rgba(240,198,116,.12);}
+  .pscell.dropt{outline:2px solid #fff; outline-offset:-2px; background:rgba(255,236,180,.30) !important;}
+  .psscore.preview{outline:1px dashed rgba(255,255,255,.75); outline-offset:1px;}
+
+  /* the big moment: straight or royal flush made */
+  .ngcine{position:fixed; inset:0; z-index:47; pointer-events:none; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 45%,rgba(0,0,0,0) 0%,rgba(0,0,0,.74) 72%); animation:ngCine 2.6s ease-out forwards;}
+  .ngcine .rays{position:absolute; left:50%; top:45%; width:160vmax; height:160vmax; margin:-80vmax 0 0 -80vmax;
+    background:repeating-conic-gradient(from 0deg,rgba(124,196,255,.17) 0deg 6deg,rgba(124,196,255,0) 6deg 18deg);
+    -webkit-mask-image:radial-gradient(circle,#000 0%,transparent 55%); mask-image:radial-gradient(circle,#000 0%,transparent 55%); animation:ngSpin 7s linear infinite;}
+  .ngcine.royal .rays{background:repeating-conic-gradient(from 0deg,rgba(255,214,130,.2) 0deg 6deg,rgba(255,214,130,0) 6deg 18deg);}
+  .ngcine .ttl{position:relative; font:900 clamp(26px,9vw,52px)/1 Georgia,serif; letter-spacing:2px; white-space:nowrap; color:#e8f3ff;
+    text-shadow:0 0 24px rgba(124,196,255,.95),0 3px 0 #1d2b6b; animation:ngTitle 2.6s cubic-bezier(.2,.9,.2,1) forwards;}
+  .ngcine.royal .ttl{color:#ffe9b0; text-shadow:0 0 26px rgba(255,190,80,.95),0 3px 0 #6b4a12;}
+  .ngcine .sub{position:relative; margin-top:10px; font:900 22px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#fff; letter-spacing:1px; animation:ngTitle 2.6s .12s cubic-bezier(.2,.9,.2,1) both;}
+  @keyframes ngCine{0%{opacity:0} 7%{opacity:1} 80%{opacity:1} 100%{opacity:0}}
+  @keyframes ngTitle{0%{transform:scale(2.4); opacity:0; filter:blur(8px)} 14%{transform:scale(.96); opacity:1; filter:blur(0)} 22%{transform:scale(1)} 100%{transform:scale(1.08)}}
+  @keyframes ngSpin{to{transform:rotate(360deg)}}
+  .wrap.ngshake1{animation:ngShake .32s;} .wrap.ngshake2{animation:ngShake2 .55s;}
+  @keyframes ngShake{20%{transform:translate(-2px,1px)} 40%{transform:translate(2px,-1px)} 60%{transform:translate(-1px,1px)} 80%{transform:translate(1px,0)}}
+  @keyframes ngShake2{10%{transform:translate(-4px,2px)} 25%{transform:translate(4px,-2px)} 40%{transform:translate(-3px,1px)} 55%{transform:translate(3px,-1px)} 70%{transform:translate(-2px,1px)} 85%{transform:translate(1px,0)}}
+  .pscell.tally{animation:ngTally .34s ease-out;}
+  @keyframes ngTally{40%{transform:translateY(-3px) scale(1.06); filter:brightness(1.2)}}
+
+  /* trophies */
+  .ngtro{position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 10px); transform:translate(-50%,-150%); z-index:60; display:flex; align-items:center; gap:10px;
+    background:rgba(12,16,22,.95); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:8px 16px 8px 10px; box-shadow:0 10px 30px rgba(0,0,0,.6);
+    transition:transform .45s cubic-bezier(.2,1.2,.4,1); pointer-events:none; min-width:220px; max-width:92vw; color:#fff;}
+  .ngtro.on{transform:translate(-50%,0);}
+  .ngcup{width:34px; height:34px; flex:0 0 auto;}
+  .ngtro .l1{font-size:10px; letter-spacing:1.4px; text-transform:uppercase; opacity:.7;} .ngtro .l2{font-weight:800; font-size:14px;}
+  .trolist{list-style:none; margin:8px 0 0; padding:0;}
+  .trolist li{display:flex; align-items:center; gap:10px; padding:7px 2px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .trolist li.lock{opacity:.42;} .trolist li .ngcup{width:28px; height:28px;}
+  .trolist .tn{font-weight:800; font-size:14px;} .trolist .td{font-size:12px; opacity:.8;} .trolist .tw{margin-left:auto; font-size:11px; opacity:.7; white-space:nowrap;}
+
+  @media (prefers-reduced-motion:reduce){
+    .ngamb i,.pscell.holo::before,.ng-ghost,.psscore.ngdraw{animation:none}
+    .pscell.h2,.pscell.empty.live.h2{animation:none; box-shadow:0 0 0 2px var(--pl),0 0 14px rgba(124,196,255,.6)}
+    .pscell.h2.royal,.pscell.empty.live.h2.royal{box-shadow:0 0 0 2px var(--fire),0 0 14px rgba(255,170,60,.6)}
+    .pscell.jack,.pscell.empty.live.jack,.pstray.jackpot #psCurrent .card:not(.dealin){animation:none; box-shadow:0 0 0 3px #fff,0 0 26px var(--fire)}
+    #psCurrent .card.dealin,#psCurrent .card.dealin::after{animation:none} #psCurrent .card.dealin::after{display:none}
+    .wrap.ngshake1,.wrap.ngshake2,.psboard.ngthump,.pscell.tally{animation:none} .psboard{transition:none}
+  }
 </style>
 <style id="gn-safe">
   /* Status bar: the app draws under it (black-translucent), so the felt runs to the top edge
      instead of iOS's white bar fading into the header. Keep content clear of the clock. */
-  html{background:#0d5c3f;}
+  html{background:#0b3f2b;}
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
 <script src="../gn-header.js"></script>
 </head>
 <body>
+<div class="ngamb" aria-hidden="true"><i style="width:70vmax;height:70vmax;left:-30vmax;top:-20vmax;--dx:12vmax;--dy:8vmax"></i><i style="width:55vmax;height:55vmax;right:-25vmax;top:25vh;--dx:-10vmax;--dy:-6vmax;animation-duration:41s"></i><i style="width:60vmax;height:60vmax;left:10vw;bottom:-35vmax;--dx:-8vmax;--dy:-10vmax;animation-duration:47s"></i></div>
 <div class="wrap">
   <div class="gn-hdr">
     <div class="gn-top">
@@ -276,7 +413,7 @@
       <div class="psmeter" id="psMeter" aria-hidden="true"></div>
     </div>
     <div class="pstray-score">
-      <div class="lbl">SCORE</div><div class="num" id="psTotal">0</div>
+      <div class="lbl">SCORE</div><div class="num" id="psTotal">0</div><div class="ngdelta" id="ngDelta"></div>
       <div class="best" id="psBest">Best 0</div>
     </div>
   </div>
@@ -300,6 +437,7 @@
 </div>
 
 <div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+<canvas id="ngfx" aria-hidden="true"></canvas>
 
 <script src="../sfx.js"></script>
 <script src="../cardsize.js"></script>
@@ -391,12 +529,12 @@ function newGame(){
   lastMove=null; over=false;
   VIEW="mine"; stopSolve(); SOLVE=null;
   botStop(); botTouched=false;
-  render();
+  NG.reset(); render();
 }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
   if(over||!current||grid[i]) return;
-  const from=document.querySelector('#psCurrent .card'), fromR=from?from.getBoundingClientRect():null;
+  const from=document.querySelector('#psCurrent .card'), fromR=ngFromRect||(from?from.getBoundingClientRect():null); ngFromRect=null;
   grid[i]=current;
   sfx('place');
   lastMove={i, card:current, was:i};
@@ -413,18 +551,24 @@ function dealFx(i, fromR){
     const cards=lineIdx(l[0],l[1]).map(x=>grid[x]);
     if(cards.every(Boolean)) done.push({type:l[0], idx:l[1], h:scoreHand(cards)});
   });
-  function landed(){ done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
+  const user=!ngByBot;
+  function landed(){ NG.land(i,user); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
   if(!cell || !fromR || reduceMotion() || !document.body.animate){ landed(); return; }
+  NG.snd('whoosh', NG.panOfCol(i%5));
   const to=cell.getBoundingClientRect();
   const f=document.createElement("div"); f.className="flycard deal"; f.innerHTML=cell.innerHTML;
   Object.assign(f.style,{left:to.left+"px", top:to.top+"px", width:to.width+"px", height:to.height+"px"});
   document.body.appendChild(f); cell.style.visibility="hidden";
   const sx=fromR.width/to.width, sy=fromR.height/to.height;
   const dx=(fromR.left+fromR.width/2)-(to.left+to.width/2), dy=(fromR.top+fromR.height/2)-(to.top+to.height/2);
+  // v204: the card rises off the tray, arcs over the board with its shadow growing, and settles
+  const lift=Math.min(60, 18+Math.hypot(dx,dy)*.12), sw=dx>0?-1:1;
   const a=f.animate([
-    {transform:'translate('+dx+'px,'+dy+'px) scale('+sx+','+sy+') rotate(-4deg)'},
-    {transform:'translate(0,0) scale(1) rotate(0deg)'}
-  ],{duration:240, easing:'cubic-bezier(.25,.75,.35,1)'});
+    {transform:'translate('+dx+'px,'+dy+'px) scale('+sx+','+sy+') rotate(-4deg)', boxShadow:'0 6px 14px rgba(0,0,0,.45)'},
+    {transform:'translate('+(dx*.45)+'px,'+(dy*.45-lift)+'px) scale('+((sx+1)/2*1.12)+','+((sy+1)/2*1.12)+') rotate('+(sw*6)+'deg)', boxShadow:'0 26px 34px rgba(0,0,0,.4)', offset:.45},
+    {transform:'translate(0,-3px) scale(1.04) rotate(0deg)', boxShadow:'0 8px 14px rgba(0,0,0,.45)', offset:.86},
+    {transform:'translate(0,0) scale(1) rotate(0deg)', boxShadow:'0 2px 5px rgba(0,0,0,.45)'}
+  ],{duration:360, easing:'cubic-bezier(.3,.7,.3,1)'});
   a.onfinish=function(){ f.remove();
     const now=document.querySelector('#psboard .pscell[data-i="'+i+'"]');   // a re-render may have replaced it
     if(now){ now.style.visibility=""; now.classList.remove("just"); void now.offsetWidth; now.classList.add("just"); }
@@ -437,12 +581,14 @@ function lineFx(d){
   if(h.pts>0) els.forEach(function(el,k){ el.classList.remove("sweep"); void el.offsetWidth; el.style.setProperty("--d",(k*45)+"ms"); el.classList.add("sweep");
     setTimeout(function(){ el.classList.remove("sweep"); }, 700+k*45); });
   const a=els[0].getBoundingClientRect(), b=els[4].getBoundingClientRect();
+  NG.clearCalls();   // a made hand replaces any draw callout still up
   const call=document.createElement("div"); call.className="pscall t"+t;
   call.innerHTML = h.pts>0 ? h.name+'<b>+'+h.pts+'</b>' : 'No hand';
   call.style.left=((a.left+b.right)/2)+"px"; call.style.top=((a.top+b.bottom)/2)+"px";
   document.body.appendChild(call); setTimeout(function(){ call.remove(); }, 1300);
   if(t>=4) sfx('win'); else if(t===3) { sfx('good'); setTimeout(function(){ sfx('chip'); }, 180); }
   else if(t===2) sfx('good'); else if(t===1) sfx('chip');
+  NG.lineBurst(d, els, t);
 }
 function undo(){
   if(!lastMove || ANIMATING) return;
@@ -453,7 +599,7 @@ function undo(){
   grid[lastMove.i]=null;
   const back=lastMove.i;
   lastMove=null; over=false;
-  render(); 
+  NG.quiet(); render();
 }
 function finish(fromPlace){
   over=true; VIEW="mine";
@@ -466,9 +612,9 @@ function finish(fromPlace){
   sfx(beatBest ? 'win' : 'good');
   persist();
   render();
-  if(fromPlace && !reduceMotion()){
-    const g=grid; setTimeout(function(){ if(over && grid===g) openResults(total); }, 1500);   // the last callouts first
-  } else openResults(total);
+  NG.trophies(total);
+  if(fromPlace){ NG.tally(grid, function(){ openResults(total); }); }   // the last callouts, then each scoring line lights in turn
+  else openResults(total);
   HS.refresh();
 }
 
@@ -587,7 +733,7 @@ let BOT={on:false, t:null, fns:{}}, botTouched=false;
 function botPickFn(){ const k=settings.scoring; return BOT.fns[k]||(BOT.fns[k]=makeBot(SCORING[k], BOT_W)); }
 function unseenCards(){ const seen=new Set(grid.filter(Boolean).map(cardKey)); if(current) seen.add(cardKey(current));
   return makeDeck().filter(c=>!seen.has(cardKey(c))); }
-function botMove(){ if(!BOT.on||over||!current||ANIMATING) return; botTouched=true; place(botPickFn()(grid, current, unseenCards())); }
+function botMove(){ if(!BOT.on||over||!current||ANIMATING) return; botTouched=true; ngByBot=true; try{ place(botPickFn()(grid, current, unseenCards())); } finally{ ngByBot=false; } }
 function botSchedule(){ clearTimeout(BOT.t); BOT.t=null;
   if(!BOT.on||over||!settings.botAuto) return;
   BOT.t=setTimeout(function(){ if(curOverlay.kind){ botSchedule(); return; }   // waits while a panel is open
@@ -640,7 +786,7 @@ function render(justIdx){
         html+='<div class="pscell filled'+(justIdx===idx?' just':'')+'" data-i="'+idx+'">'+miniHTML(card)+'</div>';
       }else{
         const live=(!over&&current&&!BOT.on)?' live':'';
-        html+='<div class="pscell empty'+live+'"'+(live?(' onclick="place('+idx+')"'):'')+'></div>';
+        html+='<div class="pscell empty'+live+'" data-i="'+idx+'"'+(live?(' onclick="place('+idx+')"'):'')+'></div>';
       }
     }
     html+=chipHTML(rows[r]);
@@ -659,6 +805,7 @@ function render(justIdx){
   // undo availability
   document.getElementById("psUndo").disabled = !lastMove || showBest;
   renderBotBar();
+  NG.after(justIdx);
   fitPS();
 }
 // Never scroll the main screen: if the page is taller than the phone (small phone, or a big card
@@ -690,6 +837,9 @@ function openRules(){
     +'<p>When all 25 squares are full, each of the <b>5 rows</b> and <b>5 columns</b> is scored as a poker hand. Your total is the sum of all ten. Aces play high or low, <b>A-2-3-4-5</b> counts as a straight, and <b>10-J-Q-K-A</b> of one suit is a royal flush.</p>'
     +'<h3>Scoring — '+sysName+' system</h3>'
     +scoreTableHTML()
+    +'<h3>What the lights mean</h3>'
+    +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
+    +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
     +'<p class="muted">Switch between the American and English point systems in the Menu. American mirrors real-poker rarity; English rewards how hard each hand is to build inside the grid.</p>';
   openPanel(html,"rules");
 }
@@ -701,10 +851,12 @@ function openMenu(){
     +'<div style="margin:12px 0 4px;font-size:13px;">Scoring system</div>'
     +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
     +'<div style="height:6px"></div>'
+    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(NG.haptics?'on':'')+'" onclick="NG.toggleHaptics();openMenu();"></button><span>Haptics</span></div>'
     +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.botAuto?'on':'')+'" onclick="botToggleAuto();openMenu();"></button><span>Bot auto-plays a card every 1.5 s'+(settings.botAuto?'':' (off: tap Next card)')+'</span></div>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 New game</button>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();botStart();">🤖 Watch the bot play a new board</button>'
     +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
+    +'<button class="setup-opt" onclick="NG.openTrophies()">🥇 Trophies</button>'
     +'<a class="setup-opt" href="../">🏠 Back to all games</a>'
     +'<button class="setup-opt" onclick="openRules()">📖 How to play</button>'
     +'<div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>';
@@ -930,6 +1082,7 @@ function refreshSolveUI(){
   const box=document.getElementById("psSolveBox"); if(box) box.innerHTML=solveBoxHTML();
   const bb=document.getElementById("psBestBtn"); if(bb) bb.disabled=!(SOLVE&&SOLVE.done&&SOLVE.score>computeLines(grid).total);
   if(!ANIMATING) renderBestBar();
+  NG.perfect();
 }
 
 /* ---- the move: every card that changes square lifts, spins and lands ---- */
@@ -1167,6 +1320,312 @@ const HS=(function(){
   return {open, submit, setTab, refresh, resultsHTML, sync, openBoard, boardMode, backFromBoard, get board(){ return board; }, _clean:clean, _enc:encCards, _dec:decCards};
 })();
 
+/* ============================================================
+   v204 NEXT-GEN LAYER — presentation only. It reads grid / current / over and the engine's
+   scoring, and never changes a rule: sound, haptics, particles, drag-to-place with a preview,
+   the draw excitement (straight / royal flush still alive), the end-of-board tally, trophies.
+   ============================================================ */
+var ngFromRect=null, ngByBot=false;
+var NG=(function(){
+  const RM=reduceMotion;
+  const LINES10=[]; for(let i=0;i<5;i++) LINES10.push(["row",i]); for(let j=0;j<5;j++) LINES10.push(["col",j]);
+  const KS="pokersquares.ng", KT="pokersquares.trophies";
+  const ngs=(function(){ try{ return JSON.parse(localStorage.getItem(KS))||{}; }catch(e){ return {}; } })();
+  if(ngs.haptics===undefined) ngs.haptics=true;
+  function saveNg(){ try{ localStorage.setItem(KS,JSON.stringify(ngs)); }catch(e){} }
+  const cellEl=i=>document.querySelector('#psboard .pscell[data-i="'+i+'"]');
+  const cname=c=>rankStr(c.r)+SUITS[c.s];
+  const panOfCol=c=>(c-2)/2.5;
+
+  /* ---- sound: a small spatial synth beside sfx.js, behind the same mute ---- */
+  let AC=null, OUT=null, NB=null;
+  function ac(){ if(!(window.SFX && SFX.isOn())) return null;
+    if(AC){ if(AC.state==="suspended") AC.resume(); return AC; }
+    const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+    try{ AC=new C(); }catch(e){ return null; }
+    OUT=AC.createGain(); OUT.gain.value=.45; const comp=AC.createDynamicsCompressor(); OUT.connect(comp); comp.connect(AC.destination);
+    NB=AC.createBuffer(1,AC.sampleRate,AC.sampleRate); const d=NB.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    return AC; }
+  addEventListener("pointerdown",function(){ ac(); },{passive:true});
+  function bus(pan){ const g=AC.createGain();
+    if(AC.createStereoPanner){ const p=AC.createStereoPanner(); p.pan.value=Math.max(-1,Math.min(1,pan||0)); g.connect(p); p.connect(OUT); } else g.connect(OUT);
+    return g; }
+  function env(g,t,a,d,peak){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+a+d); }
+  function osc(type,f0,f1,t,dur,peak,pan){ const o=AC.createOscillator(), g=bus(pan); o.type=type; o.frequency.setValueAtTime(f0,t);
+    if(f1) o.frequency.exponentialRampToValueAtTime(f1,t+dur); o.connect(g); env(g,t,.006,dur,peak); o.start(t); o.stop(t+dur+.05); }
+  function nz(f0,f1,q,t,dur,peak,pan,type){ const s=AC.createBufferSource(); s.buffer=NB; const f=AC.createBiquadFilter(); f.type=type||"bandpass"; f.Q.value=q;
+    f.frequency.setValueAtTime(f0,t); if(f1) f.frequency.exponentialRampToValueAtTime(f1,t+dur); const g=bus(pan); s.connect(f); f.connect(g);
+    env(g,t,Math.min(.03,dur/4),dur,peak); s.start(t); s.stop(t+dur+.05); }
+  const SND={
+    whoosh:(t,p)=>nz(500,2600,.9,t,.2,.22,p),
+    thud:(t,p)=>{ osc("sine",150,46,t,.16,.5,p); nz(2600,700,1,t,.05,.18,p); },
+    heart:(t)=>{ osc("sine",70,38,t,.15,.75); osc("sine",62,34,t+.18,.17,.55); },
+    riser:(t)=>{ nz(280,4200,2,t,.95,.2,0); osc("sawtooth",110,440,t,.95,.04); },
+    shimmer:(t,p)=>{ [1568,1976,2349,2637,3136].forEach((f,i)=>osc("sine",f,0,t+i*.05,.55,.06,p+(i-2)*.15)); },
+    glint:(t,p)=>{ osc("sine",2349,0,t,.35,.05,p); osc("sine",3136,0,t+.06,.4,.035,p); },
+    fizzle:(t,p)=>{ osc("sawtooth",420,70,t,.5,.07,p); nz(1200,200,1,t,.4,.1,p); },
+    boom:(t)=>{ osc("sine",110,30,t,1.1,.85); nz(900,80,.7,t,.9,.3,0,"lowpass"); },
+    tick:(t,p,n)=>osc("triangle",587*Math.pow(2,(n||0)/12),0,t,.08,.16,p),
+    hover:(t,p)=>osc("sine",1320,0,t,.04,.05,p),
+    ping:(t)=>{ osc("sine",1318.5,0,t,.9,.22); osc("sine",1760,0,t+.09,1.1,.18); osc("sine",2637,0,t+.18,1.2,.07); }
+  };
+  function snd(name,pan,arg){ const c=ac(); if(!c) return; try{ SND[name](c.currentTime+.005,pan||0,arg); }catch(e){} }
+
+  /* ---- haptics: vibrate() where it exists; on iPhone, Safari's switch control ticks the
+     Taptic Engine when it's toggled from a tap (iOS 18+). Best effort, silent otherwise. ---- */
+  let hapLab=null;
+  function hap(n,gap){ if(!ngs.haptics) return; n=n||1; gap=gap||70;
+    if(navigator.vibrate){ const pat=[]; for(let k=0;k<n;k++){ pat.push(12); if(k<n-1) pat.push(gap); } try{ navigator.vibrate(pat); }catch(e){} return; }
+    if(!hapLab){ hapLab=document.createElement("label"); hapLab.setAttribute("aria-hidden","true");
+      hapLab.style.cssText="position:fixed;left:-60px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
+      const i=document.createElement("input"); i.type="checkbox"; i.setAttribute("switch",""); i.tabIndex=-1; hapLab.appendChild(i); document.body.appendChild(hapLab); }
+    for(let k=0;k<n;k++) setTimeout(function(){ try{ hapLab.click(); }catch(e){} }, k*gap); }
+
+  /* ---- particles: one canvas, runs only while something is alive ---- */
+  const cv=document.getElementById("ngfx"), cx=cv?cv.getContext("2d"):null; let P=[], raf=0, DPR=1, lastT=0; const SPR={};
+  function fit(){ if(!cv) return; DPR=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(innerWidth*DPR); cv.height=Math.round(innerHeight*DPR); }
+  fit(); addEventListener("resize",fit);
+  function sprite(c){ if(SPR[c]) return SPR[c]; const s=document.createElement("canvas"); s.width=s.height=64; const g=s.getContext("2d");
+    const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,"#fff"); gr.addColorStop(.18,c); gr.addColorStop(1,"rgba(0,0,0,0)");
+    g.fillStyle=gr; g.fillRect(0,0,64,64); return SPR[c]=s; }
+  function loop(now){ if(!cx){ P=[]; return; }
+    const dt=Math.min(.05,lastT?(now-lastT)/1000:.016); lastT=now;
+    cx.setTransform(DPR,0,0,DPR,0,0); cx.clearRect(0,0,innerWidth,innerHeight);
+    P=P.filter(function(p){ const k=(now-p.t0)/p.life; if(k>=1) return false; if(k<0) return true;
+      p.vx*=Math.pow(p.drag,dt*60); p.vy=p.vy*Math.pow(p.drag,dt*60)+p.g*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt;
+      cx.globalAlpha=Math.max(0,1-k*k);
+      if(p.kind==="ring"){ cx.globalCompositeOperation="lighter"; cx.strokeStyle=p.c; cx.lineWidth=2.2*(1-k)+.4; cx.beginPath();
+        cx.arc(p.x,p.y,p.r0+(p.r1-p.r0)*(1-Math.pow(1-k,3)),0,6.2832); cx.stroke(); }
+      else if(p.kind==="conf"){ cx.globalCompositeOperation="source-over"; cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot); cx.fillStyle=p.c;
+        cx.fillRect(-p.s/2,-p.s/4,p.s,Math.max(1,p.s/2*Math.abs(Math.cos(p.rot*1.7)))); cx.restore(); }
+      else { cx.globalCompositeOperation="lighter"; const r=p.s*(1-k*.5); cx.drawImage(sprite(p.c),p.x-r,p.y-r,r*2,r*2); }
+      return true; });
+    cx.globalAlpha=1; cx.globalCompositeOperation="source-over";
+    if(P.length) raf=requestAnimationFrame(loop); else { raf=0; lastT=0; cx.clearRect(0,0,innerWidth,innerHeight); } }
+  function kick(){ if(!raf && P.length) raf=requestAnimationFrame(loop); }
+  function emit(x,y,o){ if(RM()||!cx) return; const now=performance.now();
+    for(let n=0;n<(o.n||10);n++){ const a=(o.dir==null?Math.random()*6.2832:o.dir+(Math.random()-.5)*(o.spread||1)), sp=(o.sp||160)*(.35+Math.random()*.9);
+      P.push({kind:o.kind||"spark", x:x+(Math.random()-.5)*(o.jx||0), y:y+(Math.random()-.5)*(o.jy||0), vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, g:o.g==null?260:o.g,
+        drag:o.drag||.94, s:(o.s||7)*(.6+Math.random()*.8), c:o.colors[(Math.random()*o.colors.length)|0], life:(o.life||700)*(.7+Math.random()*.6),
+        t0:now+(o.delay||0)+Math.random()*(o.stagger||0), rot:Math.random()*6, vr:(Math.random()-.5)*14}); }
+    kick(); }
+  function ring(x,y,r0,r1,c,life){ if(RM()||!cx) return; P.push({kind:"ring",x,y,r0,r1,c,life:life||420,t0:performance.now(),vx:0,vy:0,g:0,drag:1,rot:0,vr:0,s:0}); kick(); }
+  function confetti(n,royal){ const cols=royal?["#ffd36b","#fff1c4","#ff9a3d","#ffffff","#f0c674"]:["#7cc4ff","#a98bff","#ffffff","#f0c674","#5ee0c0"];
+    emit(innerWidth/2,-10,{kind:"conf",n:n,dir:Math.PI/2,spread:1.6,sp:420,g:420,drag:.985,s:9,life:2400,colors:cols,jx:innerWidth,stagger:500}); }
+  function center(el){ const r=el.getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height}; }
+  function shake(level){ if(RM()) return; const w=document.querySelector(".wrap"); if(!w) return; w.classList.remove("ngshake1","ngshake2"); void w.offsetWidth; w.classList.add("ngshake"+level);
+    setTimeout(function(){ w.classList.remove("ngshake"+level); },600); }
+
+  /* ---- a card lands ---- */
+  function land(i,user){ const el=cellEl(i); if(!el) return; const c=center(el), pan=panOfCol(i%5);
+    ring(c.x,c.y,c.w*.45,c.w*1.05,"rgba(255,226,160,.85)",420);
+    emit(c.x,c.y+c.h*.4,{n:7,dir:-Math.PI/2,spread:2.6,sp:90,g:120,s:5,life:520,colors:["#fff2c8","#f0c674"]});
+    snd("thud",pan); if(user) hap(1);
+    const b=document.getElementById("psboard"); if(b && !RM()){ b.classList.remove("ngthump"); void b.offsetWidth; b.classList.add("ngthump"); } }
+  /* ---- a row or column is finished ---- */
+  function lineBurst(d,els,t){ const h=d.h; if(t<1) return;
+    const cols=[null,["#fff2c8","#f0c674"],["#ffe29a","#f0c674","#ffffff"],["#ffe29a","#ffffff","#ffd36b","#ff9a3d"],["#ffffff","#7cc4ff","#a98bff","#ffd36b"]][t];
+    els.forEach(function(el,k){ const c=center(el); emit(c.x,c.y,{n:[0,5,9,14,20][t],sp:[0,120,170,230,300][t],s:[0,5,6,7,8][t],life:[0,600,750,900,1100][t],colors:cols,delay:k*45}); });
+    if(t>=3) shake(t===4?2:1);
+    if(t>=2) hap(t>=3?3:2,60);
+    if(t===4) cinema(h.key==="royal"?"ROYAL FLUSH":"STRAIGHT FLUSH","+"+h.pts,h.key==="royal"); }
+  function cinema(title,sub,royal){ snd("boom"); hap(4,90); confetti(royal?180:120,royal); if(RM()) return;
+    const el=document.createElement("div"); el.className="ngcine"+(royal?" royal":""); el.innerHTML='<div class="rays"></div><div class="ttl">'+title+'</div><div class="sub">'+sub+'</div>';
+    document.body.appendChild(el); setTimeout(function(){ el.remove(); },2700); }
+
+  /* ---- the draws: which lines can still make a straight flush (or a royal) ---- */
+  function chanceAny(k,D,R){ if(k<=0||R<=0||D<=0) return 0; let q=1; for(let i=0;i<R;i++){ q*=(D-k-i)/(D-i); if(q<=0) return 1; } return 1-q; }
+  function heat(){
+    const out=[]; if(over||!current) return out;
+    const onBoard=new Set(grid.filter(Boolean).map(cardKey)), n0=placed(), D=52-n0-1, R=25-n0-1;
+    LINES10.forEach(function(L){ const type=L[0], idx=L[1], cells=lineIdx(type,idx), cs=cells.map(x=>grid[x]), pl=cs.filter(Boolean), n=pl.length;
+      if(n<3||n>=5) return; const s=pl[0].s; if(!pl.every(c=>c.s===s)) return;
+      const rs=pl.map(c=>c.r); if(new Set(rs).size!==n) return;
+      const wins=[];
+      for(let lo=1;lo<=10;lo++){ const w=[]; for(let r=lo;r<lo+5;r++) w.push(r===1?14:r);
+        if(!rs.every(r=>w.includes(r))) continue;
+        const need=w.filter(r=>!rs.includes(r)).map(r=>({r:r,s:s}));
+        if(need.every(c=>!onBoard.has(cardKey(c)))) wins.push({lo:lo,need:need}); }
+      if(!wins.length) return;
+      const royal=wins.some(w=>w.lo===10), om={}; wins.forEach(w=>w.need.forEach(c=>{ om[cardKey(c)]=c; }));
+      const outs=Object.values(om).sort((a,b)=>a.r-b.r), royalOuts=royal?wins.find(w=>w.lo===10).need.map(cardKey):[];
+      const isOut=c=>c.s===s && outs.some(o=>o.r===c.r);
+      const inTray=n===4 && isOut(current), trayRoyal=inTray && royalOuts.indexOf(cardKey(current))>=0;
+      let p;
+      if(n===4) p=inTray?1:chanceAny(outs.length,D,R);
+      else p=Math.max.apply(null,wins.map(function(w){ const k=w.need.filter(c=>!(current.s===c.s&&current.r===c.r)).length;
+        return k===1?R/D:(R*(R-1))/(D*(D-1)); }));
+      out.push({key:type[0]+idx, type:type, idx:idx, n:n, s:s, royal:royal, outs:outs, royalOuts:royalOuts, inTray:inTray, trayRoyal:trayRoyal, cells:cells, p:p}); });
+    return out; }
+  function pct(p){ return p>=1?"now":(p<.01?"<1%":Math.round(p*100)+"%"); }
+  function chipFor(h){ const ab=h.royal?"RF":"SF";
+    return {cls:"psscore ngdraw n"+h.n+(h.royal?" royal":""), html:'<span class="ab">'+ab+(h.n===4?"!":"?")+'</span><span class="pts">'+pct(h.p)+'</span>'}; }
+  function applyHeat(H){
+    const board=document.getElementById("psboard"), tray=document.querySelector(".pstray");
+    let jack=false, jackRoyal=false;
+    H.forEach(function(h){
+      h.cells.forEach(function(x){ const el=cellEl(x); if(!el) return; el.classList.add(h.n===4?"h2":"h1"); if(h.royal) el.classList.add("royal"); });
+      if(h.n===4){ const t=h.cells.find(x=>!grid[x]), el=cellEl(t);
+        if(el){ el.classList.add("target"); if(h.inTray){ el.classList.add("jack"); jack=true; if(h.trayRoyal) jackRoyal=true; }
+          el.innerHTML='<span class="ng-ghost">'+h.outs.map(c=>'<b class="'+(h.royalOuts.indexOf(cardKey(c))>=0?'ro':'')+'" style="color:'+suitColor(c.s)+'">'+cname(c)+'</b>').join("")+'</span>'; } }
+      const ch=board.querySelector('.psscore[data-line="'+h.key+'"]');
+      if(ch){ const f=chipFor(h); ch.className=f.cls; ch.innerHTML=f.html; ch.title=(h.royal?"Royal":"Straight")+" flush still possible · "+pct(h.p); } });
+    board.classList.toggle("jackpot",jack); if(tray){ tray.classList.toggle("jackpot",jack); tray.classList.toggle("royal",jackRoyal); }
+    if(jack) startBeat(); else stopBeat(); }
+  let prev={}, quiet=false, tok=0, beat=null;
+  function startBeat(){ if(beat) return; beat=setInterval(function(){ if(curOverlay.kind||over) return; snd("heart");
+    if(navigator.vibrate && ngs.haptics){ try{ navigator.vibrate([14,170,10]); }catch(e){} } },1100); }
+  function stopBeat(){ if(beat){ clearInterval(beat); beat=null; } }
+  function lineMid(h){ const els=h.cells.map(cellEl).filter(Boolean); if(els.length<5) return null; const a=els[0].getBoundingClientRect(), b=els[4].getBoundingClientRect();
+    return {x:(a.left+b.right)/2, y:(a.top+b.bottom)/2}; }
+  function clearCalls(){ document.querySelectorAll(".pscall.ngc").forEach(function(el){ el.remove(); }); }
+  function callout(h,cls,html,ms){ const m=lineMid(h); if(!m) return; clearCalls(); const el=document.createElement("div"); el.className="pscall ngc "+cls; el.innerHTML=html;
+    el.style.left=m.x+"px"; el.style.top=m.y+"px"; document.body.appendChild(el); setTimeout(function(){ el.remove(); },ms||2300); return m; }
+  function fire(e,myTok){ if(myTok!==tok) return; const h=e.h, pan=h.type==="col"?panOfCol(h.idx):0, need=h.outs.map(cname).join(" or ");
+    if(e.k==="draw"){ callout(h,"draw"+(h.royal?" royal":""),(h.royal?"Royal flush draw":"Straight flush draw")+'<small>need '+need+' · '+pct(h.p)+'</small>',2300);
+      snd("shimmer",pan); if(h.royal) snd("riser"); hap(2,80);
+      const m=lineMid(h); if(m) emit(m.x,m.y,{n:h.royal?26:18,dir:-Math.PI/2,spread:1.4,sp:120,g:-40,drag:.97,s:6,life:1300,colors:h.royal?["#ffd36b","#ff9a3d","#fff1c4"]:["#7cc4ff","#a98bff","#e4f2ff"],jx:120,jy:20}); }
+    else if(e.k==="warm"){ callout(h,"warm"+(h.royal?" royal":""),h.royal?"Three to a royal":"Straight flush alive",1700); snd("glint",pan); }
+    else if(e.k==="jack"){ callout(h,"jack"+(h.trayRoyal?" royal":""),"It's here!"+'<small>'+cname(current)+(h.trayRoyal?" makes the royal":" makes the straight flush")+'</small>',2400);
+      snd("riser"); setTimeout(function(){ snd("heart"); },500); hap(3,90);
+      const c=document.querySelector("#psCurrent .card"); if(c){ const p=center(c); ring(p.x,p.y,p.w*.5,p.w*1.6,h.trayRoyal?"rgba(255,207,90,.95)":"rgba(160,170,255,.95)",700);
+        emit(p.x,p.y,{n:24,sp:200,s:7,life:900,g:60,colors:h.trayRoyal?["#ffd36b","#fff1c4","#ff9a3d"]:["#7cc4ff","#a98bff","#ffffff"]}); } }
+    else if(e.k==="dead"){ callout(h,"dead",'<s>'+(h.royal?"Royal":"Straight flush")+' draw</s> dead',1500); snd("fizzle",pan); } }
+  function events(H){
+    if(over){ prev={}; stopBeat(); return; }
+    const now={}; H.forEach(h=>{ now[h.key]=h; }); const ev=[];
+    if(!quiet){
+      H.forEach(function(h){ const p=prev[h.key];
+        if(h.n===4 && (!p||p.n<4) && !h.inTray) ev.push({k:"draw",h:h});   // out already in the tray: "It's here" says it
+        else if(h.n===3 && !p) ev.push({k:"warm",h:h});
+        if(h.inTray && !(p&&p.inTray)) ev.push({k:"jack",h:h}); });
+      Object.keys(prev).forEach(function(key){ const p=prev[key]; if(p.n===4 && !now[key] && !p.cells.every(x=>grid[x])) ev.push({k:"dead",h:p}); });
+    }
+    prev=now; quiet=false; const my=++tok;
+    ev.forEach(function(e,n){ setTimeout(function(){ fire(e,my); }, 560+n*700); }); }
+
+  /* ---- after every render ---- */
+  function after(){
+    const board=document.getElementById("psboard"); if(!board) return;
+    board.querySelectorAll(".psscore").forEach(function(el,k){ if(k<10) el.dataset.line=k<5?("r"+k):("c"+(k-5)); });
+    const g=viewGrid(), L=computeLines(g);
+    LINES10.forEach(function(Ln,k){ const h=k<5?L.rows[Ln[1]]:L.cols[Ln[1]]; if(h && TIER[h.key]>=3) lineIdx(Ln[0],Ln[1]).forEach(function(x){ const c=cellEl(x); if(c) c.classList.add("holo"); }); });
+    const tc=document.querySelector("#psCurrent .card.dealin"); if(tc) tc.addEventListener("animationend",function(){ tc.classList.remove("dealin"); },{once:true});
+    const H=(g===grid)?heat():[];
+    applyHeat(H); events(H); }
+  function reset(){ prev={}; quiet=false; tok++; stopBeat(); document.querySelectorAll(".pscall,.ngcine").forEach(function(el){ el.remove(); }); }
+
+  /* ---- drag the tray card onto a square, with a live preview ---- */
+  let DR=null;
+  function light(x,y){ const r=document.documentElement.style; r.setProperty("--lx",(x/innerWidth*100).toFixed(1)+"%"); r.setProperty("--ly",(y/innerHeight*100).toFixed(1)+"%"); }
+  addEventListener("pointermove",function(e){ if(e.pointerType==="mouse" && !DR) light(e.clientX,e.clientY); },{passive:true});
+  function tilt(x,y){ if(RM()) return; const b=document.getElementById("psboard"), r=DR.br; if(!r) return;
+    const nx=Math.max(-1,Math.min(1,(x-(r.left+r.width/2))/(r.width/2))), ny=Math.max(-1,Math.min(1,(y-(r.top+r.height/2))/(r.height/2)));
+    b.style.transform="perspective(900px) rotateX("+(-ny*2.5).toFixed(2)+"deg) rotateY("+(nx*2.5).toFixed(2)+"deg)"; }
+  function untilt(instant){ const b=document.getElementById("psboard"); if(!b) return;
+    if(instant){ b.style.transition="none"; b.style.transform=""; void b.offsetWidth; b.style.transition=""; } else b.style.transform=""; }
+  function clearTarget(){ if(!DR) return;
+    document.querySelectorAll("#psboard .dropt,#psboard .xhair").forEach(el=>el.classList.remove("dropt","xhair"));
+    DR.saved.forEach(function(s){ s.el.className=s.cls; s.el.innerHTML=s.html; }); DR.saved=[];
+    const d=document.getElementById("ngDelta"); if(d) d.classList.remove("on"); DR.target=-1; }
+  function setTarget(i){ if(!DR || i===DR.target) return; clearTarget(); if(i<0) return; DR.target=i;
+    const r=Math.floor(i/5), c=i%5, g2=grid.slice(); g2[i]=current; const L2=computeLines(g2), base=computeLines(grid).total;
+    for(let k=0;k<5;k++){ [cellEl(r*5+k),cellEl(k*5+c)].forEach(el=>{ if(el) el.classList.add("xhair"); }); }
+    const t=cellEl(i); if(t) t.classList.add("dropt");
+    [["r"+r,L2.rows[r]],["c"+c,L2.cols[c]]].forEach(function(p){ if(!p[1]) return; const el=document.querySelector('#psboard .psscore[data-line="'+p[0]+'"]'); if(!el) return;
+      DR.saved.push({el:el,cls:el.className,html:el.innerHTML}); const tmp=document.createElement("div"); tmp.innerHTML=chipHTML(p[1]); const n=tmp.firstChild;
+      el.className=n.className+" preview"; el.innerHTML=n.innerHTML; });
+    const d=document.getElementById("ngDelta"), delta=L2.total-base; if(d && delta>0){ d.textContent="+"+delta; d.classList.add("on"); }
+    snd("hover",panOfCol(c)); if(navigator.vibrate && ngs.haptics){ try{ navigator.vibrate(4); }catch(e){} } }
+  function frame(){ if(!DR) return; DR.vx*=.82;
+    const rot=Math.max(-16,Math.min(16,DR.vx*.012)); DR.rot+=(rot-DR.rot)*.3;
+    const cxp=DR.px-DR.ox, cyp=DR.py-DR.oy-DR.lift;
+    DR.f.style.transform="translate("+(cxp-(DR.r.left+DR.r.width/2)).toFixed(1)+"px,"+(cyp-(DR.r.top+DR.r.height/2)).toFixed(1)+"px) rotate("+DR.rot.toFixed(2)+"deg) scale(1.1)";
+    DR.raf=requestAnimationFrame(frame); }
+  function onMove(e){ if(!DR) return; if(e.cancelable) e.preventDefault();
+    const now=performance.now(), dt=Math.max(8,now-DR.lt), v=(e.clientX-DR.px)/dt*1000; DR.vx=DR.vx*.5+v*.5; DR.lt=now; DR.px=e.clientX; DR.py=e.clientY;
+    if(Math.abs(e.clientX-DR.x0)+Math.abs(e.clientY-DR.y0)>6) DR.moved=true;
+    const cxp=DR.px-DR.ox, cyp=DR.py-DR.oy-DR.lift; light(cxp,cyp); tilt(cxp,cyp);
+    const el=document.elementFromPoint(cxp,cyp), t=el&&el.closest?el.closest("#psboard .pscell.empty.live"):null;
+    setTarget(t?+t.dataset.i:-1); }
+  function end(){ document.removeEventListener("pointermove",onMove); document.removeEventListener("pointerup",onUp); document.removeEventListener("pointercancel",onCancel);
+    if(DR&&DR.raf) cancelAnimationFrame(DR.raf); }
+  function onUp(){ const d=DR; if(!d) return; const target=d.target; clearTarget(); end(); DR=null;
+    if(target>=0 && !over && current && !grid[target]){ ngFromRect=d.f.getBoundingClientRect(); d.f.remove(); untilt(true); place(target); return; }
+    untilt(false);
+    if(!d.moved || RM() || !d.f.animate){ d.f.remove(); d.c.style.visibility=""; return; }
+    const a=d.f.animate([{transform:d.f.style.transform},{transform:"none"}],{duration:320,easing:"cubic-bezier(.3,1.5,.5,1)"});
+    a.onfinish=function(){ d.f.remove(); d.c.style.visibility=""; }; snd("whoosh",0); }
+  function onCancel(){ const d=DR; if(!d) return; clearTarget(); end(); DR=null; untilt(false); d.f.remove(); d.c.style.visibility=""; }
+  const cur=document.getElementById("psCurrent");
+  if(cur) cur.addEventListener("pointerdown",function(e){
+    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR) return;
+    e.preventDefault(); const r=c.getBoundingClientRect(), f=c.cloneNode(true); f.classList.remove("dealin"); f.classList.add("ngdrag");
+    Object.assign(f.style,{left:r.left+"px",top:r.top+"px",width:r.width+"px",height:r.height+"px"}); document.body.appendChild(f); c.style.visibility="hidden";
+    DR={f:f,c:c,r:r,br:document.getElementById("psboard").getBoundingClientRect(),ox:e.clientX-(r.left+r.width/2),oy:e.clientY-(r.top+r.height/2),
+      lift:e.pointerType==="touch"?Math.round(r.height*.45):0,px:e.clientX,py:e.clientY,lt:performance.now(),vx:0,rot:0,moved:false,target:-1,x0:e.clientX,y0:e.clientY,saved:[],raf:0};
+    document.addEventListener("pointermove",onMove,{passive:false}); document.addEventListener("pointerup",onUp); document.addEventListener("pointercancel",onCancel);
+    snd("whoosh",0); hap(1); frame(); onMove(e); });
+
+  /* ---- end of the board: each scoring line lights in turn, then the results ---- */
+  function tally(g,cb){
+    const ok=()=>over && grid===g;
+    if(RM()){ setTimeout(function(){ if(ok()) cb(); },1500); return; }
+    const L=computeLines(grid), seq=[];
+    LINES10.forEach(function(Ln,k){ const h=k<5?L.rows[Ln[1]]:L.cols[Ln[1]]; if(h&&h.pts>0) seq.push({t:Ln[0],i:Ln[1],k:k}); });
+    setTimeout(function(){ if(!ok()) return;
+      seq.forEach(function(s,n){ setTimeout(function(){ if(!ok()) return;
+        lineIdx(s.t,s.i).forEach(function(x){ const c=cellEl(x); if(c){ c.classList.remove("tally"); void c.offsetWidth; c.classList.add("tally"); } });
+        const ch=document.querySelector('#psboard .psscore[data-line="'+(s.k<5?"r"+s.i:"c"+s.i)+'"]'); if(ch){ ch.classList.remove("land"); void ch.offsetWidth; ch.classList.add("land"); }
+        snd("tick",s.t==="col"?panOfCol(s.i):0,n); }, n*100); });
+      setTimeout(function(){ if(ok()) cb(); }, seq.length*100+450); }, 1300); }
+
+  /* ---- trophies ---- */
+  const TRO=[
+    {id:"first",  g:"b", n:"First Board",    d:"Finish a board."},
+    {id:"flush",  g:"b", n:"Suited Up",      d:"Make a flush."},
+    {id:"full",   g:"b", n:"Full House",     d:"Make a full house."},
+    {id:"ten",    g:"s", n:"Ten for Ten",    d:"Every row and column scores."},
+    {id:"century",g:"s", n:"Century",        d:"Score 100 (American) or 50 (English)."},
+    {id:"four",   g:"s", n:"Quads",          d:"Make four of a kind."},
+    {id:"big",    g:"g", n:"High Roller",    d:"Score 150 (American) or 75 (English)."},
+    {id:"perfect",g:"g", n:"Perfect Board",  d:"Match the best board your 25 cards can make."},
+    {id:"sflush", g:"g", n:"Straight Flush", d:"Make a straight flush."},
+    {id:"royal",  g:"p", n:"Royal Flush",    d:"Make a royal flush."}];
+  const GC={b:["#e0a26d","#9a5a2c"],s:["#f1f4f7","#9aa4ae"],g:["#ffe49a","#c8922e"],p:["#e8f7ff","#7fb6d9"]}, GN={b:"Bronze",s:"Silver",g:"Gold",p:"Platinum"};
+  function cup(g){ const c=GC[g], id="cg"+g;
+    return '<svg class="ngcup" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+c[0]+'"/><stop offset="1" stop-color="'+c[1]+'"/></linearGradient></defs>'
+      +'<path d="M9 4h14v6.5a7 7 0 0 1-14 0z" fill="url(#'+id+')"/><path d="M9 7H5v1.5a5 5 0 0 0 5 5M23 7h4v1.5a5 5 0 0 1-5 5" fill="none" stroke="url(#'+id+')" stroke-width="2"/>'
+      +'<rect x="14" y="17" width="4" height="5" fill="url(#'+id+')"/><rect x="9.5" y="22" width="13" height="5" rx="1.2" fill="url(#'+id+')"/></svg>'; }
+  function got(){ try{ return JSON.parse(localStorage.getItem(KT))||{}; }catch(e){ return {}; } }
+  let tq=[], tbusy=false;
+  function earn(id){ const T=got(); if(T[id]) return; T[id]=Date.now(); try{ localStorage.setItem(KT,JSON.stringify(T)); }catch(e){}
+    const t=TRO.find(x=>x.id===id); if(t){ tq.push(t); toastNext(); } }
+  function toastNext(){ if(tbusy||!tq.length) return; tbusy=true; const t=tq.shift();
+    const el=document.createElement("div"); el.className="ngtro"; el.innerHTML=cup(t.g)+'<div><div class="l1">'+GN[t.g]+' trophy</div><div class="l2">'+t.n+'</div></div>';
+    document.body.appendChild(el); requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add("on"); }); }); snd("ping");
+    setTimeout(function(){ el.classList.remove("on"); setTimeout(function(){ el.remove(); tbusy=false; toastNext(); },500); },2800); }
+  function trophies(total){ if(botTouched) return; const L=computeLines(grid), keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), am=settings.scoring==="american";
+    earn("first");
+    if(keys.indexOf("flush")>=0) earn("flush");
+    if(keys.indexOf("full")>=0) earn("full");
+    if(keys.indexOf("four")>=0) earn("four");
+    if(keys.indexOf("sflush")>=0) earn("sflush");
+    if(keys.indexOf("royal")>=0){ earn("sflush"); earn("royal"); }
+    if(L.rows.concat(L.cols).every(h=>h&&h.pts>0)) earn("ten");
+    if(total>=(am?100:50)) earn("century");
+    if(total>=(am?150:75)) earn("big"); }
+  function perfect(){ if(!over||botTouched||!SOLVE||!SOLVE.done) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
+  function trophiesHTML(){ const T=got(), n=TRO.filter(t=>T[t.id]).length;
+    return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Trophies</h2><p class="muted" style="margin-top:0;">'+n+' of '+TRO.length+' on this device. Bot boards don\'t count.</p><ul class="trolist">'
+      +TRO.map(t=>'<li class="'+(T[t.id]?'':'lock')+'">'+cup(t.g)+'<div><div class="tn">'+t.n+'</div><div class="td">'+t.d+'</div></div><span class="tw">'+(T[t.id]?new Date(T[t.id]).toLocaleDateString([],{month:"short",day:"numeric"}):GN[t.g])+'</span></li>').join("")+'</ul>'; }
+  function openTrophies(){ openPanel(trophiesHTML(),"trophies"); }
+  function toggleHaptics(){ ngs.haptics=!ngs.haptics; saveNg(); if(ngs.haptics) hap(1); }
+
+  return {after:after, reset:reset, quiet:function(){ quiet=true; }, land:land, lineBurst:lineBurst, tally:tally, trophies:trophies, perfect:perfect,
+    openTrophies:openTrophies, clearCalls:clearCalls, toggleHaptics:toggleHaptics, get haptics(){ return ngs.haptics; }, snd:snd, heat:heat, panOfCol:panOfCol, _earn:earn, _P:function(){ return P.length; }};
+})();
+
 /* ---- wire up ---- */
 document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand openRules the click Event
 document.getElementById("menuBtn").onclick=openMenu;
@@ -1201,7 +1660,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v201", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v204", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

@@ -171,3 +171,89 @@ and moves changed. All of it is CSS plus a little UI code; nothing in the scorin
   - the results open only after the pause;
   - no card is left mid-flight or hidden, the page doesn't scroll, Undo still empties the square;
   - no page errors.
+
+## Next-gen (v204)
+If v1 was the cartridge and v201 the console, this is the next generation: the same engine (scoring,
+bot, best-board solver, high scores) with a new presentation layer, `NG`, in its own block above
+"wire up". It reads `grid`, `current` and `over` and never changes a rule. `render()` calls
+`NG.after()`, `place()`/`dealFx()`/`lineFx()`/`finish()` call into it, and that's the whole seam.
+
+**Draws: excitement before the hand is made.** After every render `NG.heat()` checks each unfinished
+row and column. A line qualifies if it has 3 or 4 cards, all one suit, all different ranks, that fit a
+5-rank straight window (A low or high) whose missing cards are all still unseen (not on the board).
+- **3 cards: warm.** A thin blue ring round the line, or gold if the royal window (10-A) is alive.
+  One small callout, "Straight flush alive" or "Three to a royal". The chip shows `SF?`/`RF?` and the
+  chance both missing cards still come.
+- **4 cards: hot.** The line pulses blue plasma, or gold fire for a royal. The open square shows the
+  card or cards it needs, as a ghost; the royal out is ringed in gold. A callout appears, e.g. "Royal
+  flush draw, need 9♠ or A♠ · 68%", and the chip shows `RF!`/`SF!` and the odds.
+- **The odds** are exact for the deal as it stands: 1 − C(D−k, R)/C(D, R), where k is the number of
+  live outs, D the unseen cards not counting the tray, and R the cards still to deal after this one.
+  K-Q-J-10 of spades with 4 down: 1 − (27·26)/(47·46) = 67.5%.
+- **The out is in the tray: "It's here!"** The target square beams white and gold and every other open
+  square dims to 35%. The tray card pulses, and a heartbeat thumps every 1.1 s (plus a vibration where
+  `navigator.vibrate` exists) until you place it.
+- **Draw dead.** If the last live out goes somewhere else, the line says so with a struck-through
+  callout and a fizzle. It says nothing if the line simply fills with a different card; the normal
+  hand callout covers that.
+- **Undo is quiet:** it restores the glow without replaying the announcements. A new callout clears
+  any draw callout still up, and a made hand clears it too, so they never stack.
+- Bot boards get the same lights and callouts. That's the point of watching.
+
+**Making a straight or royal flush** dims the screen, spins light rays and slams the title in, with
+a sub-bass hit, confetti and a 4-pulse haptic. 2.6 s, and it doesn't block taps.
+
+**Look and feel**
+- **Table:** a deeper felt with an overhead light and three slow light pools drifting behind it (CSS
+  gradients, no blur filters).
+- **HUD:** the tray is dark glass with a gold-to-plasma edge.
+- **The next card is dealt face-down and flips over** (rotateY, with a back face that hides at 90°).
+- **Cards are glossy.** Each has a specular highlight at `--lx/--ly`, which follows your finger while
+  you drag and the mouse on desktop. The cards of a full house or better get animated holo foil.
+- **Drag the tray card onto a square.** It lifts, tilts with your speed, and on touch rides above
+  your finger so you can see it. The square under it is outlined and its row and column brighten.
+  Those two chips preview the hands they'd make, and a `+N` badge by the score shows the gain. The
+  board leans up to 2.5° toward the card. Let go off the board and it springs back. Tapping a square
+  still works.
+- **Flights arc.** The card rises off the tray, its shadow grows mid-flight, and it settles in 360 ms.
+  On landing a shockwave ring and dust come off the square, the board thumps 1.5 px, and there's a
+  thud panned to the square's column.
+- **Finished lines** throw sparks scaled to the hand: tier 1-4 is 5 to 20 per card. Full house and
+  four of a kind shake the board; straight and royal flushes get the cinematic.
+- **End of board:** 1.3 s after the 25th card (the last callouts first), each scoring line lights in
+  turn, 100 ms apart, with a rising tick. Then the results open, at most about 2.75 s after the last
+  card. `__PS.deal()` still opens them at once.
+- **Particles:** one full-screen canvas whose animation loop runs only while something is alive, so
+  it costs nothing at rest. The time step is real elapsed time, so 120 Hz phones don't run it double.
+
+**Sound and haptics**
+- `NG.snd` is a small WebAudio synth beside `sfx.js`, behind the same mute (`SFX.isOn()`): whoosh,
+  panned thud, heartbeat, riser, shimmer, fizzle, boom, tally ticks, trophy ping.
+- Haptics use `navigator.vibrate` where it exists. On iPhone it's Safari's `<input type=checkbox
+  switch>`, which ticks the Taptic Engine when toggled from a tap (iOS 18+). That only fires inside a
+  gesture, so on iPhone you feel the pick-up and the drop, not the delayed effects.
+- Menu → **Haptics** turns them off (`pokersquares.ng`).
+
+**Trophies** (Menu → Trophies, `pokersquares.trophies`, this device only, bot boards never count):
+- Bronze: First Board, Suited Up (a flush), Full House.
+- Silver: Ten for Ten (every line scores), Century (100 American / 50 English), Quads.
+- Gold: High Roller (150 / 75), Perfect Board (equal the solver's max), Straight Flush.
+- Platinum: Royal Flush.
+
+A toast drops in from the top with a ping; several queue.
+
+**Reduced motion:** no flights, particles, shake, cinematic, flip or tally. The draw glows and the
+jackpot beam hold steady instead of pulsing, so you still see them.
+
+**Tested** in headless Chrome against a stacked deck:
+- 10-J-Q♠ shows "Three to a royal" (warm, `RF? 44%`).
+- K♠ makes it hot, with ghosts 9♠/A♠ and a 68% callout.
+- A♠ arriving in the tray shows "It's here!", 1 jack square, the board in jackpot mode.
+- Placing it fires the royal callout and the cinematic.
+- An open-ended 5-6-7-8♥ draw with both outs placed elsewhere says "draw dead", and Undo brings the
+  glow back silently.
+- A drag to square 24 shows the drop target and 9 crosshair cells, and places the card. A drag off
+  the board springs back.
+- A full board: the results are not open at 1 s, are open by 4.2 s, and "First Board" is stored.
+- A bot board plays through and earns no trophies. The best-board flight still runs.
+- No page scroll at 320×568, 390×844 or 430×932 at every card size, mid-draw. No page errors.
