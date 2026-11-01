@@ -380,6 +380,14 @@
   .lvlist li{display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid rgba(255,255,255,.08);}
   .lvlist li.lock{opacity:.4;} .lvlist .ln{font-weight:900; font-size:16px; width:34px; color:var(--gold);}
   .lvlist .ld{font-size:12px; opacity:.8; flex:1;} .lvlist .ls{font-size:16px; letter-spacing:1px; color:rgba(255,255,255,.2);} .lvlist .ls b{color:var(--gold); font-weight:400;}
+  /* the clock (v209) */
+  .ngclock{position:absolute; left:-6px; top:-6px; width:calc(100% + 12px); height:calc(100% + 12px); pointer-events:none; overflow:visible;}
+  .ngclock rect{fill:none; stroke:var(--gold); stroke-width:3.5; vector-effect:non-scaling-stroke; stroke-dasharray:100; stroke-dashoffset:0; stroke-linecap:round;
+    filter:drop-shadow(0 0 4px rgba(240,198,116,.8));}
+  .ngclock.warn rect{stroke:#ff5a4a; filter:drop-shadow(0 0 6px rgba(255,90,74,.9)); animation:ngWarn .5s ease-in-out infinite alternate;}
+  @keyframes ngWarn{to{stroke-width:5.5}}
+  .ngtime{font-variant-numeric:tabular-nums; color:#ffe2a0;} .ngtime.warn{color:#ff7a6a;}
+  @media (prefers-reduced-motion:reduce){ .ngclock.warn rect{animation:none} }
   /* trophies */
   .ngtro{position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 10px); transform:translate(-50%,-150%); z-index:60; display:flex; align-items:center; gap:10px;
     background:rgba(12,16,22,.95); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:8px 16px 8px 10px; box-shadow:0 10px 30px rgba(0,0,0,.6);
@@ -480,7 +488,7 @@ const SCORING={
 };
 
 const LS_KEY="pokersquares.v1";
-let settings={tipsOn:false, fourColor:true, scoring:"american", botAuto:true, mode:"levels"};
+let settings={tipsOn:false, fourColor:true, scoring:"american", botAuto:true, mode:"levels", clock:"off"};
 let best=0;
 try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw);
   if(o&&o.settings) Object.assign(settings,o.settings); if(o&&typeof o.best==="number") best=o.best; } }catch(e){}
@@ -546,7 +554,9 @@ const LV_LOCKS=[15,10,5];                                   // pre-filled square
 // Calibrated with the bot's brain (Oct 31): pre-filled squares help a lot (its median on level 1
 // is 86% of the best board), and a bare board is hard (37%). So 1-3 ask 40/40/38%, then the bare
 // boards start at 34% and climb 2 points a level to 55% at level 15.
-function levelPct(n){ return n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4)); }
+function levelPct(n){ return (n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4))) - (levelClock(n)!=="off"?.04:0); }
+// Blitz: every 5th level is timed, 4 points easier. 5, 15, 25… the shot clock; 10, 20… the board clock.
+function levelClock(n){ return n%5!==0?"off":(n%10===0?"board":"shot"); }
 function isLevels(){ return settings.mode==="levels"; }
 let LV=null, LVSOLVER=null;
 function lvProg(){ let P; try{ P=JSON.parse(localStorage.getItem("pokersquares.levels"))||{}; }catch(e){ P={}; }
@@ -601,13 +611,14 @@ function levelHUD(){
   if(!el) return;
   el.innerHTML='Target <b>'+(LV.target==null?'…':LV.target)+'</b>';
   el.className='best goal'+(LV.target!=null && total>=LV.target?' ahead':'');
-  if(!over && !(viewGrid()!==grid)) document.getElementById("psPlace").textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":""));
+  if(!over && !(viewGrid()!==grid)) document.getElementById("psPlace").textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz":"")));
 }
 // stars: 1 at the target, 2 at +5 points of percentage, 3 at +10
 function levelJudge(total){
   const L=LV, max=Math.max(L.max||0,total), pct=max?total/max:0;
   const stars=botTouched?0:(pct>=L.pct+.10?3:pct>=L.pct+.05?2:total>=L.target?1:0);
   const P=lvProg(), R=P[settings.scoring]; let unlocked=false;
+  if(stars>0 && levelClock(L.n)!=="off") NG._earn("clock");
   if(stars>0){ R.stars[L.n]=Math.max(R.stars[L.n]||0,stars); if(R.level===L.n){ R.level=L.n+1; unlocked=true; } lvSave(P);
     if(stars===3) NG._earn("stars3"); if(L.n>=5) NG._earn("lv5"); if(L.n>=10) NG._earn("lv10"); }
   L.result={total, max, pct, stars, cleared:stars>0, unlocked};
@@ -622,10 +633,52 @@ function openLevels(){
   const R=lvProg()[settings.scoring], top=R.level, sys=settings.scoring==="american"?"American":"English";
   let rows='';
   for(let n=1;n<=Math.max(top,3);n++){ const lock=n>top, st=R.stars[n]||0;
-    rows+='<li class="'+(lock?'lock':'')+'"><span class="ln">'+n+'</span><span class="ld">Score '+Math.round(levelPct(n)*100)+'% of the best board'+(LV_LOCKS[n-1]?' · '+LV_LOCKS[n-1]+' pre-filled':'')+(n>=4?' · no undo':'')+'</span><span class="ls">'+stars(st)+'</span>'
+    rows+='<li class="'+(lock?'lock':'')+'"><span class="ln">'+n+'</span><span class="ld">Score '+Math.round(levelPct(n)*100)+'% of the best board'+(LV_LOCKS[n-1]?' · '+LV_LOCKS[n-1]+' pre-filled':'')+(levelClock(n)==="shot"?' · Blitz, 8 s a card':(levelClock(n)==="board"?' · Blitz, 90 s board':''))+(n>=4?' · no undo':'')+'</span><span class="ls">'+stars(st)+'</span>'
       +(lock?'':'<button class="btn sm'+(n===top?'':' sec')+'" onclick="levelPlay('+n+')">'+(st?'Replay':'Play')+'</button>')+'</li>'; }
   openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Levels</h2><p class="muted" style="margin-top:0;">'+sys+' scoring. Clear a level to open the next; stars at the target, +5% and +10%.</p><ul class="lvlist">'+rows+'</ul>',"levels");
 }
+
+/* ============================================================
+   THE CLOCK (v209). Shot clock: 8 s for each card; time out and it goes into a random open square.
+   Board clock: 90 s for all 25; at zero the rest drop into random squares. It runs only while you
+   can play: it pauses for any open panel, a hidden app, a card in flight, the bot, and the first
+   moments of each deal. A ring drains around the tray card; the last 3 s (shot) or 10 s (board)
+   turn it red with a tick each second. No undo with a clock on.
+   ============================================================ */
+const SHOT_MS=8000, BOARD_MS=90000, GRACE_MS=550;
+let CLOCK={kind:"off", left:0, total:0, last:0, grace:0, raf:0, dumping:false, lastSec:-1};
+function clockKind(){ return isLevels() ? (LV?levelClock(LV.n):"off") : (settings.clock||"off"); }
+function clockReset(){ cancelAnimationFrame(CLOCK.raf);
+  const k=clockKind(); CLOCK={kind:k, left:k==="shot"?SHOT_MS:BOARD_MS, total:k==="shot"?SHOT_MS:BOARD_MS, last:0, grace:performance.now()+GRACE_MS+300, raf:0, dumping:false, lastSec:-1};
+  if(k!=="off") CLOCK.raf=requestAnimationFrame(clockTick); }
+function clockStop(){ cancelAnimationFrame(CLOCK.raf); CLOCK.raf=0; }
+function clockPaused(now){ return over || !current || BOT.on || ANIMATING || CLOCK.dumping || !!curOverlay.kind || document.hidden || now<CLOCK.grace || VIEW!=="mine"; }
+function clockTick(now){
+  if(CLOCK.kind==="off") return;
+  const dt=CLOCK.last?Math.min(100,now-CLOCK.last):0; CLOCK.last=now;
+  if(!clockPaused(now)){
+    CLOCK.left=Math.max(0,CLOCK.left-dt);
+    const warn=CLOCK.kind==="shot"?3000:10000, sec=Math.ceil(CLOCK.left/1000);
+    if(CLOCK.left<=warn && CLOCK.left>0 && sec!==CLOCK.lastSec){ CLOCK.lastSec=sec; NG.snd("tick",0,sec<=3?7:0); NG.hap(1,0,"light"); }
+    if(CLOCK.left<=0){ clockDraw(); clockOut(); return; }
+  }
+  clockDraw(); CLOCK.raf=requestAnimationFrame(clockTick); }
+function clockDraw(){
+  const r=document.querySelector("#psCurrent .ngclock rect"); const warn=CLOCK.kind==="shot"?3000:10000;
+  if(r){ r.style.strokeDashoffset=(100*(1-CLOCK.left/CLOCK.total)).toFixed(2); r.parentNode.classList.toggle("warn",CLOCK.left<=warn); }
+  if(CLOCK.kind==="board"){ const pr=document.getElementById("psProg"); if(pr && !over){ const t=Math.ceil(CLOCK.left/1000);
+    pr.innerHTML='<span class="ngtime'+(CLOCK.left<=warn?' warn':'')+'">'+Math.floor(t/60)+':'+String(t%60).padStart(2,"0")+'</span> · Card '+(placed()-((isLevels()&&LV)?LV.k:0)+1)+' of '+(25-((isLevels()&&LV)?LV.k:0)); } } }
+function clockRingHTML(){ if(CLOCK.kind==="off"||!current) return "";
+  return '<svg class="ngclock" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="94" height="134" rx="14" pathLength="100"/></svg>'; }
+function randomEmpty(){ const e=[]; grid.forEach((c,i)=>{ if(!c) e.push(i); }); return e[(Math.random()*e.length)|0]; }
+function clockOut(){
+  NG.cancelDrag(); NG.timeUp(CLOCK.kind==="shot"?"Time!":"Time's up");
+  if(CLOCK.kind==="shot"){ place(randomEmpty()); return; }   // place() resets the shot clock for the next card
+  CLOCK.dumping=true; render();
+  (function next(){ if(over||!current){ CLOCK.dumping=false; return; } place(randomEmpty()); setTimeout(next,190); })();
+}
+function setClock(k){ settings.clock=k; persist(); closeOverlay(); newGame(); }
+function clockBests(){ try{ return JSON.parse(localStorage.getItem("pokersquares.clockbest"))||{}; }catch(e){ return {}; } }
 
 /* ---- flow ---- */
 // Sound is best-effort: no sfx.js, no noise, no error.
@@ -637,9 +690,9 @@ function newGame(opts){
   botStop(); botTouched=false;
   if(isLevels()) levelSetup(opts||{});
   else { if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
-  NG.reset(); render();
+  NG.reset(); clockReset(); render();
 }
-function undoAllowed(){ return !isLevels() || !LV || LV.n<=3; }
+function undoAllowed(){ return clockKind()==="off" && (!isLevels() || !LV || LV.n<=3); }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
   if(over||!current||grid[i]) return;
@@ -648,6 +701,7 @@ function place(i){
   sfx('place');
   lastMove={i, card:current, was:i};
   current = (placed()<25 && queue.length) ? queue.pop() : null;   // a full board leaves the tray empty
+  if(CLOCK.kind==="shot"){ CLOCK.left=SHOT_MS; CLOCK.lastSec=-1; CLOCK.grace=performance.now()+GRACE_MS; }   // a fresh 8 s for the next card
   if(placed()===25){ finish(true); } else { render(i); }
   dealFx(i, fromR);
 }
@@ -711,7 +765,7 @@ function undo(){
   NG.quiet(); render();
 }
 function finish(fromPlace){
-  over=true; VIEW="mine";
+  over=true; VIEW="mine"; clockStop(); CLOCK.dumping=false;
   const {total}=computeLines(grid);
   if(isLevels() && LV){   // a level: judge it against the target (waiting for the search if it's still running)
     botStop(); sfx('good'); render(); NG.trophies(total);
@@ -722,9 +776,13 @@ function finish(fromPlace){
   }
   startSolve();
   botStop();
+  const timed=CLOCK.kind!=="off"; var beatBest=false;
+  if(timed){ if(!botTouched){ const B=clockBests(), key=CLOCK.kind+":"+settings.scoring; if(total>(B[key]||0)){ B[key]=total; beatBest=true; try{ localStorage.setItem("pokersquares.clockbest",JSON.stringify(B)); }catch(e){} } } }
+  else {
   if(!botTouched){ const k=settings.scoring, S=loadStats(); S[k]=S[k]||{n:0,sum:0}; S[k].n++; S[k].sum+=total; saveStats(S); }
-  var beatBest = !botTouched && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
+  beatBest = !botTouched && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
   if(beatBest){ best=total; }
+  }
   sfx(beatBest ? 'win' : 'good');
   persist();
   render();
@@ -882,7 +940,7 @@ function render(justIdx){
   const g=viewGrid(), showBest=g!==grid;
   const {rows,cols,total}=computeLines(g);
   // tray
-  document.getElementById("psCurrent").innerHTML=bigCardHTML(current);
+  document.getElementById("psCurrent").innerHTML=bigCardHTML(current)+clockRingHTML();
   document.getElementById("psCurrent").style.display=current?"":"none";   // board full: no next card, give the room back
   const n=placed();
   document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? (botTouched?"The bot's board":"Board complete") : (BOT.on ? (settings.botAuto?"The bot is playing":"Tap Next card") : "Tap an empty square"));
@@ -906,7 +964,7 @@ function render(justIdx){
         const lk=(!showBest && isLevels() && LV && LV.locks[idx])?' locked':'';
         html+='<div class="pscell filled'+lk+(justIdx===idx?' just':'')+'" data-i="'+idx+'">'+miniHTML(card)+'</div>';
       }else{
-        const live=(!over&&current&&!BOT.on)?' live':'';
+        const live=(!over&&current&&!BOT.on&&!CLOCK.dumping)?' live':'';
         html+='<div class="pscell empty'+live+'" data-i="'+idx+'"'+(live?(' onclick="place('+idx+')"'):'')+'></div>';
       }
     }
@@ -928,6 +986,7 @@ function render(justIdx){
   undoBtn.disabled = !lastMove || showBest || !undoAllowed();
   undoBtn.textContent = undoAllowed() ? "↩ Undo" : "No undo";
   renderBotBar();
+  if(CLOCK.kind!=="off") clockDraw();
   NG.after(justIdx);
   fitPS();
 }
@@ -962,6 +1021,8 @@ function openRules(){
     +scoreTableHTML()
     +'<h3>Levels</h3>'
     +'<p>In <b>Levels</b> (the Menu switches to Free play) each board has a target: a share of the best board its 25 cards can make. It shows under your score a few seconds into the deal, turning green when you pass it. Clear it to open the next level; score 5% or 10% over for two or three stars. Levels 1 to 3 come part-built (the gold-dotted squares are locked in from the best board), and Undo works only there. Miss, and you can replay the same board or take a new one.</p>'
+    +'<h3>The clock</h3>'
+    +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>8 seconds a card</b>, and 10, 20… give you <b>90 seconds for the whole board</b>. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
     +'<h3>What the lights mean</h3>'
     +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
     +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
@@ -981,7 +1042,8 @@ function openMenu(){
     +'<div style="margin:12px 0 4px;font-size:13px;">Play</div>'
     +'<div class="seg"><button class="'+(isLevels()?'on':'')+'" onclick="setMode(\'levels\')">Levels</button><button class="'+(!isLevels()?'on':'')+'" onclick="setMode(\'free\')">Free play</button></div>'
     +'<div style="height:6px"></div>'
-    +(isLevels()?'<button class="setup-opt" onclick="openLevels()">🪜 Levels</button>':'')
+    +(isLevels()?'<button class="setup-opt" onclick="openLevels()">🪜 Levels</button>':
+      '<div style="margin:6px 0 4px;font-size:13px;">Clock</div><div class="seg"><button class="'+(settings.clock==="off"?'on':'')+'" onclick="setClock(\'off\')">Off</button><button class="'+(settings.clock==="shot"?'on':'')+'" onclick="setClock(\'shot\')">8 s a card</button><button class="'+(settings.clock==="board"?'on':'')+'" onclick="setClock(\'board\')">90 s board</button></div><div style="height:6px"></div>')
     +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 '+(isLevels()?'New board, same level':'New game')+'</button>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();botStart();">🤖 Watch the bot play a new board</button>'
     +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
@@ -994,9 +1056,10 @@ function openMenu(){
 function openResults(total){
   // One screen, no scrolling: the score line, the top five, the best-board line, two buttons.
   // (The hand each row and column made is on the board's chips; the full ten are under Scores.)
-  const beat = !botTouched && total>=best && total>0;
   const sysName=settings.scoring==="american"?"American":"English";
   if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); return; }
+  if(CLOCK.kind!=="off"){ openPanel(clockResultsHTML(total),"results"); return; }
+  const beat = !botTouched && total>=best && total>0;
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(beat?'🏆 New best!':'✅ Board complete'))+'</h2>'
     +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">'+(botTouched?'Doesn\'t count toward your best ('+best+') · ':'Best '+best+' · ')+sysName+'</span></div>'
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
@@ -1007,6 +1070,16 @@ function openResults(total){
   openPanel(html,"results");
 }
 
+function clockResultsHTML(total){
+  const sysName=settings.scoring==="american"?"American":"English", key=CLOCK.kind+":"+settings.scoring, cb=clockBests()[key]||0;
+  const label=CLOCK.kind==="shot"?"8 s a card":"90 s board", newBest=!botTouched && total>=cb && total>0;
+  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(newBest?'⏱ New best against the clock':'⏱ Board complete'))+'</h2>'
+    +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">Best with the clock ('+label+') '+cb+' · '+sysName+'</span></div>'
+    +'<p class="muted" style="margin:6px 0 0;">Timed boards keep their own best and stay off the shared top 10, so your untimed best stays comparable.</p>'
+    +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
+    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
+    +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>✨ Best board</button></div>';
+}
 function levelResultsHTML(){
   const L=LV, r=L.result, pctTxt=Math.round(r.pct*100)+'%', need=Math.max(0,L.target-r.total);
   const mark=function(p,cls){ return '<u class="'+cls+'" style="left:'+Math.min(100,p*100).toFixed(1)+'%"></u>'; };
@@ -1719,7 +1792,7 @@ var NG=(function(){
   function onCancel(){ const d=DR; if(!d) return; clearTarget(); end(); DR=null; untilt(false); d.f.remove(); d.c.style.visibility=""; }
   const cur=document.getElementById("psCurrent");
   if(cur) cur.addEventListener("pointerdown",function(e){
-    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR) return;
+    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR||CLOCK.dumping) return;
     e.preventDefault(); const r=c.getBoundingClientRect(), f=c.cloneNode(true); f.classList.remove("dealin"); f.classList.add("ngdrag");
     Object.assign(f.style,{left:r.left+"px",top:r.top+"px",width:r.width+"px",height:r.height+"px"}); document.body.appendChild(f); c.style.visibility="hidden";
     DR={f:f,c:c,r:r,br:document.getElementById("psboard").getBoundingClientRect(),ox:e.clientX-(r.left+r.width/2),oy:e.clientY-(r.top+r.height/2),
@@ -1752,6 +1825,8 @@ var NG=(function(){
     {id:"perfect",g:"g", n:"Perfect Board",  d:"Match the best board your 25 cards can make."},
     {id:"sflush", g:"g", n:"Straight Flush", d:"Make a straight flush."},
     {id:"stars3", g:"b", n:"Three Stars",    d:"Get three stars on a level."},
+    {id:"clock",  g:"b", n:"Beat the Clock", d:"Clear a Blitz level."},
+    {id:"icecold",g:"s", n:"Ice Cold",       d:"Score 100 (American) or 50 (English) with a clock on."},
     {id:"lv5",    g:"s", n:"Halfway Up",     d:"Clear level 5."},
     {id:"lv10",   g:"g", n:"Summit",         d:"Clear level 10."},
     {id:"royal",  g:"p", n:"Royal Flush",    d:"Make a royal flush."}];
@@ -1778,6 +1853,7 @@ var NG=(function(){
     if(L.rows.concat(L.cols).every(h=>h&&h.pts>0)) earn("ten");
     if(total>=(am?100:50)) earn("century");
     if(total>=(am?150:75)) earn("big");
+    if(CLOCK.kind!=="off" && total>=(am?100:50)) earn("icecold");
   }
   function perfect(){ if(!over||botTouched||!SOLVE||!SOLVE.done||(isLevels()&&LV&&LV.k>0)) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
   function trophiesHTML(){ const T=got(), n=TRO.filter(t=>T[t.id]).length;
@@ -1786,7 +1862,10 @@ var NG=(function(){
   function openTrophies(){ openPanel(trophiesHTML(),"trophies"); }
   function toggleHaptics(){ ngs.haptics=!ngs.haptics; saveNg(); if(ngs.haptics) hap(1,0,"medium"); }
 
-  return {after:after, reset:reset, quiet:function(){ quiet=true; }, land:land, lineBurst:lineBurst, tally:tally, trophies:trophies, perfect:perfect,
+  function timeUp(text){ clearCalls(); const t=document.querySelector("#psCurrent .card")||document.getElementById("psCurrent"); if(!t) return;
+    const r=t.getBoundingClientRect(), el=document.createElement("div"); el.className="pscall ngc dead"; el.style.left=(r.left+r.width/2)+"px"; el.style.top=(r.top+r.height/2)+"px";
+    el.textContent=text; document.body.appendChild(el); setTimeout(function(){ el.remove(); },1500); snd("fizzle",0); hap(2,80,"heavy"); }
+  return {cancelDrag:function(){ if(DR) onCancel(); }, timeUp:timeUp, hap:hap, after:after, reset:reset, quiet:function(){ quiet=true; }, land:land, lineBurst:lineBurst, tally:tally, trophies:trophies, perfect:perfect,
     openTrophies:openTrophies, clearCalls:clearCalls, toggleHaptics:toggleHaptics, get haptics(){ return ngs.haptics; }, snd:snd, heat:heat, panOfCol:panOfCol, _earn:earn, _P:function(){ return P.length; }};
 })();
 
@@ -1824,7 +1903,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v208", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v209", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

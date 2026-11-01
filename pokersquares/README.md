@@ -341,6 +341,53 @@ Up (silver, clear level 5) and Summit (gold, clear level 10).
 - Free play still shows the top scores.
 - No scroll mid-game or on the results at 320×568. No page errors.
 
+## The clock (v209)
+Two kinds:
+- **Shot clock: 8 s a card.** Each placement starts a fresh 8 s. Run out and the card goes into a
+  random open square, with a "Time!" callout.
+- **Board clock: 90 s for all 25.** The progress line shows m:ss. At zero, "Time's up", and the
+  remaining cards drop into random squares, 190 ms apart. Tapping and dragging are off while they do.
+
+**Where it applies:**
+- **Levels:** every 5th level is **Blitz** (`levelClock`). Levels 5, 15, 25… use the shot clock;
+  10, 20… use the board clock. Their targets are 4 points of percentage lower than the curve.
+- **Free play:** Menu → Clock: Off / 8 s a card / 90 s board (`settings.clock`). Changing it starts
+  a new game.
+  - A timed board keeps its own best (`pokersquares.clockbest`, keyed `shot:american` and so on) and
+    gets its own results screen.
+  - It never touches your untimed best or average, and isn't offered to the shared top 10, so
+    those stay comparable.
+
+**Fairness.** The clock only runs while you can actually play. `clockPaused()` stops it for:
+- any open panel;
+- a hidden app (`document.hidden`);
+- a card in flight;
+- the bot playing;
+- the best-board view;
+- the board clock dumping;
+- 550 ms of grace as each card is dealt in, plus 300 ms more at the start.
+
+The frame step is capped at 100 ms, so coming back from the background never eats time. There's no
+undo with any clock on.
+
+**The look and feel.** A ring drains around the tray card (an SVG rect with `pathLength=100`,
+`vector-effect:non-scaling-stroke`). It shows the card's time, or the whole board's. In the last
+3 s (shot) or 10 s (board) it turns red and pulses, with a tick and a light haptic each second.
+Reduced motion drops the pulse.
+
+**Trophies:** Beat the Clock (bronze, clear a Blitz level) and Ice Cold (silver, 100 American /
+50 English with a clock on, in free play or a level with nothing pre-filled).
+
+**Tested** in headless Chrome:
+- **Shot clock:** reads 7.35 s after 1.5 s; Rules open freezes it; the ring is red at 2.35 s; at zero
+  the card lands at random, "Time!" shows, and the next card gets a fresh 8 s.
+- **Pauses:** a hidden page freezes the clock.
+- **Results:** a timed board goes to the clock best, and the untimed best stays 0.
+- **Board clock:** shows 1:30, goes red under 10 s, fills all 25 at zero, and the results open
+  7.2 s later.
+- **Levels:** 5 is shot at 32%, 10 is board at 42%, 4 has no clock.
+- No scroll at 320×568 with the ring showing, and every earlier suite still passes.
+
 **Public leaderboard: on hold.** The website's shared board works because every entry carries its
 25 cards and every phone re-scores them. A level clear would also need its deal, locks and target
 to be verifiable. In the App Store it's user-generated content (reporting, blocking, privacy
@@ -348,5 +395,7 @@ label). The plan is Game Center leaderboards in the app (highest level, total st
 has its App Store Connect record.
 
 **Later**
+- If timing out feels too harsh, the card could go where the bot would put it instead of a random
+  square. That's a one-line change in `clockOut()`.
 - Earn helpers on the ladder, e.g. a 3-star clear banks an undo for a no-undo level, a **swap**
   card (exchange two placed cards), or a **joker** (a wild card for one square).
