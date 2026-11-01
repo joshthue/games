@@ -265,25 +265,81 @@ changes there. The iOS app does (see `pokersquares-app/app/app-shim.js`), which 
 Taptic Engine, including bot moves and the delayed effects that the iPhone web workaround can't reach.
 Menu → Haptics still gates it.
 
-## Duel the bot (v206)
-Menu → **Duel the bot: it gets your exact cards**. It's a setting (`settings.duel`), so every new game
-is a duel until you turn it off. Turning it on or off starts a new game.
-- **Same cards, same moment.** In `place()`, the card you just placed also goes to `duelPlace()`.
-  That runs the same `makeBot` pick as Watch the bot, on the bot's own grid (`duel.grid`).
-  - It knows its own board, the card, and the cards it hasn't seen. It never sees the deck order or
-    your board.
-  - Both boards always hold the same cards; the test asserts that after every move.
-  - **Undo** takes back the bot's last card too.
-- **HUD.** The line under your score turns into the bot's score: green when you lead, red when you
-  trail. Tap it for a read-only look at its board, with a You / Bot toggle (`openDuel`).
-- **Results.** The title is the verdict ("You beat the bot" / "The bot wins" / "Dead heat"). Under it:
-  You N vs Bot M, a **Bot's board ›** link (its ‹ Back returns to the results), and your record vs
-  the bot per scoring system (`pokersquares.duel`, `{american:{w,l,t}, english:{...}}`). It still
-  fits one screen at 320×568.
-- **Your board still counts.** Your best, average and the shared top 10 work as usual, because the
-  bot never touches your grid. If you hand your board to Watch the bot mid-duel, the duel isn't
-  recorded.
-- **New trophies:** Beat the Bot (bronze, win a duel) and Schooled (silver, win by 50 American /
-  25 English).
-- The bot averages 84 a board American (84.3 over 200 fresh deals in the test), so beating it
-  takes a good board.
+## Levels (v207) — the default mode
+Each board has a target: a share of the **best board its own 25 cards can make**. Clear it to open
+the next level. Menu → Play switches between **Levels** and **Free play** (the classic game, with
+your best, average and the shared top 10). Levels replaced Duel the bot (v206), which is gone.
+
+**The target is known from the start.** All 25 cards are fixed at the deal, so the solver runs in
+the background straight away (`levelSolve` → `runSolver`, the same worker as the end-of-game
+search). The line under your score reads "Target …" for a few seconds, then e.g. "Target 92".
+It turns green when you pass it. The end-of-game ✨ Best board uses that same search.
+
+**Levels 1-3 come part-built.** The pre-filled squares are locked, marked with a gold dot.
+- Level 1 has 15, level 2 has 10, level 3 has 5.
+- `levelDeal` solves the deal first (`bestBoardFor`), then locks the squares that matter most on
+  that best board. Its whole board is still reachable, so the full target is honest.
+- Never more than 3 locks in a row or column, so no line starts finished. Every pre-filled board
+  starts at 0 points (checked over 40 deals per level). The first cut locked whole straight-flush
+  columns and handed you 150 points before your first card.
+- The solver respects locks: `makeSolver(cards, PTS, fixed)` only moves the free squares, in
+  anneal and polish both. So the target is the best board that keeps the pre-filled cards where
+  they are.
+
+**Targets** (`levelPct`), calibrated with the bot's brain on 25 deals a level:
+
+| Level | Pre-filled | Target | Bot median | Notes |
+|---|---|---|---|---|
+| 1 | 15 | 40% | 91% | a careless player (first open square) clears 5 of 25 |
+| 2 | 10 | 40% | 68% | |
+| 3 | 5 | 38% | 54% | |
+| 4 | 0 | 34% | ~37% | bare boards from here; no undo |
+| 5–14 | 0 | 36% → 54%, +2 a level | | |
+| 15+ | 0 | 55% | | |
+
+On bare boards over 60 deals the bot's share was 22 / 31 / 37 / 44 / 50% at the 10th / 25th / 50th
+/ 75th / 90th percentile. The best board ran 167-245 points American (median 230).
+
+**Stars:** 1 at the target, 2 at +5 points of percentage, 3 at +10. Progress lives in
+`pokersquares.levels` = `{american:{level, stars:{n:best}}, english:{…}}`. Levels follow the Menu's
+scoring system, with a separate ladder for each, and changing it starts a fresh board.
+
+**Undo** works on levels 1-3 only. From 4 the button reads "No undo".
+
+**Results** fit one screen at 320×568:
+- the stars;
+- your points and share of the best board;
+- a bar with the target and star marks;
+- the target line;
+- "N more would have done it" when you miss.
+
+Buttons: cleared gives **Level N+1 ›** and **Replay board**; missed gives **Same board** (identical
+cards, order and locks, target known at once) and **New board** (same level). Below them: ✨ Best
+board and All levels ›.
+
+**Menu → Levels** lists every open level with its target, pre-fill and stars.
+
+**What counts.** A level board never goes on the shared top 10 or your free-play best and average.
+Watch the bot on a level makes it not count. Hand and score trophies only count on boards you built
+yourself: free play, or a level with nothing pre-filled. New trophies: Three Stars (bronze), Halfway
+Up (silver, clear level 5) and Summit (gold, clear level 10).
+
+**Tested** in headless Chrome:
+- Level 1 starts with 15 locked squares, "Card 1 of 10" and "Target …".
+- The solve keeps every locked card in place, and its board re-scores to the max it reports.
+- A bot-brained play clears level 1 with 3 stars and opens level 2.
+- A careless level-6 board misses (6 of target 101). Same board gives the identical deal and order
+  with the target already known; New board gives a different deal at the same level.
+- Level 4 has no undo.
+- Free play still shows the top scores.
+- No scroll mid-game or on the results at 320×568. No page errors.
+
+**Public leaderboard: on hold.** The website's shared board works because every entry carries its
+25 cards and every phone re-scores them. A level clear would also need its deal, locks and target
+to be verifiable. In the App Store it's user-generated content (reporting, blocking, privacy
+label). The plan is Game Center leaderboards in the app (highest level, total stars) once the app
+has its App Store Connect record.
+
+**Later**
+- Earn helpers on the ladder, e.g. a 3-star clear banks an undo for a no-undo level, a **swap**
+  card (exchange two placed cards), or a **joker** (a wild card for one square).
