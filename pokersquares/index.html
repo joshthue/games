@@ -452,12 +452,6 @@
   <div class="controls" id="psControls">
     <button class="btn sec sm" id="psUndo">↩ Undo</button>
     <button class="btn sm" id="psNew">🔀 New game</button>
-    <button class="btn sec sm" id="psBotGo">🤖 Watch bot</button>
-  </div>
-  <div class="controls botbar hidden" id="psBotBar">
-    <div class="switch"><button class="toggle" id="psBotAuto" aria-label="Auto-play"></button><span>Auto</span></div>
-    <button class="btn sm" id="psBotNext">Next card ▶</button>
-    <button class="btn sec sm" id="psBotStop">Take over</button>
   </div>
 </div>
 
@@ -917,13 +911,8 @@ function botStart(){ if(over) newGame(); BOT.on=true; closeOverlay(); render(); 
 function botStop(){ BOT.on=false; clearTimeout(BOT.t); BOT.t=null; }
 function botTakeOver(){ botStop(); render(); }
 function botToggleAuto(){ settings.botAuto=!settings.botAuto; persist(); render(); botSchedule(); }
-function renderBotBar(){
-  const on=BOT.on&&!over;
-  document.getElementById("psControls").classList.toggle("hidden", on);
-  document.getElementById("psBotBar").classList.toggle("hidden", !on);
-  document.getElementById("psBotAuto").classList.toggle("on", !!settings.botAuto);
-  document.getElementById("psBotNext").style.display=settings.botAuto?"none":"";
-}
+// Watch the bot was removed in v210 (makeBot stays: it calibrates the level targets and could power hints)
+function renderBotBar(){}
 let lastShownCard="", shownTotal=0, rollTok=0;
 // the score rolls up to its new value (and pops) rather than jumping; the best-board flight counts it itself
 function rollScore(to){
@@ -1038,14 +1027,12 @@ function openMenu(){
     +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
     +'<div style="height:6px"></div>'
     +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(NG.haptics?'on':'')+'" onclick="NG.toggleHaptics();openMenu();"></button><span>Haptics</span></div>'
-    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.botAuto?'on':'')+'" onclick="botToggleAuto();openMenu();"></button><span>Bot auto-plays a card every 1.5 s'+(settings.botAuto?'':' (off: tap Next card)')+'</span></div>'
     +'<div style="margin:12px 0 4px;font-size:13px;">Play</div>'
     +'<div class="seg"><button class="'+(isLevels()?'on':'')+'" onclick="setMode(\'levels\')">Levels</button><button class="'+(!isLevels()?'on':'')+'" onclick="setMode(\'free\')">Free play</button></div>'
     +'<div style="height:6px"></div>'
     +(isLevels()?'<button class="setup-opt" onclick="openLevels()">🪜 Levels</button>':
       '<div style="margin:6px 0 4px;font-size:13px;">Clock</div><div class="seg"><button class="'+(settings.clock==="off"?'on':'')+'" onclick="setClock(\'off\')">Off</button><button class="'+(settings.clock==="shot"?'on':'')+'" onclick="setClock(\'shot\')">8 s a card</button><button class="'+(settings.clock==="board"?'on':'')+'" onclick="setClock(\'board\')">90 s board</button></div><div style="height:6px"></div>')
     +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 '+(isLevels()?'New board, same level':'New game')+'</button>'
-    +'<button class="setup-opt" onclick="closeOverlay();newGame();botStart();">🤖 Watch the bot play a new board</button>'
     +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
     +'<button class="setup-opt" onclick="NG.openTrophies()">🥇 Trophies</button>'
     +'<a class="setup-opt" href="../">🏠 Back to all games</a>'
@@ -1065,8 +1052,7 @@ function openResults(total){
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
-    +(botTouched?'<button class="btn sec" onclick="closeOverlay();newGame();botStart();">🤖 Watch again</button>'
-                :'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>✨ Best board</button>')+'</div>';
+    +('<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>✨ Best board</button>')+'</div>';
   openPanel(html,"results");
 }
 
@@ -1875,10 +1861,6 @@ document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("hsBtn").onclick=function(){ HS.open(); };
 document.getElementById("psUndo").onclick=undo;
 document.getElementById("psNew").onclick=function(){ newGame(); };
-document.getElementById("psBotGo").onclick=function(){ botStart(); };          // from a fresh board, or takes over yours
-document.getElementById("psBotAuto").onclick=botToggleAuto;
-document.getElementById("psBotNext").onclick=function(){ botMove(); };
-document.getElementById("psBotStop").onclick=botTakeOver;
 document.getElementById("overlay").addEventListener("click",function(e){ if(e.target===this) closeOverlay(); });
 
 newGame();
@@ -1903,7 +1885,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v209", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v210", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

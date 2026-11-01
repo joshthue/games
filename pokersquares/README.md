@@ -49,7 +49,11 @@ and the results panel says how close you came ("best these cards make scores 275
 - Not a proof: on test deals it matched much longer searches about 99% of the time.
 - `window.__PS` exposes `state`, `showView`, `startSolve`, `deal(cards)` for headless tests.
 
-## Watch the bot (v135)
+## Watch the bot (v135, removed in v210)
+**Gone from the game in v210:** no button, no bot bar, no Menu rows, no "Watch again". `makeBot`
+and the code that ran it are still there, dormant: the bot's brain calibrated the level targets and
+could power hints later. The notes below are what it did.
+
 **🤖 Watch bot** (beside New game, or Menu → Watch the bot play a new board) hands the board to a
 bot. On a fresh board it plays the whole deal; mid-game it picks up from where you are. While it
 plays, the buttons under the board become:
