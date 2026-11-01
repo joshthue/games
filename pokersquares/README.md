@@ -314,8 +314,15 @@ scoring system, with a separate ladder for each, and changing it starts a fresh 
 - "N more would have done it" when you miss.
 
 Buttons: cleared gives **Level N+1 ›** and **Replay board**; missed gives **Same board** (identical
-cards, order and locks, target known at once) and **New board** (same level). Below them: ✨ Best
-board and All levels ›.
+cards, order and locks, target known at once) and **New board** (same level).
+
+A second row, the same size (v208): **Best board** and **All levels**. Best board reads "Yours is
+best", disabled, when your board already matches the search.
+
+**‹ Results** (v208) sits in the bar under any finished board, beside the Yours / Best switch.
+Before it, Best board (or ✕) closed the results with no way back to Level N+1. That was true in
+free play too. Checked at 390×844 and 320×568: results → Best board → ‹ Results → Level 2 ›,
+nothing scrolls.
 
 **Menu → Levels** lists every open level with its target, pre-fill and stars.
 

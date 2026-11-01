@@ -95,7 +95,8 @@
   .hs li.tap{cursor:pointer;} .hs li.tap:active{background:rgba(255,255,255,.06); border-radius:6px;}
   .hs li .vb{font-size:10px; opacity:.55; letter-spacing:.3px;}
   .bestbar{max-width:440px; margin:12px auto 0; text-align:center;}
-  .bestbar .seg button{padding:7px 14px;}
+  .bestbar .seg button{padding:7px 12px;}
+  .bestbar .bbrow{display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap;}
   .bestbar .note{font-size:12px; opacity:.8; margin-top:6px; min-height:16px;}
   @media (max-height:640px){ .bestbar .note{display:none;} }
   .solvebox{margin:4px 0 0; font-size:14px; line-height:1.45;}
@@ -374,7 +375,7 @@
   .lvbar i{position:absolute; left:0; top:0; bottom:0; border-radius:5px; background:linear-gradient(90deg,#c9973d,#ffe29a);}
   .lvbar u{position:absolute; top:-4px; bottom:-4px; width:2px; background:#fff; border-radius:1px;}
   .lvbar u.s{background:rgba(255,255,255,.5);}
-  .lvlinks{display:flex; justify-content:space-between; margin-top:10px;} .lvlinks .hs-all:disabled{opacity:.35;}
+  .res-btns+.res-btns{margin-top:8px;} .res-btns .btn{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .lvlist{list-style:none; margin:8px 0 0; padding:0;}
   .lvlist li{display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid rgba(255,255,255,.08);}
   .lvlist li.lock{opacity:.4;} .lvlist .ln{font-weight:900; font-size:16px; width:34px; color:var(--gold);}
@@ -1019,8 +1020,9 @@ function levelResultsHTML(){
     +'<div class="res-btns">'+(r.cleared
         ?'<button class="btn" onclick="levelPlay('+(L.n+1)+')">Level '+(L.n+1)+' ›</button><button class="btn sec" onclick="levelPlay('+L.n+',true)">Replay board</button>'
         :'<button class="btn" onclick="levelPlay('+L.n+',true)">Same board</button><button class="btn sec" onclick="levelPlay('+L.n+')">New board</button>')+'</div>'
-    +'<div class="lvlinks"><button class="hs-all" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>r.total?'':' disabled')+'>✨ Best board</button>'
-    +'<button class="hs-all" onclick="openLevels()">All levels ›</button></div>';
+    +(function(){ const can=SOLVE&&SOLVE.done&&SOLVE.score>r.total, mineBest=SOLVE&&SOLVE.done&&SOLVE.score<=r.total;
+        return '<div class="res-btns"><button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(can?'':' disabled')+'>'+(mineBest?'Yours is best':'Best board')+'</button>'
+          +'<button class="btn sec" onclick="openLevels()">All levels</button></div>'; })();
 }
 
 /* ---- toggles ---- */
@@ -1226,10 +1228,11 @@ function renderBestBar_(){
   const el=document.getElementById("psBestBar"); if(!el) return;
   if(!over || !SOLVE){ el.innerHTML=""; return; }
   const mine=computeLines(grid).total;
-  if(!SOLVE.done){ el.innerHTML='<div class="note">Searching for the best board…</div>'; return; }
-  if(SOLVE.score<=mine){ el.innerHTML='<div class="note">🎯 Best possible board — nothing beats '+mine+'.</div>'; return; }
-  el.innerHTML='<div class="seg"><button class="'+(VIEW==="mine"?"on":"")+'" onclick="showView(\'mine\')">Your board '+mine+'</button>'
-    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">✨ Best '+SOLVE.score+'</button></div>'
+  const back='<button class="btn sm ngback" onclick="openResults(computeLines(grid).total)">‹ Results</button>';
+  if(!SOLVE.done){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">Searching for the best board…</div>'; return; }
+  if(SOLVE.score<=mine){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">🎯 Best possible board — nothing beats '+mine+'.</div>'; return; }
+  el.innerHTML='<div class="bbrow">'+back+'<div class="seg"><button class="'+(VIEW==="mine"?"on":"")+'" onclick="showView(\'mine\')">Yours '+mine+'</button>'
+    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">✨ Best '+SOLVE.score+'</button></div></div>'
     +'<div class="note">'+(VIEW==="best"?"Same 25 cards, rearranged.":"Tap Best to watch the cards rearrange.")+'</div>';
 }
 function refreshSolveUI(){
@@ -1821,7 +1824,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v207", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v208", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
