@@ -383,6 +383,50 @@
   .lvlist li{display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid rgba(255,255,255,.08);}
   .lvlist li.lock{opacity:.4;} .lvlist .ln{font-weight:900; font-size:16px; width:34px; color:var(--gold);}
   .lvlist .ld{font-size:12px; opacity:.8; flex:1;} .lvlist .ls{font-size:16px; letter-spacing:1px; color:rgba(255,255,255,.2);} .lvlist .ls b{color:var(--gold); font-weight:400;}
+  /* results, bigger and livelier (v214) */
+  .panel.res{max-width:460px; padding:20px 20px 18px; position:relative; overflow-x:hidden;
+    background:radial-gradient(120% 60% at 50% 0%,#1d6a4a 0%,#12503a 45%,#0c3d2c 100%); box-shadow:0 0 0 1px rgba(240,198,116,.25),0 18px 50px rgba(0,0,0,.65),0 0 40px rgba(240,198,116,.18);
+    animation:resIn .45s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes resIn{from{transform:scale(.88) translateY(14px); opacity:0}}
+  .rhero{position:relative; display:flex; align-items:center; gap:14px; margin:0 40px 8px 0;}
+  /* the rays turn by animating the gradient's angle, not the box: a rotating box's corners overflowed short panels */
+  @property --rayA{syntax:"<angle>"; inherits:false; initial-value:0deg;}
+  .rhero.win::before{content:""; position:absolute; left:32px; top:32px; width:360px; height:360px; margin:-180px 0 0 -180px; pointer-events:none; z-index:0;
+    background:repeating-conic-gradient(from var(--rayA),rgba(255,220,140,.13) 0deg 7deg,rgba(255,220,140,0) 7deg 20deg);
+    -webkit-mask-image:radial-gradient(circle,#000 0%,transparent 60%); mask-image:radial-gradient(circle,#000 0%,transparent 60%); animation:rayTurn 14s linear infinite;}
+  @keyframes rayTurn{to{--rayA:360deg}}
+  .rmed{position:relative; z-index:1; flex:0 0 auto; width:64px; height:64px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 35% 30%,#fff1c4,#f0c674 55%,#b88a35); color:#2a1c05; box-shadow:0 0 0 3px rgba(240,198,116,.35),0 6px 16px rgba(0,0,0,.45),inset 0 -3px 0 rgba(0,0,0,.18);}
+  .rhero:not(.win) .rmed{background:radial-gradient(circle at 35% 30%,#d9dde3,#a4acb7 55%,#6f7884);}
+  .rmed span{font:800 9px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; letter-spacing:1.5px; text-transform:uppercase; opacity:.75;}
+  .rmed b{font:900 26px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;}
+  .rtitle{position:relative; z-index:1; min-width:0;}
+  .panel.res .rtitle h2{font:700 28px/1.1 Georgia,serif; margin:0; color:var(--gold); text-shadow:0 2px 0 rgba(0,0,0,.3);}
+  .rch{font-size:12px; letter-spacing:1.4px; text-transform:uppercase; opacity:.75; margin-top:3px;}
+  .panel.res .lvstars{font-size:44px; letter-spacing:8px; margin:6px 0 4px; text-align:center;}
+  .rpts{display:flex; align-items:baseline; justify-content:center; gap:6px; margin:6px 0 0;}
+  .rpts b{font:900 56px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#ffe2a0; font-variant-numeric:tabular-nums;
+    text-shadow:0 0 18px rgba(240,198,116,.55),0 3px 0 rgba(0,0,0,.35);}
+  .rpts b.done{animation:psBump .45s ease-out;}
+  .rpts span{font:800 18px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; opacity:.8;}
+  .rsub{text-align:center; font-size:15px; opacity:.8; margin:4px 0 2px;}
+  .panel.res .lvbar{height:14px; border-radius:7px; margin:14px 0 6px;}
+  .panel.res .lvbar i{border-radius:7px;}
+  .panel.res .lvbar u{top:-5px; bottom:-5px; width:3px; background:rgba(255,255,255,.35); transition:background .2s,box-shadow .2s;}
+  .panel.res .lvbar u.lit{background:#fff; box-shadow:0 0 8px #fff;}
+  .panel.res .lvline{font-size:16px; text-align:center;} .nw{white-space:nowrap;}
+  .panel.res .lvunlock{font-size:16px; text-align:center; padding:9px 12px; margin:8px 0 4px;}
+  .panel.res .res-btns .btn{font-size:16px; padding:13px 12px; border-radius:12px;}
+  .panel.res .res-btns{margin-top:14px;} .panel.res .res-btns+.res-btns{margin-top:8px;}
+  .panel.res .hs{margin:10px 0;} .panel.res .hs li{font-size:15px;} .panel.res .stats b{font-size:22px;} .panel.res .stats span{font-size:11px;}
+  @media (max-height:700px){ .panel.res{padding:14px 16px;} .rmed{width:52px; height:52px;} .rmed b{font-size:21px;} .panel.res .rtitle h2{font-size:24px;}
+    .panel.res .lvstars{font-size:34px; margin:2px 0;} .rpts b{font-size:44px;} .rsub{font-size:14px;} .panel.res .lvline{font-size:15px;}
+    .panel.res .res-btns .btn{padding:10px 10px; font-size:15px;} .panel.res .res-btns{margin-top:10px;} .panel.res .lvbar{margin:10px 0 4px;} }
+  @media (prefers-reduced-motion:reduce){ .panel.res{animation:none} .rhero.win::before{animation:none} }
+  html[data-theme="night"] .panel.res{background:#1a1612; box-shadow:0 18px 50px rgba(0,0,0,.65);}
+  html[data-theme="night"] .rhero.win::before{display:none;}
+  html[data-theme="night"] .rmed{background:#6e5a36; color:#efdcb2; box-shadow:0 0 0 2px rgba(201,162,94,.45);} html[data-theme="night"] .rhero:not(.win) .rmed{background:#3a3630; color:#cdbf9f;}
+  html[data-theme="night"] .rpts b{color:#d9b874; text-shadow:none;} html[data-theme="night"] .panel.res .lvbar u.lit{background:#d9b874; box-shadow:none;}
   /* the score (v213) */
   .pstray-score .num{font-size:clamp(32px,9.5vw,44px);}
   .pstray-score .num.bump{animation:psBumpG .55s ease-out;}
@@ -1218,7 +1262,7 @@ function fitPS(){
 addEventListener('resize', function(){ try{ fitPS(); }catch(e){} });
 
 /* ---- overlays ---- */
-function openPanel(html,kind){ document.getElementById("panel").innerHTML=html; document.getElementById("overlay").classList.add("show"); curOverlay={kind}; }
+function openPanel(html,kind){ const pn=document.getElementById("panel"); pn.classList.toggle("res",kind==="results"); pn.innerHTML=html; document.getElementById("overlay").classList.add("show"); curOverlay={kind}; }
 let introPending=false;   // a level dealt behind the Menu shows its intro when the Menu closes
 function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; if(introPending){ introPending=false; levelIntro(); } }
 
@@ -1264,24 +1308,38 @@ function openResults(total){
   // One screen, no scrolling: the score line, the top five, the best-board line, two buttons.
   // (The hand each row and column made is on the board's chips; the full ten are under Scores.)
   const sysName=settings.scoring==="american"?"American":"English";
-  if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); NG.starFx(LV.result.stars); return; }
-  if(CLOCK.kind!=="off"){ openPanel(clockResultsHTML(total),"results"); return; }
+  if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); resAnimate(); NG.starFx(LV.result.stars); return; }
+  if(CLOCK.kind!=="off"){ openPanel(clockResultsHTML(total),"results"); resAnimate(); return; }
   const beat = !botTouched && total>=best && total>0;
-  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'The bot\'s board':(beat?'New best!':'Board complete'))+'</h2>'
-    +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">'+(botTouched?'Doesn\'t count toward your best ('+best+') · ':'Best '+best+' · ')+sysName+'</span></div>'
+  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
+    +resHero('Free','play',botTouched?'The bot\'s board':(beat?'New best!':'Board complete'),sysName+' scoring',beat)
+    +resPts(total,botTouched?'Doesn\'t count toward your best ('+best+')':'Your best '+best)
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
     +('<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board</button>')+'</div>';
-  openPanel(html,"results");
+  openPanel(html,"results"); resAnimate();
 }
 
+/* ---- results, bigger and livelier (v214) ---- */
+function resHero(badgeTop,badgeNum,title,sub,win){
+  return '<div class="rhero'+(win?' win':'')+'"><div class="rmed"><span>'+badgeTop+'</span><b>'+badgeNum+'</b></div><div class="rtitle"><h2>'+title+'</h2>'+(sub?'<div class="rch">'+sub+'</div>':'')+'</div></div>'; }
+function resPts(total,sub){ return '<div class="rpts"><b class="cnt" data-to="'+total+'">'+(reduceMotion()?total:0)+'</b><span>pts</span></div>'+(sub?'<div class="rsub">'+sub+'</div>':''); }
+function resAnimate(){
+  const el=document.querySelector("#panel .cnt"); if(!el) return; const to=+el.dataset.to;
+  const bar=document.querySelector("#panel .lvbar i"), marks=[...document.querySelectorAll("#panel .lvbar u")];
+  if(reduceMotion()){ el.textContent=to; if(bar) bar.style.width=bar.dataset.w+"%"; marks.forEach(m=>{ if(parseFloat(m.style.left)<=parseFloat(bar.dataset.w)) m.classList.add("lit"); }); return; }
+  const t0=performance.now()+150, dur=Math.min(1100,450+to*3); let lastTick=0;
+  (function tick(now){ if(!document.body.contains(el)) return; const k=Math.max(0,Math.min(1,(now-t0)/dur)), v=Math.round(to*(1-Math.pow(1-k,3)));
+    el.textContent=v; if(now-lastTick>70 && k>0 && k<1){ lastTick=now; NG.snd("tick",0,Math.round(k*12)); }
+    if(bar){ const w=parseFloat(bar.dataset.w)*(1-Math.pow(1-k,3)); bar.style.width=w+"%"; marks.forEach(m=>{ if(!m.classList.contains("lit") && parseFloat(m.style.left)<=w){ m.classList.add("lit"); } }); }
+    if(k<1) requestAnimationFrame(tick); else { el.classList.add("done"); } })(performance.now()); }
 function clockResultsHTML(total){
   const sysName=settings.scoring==="american"?"American":"English", key=CLOCK.kind+":"+settings.scoring, cb=clockBests()[key]||0;
   const label=CLOCK.kind==="shot"?"8 s a card":"90 s board", newBest=!botTouched && total>=cb && total>0;
-  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'The bot\'s board':(newBest?'New best against the clock':'Board complete'))+'</h2>'
-    +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">Best with the clock ('+label+') '+cb+' · '+sysName+'</span></div>'
-    +'<p class="muted" style="margin:6px 0 0;">Timed boards keep their own best and stay off the shared top 10, so your untimed best stays comparable.</p>'
+  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
+    +resHero('Clock',CLOCK.kind==="shot"?'8s':'90s',botTouched?'The bot\'s board':(newBest?'New best!':'Board complete'),label+' · '+sysName,newBest)
+    +resPts(total,'Best with the clock '+cb+' · kept apart from your untimed best')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
     +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board</button></div>';
@@ -1289,14 +1347,16 @@ function clockResultsHTML(total){
 function levelResultsHTML(){
   const L=LV, r=L.result, pctTxt=Math.round(r.pct*100)+'%', need=Math.max(0,L.target-r.total);
   const mark=function(p,cls){ return '<u class="'+cls+'" style="left:'+Math.min(100,p*100).toFixed(1)+'%"></u>'; };
-  const title=botTouched?'The bot\'s board':(r.cleared?'Level '+L.n+' cleared':'Not quite');
-  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+title+'</h2>'
+  const close=!r.cleared && need<=Math.max(5,Math.round(L.target*.1));
+  const title=botTouched?'The bot\'s board':(r.stars===3?'Three stars!':(r.cleared?'Cleared!':(close?'So close':'Not quite')));
+  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
+    +resHero('Level',L.n,title,chapterOf(L.n).name,r.cleared)
     +'<div class="lvstars">'+[0,1,2].map(i=>'<span class="lst'+(i<r.stars?' on':'')+'" style="animation-delay:'+(250+i*260)+'ms">★</span>').join('')+'</div>'
     +(r.unlocked?'<div class="lvunlock">Level '+(L.n+1)+' unlocked'+(chapterOf(L.n+1).from===L.n+1?' · '+chapterOf(L.n+1).name:'')+'</div>':'')
-    +'<div class="res-top"><span class="pts">'+r.total+' pts</span><span class="sub">'+pctTxt+' of the best board ('+r.max+')</span></div>'
-    +'<div class="lvbar"><i style="width:'+Math.min(100,r.pct*100).toFixed(1)+'%"></i>'+mark(L.pct,'')+mark(L.pct+.05,'s')+mark(L.pct+.10,'s')+'</div>'
-    +'<div class="lvline">Target <b>'+L.target+'</b> ('+Math.round(L.pct*100)+'%) · ★★ at '+Math.round((L.pct+.05)*100)+'% · ★★★ at '+Math.round((L.pct+.10)*100)+'%</div>'
-    +'<div class="lvline">'+(botTouched?'A board the bot played doesn\'t count.':(r.cleared?(r.unlocked?'':'Best on this level: '+stars(lvProg()[settings.scoring].stars[L.n]||0)):(need+' more would have done it.')))+'</div>'
+    +resPts(r.total,pctTxt+' of the best board ('+r.max+')')
+    +'<div class="lvbar"><i data-w="'+Math.min(100,r.pct*100).toFixed(1)+'" style="width:'+(reduceMotion()?Math.min(100,r.pct*100).toFixed(1):0)+'%"></i>'+mark(L.pct,'')+mark(L.pct+.05,'s')+mark(L.pct+.10,'s')+'</div>'
+    +'<div class="lvline">Target <b>'+L.target+'</b> ('+Math.round(L.pct*100)+'%) · <span class="nw">★★ '+Math.round((L.pct+.05)*100)+'%</span> · <span class="nw">★★★ '+Math.round((L.pct+.10)*100)+'%</span></div>'
+    +'<div class="lvline">'+(botTouched?'A board the bot played doesn\'t count.':(r.cleared?(r.unlocked?'':'Best on this level: '+stars(lvProg()[settings.scoring].stars[L.n]||0)):('<b>'+need+'</b> more would have done it.')))+'</div>'
     +'<div class="res-btns">'+(r.cleared
         ?'<button class="btn" onclick="levelPlay('+(L.n+1)+')">Level '+(L.n+1)+' ›</button><button class="btn sec" onclick="levelPlay('+L.n+',true)">Replay board</button>'
         :'<button class="btn" onclick="levelPlay('+L.n+',true)">Same board</button><button class="btn sec" onclick="levelPlay('+L.n+')">New board</button>')+'</div>'
@@ -2135,7 +2195,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v213", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v214", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

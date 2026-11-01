@@ -531,3 +531,26 @@ one.
 - Crossing calls fire at the target and at 2★.
 - At 320 wide, every node stays inside the panel.
 - All earlier suites pass. Night still gives off 11% of Day's light.
+
+## A bigger, livelier results screen (v214)
+Every end-of-board screen (Levels, Free play, the clock) is larger and more alive.
+- **Panel:** `.panel.res`, 460 px wide, a lit green gradient, a soft gold glow; it springs in (0.45 s).
+- **Hero:** a medallion (gold on a win, silver otherwise) showing the level number, "Free play" or
+  the clock, beside a 28 px Georgia title.
+  - Levels titles: "Three stars!", "Cleared!", "So close" (missed by 10% of the target or less, at
+    least 5 points) or "Not quite".
+  - Free play and clock titles: "New best!" or "Board complete".
+  - Under the title: the chapter name or scoring system. On a win, slow light rays turn behind it.
+- **Score:** 56 px, counting up from 0 with rising ticks, ending in a bump (`resAnimate`).
+- **Levels:** 44 px stars that pop; a 14 px bar that fills alongside the count, lighting each ★ tick
+  as it passes; the target line at 16 px.
+- **Buttons:** 16 px text, 13 px padding.
+- **Short screens** (≤700 px tall) step down: title 24, score 44, stars 34, buttons 15 px.
+- **The rays turn by animating the gradient's angle** (`@property --rayA`), not by rotating the box.
+  A rotating 420 px box poked its corners past the bottom of the short clock panel, and the panel
+  scrolled 24-39 px at 320 and 375 wide.
+- **Night:** a flat panel, an amber medallion, no rays or glow.
+
+**Measured** with a bot-played board in every mode at 320×568, 375×667, 390×844 and 430×932, plus
+Night: one screen, no panel scroll, the count lands on the exact total, and a 3-star bar lights all
+three ticks. No page errors; every earlier suite passes.
