@@ -479,3 +479,55 @@ possible:
 Measured on a full board at 390×844: Night gives off **9% of Day's light and 8% of its blue**. The
 brightest pixel is 66% of white (text anti-aliasing) against Day's 100%. Auto still follows the
 phone's dark mode, so Night arrives with it.
+
+## The level map, and more juice on the score (v213)
+**Levels screen.** The plain list is now a map: a winding path of nodes (x pattern 50 / 76 / 50 / 24%,
+86 px a row). A gold polyline runs through the cleared levels and a dotted one through the rest
+(an SVG with `preserveAspectRatio="none"` and non-scaling strokes).
+- **Node states:** cleared levels are gold with their stars underneath; the level you're up to is
+  bigger with a pulsing ring; locked levels are dim and dashed.
+- **Badges:** Blitz levels carry an `8s` or `90s` badge, the part-built ones carry `Learn`, and a
+  silver or gold cup marks levels 5 and 10.
+- **Chapters** head each stretch: *Training Table* (1–3), *The Climb* (4–9), *High Stakes* (10–14),
+  *Master's Table* (15+).
+- **Header:** total stars · cleared · next target · scoring system.
+- **Detail card:** a sticky card shows the level you tap: target, pre-fill, Blitz, undo, your best
+  stars, and Play / Replay. A locked level says "Clear level N−1 to open".
+- **Opening:** the map scrolls to your current level. It shows the levels up to the furthest of
+  current + 4 and level 10.
+
+**Level intro.** Starting a level (not a same-board replay) flashes "LEVEL 5 / The Climb · Blitz ·
+8 s a card / Target 32%" over the board for 1.9 s. Blitz clocks wait for it (`CLOCK.grace`). If the
+level was dealt behind the Menu, the intro waits for the Menu to close (`introPending`).
+
+**Results.** The stars pop in one at a time with rising ticks and haptics; three stars adds a ping
+and confetti. A shining banner says "Level N unlocked", plus the chapter name when you reach a new
+one.
+
+**The score.**
+- **Points fly.** A finished line's "+N" lifts off its chip and arcs into the score (`flyPts`, 720 ms).
+  - `place()` sees the scoring line coming and calls `holdScore()`, so the number rolls only when the
+    points land. There's a 2.6 s safety release.
+  - On landing: sparks, a chip sound, a haptic, and a glow behind the score.
+- **The bump scales with the gain** (`--gain`), and the number is bigger on tall phones
+  (`clamp(32px, 9.5vw, 44px)`).
+- **Target bar (levels).** A bar under the target line fills toward the 3-star mark, with ticks at
+  1★ and 2★. It turns gold past the target.
+- **Crossing calls.** Crossing a threshold mid-board calls "Target hit!", "★★" or "★★★" under the
+  score with a chime; 3★ adds confetti.
+
+**Fixes:**
+- "It's here!" keeps the card it announces. It fired about 560 ms after the move, and if that move
+  was the last card the tray was already empty: an intermittent `null.r`.
+- Switching Play or Clock in the Menu keeps the Menu open, so you can set up before playing. The
+  board deals behind it.
+
+**Tested:**
+- The map selects and scrolls to the current level.
+- Tapping a locked node or a cleared node shows the right card, and Play from the card starts the
+  level with the intro.
+- The Blitz clock holds through the intro.
+- The score holds at 0 while a "+20" flies, then rolls to 20.
+- Crossing calls fire at the target and at 2★.
+- At 320 wide, every node stays inside the panel.
+- All earlier suites pass. Night still gives off 11% of Day's light.
