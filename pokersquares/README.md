@@ -403,3 +403,40 @@ has its App Store Connect record.
   square. That's a one-line change in `clockOut()`.
 - Earn helpers on the ladder, e.g. a 3-star clear banks an undo for a no-undo level, a **swap**
   card (exchange two placed cards), or a **joker** (a wild card for one square).
+
+## Trim and Night (v211)
+**Trimmed:**
+- **Menu, 15 rows to 8:** Play · Clock (free play only) · New board/New game · Trophies · Theme ·
+  Scoring · Card size and Card text · Four-color deck · Haptics.
+  - Gone because they duplicated something on screen: Back to all games (‹ Games), How to play
+    (Rules), High scores (Scores) and Resume (✕).
+  - Also gone: the Levels row, now a header pill, and Tips. The tip boxes are deleted; the draw
+    lights and Rules teach more.
+- **Header:** the one extra pill follows the mode. `html.mode-levels` shows **Levels** (`#lvBtn`,
+  opens the ladder); Free play shows **Scores** (`#hsBtn`). The iOS app hides `#hsBtn` (no shared
+  board) and keeps Levels.
+- **HUD:** the 25-light meter is gone. "Card N of M" (with the board-clock time) says the same thing.
+- **Under the board:** Undo is hidden, not shown as a dead "No undo", wherever it doesn't apply.
+  New game reads **New board** in Levels.
+- **Emoji:** off the panel titles, buttons, Menu rows and notes. The rules panel's title is now
+  "How to play". Stars ★ stay; they're the content.
+
+**Night theme.** Menu → **Theme: Auto / Day / Night** (`settings.theme`, default Auto). Auto follows
+`prefers-color-scheme`, so it switches with the phone's dark mode, sunset schedule included, and
+live (a `matchMedia` change listener). Night is `html[data-theme="night"]`:
+- **Table:** a midnight blue-black gradient instead of green felt, with a cool-tinted light drift.
+- **Cards:** dimmed parchment (`#e2d9c2` → `#c4b899`) instead of bright cream, with the gloss at 45%.
+- **Gold:** `--gold` becomes amber `#e3b25e`. Panels, callouts and the HUD glass are navy.
+- **Particles:** at 75% opacity. The blue and gold draw lights keep their contrast.
+- **Chrome:** `theme-color` switches to `#0e1a2e`.
+- **First paint:** a small script in `<head>` reads the saved theme and sets the attribute before
+  anything renders, so Night never flashes green.
+
+**Tested** in headless Chrome:
+- **Menu:** shows exactly the 8 rows.
+- **Header and controls:** the pill is Levels on levels and Scores in free play; level 4's controls
+  are just "New board".
+- **Night:** Auto on a dark-mode phone gives Night, the theme-color meta and page background switch
+  with it, Day overrides a dark phone, and Night survives a reload.
+- **Layout:** no scroll at 320, 390 and 430 wide.
+- **Regressions:** the levels, clock and effects suites all pass, and the app build runs.

@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<script>/* Night before first paint (v211): read the saved theme; Auto follows the phone's dark mode */
+(function(){ try{ var o=JSON.parse(localStorage.getItem("pokersquares.v1")||"{}"), t=(o.settings&&o.settings.theme)||"auto";
+  if(t==="night"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.setAttribute("data-theme","night"); }catch(e){} })();</script>
 <style>
   :root{ --felt:#0d5c3f;
     --size:1;   /* card scale, shared S/M/L/XL control (../cardsize.js) */ --felt2:#0a4a33; --wood:#8a5a2b; --wood2:#6b4420;
@@ -388,6 +391,26 @@
   @keyframes ngWarn{to{stroke-width:5.5}}
   .ngtime{font-variant-numeric:tabular-nums; color:#ffe2a0;} .ngtime.warn{color:#ff7a6a;}
   @media (prefers-reduced-motion:reduce){ .ngclock.warn rect{animation:none} }
+  /* header: the extra pill follows the mode (v211) */
+  html.mode-levels #hsBtn{display:none;} html:not(.mode-levels) #lvBtn{display:none;}
+  .mlabel{margin:14px 0 5px; font-size:13px; opacity:.85;}
+  /* ================= v211: Night ================= */
+  html[data-theme="night"]{ --gold:#e3b25e; --cream:#e9e1cc; --felt:#0e1a2e; background:#070c16; }
+  html[data-theme="night"] body{background:radial-gradient(130% 60% at 50% -8%,#1c2d4a 0%,rgba(28,45,74,0) 62%),radial-gradient(120% 70% at 50% 120%,#02040a 0%,rgba(2,4,10,0) 60%),linear-gradient(180deg,#0e1a2e,#0a1322 60%,#060b15);}
+  html[data-theme="night"] .ngamb i{background:radial-gradient(closest-side,rgba(150,170,255,.07),rgba(150,170,255,0));}
+  html[data-theme="night"] .pstray{background:radial-gradient(130% 150% at 50% 0%,#17233a 0%,#0b1426 55%,#060b16 100%) padding-box,
+      linear-gradient(120deg,rgba(227,178,94,.6),rgba(124,160,255,.4) 50%,rgba(227,178,94,.6)) border-box;}
+  html[data-theme="night"] .pscell.filled,html[data-theme="night"] #psCurrent .card,html[data-theme="night"] .flycard,html[data-theme="night"] .ngdrag{
+    background:linear-gradient(165deg,#e2d9c2 0%,#d3c8ad 60%,#c4b899 100%) !important; border-color:#b3a685;}
+  html[data-theme="night"] .pscell.filled{box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 1px 0 rgba(0,0,0,.3),0 4px 10px rgba(0,0,0,.55);}
+  html[data-theme="night"] .pscell.filled::before,html[data-theme="night"] #psCurrent .card::before{opacity:.45;}
+  html[data-theme="night"] .pscell.empty{background:linear-gradient(180deg,rgba(0,0,0,.38),rgba(0,0,0,.2)); border-color:rgba(227,178,94,.14);}
+  html[data-theme="night"] .psscore{background:rgba(0,0,0,.3);}
+  html[data-theme="night"] .panel{background:linear-gradient(180deg,#15213b,#0c1528);}
+  html[data-theme="night"] .overlay{background:rgba(0,0,0,.7);}
+  html[data-theme="night"] .pscall{background:rgba(8,14,28,.92);}
+  html[data-theme="night"] .ng-ghost b{background:rgba(226,217,194,.92);}
+  html[data-theme="night"] #ngfx{opacity:.75;}
   /* trophies */
   .ngtro{position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 10px); transform:translate(-50%,-150%); z-index:60; display:flex; align-items:center; gap:10px;
     background:rgba(12,16,22,.95); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:8px 16px 8px 10px; box-shadow:0 10px 30px rgba(0,0,0,.6);
@@ -423,7 +446,7 @@
   <div class="gn-hdr">
     <div class="gn-top">
       <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
-      <button class="gn-pill" id="hsBtn">Scores</button>
+      <button class="gn-pill" id="hsBtn">Scores</button><button class="gn-pill" id="lvBtn">Levels</button>
       <button class="gn-pill" id="rulesBtn">Rules</button>
       <button class="gn-pill" id="menuBtn">Menu</button>
     </div>
@@ -435,7 +458,6 @@
     <div class="pstray-info">
       <div class="pstray-place" id="psPlace">Tap an empty square</div>
       <div class="pstray-prog" id="psProg">Card 1 of 25</div>
-      <div class="psmeter" id="psMeter" aria-hidden="true"></div>
     </div>
     <div class="pstray-score">
       <div class="lbl">SCORE</div><div class="num" id="psTotal">0</div><div class="ngdelta" id="ngDelta"></div>
@@ -447,11 +469,10 @@
 
   <div class="bestbar" id="psBestBar"></div>
 
-  <div id="psTips"></div>
 
   <div class="controls" id="psControls">
-    <button class="btn sec sm" id="psUndo">↩ Undo</button>
-    <button class="btn sm" id="psNew">🔀 New game</button>
+    <button class="btn sec sm" id="psUndo">Undo</button>
+    <button class="btn sm" id="psNew">New game</button>
   </div>
 </div>
 
@@ -482,7 +503,7 @@ const SCORING={
 };
 
 const LS_KEY="pokersquares.v1";
-let settings={tipsOn:false, fourColor:true, scoring:"american", botAuto:true, mode:"levels", clock:"off"};
+let settings={fourColor:true, scoring:"american", botAuto:true, mode:"levels", clock:"off", theme:"auto"};
 let best=0;
 try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw);
   if(o&&o.settings) Object.assign(settings,o.settings); if(o&&typeof o.best==="number") best=o.best; } }catch(e){}
@@ -936,8 +957,6 @@ function render(justIdx){
   const k0=(isLevels()&&LV)?LV.k:0;
   document.getElementById("psProg").textContent  = showBest ? ("You scored "+computeLines(grid).total) : (over ? "25 of 25 placed" : ("Card "+(n-k0+1)+" of "+(25-k0)));
   rollScore(total);
-  const m=document.getElementById("psMeter");
-  if(m){ let mh=""; for(let k=0;k<25;k++) mh+='<i class="'+(k<n?'on':(k===n&&!over&&!showBest?'now':''))+'"></i>'; m.innerHTML=mh; m.style.display=showBest?"none":""; }
   const ck=current?(current.r+"/"+current.s):"";
   if(ck && ck!==lastShownCard){ const cc=document.querySelector('#psCurrent .card'); if(cc) cc.classList.add("dealin"); }
   lastShownCard=ck;
@@ -964,16 +983,12 @@ function render(justIdx){
   const board=document.getElementById("psboard");
   board.innerHTML=html; board.classList.toggle("isbest",showBest);
   renderBestBar();
-  // tips
-  const fp=SCORING[settings.scoring].flush;
-  document.getElementById("psTips").innerHTML = settings.tipsOn
-    ? '<div class="tip-block"><b>Flushes are your friend.</b> Funnel one suit down a single row or column — a flush is '+fp+' pts and far easier to land than a straight.</div>'
-     +'<div class="tip-block"><b>Every square feeds two hands.</b> A card lives in one row and one column at once, so the corners and centre are worth the most thought.</div>'
-    : "";
   // undo availability
   const undoBtn=document.getElementById("psUndo");
-  undoBtn.disabled = !lastMove || showBest || !undoAllowed();
-  undoBtn.textContent = undoAllowed() ? "↩ Undo" : "No undo";
+  undoBtn.disabled = !lastMove || showBest;
+  undoBtn.style.display = undoAllowed() ? "" : "none";
+  document.getElementById("psNew").textContent = isLevels() ? "New board" : "New game";
+  document.documentElement.classList.toggle("mode-levels", isLevels());
   renderBotBar();
   if(CLOCK.kind!=="off") clockDraw();
   NG.after(justIdx);
@@ -1003,7 +1018,7 @@ function scoreTableHTML(){
 }
 function openRules(){
   const sysName = settings.scoring==="american" ? "American" : "English";
-  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🎴 Poker Squares</h2>'
+  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>How to play</h2>'
     +'<p>Cards are dealt <b>one at a time</b> into a 5×5 grid. Tap any empty square to drop the card shown in the tray. Once it is down it stays put — <b>Undo</b> only reverses your most recent placement.</p>'
     +'<p>When all 25 squares are full, each of the <b>5 rows</b> and <b>5 columns</b> is scored as a poker hand. Your total is the sum of all ten. Aces play high or low, <b>A-2-3-4-5</b> counts as a straight, and <b>10-J-Q-K-A</b> of one suit is a royal flush.</p>'
     +'<h3>Scoring — '+sysName+' system</h3>'
@@ -1019,25 +1034,18 @@ function openRules(){
   openPanel(html,"rules");
 }
 function openMenu(){
-  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>⚙ Menu</h2>'
-    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.tipsOn?'on':'')+'" onclick="menuToggleTips()"></button><span>Tips '+(settings.tipsOn?'ON':'OFF')+'</span></div>'
-    +'<div class="optrow"><div class="switch" style="display:flex;"><button class="toggle '+(settings.fourColor?'on':'')+'" onclick="menuToggleFour()"></button><span>Four-color deck</span></div></div>'
+  const seg=(label,opts,cur,fn)=>'<div class="mlabel">'+label+'</div><div class="seg">'+opts.map(o=>'<button class="'+(cur===o[0]?'on':'')+'" onclick="'+fn+'(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
+  const tog=(on,fn,label)=>'<div class="switch" style="display:flex;margin:12px 0 2px;"><button class="toggle '+(on?'on':'')+'" onclick="'+fn+'"></button><span>'+label+'</span></div>';
+  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Menu</h2>'
+    +seg('Play',[['levels','Levels'],['free','Free play']],isLevels()?'levels':'free','setMode')
+    +(isLevels()?'':seg('Clock',[['off','Off'],['shot','8 s a card'],['board','90 s board']],settings.clock||'off','setClock'))
+    +'<button class="setup-opt" style="margin-top:12px" onclick="closeOverlay();newGame();">'+(isLevels()?'New board, same level':'New game')+'</button>'
+    +'<button class="setup-opt" onclick="NG.openTrophies()">Trophies</button>'
+    +seg('Theme',[['auto','Auto'],['day','Day'],['night','Night']],settings.theme||'auto','setTheme')
+    +seg('Scoring',[['american','American'],['english','English']],settings.scoring,'setScoring')
     +CARDSIZE.rowsHTML()
-    +'<div style="margin:12px 0 4px;font-size:13px;">Scoring system</div>'
-    +'<div class="seg"><button class="'+(settings.scoring==="american"?'on':'')+'" onclick="setScoring(\'american\')">American</button><button class="'+(settings.scoring==="english"?'on':'')+'" onclick="setScoring(\'english\')">English</button></div>'
-    +'<div style="height:6px"></div>'
-    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(NG.haptics?'on':'')+'" onclick="NG.toggleHaptics();openMenu();"></button><span>Haptics</span></div>'
-    +'<div style="margin:12px 0 4px;font-size:13px;">Play</div>'
-    +'<div class="seg"><button class="'+(isLevels()?'on':'')+'" onclick="setMode(\'levels\')">Levels</button><button class="'+(!isLevels()?'on':'')+'" onclick="setMode(\'free\')">Free play</button></div>'
-    +'<div style="height:6px"></div>'
-    +(isLevels()?'<button class="setup-opt" onclick="openLevels()">🪜 Levels</button>':
-      '<div style="margin:6px 0 4px;font-size:13px;">Clock</div><div class="seg"><button class="'+(settings.clock==="off"?'on':'')+'" onclick="setClock(\'off\')">Off</button><button class="'+(settings.clock==="shot"?'on':'')+'" onclick="setClock(\'shot\')">8 s a card</button><button class="'+(settings.clock==="board"?'on':'')+'" onclick="setClock(\'board\')">90 s board</button></div><div style="height:6px"></div>')
-    +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 '+(isLevels()?'New board, same level':'New game')+'</button>'
-    +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
-    +'<button class="setup-opt" onclick="NG.openTrophies()">🥇 Trophies</button>'
-    +'<a class="setup-opt" href="../">🏠 Back to all games</a>'
-    +'<button class="setup-opt" onclick="openRules()">📖 How to play</button>'
-    +'<div style="text-align:center;margin-top:8px;"><button class="btn sec" onclick="closeOverlay()">Resume</button></div>';
+    +tog(settings.fourColor,'menuToggleFour()','Four-color deck')
+    +tog(NG.haptics,'NG.toggleHaptics();openMenu();','Haptics');
   openPanel(html,"menu");
 }
 function openResults(total){
@@ -1047,29 +1055,29 @@ function openResults(total){
   if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); return; }
   if(CLOCK.kind!=="off"){ openPanel(clockResultsHTML(total),"results"); return; }
   const beat = !botTouched && total>=best && total>0;
-  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(beat?'🏆 New best!':'✅ Board complete'))+'</h2>'
+  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'The bot\'s board':(beat?'New best!':'Board complete'))+'</h2>'
     +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">'+(botTouched?'Doesn\'t count toward your best ('+best+') · ':'Best '+best+' · ')+sysName+'</span></div>'
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
-    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
-    +('<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>✨ Best board</button>')+'</div>';
+    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
+    +('<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board</button>')+'</div>';
   openPanel(html,"results");
 }
 
 function clockResultsHTML(total){
   const sysName=settings.scoring==="american"?"American":"English", key=CLOCK.kind+":"+settings.scoring, cb=clockBests()[key]||0;
   const label=CLOCK.kind==="shot"?"8 s a card":"90 s board", newBest=!botTouched && total>=cb && total>0;
-  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(newBest?'⏱ New best against the clock':'⏱ Board complete'))+'</h2>'
+  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'The bot\'s board':(newBest?'New best against the clock':'Board complete'))+'</h2>'
     +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">Best with the clock ('+label+') '+cb+' · '+sysName+'</span></div>'
     +'<p class="muted" style="margin:6px 0 0;">Timed boards keep their own best and stay off the shared top 10, so your untimed best stays comparable.</p>'
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
-    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
-    +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>✨ Best board</button></div>';
+    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
+    +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board</button></div>';
 }
 function levelResultsHTML(){
   const L=LV, r=L.result, pctTxt=Math.round(r.pct*100)+'%', need=Math.max(0,L.target-r.total);
   const mark=function(p,cls){ return '<u class="'+cls+'" style="left:'+Math.min(100,p*100).toFixed(1)+'%"></u>'; };
-  const title=botTouched?'🤖 The bot\'s board':(r.cleared?'Level '+L.n+' cleared':'Not quite');
+  const title=botTouched?'The bot\'s board':(r.cleared?'Level '+L.n+' cleared':'Not quite');
   return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+title+'</h2>'
     +'<div class="lvstars">'+stars(r.stars)+'</div>'
     +'<div class="res-top"><span class="pts">'+r.total+' pts</span><span class="sub">'+pctTxt+' of the best board ('+r.max+')</span></div>'
@@ -1085,10 +1093,16 @@ function levelResultsHTML(){
 }
 
 /* ---- toggles ---- */
-function menuToggleTips(){ settings.tipsOn=!settings.tipsOn; persist(); render(); openMenu(); }
 function menuToggleFour(){ settings.fourColor=!settings.fourColor; persist(); render(); openMenu(); }
 // the shared size control repaints itself; the board still needs a redraw behind the panel
 window.onCardSize=function(){ try{ render(); }catch(e){} };
+/* ---- theme (v211): Auto follows the phone's dark mode; Night is a midnight table with dimmed cards ---- */
+const DARKQ=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):null;
+function isNight(){ const t=settings.theme||"auto"; return t==="night" || (t==="auto" && !!(DARKQ&&DARKQ.matches)); }
+function applyTheme(){ const n=isNight(); document.documentElement.toggleAttribute("data-theme",false); if(n) document.documentElement.setAttribute("data-theme","night");
+  const m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute("content", n?"#0e1a2e":"#0b3f2b"); }
+function setTheme(t){ settings.theme=t; persist(); applyTheme(); openMenu(); }
+if(DARKQ){ try{ DARKQ.addEventListener("change",applyTheme); }catch(e){ try{ DARKQ.addListener(applyTheme); }catch(_){} } }
 function setScoring(s){ settings.scoring=s; persist(); if(isLevels()){ newGame({top:true}); openMenu(); return; } if(over){ VIEW="mine"; startSolve(); } render(); openMenu(); }
 
 /* ============================================================
@@ -1280,7 +1294,7 @@ function solveBoxHTML(){
   return '<div class="stats">'+tile(botTouched?'Bot':'You',mine)+tile('Max',done?max:'…')+tile('Of max',done?pct+'%':'…')
     +tile(st.n&&!botTouched?'Avg · '+st.n:'Avg',avg)
     +'<div class="bar"><i style="width:'+prog+'%"></i></div></div>'
-    +'<div class="stats-note">'+(!done?'Searching for the best board these 25 cards make…':(SOLVE.score<=mine?'🎯 That\'s the best board these cards make.':'Max is the best board these same 25 cards can make.'))+'</div>';
+    +'<div class="stats-note">'+(!done?'Searching for the best board these 25 cards make…':(SOLVE.score<=mine?'That\'s the best board these cards make.':'Max is the best board these same 25 cards can make.'))+'</div>';
 }
 function renderBestBar(){ renderBestBar_(); try{ fitPS(); }catch(e){} }   // the bar appearing after a game can push the page; refit
 function renderBestBar_(){
@@ -1289,9 +1303,9 @@ function renderBestBar_(){
   const mine=computeLines(grid).total;
   const back='<button class="btn sm ngback" onclick="openResults(computeLines(grid).total)">‹ Results</button>';
   if(!SOLVE.done){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">Searching for the best board…</div>'; return; }
-  if(SOLVE.score<=mine){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">🎯 Best possible board — nothing beats '+mine+'.</div>'; return; }
+  if(SOLVE.score<=mine){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">Best possible board — nothing beats '+mine+'.</div>'; return; }
   el.innerHTML='<div class="bbrow">'+back+'<div class="seg"><button class="'+(VIEW==="mine"?"on":"")+'" onclick="showView(\'mine\')">Yours '+mine+'</button>'
-    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">✨ Best '+SOLVE.score+'</button></div></div>'
+    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">Best '+SOLVE.score+'</button></div></div>'
     +'<div class="note">'+(VIEW==="best"?"Same 25 cards, rearranged.":"Tap Best to watch the cards rearrange.")+'</div>';
 }
 function refreshSolveUI(){
@@ -1447,7 +1461,7 @@ const HS=(function(){
   // the block inside the results panel
   function resultsHTML(total){
     const sys=settings.scoring, sysName=sys==="american"?"American":"English", key=dealKey();
-    let top='<div class="hs-h"><h3>🏆 Top scores</h3>'+(board[sys].length>5?'<button class="hs-all" onclick="HS.open()">All '+board[sys].length+' ›</button>':'')+'</div>';
+    let top='<div class="hs-h"><h3>Top scores</h3>'+(board[sys].length>5?'<button class="hs-all" onclick="HS.open()">All '+board[sys].length+' ›</button>':'')+'</div>';
     if(posted.indexOf(key)<0 && qualifies(total,sys)){
       const L=board[sys], rank=L.filter(e=>e.score>=total).length+1;
       top+='<div style="font-size:14px;">'+total+' makes the board at <b>#'+rank+'</b>! Put your name on it:</div>'
@@ -1471,12 +1485,12 @@ const HS=(function(){
     post({t:"score",e}).catch(()=>{ pending.push(e); save(KP,pending); status="Saved here — it'll post when you're back online."; paint(); });
     paint();
   }
-  // the standalone board (🏆 button / Menu)
+  // the standalone board (button / Menu)
   function open(){
     tab=tab||settings.scoring;
     // opened from the results screen (All 10 ›): a Back button returns to it instead of closing everything
     const fromResults=curOverlay.kind==="results";
-    openPanel((fromResults?'<button class="btn sec sm close" onclick="openResults(computeLines(grid).total)">‹ Back</button>':'<button class="btn sec sm close" onclick="closeOverlay()">✕</button>')+'<h2>🏆 High scores</h2>'
+    openPanel((fromResults?'<button class="btn sec sm close" onclick="openResults(computeLines(grid).total)">‹ Back</button>':'<button class="btn sec sm close" onclick="closeOverlay()">✕</button>')+'<h2>High scores</h2>'
       +'<p class="muted" style="margin-top:0;">Everybody playing Poker Squares, on any phone. Top 10 for each scoring system.</p>'
       +'<div id="hsPanel"></div>','scores');
     paint(); sync();
@@ -1499,7 +1513,7 @@ const HS=(function(){
     let head='<h2>'+esc(v.entry.name)+'</h2><p class="muted" style="margin-top:0;">'+sysName+' · '+when(v.entry.at)+'</p>';
     let toggle='<div style="text-align:center;margin:8px 0 10px;"><div class="seg">'
       +'<button class="'+(v.mode==="played"?"on":"")+'" onclick="HS.boardMode(\'played\')">As played '+v.entry.score+'</button>'
-      +'<button class="'+(v.mode==="best"?"on":"")+'" onclick="HS.boardMode(\'best\')">✨ Best'+(v.best?' '+v.best.score:'')+'</button>'
+      +'<button class="'+(v.mode==="best"?"on":"")+'" onclick="HS.boardMode(\'best\')">Best'+(v.best?' '+v.best.score:'')+'</button>'
       +'</div></div>';
     let body, note;
     if(v.mode==="played"){
@@ -1509,7 +1523,7 @@ const HS=(function(){
       const b=viewBoardHTML(v.best.grid, v.sys); body=b.html;
       note = v.best.score>v.entry.score
         ? "The best these same 25 cards can make: "+v.best.score+" ("+(v.best.score-v.entry.score)+" more than "+esc(v.entry.name)+" scored)."
-        : "🎯 "+esc(v.entry.name)+" found the best board these 25 cards can make.";
+        : ""+esc(v.entry.name)+" found the best board these 25 cards can make.";
     }
     openPanel(back+head+toggle+'<div class="boardwrap">'+body+'<div class="bnote">'+note+'</div></div>', "board");
     curOverlay.fromScores=cameFromScores!==false;
@@ -1859,10 +1873,12 @@ var NG=(function(){
 document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand openRules the click Event
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("hsBtn").onclick=function(){ HS.open(); };
+document.getElementById("lvBtn").onclick=function(){ openLevels(); };
 document.getElementById("psUndo").onclick=undo;
 document.getElementById("psNew").onclick=function(){ newGame(); };
 document.getElementById("overlay").addEventListener("click",function(e){ if(e.target===this) closeOverlay(); });
 
+applyTheme();
 newGame();
 
 /* service worker (shared shell) */
@@ -1885,7 +1901,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v210", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v211", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
