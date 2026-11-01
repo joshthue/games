@@ -130,7 +130,7 @@ American mirrors real-poker rarity; English rewards how hard each hand is to bui
 - In-game asset refs point up one level (`../manifest.webmanifest`, `../icon-180.png`, `../sw.js`).
 - Sound from the shared `../sfx.js` (synthesized, offline, one mute setting for every game).
 
-## Card size and card text
+## Card size and card text (controls removed in v212; see below)
 
 Cards scale with the shared **Card size** row (S / M / L / XL, `../cardsize.js`) in the Menu. The steps are multipliers (0.86 / 1 / 1.2 / 1.4)
 rather than pixel sizes, because the games don't share a base card size — a multiplier
@@ -440,3 +440,42 @@ live (a `matchMedia` change listener). Night is `html[data-theme="night"]`:
   with it, Day overrides a dark phone, and Night survives a reload.
 - **Layout:** no scroll at 320, 390 and 430 wide.
 - **Regressions:** the levels, clock and effects suites all pass, and the app build runs.
+
+## Biggest cards, always, and a soft Night (v212)
+**No Card size / Card text controls.** `cardsize.js` still loads, since the other games share it,
+but this page's `!important` rules beat the inline `--size` / `--cardtext` it writes:
+- **Tray card:** `--size` 1.35 on phones at least 780 px tall, 1.15 in between, 1.0 under 640 px.
+  `--cardtext` is 1.2 (1.1 on short phones).
+- **Board squares are card-shaped:** `aspect-ratio:5/7` at full column width.
+  - On a short phone `fitPS()` sets an explicit height. It now also sets `--cellar:auto`, because
+    with both an explicit height and an aspect ratio, the browser derives the *width* from the
+    height. That gave a 34 px-wide square in a 47 px column at 320×568.
+- **Print:** sized from its own square with container units (`container-type:size` on `.pscell` and
+  `.flycard`): rank `min(40cqh,50cqw)`, suit `min(38cqh,48cqw)`. It's as big as the square allows,
+  and "10" still fits.
+
+Measured at five sizes (square / rank print / tray card), with no spill, no overlap and no scroll:
+
+| Screen | Square | Rank | Tray card |
+|---|---|---|---|
+| 320×568 | 47×48 | 19 px | 52×74 |
+| 375×667 | 58×65 | 26 px | 60×85 |
+| 390×844 | 61×86 | 31 px (was ~17) | 70×100 |
+| 430×932 | 69×97 | 35 px | 70×100 |
+| iPad mini | 76×106 | 38 px | 70×100 |
+
+**Soft Night** replaces v211's midnight blue. The aim is as easy on the eyes in a dark room as
+possible:
+- **Dark card faces.** Warm charcoal (`#26221c` → `#1e1b16`) instead of parchment. The 25 faces are
+  most of the light a board gives off.
+- **Muted suits:** `NIGHTCOL` in `suitColor()` gives ♠ `#cdbf9f`, ♥ `#c98a7c`, ♦ `#8ea2c4`,
+  ♣ `#8fae8a`. Suit colors are inline styles, so `applyTheme()` re-renders.
+- **Warm, low-contrast surroundings:** a brown-black table with no light drift, amber accents, amber
+  text on dark buttons, toggles and segment controls, muted header pills, and no white anywhere.
+- **Nothing flashes:** no gloss, holo, sheen or breathing squares; particles at 45%; a dim cinematic.
+- **Draw lights stay, softer:** steady rings in place of pulses, and a slow amber pulse for "It's
+  here".
+
+Measured on a full board at 390×844: Night gives off **9% of Day's light and 8% of its blue**. The
+brightest pixel is 66% of white (text anti-aliasing) against Day's 100%. Auto still follows the
+phone's dark mode, so Night arrives with it.
