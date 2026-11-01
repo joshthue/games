@@ -363,6 +363,13 @@
   .pscell.tally{animation:ngTally .34s ease-out;}
   @keyframes ngTally{40%{transform:translateY(-3px) scale(1.06); filter:brightness(1.2)}}
 
+  /* duel (v206) */
+  .pstray-score .best.duel{cursor:pointer; color:#cfe6ff;} .pstray-score .best.duel b{font-size:12px;}
+  .pstray-score .best.duel.ahead{color:#9df0b0;} .pstray-score .best.duel.behind{color:#ff9b8f;}
+  .duelres{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:6px 0 2px; font-size:14px;}
+  .duelres .dv{opacity:.75;} .duelres .dv b{font-size:20px; color:var(--cream);} .duelres .dv.win{opacity:1;} .duelres .dv.win b{color:var(--gold);}
+  .duelres .vs{font-size:11px; opacity:.55; text-transform:uppercase; letter-spacing:1px;} .duelres .hs-all{margin-left:auto;}
+  .duelres .drec{flex-basis:100%; font-size:12px; opacity:.7;}
   /* trophies */
   .ngtro{position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 10px); transform:translate(-50%,-150%); z-index:60; display:flex; align-items:center; gap:10px;
     background:rgba(12,16,22,.95); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:8px 16px 8px 10px; box-shadow:0 10px 30px rgba(0,0,0,.6);
@@ -463,7 +470,7 @@ const SCORING={
 };
 
 const LS_KEY="pokersquares.v1";
-let settings={tipsOn:false, fourColor:true, scoring:"american", botAuto:true};
+let settings={tipsOn:false, fourColor:true, scoring:"american", botAuto:true, duel:false};
 let best=0;
 try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw);
   if(o&&o.settings) Object.assign(settings,o.settings); if(o&&typeof o.best==="number") best=o.best; } }catch(e){}
@@ -528,7 +535,7 @@ function newGame(){
   current=queue.pop();
   lastMove=null; over=false;
   VIEW="mine"; stopSolve(); SOLVE=null;
-  botStop(); botTouched=false;
+  botStop(); botTouched=false; duelReset();
   NG.reset(); render();
 }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
@@ -536,6 +543,7 @@ function place(i){
   if(over||!current||grid[i]) return;
   const from=document.querySelector('#psCurrent .card'), fromR=ngFromRect||(from?from.getBoundingClientRect():null); ngFromRect=null;
   grid[i]=current;
+  if(settings.duel) duelPlace(current);   // the bot gets the same card, on its own board
   sfx('place');
   lastMove={i, card:current, was:i};
   current = (placed()<25 && queue.length) ? queue.pop() : null;   // a full board leaves the tray empty
@@ -597,6 +605,7 @@ function undo(){
   if(current) queue.push(current);   // send the un-placed next card back
   current=lastMove.card;
   grid[lastMove.i]=null;
+  if(duel.last!=null){ duel.grid[duel.last]=null; duel.last=null; }   // and the bot takes its card back
   const back=lastMove.i;
   lastMove=null; over=false;
   NG.quiet(); render();
@@ -609,6 +618,7 @@ function finish(fromPlace){
   if(!botTouched){ const k=settings.scoring, S=loadStats(); S[k]=S[k]||{n:0,sum:0}; S[k].n++; S[k].sum+=total; saveStats(S); }
   var beatBest = !botTouched && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
   if(beatBest){ best=total; }
+  duelScore();
   sfx(beatBest ? 'win' : 'good');
   persist();
   render();
@@ -728,6 +738,32 @@ function makeBot(PTS, W){
     return bi; };
 }
 const BOT_W={flushW:1, rankW:2.2, share:0.5, second:0.7};
+/* ---- Duel (v206): the bot plays its own board from your exact cards ------------------------
+   Each card you place, the bot places too, on its own grid, with the same makeBot pick and the
+   same knowledge: its board, the card in hand, and the cards it hasn't seen. Never the deck order,
+   never your board. Undo takes its last card back too. At the end the higher board wins. */
+let duel={grid:new Array(25).fill(null), last:null};
+function duelReset(){ duel.grid=new Array(25).fill(null); duel.last=null; }
+function duelPlace(card){ const g=duel.grid, seen=new Set(g.filter(Boolean).map(cardKey)); seen.add(cardKey(card));
+  const j=botPickFn()(g, card, makeDeck().filter(c=>!seen.has(cardKey(c)))); g[j]=card; duel.last=j; }
+function duelTotals(){ return {me:computeLines(grid).total, bot:computeLines(duel.grid).total}; }
+function loadDuel(){ try{ return JSON.parse(localStorage.getItem("pokersquares.duel"))||{}; }catch(e){ return {}; } }
+function duelRecord(){ const R=loadDuel()[settings.scoring]||{w:0,l:0,t:0}; return R; }
+function duelScore(){   // a finished duel goes on the record once; bot-played boards don't count
+  if(!settings.duel||botTouched||duel.grid.some(c=>!c)) return;
+  const D=loadDuel(), k=settings.scoring, R=D[k]=D[k]||{w:0,l:0,t:0}, t=duelTotals();
+  if(t.me>t.bot) R.w++; else if(t.me<t.bot) R.l++; else R.t++;
+  try{ localStorage.setItem("pokersquares.duel",JSON.stringify(D)); }catch(e){} }
+function setDuel(on){ settings.duel=!!on; persist(); closeOverlay(); newGame(); }
+// read-only look at either board, from the score (mid-game) or the results
+function openDuel(which, fromResults){
+  const sys=settings.scoring, t=duelTotals(), g=which==="bot"?duel.grid:grid, b=viewBoardHTML(g.slice(), sys);
+  const back=fromResults?'<button class="btn sec sm close" onclick="openResults(computeLines(grid).total)">‹ Back</button>':'<button class="btn sec sm close" onclick="closeOverlay()">✕</button>';
+  openPanel(back+'<h2>Same cards</h2><p class="muted" style="margin-top:0;">'+(over?'Every card went to both boards.':'The bot has placed every card you have, on its own board.')+'</p>'
+    +'<div style="text-align:center;margin:8px 0 10px;"><div class="seg"><button class="'+(which!=="bot"?"on":"")+'" onclick="openDuel(\'me\','+!!fromResults+')">You '+t.me+'</button>'
+    +'<button class="'+(which==="bot"?"on":"")+'" onclick="openDuel(\'bot\','+!!fromResults+')">Bot '+t.bot+'</button></div></div>'
+    +'<div class="boardwrap">'+b.html+'</div>', "duel");
+}
 const BOT_MS=1500;
 let BOT={on:false, t:null, fns:{}}, botTouched=false;
 function botPickFn(){ const k=settings.scoring; return BOT.fns[k]||(BOT.fns[k]=makeBot(SCORING[k], BOT_W)); }
@@ -776,7 +812,9 @@ function render(justIdx){
   const ck=current?(current.r+"/"+current.s):"";
   if(ck && ck!==lastShownCard){ const cc=document.querySelector('#psCurrent .card'); if(cc) cc.classList.add("dealin"); }
   lastShownCard=ck;
-  document.getElementById("psBest").textContent  = "Best "+best;
+  const bestEl=document.getElementById("psBest");
+  if(settings.duel){ const t=duelTotals(); bestEl.innerHTML='Bot <b>'+t.bot+'</b>'; bestEl.className='best duel'+(t.me>t.bot?' ahead':(t.me<t.bot?' behind':'')); }
+  else { bestEl.textContent="Best "+best; bestEl.className='best'; }
   // board (6x6: 25 cells + 5 row chips + 5 col chips + total corner)
   let html="";
   for(let r=0;r<5;r++){
@@ -837,6 +875,8 @@ function openRules(){
     +'<p>When all 25 squares are full, each of the <b>5 rows</b> and <b>5 columns</b> is scored as a poker hand. Your total is the sum of all ten. Aces play high or low, <b>A-2-3-4-5</b> counts as a straight, and <b>10-J-Q-K-A</b> of one suit is a royal flush.</p>'
     +'<h3>Scoring — '+sysName+' system</h3>'
     +scoreTableHTML()
+    +'<h3>Duel the bot</h3>'
+    +'<p>Turn on <b>Duel the bot</b> in the Menu and the bot plays its own board from the same cards, in the same order: each card you place, it places too. It sees what you see, never the deck. The line under your score is the bot\'s score, green when you lead, red when you trail; tap it to look at its board. Higher board wins.</p>'
     +'<h3>What the lights mean</h3>'
     +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
     +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
@@ -853,6 +893,7 @@ function openMenu(){
     +'<div style="height:6px"></div>'
     +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(NG.haptics?'on':'')+'" onclick="NG.toggleHaptics();openMenu();"></button><span>Haptics</span></div>'
     +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.botAuto?'on':'')+'" onclick="botToggleAuto();openMenu();"></button><span>Bot auto-plays a card every 1.5 s'+(settings.botAuto?'':' (off: tap Next card)')+'</span></div>'
+    +'<div class="switch" style="display:flex;margin:10px 0;"><button class="toggle '+(settings.duel?'on':'')+'" onclick="setDuel('+!settings.duel+')"></button><span>Duel the bot: it gets your exact cards'+(settings.duel?'':' (starts a new game)')+'</span></div>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();">🔀 New game</button>'
     +'<button class="setup-opt" onclick="closeOverlay();newGame();botStart();">🤖 Watch the bot play a new board</button>'
     +'<button class="setup-opt" onclick="HS.open()">🏆 High scores — everybody</button>'
@@ -867,8 +908,13 @@ function openResults(total){
   // (The hand each row and column made is on the board's chips; the full ten are under Scores.)
   const beat = !botTouched && total>=best && total>0;
   const sysName=settings.scoring==="american"?"American":"English";
-  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(botTouched?'🤖 The bot\'s board':(beat?'🏆 New best!':'✅ Board complete'))+'</h2>'
-    +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">'+(botTouched?'Doesn\'t count toward your best ('+best+') · ':'Best '+best+' · ')+sysName+'</span></div>'
+  const isDuel=settings.duel && duel.grid.every(Boolean), dt=isDuel?duelTotals():null, R=isDuel?duelRecord():null;
+  const verdict=!isDuel?null:(dt.me>dt.bot?'🏆 You beat the bot':(dt.me<dt.bot?'🤖 The bot wins':'🤝 Dead heat'));
+  const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>'+(isDuel&&!botTouched?verdict:(botTouched?'🤖 The bot\'s board':(beat?'🏆 New best!':'✅ Board complete')))+'</h2>'
+    +'<div class="res-top"><span class="pts">'+total+' pts</span><span class="sub">'+(botTouched?'Doesn\'t count toward your best ('+best+') · ':(isDuel&&beat?'New best! · ':'Best '+best+' · '))+sysName+'</span></div>'
+    +(isDuel?'<div class="duelres"><span class="dv'+(dt.me>=dt.bot?' win':'')+'">You <b>'+dt.me+'</b></span><span class="vs">vs</span><span class="dv'+(dt.bot>=dt.me?' win':'')+'">Bot <b>'+dt.bot+'</b></span>'
+      +'<button class="hs-all" onclick="openDuel(\'bot\',true)">Bot\'s board ›</button>'
+      +(botTouched?'':'<div class="drec">Record vs the bot · '+R.w+'–'+R.l+(R.t?'–'+R.t:'')+' ('+sysName+')</div>')+'</div>':'')
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">🔀 New game</button>'
@@ -1594,6 +1640,8 @@ var NG=(function(){
     {id:"big",    g:"g", n:"High Roller",    d:"Score 150 (American) or 75 (English)."},
     {id:"perfect",g:"g", n:"Perfect Board",  d:"Match the best board your 25 cards can make."},
     {id:"sflush", g:"g", n:"Straight Flush", d:"Make a straight flush."},
+    {id:"beatbot",g:"b", n:"Beat the Bot",   d:"Win a duel."},
+    {id:"schooled",g:"s",n:"Schooled",       d:"Win a duel by 50 (American) or 25 (English)."},
     {id:"royal",  g:"p", n:"Royal Flush",    d:"Make a royal flush."}];
   const GC={b:["#e0a26d","#9a5a2c"],s:["#f1f4f7","#9aa4ae"],g:["#ffe49a","#c8922e"],p:["#e8f7ff","#7fb6d9"]}, GN={b:"Bronze",s:"Silver",g:"Gold",p:"Platinum"};
   function cup(g){ const c=GC[g], id="cg"+g;
@@ -1617,7 +1665,8 @@ var NG=(function(){
     if(keys.indexOf("royal")>=0){ earn("sflush"); earn("royal"); }
     if(L.rows.concat(L.cols).every(h=>h&&h.pts>0)) earn("ten");
     if(total>=(am?100:50)) earn("century");
-    if(total>=(am?150:75)) earn("big"); }
+    if(total>=(am?150:75)) earn("big");
+    if(settings.duel && duel.grid.every(Boolean)){ const t=duelTotals(); if(t.me>t.bot) earn("beatbot"); if(t.me-t.bot>=(am?50:25)) earn("schooled"); } }
   function perfect(){ if(!over||botTouched||!SOLVE||!SOLVE.done) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
   function trophiesHTML(){ const T=got(), n=TRO.filter(t=>T[t.id]).length;
     return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Trophies</h2><p class="muted" style="margin-top:0;">'+n+' of '+TRO.length+' on this device. Bot boards don\'t count.</p><ul class="trolist">'
@@ -1634,6 +1683,7 @@ document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand ope
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("hsBtn").onclick=function(){ HS.open(); };
 document.getElementById("psUndo").onclick=undo;
+document.querySelector(".pstray-score").addEventListener("click",function(){ if(settings.duel && !curOverlay.kind) openDuel("bot"); });
 document.getElementById("psNew").onclick=function(){ newGame(); };
 document.getElementById("psBotGo").onclick=function(){ botStart(); };          // from a fresh board, or takes over yours
 document.getElementById("psBotAuto").onclick=botToggleAuto;
@@ -1663,7 +1713,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v205", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v206", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

@@ -264,3 +264,26 @@ and select. The heartbeat and the drag-over tick use it too. The website never d
 changes there. The iOS app does (see `pokersquares-app/app/app-shim.js`), which gives every effect the
 Taptic Engine, including bot moves and the delayed effects that the iPhone web workaround can't reach.
 Menu → Haptics still gates it.
+
+## Duel the bot (v206)
+Menu → **Duel the bot: it gets your exact cards**. It's a setting (`settings.duel`), so every new game
+is a duel until you turn it off. Turning it on or off starts a new game.
+- **Same cards, same moment.** In `place()`, the card you just placed also goes to `duelPlace()`.
+  That runs the same `makeBot` pick as Watch the bot, on the bot's own grid (`duel.grid`).
+  - It knows its own board, the card, and the cards it hasn't seen. It never sees the deck order or
+    your board.
+  - Both boards always hold the same cards; the test asserts that after every move.
+  - **Undo** takes back the bot's last card too.
+- **HUD.** The line under your score turns into the bot's score: green when you lead, red when you
+  trail. Tap it for a read-only look at its board, with a You / Bot toggle (`openDuel`).
+- **Results.** The title is the verdict ("You beat the bot" / "The bot wins" / "Dead heat"). Under it:
+  You N vs Bot M, a **Bot's board ›** link (its ‹ Back returns to the results), and your record vs
+  the bot per scoring system (`pokersquares.duel`, `{american:{w,l,t}, english:{...}}`). It still
+  fits one screen at 320×568.
+- **Your board still counts.** Your best, average and the shared top 10 work as usual, because the
+  bot never touches your grid. If you hand your board to Watch the bot mid-duel, the duel isn't
+  recorded.
+- **New trophies:** Beat the Bot (bronze, win a duel) and Schooled (silver, win by 50 American /
+  25 English).
+- The bot averages 84 a board American (84.3 over 200 fresh deals in the test), so beating it
+  takes a good board.
