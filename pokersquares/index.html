@@ -427,6 +427,30 @@
   html[data-theme="night"] .rhero.win::before{display:none;}
   html[data-theme="night"] .rmed{background:#6e5a36; color:#efdcb2; box-shadow:0 0 0 2px rgba(201,162,94,.45);} html[data-theme="night"] .rhero:not(.win) .rmed{background:#3a3630; color:#cdbf9f;}
   html[data-theme="night"] .rpts b{color:#d9b874; text-shadow:none;} html[data-theme="night"] .panel.res .lvbar u.lit{background:#d9b874; box-shadow:none;}
+  /* Blitz briefing (v215) */
+  .bgate{position:fixed; inset:0; z-index:49; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(2,8,20,.78); animation:bgIn .25s ease-out;}
+  @keyframes bgIn{from{opacity:0}}
+  .bg-card{width:100%; max-width:360px; text-align:center; padding:20px 20px 18px; border-radius:20px; border:1.5px solid #7c9cff;
+    background:radial-gradient(120% 70% at 50% 0%,#24346a,#121a38 60%,#0b1026); box-shadow:0 0 40px rgba(124,156,255,.35),0 18px 40px rgba(0,0,0,.6); animation:resIn .4s cubic-bezier(.2,1.4,.4,1);}
+  .bg-k{font:900 14px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; letter-spacing:5px; text-transform:uppercase; color:#9fb6ff;}
+  .bg-ch{font-size:12px; letter-spacing:1.2px; text-transform:uppercase; opacity:.6; margin-top:5px;}
+  .bg-clock{position:relative; width:118px; height:118px; margin:14px auto 4px;}
+  .bg-clock svg{position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg);}
+  .bg-clock circle{fill:rgba(124,156,255,.08); stroke:#9fb6ff; stroke-width:5; stroke-dasharray:277; stroke-dashoffset:0; animation:bgDrain 2.4s ease-in-out infinite;}
+  @keyframes bgDrain{50%{stroke-dashoffset:200}}
+  .bg-clock b{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font:900 56px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#fff;}
+  .bg-u{font:800 17px/1.2 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#cfdcff;}
+  .bg-r{list-style:none; padding:0; margin:12px 0 16px; font-size:15px; line-height:1.45; color:#dfe6ff;} .bg-r li{margin:4px 0;} .bg-r b{color:#fff;}
+  .bg-go{width:100%; font-size:18px; padding:14px; border-radius:14px;}
+  .bcount{position:fixed; inset:0; z-index:49; display:flex; align-items:center; justify-content:center; pointer-events:auto; background:rgba(2,8,20,.35);}
+  .bcount b{font:900 120px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#fff; text-shadow:0 0 30px rgba(124,156,255,.9); animation:bcPop .56s ease-out both;}
+  .bcount b.go{color:#ffe29a; text-shadow:0 0 30px rgba(255,200,100,.9); font-size:96px;}
+  @keyframes bcPop{0%{transform:scale(1.8); opacity:0} 25%{transform:scale(1); opacity:1} 85%{opacity:1} 100%{transform:scale(.8); opacity:0}}
+  @media (prefers-reduced-motion:reduce){ .bg-clock circle{animation:none} .bcount b{animation:none} }
+  html[data-theme="night"] .bgate{background:rgba(8,6,4,.8);}
+  html[data-theme="night"] .bg-card{background:#1a1612; border-color:rgba(125,143,179,.5); box-shadow:0 18px 40px rgba(0,0,0,.6);}
+  html[data-theme="night"] .bg-k{color:#8ea2c4;} html[data-theme="night"] .bg-clock circle{stroke:#7d8fb3; fill:none;} html[data-theme="night"] .bg-clock b,html[data-theme="night"] .bg-r b{color:#d8cbb0;}
+  html[data-theme="night"] .bg-u,html[data-theme="night"] .bg-r{color:#cdbf9f;} html[data-theme="night"] .bcount b{color:#d8cbb0; text-shadow:none;} html[data-theme="night"] .bcount b.go{color:#d9b874;}
   /* the score (v213) */
   .pstray-score .num{font-size:clamp(32px,9.5vw,44px);}
   .pstray-score .num.bump{animation:psBumpG .55s ease-out;}
@@ -762,6 +786,10 @@ const LV_LOCKS=[15,10,5];                                   // pre-filled square
 function levelPct(n){ return (n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4))) - (levelClock(n)!=="off"?.04:0); }
 // Blitz: every 5th level is timed, 4 points easier. 5, 15, 25… the shot clock; 10, 20… the board clock.
 function levelClock(n){ return n%5!==0?"off":(n%10===0?"board":"shot"); }
+// v215: the clock tightens as you climb. Shot clock (5, 15, 25…): 8 s, one second less every 10 levels,
+// down to 3 s at 55. Board clock (10, 20, 30…): 90 s, 5 s less every 10 levels, down to 60 s at 70.
+function levelSecs(n){ const k=levelClock(n); return k==="shot"?Math.max(3,8-Math.floor((n-5)/10)):(k==="board"?Math.max(60,90-5*Math.floor((n-10)/10)):0); }
+function clockLabel(k,secs){ return k==="shot"?secs+' s a card':secs+' s board'; }
 function isLevels(){ return settings.mode==="levels"; }
 let LV=null, LVSOLVER=null;
 function lvProg(){ let P; try{ P=JSON.parse(localStorage.getItem("pokersquares.levels"))||{}; }catch(e){ P={}; }
@@ -816,7 +844,7 @@ function levelHUD(){
   if(!el) return;
   el.innerHTML='Target <b>'+(LV.target==null?'…':LV.target)+'</b>'; if(!scoreHold) tgBarDraw(shownTotal);
   el.className='best goal'+(LV.target!=null && total>=LV.target?' ahead':'');
-  if(!over && !(viewGrid()!==grid)) document.getElementById("psPlace").textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz":"")));
+  if(!over && !(viewGrid()!==grid)) document.getElementById("psPlace").textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz "+levelSecs(LV.n)+"s":"")));
 }
 // stars: 1 at the target, 2 at +5 points of percentage, 3 at +10
 function levelJudge(total){
@@ -837,11 +865,13 @@ function setMode(m){ if(settings.mode===m) return; settings.mode=m; persist(); n
 function stars(n){ let h=''; for(let i=0;i<3;i++) h+=i<n?'<b>★</b>':'★'; return h; }
 /* ---- the level map (v213): a winding path, chapters, a card for the level you tap ---- */
 const LV_CHAPTERS=[{from:1,name:"Training Table",sub:"Part-built boards: learn what a good one looks like"},
+  {from:25,name:"The Gauntlet",sub:"The Blitz clocks start to shrink"},{from:40,name:"Iron Table",sub:"5 seconds a card and falling"},{from:55,name:"The Summit",sub:"3 seconds a card. 60-second boards from 70"},
   {from:4,name:"The Climb",sub:"Bare boards, no undo"},{from:10,name:"High Stakes",sub:"The targets bite"},{from:15,name:"Master's Table",sub:"55% of the best board, every time"}];
+LV_CHAPTERS.sort((a,b)=>a.from-b.from);
 function chapterOf(n){ let c=LV_CHAPTERS[0]; LV_CHAPTERS.forEach(x=>{ if(n>=x.from) c=x; }); return c; }
 let LVSEL=null;
 function lvInfo(n){ const k=LV_LOCKS[n-1]||0, ck=levelClock(n);
-  return [Math.round(levelPct(n)*100)+'% of the best board', k?k+' pre-filled':null, ck==="shot"?'Blitz · 8 s a card':(ck==="board"?'Blitz · 90 s board':null), n>=4?'no undo':'undo allowed'].filter(Boolean); }
+  return [Math.round(levelPct(n)*100)+'% of the best board', k?k+' pre-filled':null, ck!=="off"?'Blitz · '+clockLabel(ck,levelSecs(n)):null, n>=4?'no undo':'undo allowed'].filter(Boolean); }
 function lvCardHTML(n){
   const R=lvProg()[settings.scoring], top=R.level, st=R.stars[n]||0, lock=n>top, ch=chapterOf(n);
   return '<div class="lvcard'+(lock?' lock':'')+'"><div class="lvc-top"><span class="lvc-n">Level '+n+'</span><span class="lvc-ch">'+ch.name+'</span></div>'
@@ -860,7 +890,7 @@ function openLevels(){
     pts.push([x,y+28]);
     nodes+='<button class="lvnode s-'+state+'" data-n="'+n+'" style="left:'+x+'%;top:'+y+'px" onclick="lvSelect('+n+')" aria-label="Level '+n+'">'
       +'<span class="num">'+n+'</span>'
-      +(ck!=="off"?'<span class="bz">'+(ck==="shot"?'8s':'90s')+'</span>':'')
+      +(ck!=="off"?'<span class="bz">'+(levelSecs(n)+'s')+'</span>':'')
       +(LV_LOCKS[n-1]?'<span class="bz learn">Learn</span>':'')
       +(state==='done'||st?'<span class="st">'+stars(st)+'</span>':'')
       +((n===5||n===10)?'<span class="ms">'+NG.cup(n===5?'s':'g')+'</span>':'')
@@ -878,10 +908,31 @@ function openLevels(){
   const pn=document.getElementById("panel"), cur=document.querySelector('.lvnode[data-n="'+top+'"]');
   if(pn&&cur) pn.scrollTop=Math.max(0,cur.offsetTop+cur.parentNode.offsetTop-pn.clientHeight*.55);
 }
+function boardIntro(){ if(CLOCK.kind!=="off") blitzGate(); else levelIntro(); }
+// The Blitz briefing: what the clock is, what happens when it runs out, a Ready button, then 3-2-1-Go.
+function blitzGate(){
+  document.querySelectorAll(".bgate,.lvintro").forEach(e=>e.remove()); GATE=true;
+  const lv=isLevels()&&LV, k=CLOCK.kind, secs=Math.round(CLOCK.total/1000);
+  const el=document.createElement("div"); el.className="bgate";
+  el.innerHTML='<div class="bg-card"><div class="bg-k">Blitz'+(lv?' · Level '+LV.n:'')+'</div>'
+    +(lv?'<div class="bg-ch">'+chapterOf(LV.n).name+'</div>':'')
+    +'<div class="bg-clock"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44"/></svg><b>'+secs+'</b></div>'
+    +'<div class="bg-u">'+(k==="shot"?'seconds a card':'seconds for the whole board')+'</div>'
+    +'<ul class="bg-r"><li>'+(k==="shot"?'Each card gets its own '+secs+' seconds.':'One clock for all '+(25-(lv?LV.k:0))+' cards.')+'</li>'
+    +'<li>'+(k==="shot"?'Run out and the card lands in a <b>random</b> open square.':'Run out and the rest drop into <b>random</b> squares.')+'</li>'
+    +'<li>No undo.'+(lv?' Target <b>'+Math.round(LV.pct*100)+'%</b> of the best board.':'')+'</li></ul>'
+    +'<button class="btn bg-go">Ready</button></div>';
+  document.body.appendChild(el); NG.snd("riser",0);
+  el.querySelector(".bg-go").onclick=function(){ el.remove(); countdown(); };
+}
+function countdown(){
+  const steps=reduceMotion()?["Go!"]:["3","2","1","Go!"], el=document.createElement("div"); el.className="bcount"; document.body.appendChild(el); let i=0;
+  (function next(){ if(i>=steps.length){ el.remove(); GATE=false; CLOCK.grace=performance.now()+150; return; }
+    el.innerHTML='<b class="'+(steps[i]==="Go!"?'go':'')+'">'+steps[i]+'</b>'; NG.snd("tick",0,steps[i]==="Go!"?12:0); NG.hap(1,0,steps[i]==="Go!"?"heavy":"light"); i++; setTimeout(next,steps[i-1]==="Go!"?380:560); })(); }
 function levelIntro(){
   if(!isLevels()||!LV) return; document.querySelectorAll(".lvintro").forEach(e=>e.remove());
   const ck=levelClock(LV.n), bits=[chapterOf(LV.n).name];
-  if(LV.k) bits.push(LV.k+' pre-filled'); if(ck==="shot") bits.push('Blitz · 8 s a card'); if(ck==="board") bits.push('Blitz · 90 s board');
+  if(LV.k) bits.push(LV.k+' pre-filled'); if(ck!=="off") bits.push('Blitz · '+clockLabel(ck,levelSecs(LV.n)));
   const el=document.createElement("div"); el.className="lvintro"+(ck!=="off"?" blitz":"");
   el.innerHTML='<div class="k">Level</div><div class="n">'+LV.n+'</div><div class="d">'+bits.join(' · ')+'</div><div class="t">Target '+Math.round(LV.pct*100)+'% of the best board</div>';
   document.body.appendChild(el); setTimeout(()=>el.remove(),1900);
@@ -896,26 +947,28 @@ function levelIntro(){
    moments of each deal. A ring drains around the tray card; the last 3 s (shot) or 10 s (board)
    turn it red with a tick each second. No undo with a clock on.
    ============================================================ */
-const SHOT_MS=8000, BOARD_MS=90000, GRACE_MS=550;
+const SHOT_MS=8000, BOARD_MS=90000, GRACE_MS=550;   // free play's clocks; levels use levelSecs()
+let GATE=false;   // the Blitz briefing / countdown is up: the clock waits and the board can't be touched
 let CLOCK={kind:"off", left:0, total:0, last:0, grace:0, raf:0, dumping:false, lastSec:-1};
 function clockKind(){ return isLevels() ? (LV?levelClock(LV.n):"off") : (settings.clock||"off"); }
 function clockReset(){ cancelAnimationFrame(CLOCK.raf);
-  const k=clockKind(); CLOCK={kind:k, left:k==="shot"?SHOT_MS:BOARD_MS, total:k==="shot"?SHOT_MS:BOARD_MS, last:0, grace:performance.now()+GRACE_MS+300, raf:0, dumping:false, lastSec:-1};
+  const k=clockKind(), ms=(isLevels()&&LV&&k!=="off")?levelSecs(LV.n)*1000:(k==="shot"?SHOT_MS:BOARD_MS);
+  CLOCK={kind:k, left:ms, total:ms, shotMs:ms, last:0, grace:performance.now()+GRACE_MS+300, raf:0, dumping:false, lastSec:-1};
   if(k!=="off") CLOCK.raf=requestAnimationFrame(clockTick); }
 function clockStop(){ cancelAnimationFrame(CLOCK.raf); CLOCK.raf=0; }
-function clockPaused(now){ return over || !current || BOT.on || ANIMATING || CLOCK.dumping || !!curOverlay.kind || document.hidden || now<CLOCK.grace || VIEW!=="mine"; }
+function clockPaused(now){ return GATE || over || !current || BOT.on || ANIMATING || CLOCK.dumping || !!curOverlay.kind || document.hidden || now<CLOCK.grace || VIEW!=="mine"; }
 function clockTick(now){
   if(CLOCK.kind==="off") return;
   const dt=CLOCK.last?Math.min(100,now-CLOCK.last):0; CLOCK.last=now;
   if(!clockPaused(now)){
     CLOCK.left=Math.max(0,CLOCK.left-dt);
-    const warn=CLOCK.kind==="shot"?3000:10000, sec=Math.ceil(CLOCK.left/1000);
+    const warn=CLOCK.kind==="shot"?Math.min(3000,CLOCK.total*.5):10000, sec=Math.ceil(CLOCK.left/1000);
     if(CLOCK.left<=warn && CLOCK.left>0 && sec!==CLOCK.lastSec){ CLOCK.lastSec=sec; NG.snd("tick",0,sec<=3?7:0); NG.hap(1,0,"light"); }
     if(CLOCK.left<=0){ clockDraw(); clockOut(); return; }
   }
   clockDraw(); CLOCK.raf=requestAnimationFrame(clockTick); }
 function clockDraw(){
-  const r=document.querySelector("#psCurrent .ngclock rect"); const warn=CLOCK.kind==="shot"?3000:10000;
+  const r=document.querySelector("#psCurrent .ngclock rect"); const warn=CLOCK.kind==="shot"?Math.min(3000,CLOCK.total*.5):10000;
   if(r){ r.style.strokeDashoffset=(100*(1-CLOCK.left/CLOCK.total)).toFixed(2); r.parentNode.classList.toggle("warn",CLOCK.left<=warn); }
   if(CLOCK.kind==="board"){ const pr=document.getElementById("psProg"); if(pr && !over){ const t=Math.ceil(CLOCK.left/1000);
     pr.innerHTML='<span class="ngtime'+(CLOCK.left<=warn?' warn':'')+'">'+Math.floor(t/60)+':'+String(t%60).padStart(2,"0")+'</span> · Card '+(placed()-((isLevels()&&LV)?LV.k:0)+1)+' of '+(25-((isLevels()&&LV)?LV.k:0)); } } }
@@ -942,7 +995,8 @@ function newGame(opts){
   if(isLevels()) levelSetup(opts||{});
   else { if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
   NG.reset(); clockReset(); render();
-  if(isLevels() && !(opts&&opts.same) && !reduceMotion()){ if(curOverlay.kind) introPending=true; else levelIntro(); }
+  const timed=CLOCK.kind!=="off"; GATE=timed;
+  if(timed || (isLevels() && !(opts&&opts.same) && !reduceMotion())){ if(curOverlay.kind) introPending=true; else boardIntro(); }
 }
 function undoAllowed(){ return clockKind()==="off" && (!isLevels() || !LV || LV.n<=3); }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
@@ -956,7 +1010,7 @@ function place(i){
   { const r0=Math.floor(i/5), c0=i%5; let fl=0;
     [["row",r0],["col",c0]].forEach(function(l){ const cs=lineIdx(l[0],l[1]).map(x=>grid[x]); if(cs.every(Boolean)){ const h=scoreHand(cs); if(h&&h.pts>0) fl++; } });
     if(fl && !reduceMotion()) holdScore(fl); }
-  if(CLOCK.kind==="shot"){ CLOCK.left=SHOT_MS; CLOCK.lastSec=-1; CLOCK.grace=performance.now()+GRACE_MS; }   // a fresh 8 s for the next card
+  if(CLOCK.kind==="shot"){ CLOCK.left=CLOCK.shotMs; CLOCK.lastSec=-1; CLOCK.grace=performance.now()+GRACE_MS; }   // a fresh 8 s for the next card
   if(placed()===25){ finish(true); } else { render(i); }
   dealFx(i, fromR);
 }
@@ -1264,7 +1318,7 @@ addEventListener('resize', function(){ try{ fitPS(); }catch(e){} });
 /* ---- overlays ---- */
 function openPanel(html,kind){ const pn=document.getElementById("panel"); pn.classList.toggle("res",kind==="results"); pn.innerHTML=html; document.getElementById("overlay").classList.add("show"); curOverlay={kind}; }
 let introPending=false;   // a level dealt behind the Menu shows its intro when the Menu closes
-function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; if(introPending){ introPending=false; levelIntro(); } }
+function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; if(introPending){ introPending=false; boardIntro(); } }
 
 function scoreTableHTML(){
   const S=SCORING[settings.scoring];
@@ -1283,7 +1337,7 @@ function openRules(){
     +'<h3>Levels</h3>'
     +'<p>In <b>Levels</b> (the Menu switches to Free play) each board has a target: a share of the best board its 25 cards can make. It shows under your score a few seconds into the deal, turning green when you pass it. Clear it to open the next level; score 5% or 10% over for two or three stars. Levels 1 to 3 come part-built (the gold-dotted squares are locked in from the best board), and Undo works only there. Miss, and you can replay the same board or take a new one.</p>'
     +'<h3>The clock</h3>'
-    +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>8 seconds a card</b>, and 10, 20… give you <b>90 seconds for the whole board</b>. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
+    +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (8 at level 5, one less every ten levels, down to 3), and 10, 20… give you <b>one clock for the whole board</b> (90 seconds at level 10, five less every ten levels, down to 60). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
     +'<h3>What the lights mean</h3>'
     +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
     +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
@@ -1336,9 +1390,9 @@ function resAnimate(){
     if(k<1) requestAnimationFrame(tick); else { el.classList.add("done"); } })(performance.now()); }
 function clockResultsHTML(total){
   const sysName=settings.scoring==="american"?"American":"English", key=CLOCK.kind+":"+settings.scoring, cb=clockBests()[key]||0;
-  const label=CLOCK.kind==="shot"?"8 s a card":"90 s board", newBest=!botTouched && total>=cb && total>0;
+  const label=clockLabel(CLOCK.kind,Math.round(CLOCK.total/1000)), newBest=!botTouched && total>=cb && total>0;
   return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
-    +resHero('Clock',CLOCK.kind==="shot"?'8s':'90s',botTouched?'The bot\'s board':(newBest?'New best!':'Board complete'),label+' · '+sysName,newBest)
+    +resHero('Clock',Math.round(CLOCK.total/1000)+'s',botTouched?'The bot\'s board':(newBest?'New best!':'Board complete'),label+' · '+sysName,newBest)
     +resPts(total,'Best with the clock '+cb+' · kept apart from your untimed best')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
@@ -2084,7 +2138,7 @@ var NG=(function(){
   function onCancel(){ const d=DR; if(!d) return; clearTarget(); end(); DR=null; untilt(false); d.f.remove(); d.c.style.visibility=""; }
   const cur=document.getElementById("psCurrent");
   if(cur) cur.addEventListener("pointerdown",function(e){
-    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR||CLOCK.dumping) return;
+    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR||CLOCK.dumping||GATE) return;
     e.preventDefault(); const r=c.getBoundingClientRect(), f=c.cloneNode(true); f.classList.remove("dealin"); f.classList.add("ngdrag");
     Object.assign(f.style,{left:r.left+"px",top:r.top+"px",width:r.width+"px",height:r.height+"px"}); document.body.appendChild(f); c.style.visibility="hidden";
     DR={f:f,c:c,r:r,br:document.getElementById("psboard").getBoundingClientRect(),ox:e.clientX-(r.left+r.width/2),oy:e.clientY-(r.top+r.height/2),
@@ -2195,7 +2249,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v214", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v215", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

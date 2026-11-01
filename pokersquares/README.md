@@ -554,3 +554,44 @@ Every end-of-board screen (Levels, Free play, the clock) is larger and more aliv
 **Measured** with a bot-played board in every mode at 320×568, 375×667, 390×844 and 430×932, plus
 Night: one screen, no panel scroll, the count lands on the exact total, and a 3-star bar lights all
 three ticks. No page errors; every earlier suite passes.
+
+## Blitz gets a briefing, and the clock tightens as you climb (v215)
+**Every timed board opens with a briefing** (`blitzGate`): Levels Blitz boards, same-board replays
+of them, and Free play with a clock. It shows:
+- "BLITZ · Level 15" and the chapter;
+- a big draining ring with the seconds;
+- "seconds a card" or "seconds for the whole board";
+- three rules: each card's own time, or one clock for all N cards; running out drops the card(s)
+  into **random** squares; no undo, plus the target;
+- a **Ready** button.
+
+Ready runs 3-2-1-Go (`countdown`), and only then does the clock start. While `GATE` is true the
+clock is paused (`clockPaused`), dragging is off, and the overlay covers the board. A board dealt
+behind the Menu shows its briefing when the Menu closes. Untimed levels keep the passive intro.
+
+**The clock tightens** (`levelSecs`). Blitz is still every 5th level:
+- **Shot clock** (5, 15, 25…): 8 s at level 5, a second less every ten levels, 3 s from level 55.
+- **Board clock** (10, 20, 30…): 90 s at level 10, 5 s less every ten levels, 60 s from level 70.
+
+| Level | 5 | 10 | 15 | 20 | 25 | 30 | 35 | 40 | 45 | 50 | 55 | 60 | 70+ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Clock | 8 s/card | 90 s | 7 s | 85 s | 6 s | 80 s | 5 s | 75 s | 4 s | 70 s | 3 s | 65 s | 3 s / 60 s |
+
+- The shot clock's red warning starts at 3 s or half the clock, whichever is less, so a 3 s clock
+  is red from 1.5 s.
+- Free play keeps 8 s and 90 s.
+- The map badges, level card, HUD ("Level 15 · Blitz 7s"), intro, briefing and results all show the
+  level's real time (`clockLabel`).
+
+**New chapters:** *The Gauntlet* (25), *Iron Table* (40) and *The Summit* (55), where the 3-second
+clock arrives.
+
+**Tested:**
+- The schedule matches the table.
+- Level 15's briefing reads 7 seconds a card with a 51% target.
+- The clock doesn't move and the board can't be touched while the briefing is up.
+- Ready shows 3, the clock runs after Go, and a same-board replay gates again.
+- Level 55 is 3 s.
+- The map shows 8s / 90s / 7s / … / 3s and all seven chapters.
+- A level dealt behind the Menu gates when it closes, and Free play's clock gates too.
+- The briefing fits at 320×568. Every earlier suite passes.
