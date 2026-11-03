@@ -649,6 +649,40 @@
   html{background:#0b3f2b;}
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
+<style id="type-v216">
+  /* v216: a type floor. Nothing a player reads is smaller than 11 px (tiny uppercase tags) and body text
+     and buttons start at 14-15 px. This block comes last, so it wins over every earlier size. */
+  /* HUD */
+  .pstray-place{font-size:17px;} .pstray-prog{font-size:14px; letter-spacing:.8px;}
+  .pstray-score .lbl{font-size:12px; letter-spacing:1.6px;} .pstray-score .best{font-size:14px; letter-spacing:.4px;} .pstray-score .best.goal b{font-size:16px;}
+  /* the hand chips beside the board */
+  .psboard{grid-template-columns:repeat(5,1fr) minmax(36px,auto);}
+  .psscore .ab{font-size:12px; letter-spacing:.3px;} .psscore .pts{font-size:16px;} .psscore.corner .pts{font-size:18px;}
+  .psscore.ngdraw .pts{font-size:13px;}
+  /* buttons and notes under the board */
+  .btn.sm{font-size:15px; padding:9px 14px;} .panel .close{font-size:15px;}
+  .bestbar .note,.muted,.stats-note{font-size:14px;}
+  /* callouts */
+  .pscall{font-size:16px;} .pscall.t0{font-size:14px;} .pscall small{font-size:12px;}
+  /* panels */
+  .panel h2{font-size:24px;} .panel h3{font-size:17px;} .panel p,.panel li{font-size:16px;} .panel table{font-size:15px;}
+  .mlabel{font-size:15px;} .setup-opt{font-size:17px;} .switch span{font-size:15px;} .seg button{font-size:15px;}
+  /* scores */
+  .hs li{font-size:16px;} .hs li .dt{font-size:13px;} .hs li .vb{font-size:12px;} .hs .st{font-size:13px;}
+  .stats span,.panel.res .stats span{font-size:12px;} .stats b{font-size:22px;}
+  /* levels */
+  .lvhead b{font-size:20px;} .lvhead span{font-size:12px;}
+  .lvc-n{font-size:24px;} .lvc-ch{font-size:13px;} .lvc-info span{font-size:14px;} .lvc-lock{font-size:14px;} .lvc-st{font-size:24px;}
+  .lvchap b{font-size:17px;} .lvchap span{font-size:13px;}
+  .lvnode{font-size:22px;} .lvnode .st{font-size:14px;} .lvnode .bz{font-size:12px; padding:3px 6px;}
+  .lvintro .d{font-size:16px;} .lvintro .t{font-size:14px;}
+  /* results */
+  .rmed span{font-size:11px; letter-spacing:1px;} .rch{font-size:14px;}
+  /* trophies */
+  .trolist .tn{font-size:16px;} .trolist .td{font-size:14px;} .trolist .tw{font-size:13px;}
+  .ngtro .l1{font-size:12px;} .ngtro .l2{font-size:16px;}
+  @media (max-width:360px){ .psboard{grid-template-columns:repeat(5,1fr) minmax(32px,auto);} .psscore .ab{font-size:11px;} .psscore .pts{font-size:14px;} .btn.sm{padding:8px 12px;} }
+</style>
 <script src="../gn-header.js"></script>
 </head>
 <body>
@@ -2249,7 +2283,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v215", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v216", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

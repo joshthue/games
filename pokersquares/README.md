@@ -595,3 +595,22 @@ clock arrives.
 - The map shows 8s / 90s / 7s / … / 3s and all seven chapters.
 - A level dealt behind the Menu gates when it closes, and Free play's clock gates too.
 - The briefing fits at 320×568. Every earlier suite passes.
+
+## A type floor (v216)
+An audit of every visible text node on every screen (board, Menu, Rules, Levels, level card,
+Trophies, Scores, all three results, the Blitz briefing) found 9-12 px text all over. Examples:
+SCORE, the hand codes on the chips, "Card N of M", Target/Best, Undo / New game, ✕, the map's
+captions and badges, trophy descriptions, score dates.
+
+The `<style id="type-v216">` block comes last, so it wins over every earlier size:
+- **Body text and buttons:** at least 14-15 px. Small buttons are now 15 px (were 12); panel text
+  16; Menu rows 17.
+- **HUD:** place line 17, progress 14, Best / Target 14 (number 16), SCORE label 12 (was 9).
+- **Chips:** the hand chips go from 9 / 13 to 12 / 16 px, so their column is now
+  `minmax(36px,auto)`; squares are 1 px narrower at 390 wide.
+- **Small uppercase tags:** at least 11-12 px (SCORE, chip codes, badges, LEVEL on the medallion).
+- **At 360 px wide or less,** the chips step down to 11 / 14 px in a 32 px column.
+
+Re-audited afterwards: nothing under 13 px except those uppercase tags at 11-12 px. Every layout
+suite passes: no page scroll at 320 / 390 / 430, results fit one screen, the Blitz card fits, and
+the map stays inside its panel.
