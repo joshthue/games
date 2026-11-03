@@ -614,3 +614,35 @@ The `<style id="type-v216">` block comes last, so it wins over every earlier siz
 Re-audited afterwards: nothing under 13 px except those uppercase tags at 11-12 px. Every layout
 suite passes: no page scroll at 320 / 390 / 430, results fit one screen, the Blitz card fits, and
 the map stays inside its panel.
+
+## iPad (v217)
+Before this, an iPad got the phone layout in a 520 px column: small cards and half the screen empty.
+Now any screen at least 600 px both ways is a tablet. `fitPS()` adds `html.tablet`, plus
+`html.tablet-land` in landscape.
+- **The board is sized by height.** The height it may take is its own height minus the page's
+  overflow. From that, the board width that keeps the cards card-shaped (5:7) is computed and set as
+  `max-width`. If the estimate runs a few px long, the board is narrowed further; on tablets the
+  cards are never squashed (the phone path drops the aspect ratio instead).
+- **Scaled to match:**
+  - tray card `--size` 1.75;
+  - HUD text 17-60 px;
+  - hand chips 15 / 22 px in a 56 px column;
+  - buttons 19 px;
+  - callouts 22 px.
+- **Panels, the Blitz card, the level intro and trophy toasts** are scaled as a whole with `zoom`
+  (1.25-1.5). They hold no rect-driven animation. Zoomed panels cap their height at `88vh / 1.3`, or
+  the Levels map ran off the screen.
+- **Landscape is two columns:** HUD, post-game bar and Undo / New board on the left (360 px); the
+  board on the right, as tall as the screen allows. `grid-template-rows: auto auto auto auto 1fr`
+  matters: with auto rows the grid split the board's height into the left column's rows and the page
+  grew 95 px.
+
+Measured (cell size, board as a share of screen height, no page scroll):
+
+| iPad | Portrait | Landscape |
+|---|---|---|
+| mini (744×1133) | 94×132 (was ~76×66), 67% | 73×102, 83% |
+| 13" (1032×1376) | 129×181, 73% | 114×160, 87% |
+
+On all four: dragging lands on the right square, and the results, Blitz briefing and Levels map
+fit. Phones are untouched (all phone suites pass).

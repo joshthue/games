@@ -649,6 +649,33 @@
   html{background:#0b3f2b;}
   body{box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
 </style>
+<style id="tablet-v217">
+  /* v217: iPad (and any screen at least 600 px both ways). fitPS() adds html.tablet / html.tablet-land
+     and sizes the board by height; this block scales everything around it. */
+  html.tablet{ --size:1.75 !important; --cardtext:1.25 !important; }
+  html.tablet .wrap{max-width:min(94vw,980px); padding:14px 26px 30px;}
+  html.tablet .psboard{max-width:none; gap:10px; grid-template-columns:repeat(5,1fr) minmax(56px,auto);}
+  html.tablet .pscell{border-radius:12px;}
+  html.tablet .pstray{padding:16px 22px; gap:22px; border-radius:22px; margin:10px 0 16px;}
+  html.tablet .pstray-place{font-size:24px;} html.tablet .pstray-prog{font-size:17px;}
+  html.tablet .pstray-score .lbl{font-size:14px;} html.tablet .pstray-score .num{font-size:60px;}
+  html.tablet .pstray-score .best{font-size:18px;} html.tablet .pstray-score .best.goal b{font-size:21px;} html.tablet .tgbar{width:120px; height:7px;}
+  html.tablet .psscore{border-radius:12px;} html.tablet .psscore .ab{font-size:15px;} html.tablet .psscore .pts{font-size:22px;} html.tablet .psscore.corner .pts{font-size:24px;}
+  html.tablet .btn.sm{font-size:19px; padding:12px 22px; border-radius:12px;} html.tablet .controls{margin-top:18px; gap:12px;}
+  html.tablet .bestbar{max-width:none;} html.tablet .bestbar .seg button{font-size:18px; padding:9px 16px;} html.tablet .bestbar .note{font-size:16px;}
+  html.tablet .gn-hdr .gn-pill{font-size:17px; padding:8px 16px;}
+  html.tablet .pscall{font-size:22px;} html.tablet .pscall.t0{font-size:18px;} html.tablet .pscall small{font-size:15px;}
+  html.tablet .ngpts{font-size:26px;}
+  /* panels, the Blitz card and toasts: scaled as a whole (they hold no rect-driven animation) */
+  html.tablet .overlay .panel{zoom:1.3; max-height:calc(88vh / 1.3);} html.tablet .bg-card{zoom:1.35;} html.tablet .lvintro{zoom:1.5;} html.tablet .ngtro{zoom:1.25;}
+  /* landscape: two columns, the HUD and buttons on the left, the board on the right */
+  html.tablet-land .wrap{max-width:min(96vw,1240px); display:grid; grid-template-columns:minmax(300px,360px) 1fr; column-gap:30px; align-items:start;
+    grid-template-areas:"hdr hdr" "tray board" "bar board" "ctrl board" "rest board"; grid-template-rows:auto auto auto auto 1fr;}
+  html.tablet-land .gn-hdr{grid-area:hdr;} html.tablet-land .pstray{grid-area:tray; flex-direction:column; text-align:center; gap:14px; margin-top:6px;}
+  html.tablet-land #psboard{grid-area:board; margin:6px auto 0;} html.tablet-land #psBestBar{grid-area:bar;} html.tablet-land #psControls{grid-area:ctrl;}
+  html.tablet-land .pstray-info,html.tablet-land .pstray-score{width:100%;}
+  html.tablet-land .bestbar .bbrow{flex-direction:column;}
+</style>
 <style id="type-v216">
   /* v216: a type floor. Nothing a player reads is smaller than 11 px (tiny uppercase tags) and body text
      and buttons start at 14-15 px. This block comes last, so it wins over every earlier size. */
@@ -1340,9 +1367,24 @@ function render(justIdx){
 }
 // Never scroll the main screen: if the page is taller than the phone (small phone, or a big card
 // size growing the tray's card), take the difference out of the board's cell height (v138).
+function isTablet(){ return innerWidth>=600 && innerHeight>=600; }
 function fitPS(){
   const root=document.documentElement, cell=document.querySelector('#psboard .pscell'); if(!cell) return;
-  root.style.removeProperty('--cellh'); root.style.removeProperty('--cellar');
+  const board=document.getElementById('psboard');
+  root.style.removeProperty('--cellh'); root.style.removeProperty('--cellar'); board.style.maxWidth='';
+  root.classList.toggle('tablet', isTablet()); root.classList.toggle('tablet-land', isTablet() && innerWidth>innerHeight);
+  // v217, tablets: size the board by the height it may take, so the cards stay card-shaped (5:7) and fill
+  // the screen. The height left for the board is its own height minus however much the page overflows.
+  if(isTablet()){
+    const kids=board.children, gap=parseFloat(getComputedStyle(board).rowGap)||8;
+    const bh=board.getBoundingClientRect().height, over=root.scrollHeight-innerHeight, avail=bh-over;
+    const chipRowH=kids[kids.length-1].getBoundingClientRect().height, chipColW=kids[5].getBoundingClientRect().width;
+    const cellH=(avail-chipRowH-5*gap)/5, want=5*(cellH*5/7)+chipColW+5*gap;
+    let w=Math.max(320, Math.min(board.parentNode.clientWidth, Math.floor(want))); board.style.maxWidth=w+'px';
+    // the estimate can run a few px long (page padding, row rounding): narrow the board, never squash the cards
+    for(let i=0;i<10;i++){ const o=root.scrollHeight-innerHeight; if(o<=0||w<=320) break; w=Math.max(320, w-Math.ceil(o*.75)-2); board.style.maxWidth=w+'px'; }
+    return;
+  }
   let h=cell.getBoundingClientRect().height;
   for(let i=0;i<12;i++){ const over=root.scrollHeight-innerHeight; if(over<=0||h<=38) break;
     h=Math.max(38, Math.floor(h-Math.ceil(over/5)-1)); root.style.setProperty('--cellh', h+'px'); root.style.setProperty('--cellar','auto'); }   // an explicit height: keep the full column width
@@ -2283,7 +2325,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v216", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v217", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
