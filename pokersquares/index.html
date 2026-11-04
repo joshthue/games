@@ -849,7 +849,9 @@ function levelPct(n){ return (n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4))) - 
 function levelClock(n){ return n%5!==0?"off":(n%10===0?"board":"shot"); }
 // v215: the clock tightens as you climb. Shot clock (5, 15, 25…): 8 s, one second less every 10 levels,
 // down to 3 s at 55. Board clock (10, 20, 30…): 90 s, 5 s less every 10 levels, down to 60 s at 70.
-function levelSecs(n){ const k=levelClock(n); return k==="shot"?Math.max(3,8-Math.floor((n-5)/10)):(k==="board"?Math.max(60,90-5*Math.floor((n-10)/10)):0); }
+// v218: more time, by request. Shot clock 12 s at level 5, a second less every ten levels, never under 5 s
+// (from 75). Board clock 120 s at level 10, 5 s less every ten levels, never under 90 s (from 70).
+function levelSecs(n){ const k=levelClock(n); return k==="shot"?Math.max(5,12-Math.floor((n-5)/10)):(k==="board"?Math.max(90,120-5*Math.floor((n-10)/10)):0); }
 function clockLabel(k,secs){ return k==="shot"?secs+' s a card':secs+' s board'; }
 function isLevels(){ return settings.mode==="levels"; }
 let LV=null, LVSOLVER=null;
@@ -926,7 +928,7 @@ function setMode(m){ if(settings.mode===m) return; settings.mode=m; persist(); n
 function stars(n){ let h=''; for(let i=0;i<3;i++) h+=i<n?'<b>★</b>':'★'; return h; }
 /* ---- the level map (v213): a winding path, chapters, a card for the level you tap ---- */
 const LV_CHAPTERS=[{from:1,name:"Training Table",sub:"Part-built boards: learn what a good one looks like"},
-  {from:25,name:"The Gauntlet",sub:"The Blitz clocks start to shrink"},{from:40,name:"Iron Table",sub:"5 seconds a card and falling"},{from:55,name:"The Summit",sub:"3 seconds a card. 60-second boards from 70"},
+  {from:25,name:"The Gauntlet",sub:"The Blitz clocks start to shrink"},{from:40,name:"Iron Table",sub:"8 seconds a card and falling"},{from:55,name:"The Summit",sub:"7 seconds a card, 5 from level 75"},
   {from:4,name:"The Climb",sub:"Bare boards, no undo"},{from:10,name:"High Stakes",sub:"The targets bite"},{from:15,name:"Master's Table",sub:"55% of the best board, every time"}];
 LV_CHAPTERS.sort((a,b)=>a.from-b.from);
 function chapterOf(n){ let c=LV_CHAPTERS[0]; LV_CHAPTERS.forEach(x=>{ if(n>=x.from) c=x; }); return c; }
@@ -1008,7 +1010,7 @@ function levelIntro(){
    moments of each deal. A ring drains around the tray card; the last 3 s (shot) or 10 s (board)
    turn it red with a tick each second. No undo with a clock on.
    ============================================================ */
-const SHOT_MS=8000, BOARD_MS=90000, GRACE_MS=550;   // free play's clocks; levels use levelSecs()
+const SHOT_MS=12000, BOARD_MS=120000, GRACE_MS=550;   // free play's clocks; levels use levelSecs()
 let GATE=false;   // the Blitz briefing / countdown is up: the clock waits and the board can't be touched
 let CLOCK={kind:"off", left:0, total:0, last:0, grace:0, raf:0, dumping:false, lastSec:-1};
 function clockKind(){ return isLevels() ? (LV?levelClock(LV.n):"off") : (settings.clock||"off"); }
@@ -1413,7 +1415,7 @@ function openRules(){
     +'<h3>Levels</h3>'
     +'<p>In <b>Levels</b> (the Menu switches to Free play) each board has a target: a share of the best board its 25 cards can make. It shows under your score a few seconds into the deal, turning green when you pass it. Clear it to open the next level; score 5% or 10% over for two or three stars. Levels 1 to 3 come part-built (the gold-dotted squares are locked in from the best board), and Undo works only there. Miss, and you can replay the same board or take a new one.</p>'
     +'<h3>The clock</h3>'
-    +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (8 at level 5, one less every ten levels, down to 3), and 10, 20… give you <b>one clock for the whole board</b> (90 seconds at level 10, five less every ten levels, down to 60). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
+    +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (12 at level 5, one less every ten levels, down to 5), and 10, 20… give you <b>one clock for the whole board</b> (120 seconds at level 10, five less every ten levels, down to 90). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
     +'<h3>What the lights mean</h3>'
     +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
     +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
@@ -1425,7 +1427,7 @@ function openMenu(){
   const tog=(on,fn,label)=>'<div class="switch" style="display:flex;margin:12px 0 2px;"><button class="toggle '+(on?'on':'')+'" onclick="'+fn+'"></button><span>'+label+'</span></div>';
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Menu</h2>'
     +seg('Play',[['levels','Levels'],['free','Free play']],isLevels()?'levels':'free','setMode')
-    +(isLevels()?'':seg('Clock',[['off','Off'],['shot','8 s a card'],['board','90 s board']],settings.clock||'off','setClock'))
+    +(isLevels()?'':seg('Clock',[['off','Off'],['shot','12 s a card'],['board','120 s board']],settings.clock||'off','setClock'))
     +'<button class="setup-opt" style="margin-top:12px" onclick="closeOverlay();newGame();">'+(isLevels()?'New board, same level':'New game')+'</button>'
     +'<button class="setup-opt" onclick="NG.openTrophies()">Trophies</button>'
     +seg('Theme',[['auto','Auto'],['day','Day'],['night','Night']],settings.theme||'auto','setTheme')
@@ -2325,7 +2327,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v217", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v218", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

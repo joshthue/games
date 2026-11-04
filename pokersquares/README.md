@@ -646,3 +646,15 @@ Measured (cell size, board as a share of screen height, no page scroll):
 
 On all four: dragging lands on the right square, and the results, Blitz briefing and Levels map
 fit. Phones are untouched (all phone suites pass).
+
+## More time on the clock (v218)
+By request: the Blitz clocks were too tight.
+- **Shot clock:** 12 s at level 5 (was 8), a second less every ten levels, never under **5 s** (was 3),
+  reached at level 75.
+- **Board clock:** 120 s at level 10 (was 90), 5 s less every ten levels, never under **90 s** (was 60),
+  reached at level 70.
+- **Free play:** 12 s a card and 120 s a board.
+
+The Iron Table and Summit chapter captions, the Rules and the Menu follow suit. The briefing, badges,
+HUD and results already read the real time. Tested: 12 s at level 5 and 5 s by 95, 120 s at 10 and 90 s
+from 70; a free-play card times out at 12 s and the next gets a fresh 12.
