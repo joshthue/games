@@ -1,4 +1,4 @@
-# Poker Squares (`pokersquares/`)
+# Royal Draw (`royaldraw/`)
 
 Solitaire poker on a 5×5 grid — a.k.a. **Poker Solitaire / Poker Patience**. Self-contained single `index.html`, no backend.
 

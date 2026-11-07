@@ -216,7 +216,7 @@ so Rules/Menu/join dialogs open over it. While it is up, `html.gn-setup-open` lo
 (overflow hidden, overscroll-behavior none) and drags on the header are cancelled —
 otherwise iOS rubber-bands the page and the header slides under the fixed sheet (v130).
 Never put an overlay inside `.gn-setup`; the drag guard would stop it scrolling. No ✕, no in-panel "How to play", no emoji on
-Start. Blackjack, Poker Squares, YachtRock, Bar Dice and Links start straight in.
+Start. Blackjack, Royal Draw, YachtRock, Bar Dice and Links start straight in.
 
 ## Card size and card text
 
