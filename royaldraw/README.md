@@ -658,3 +658,6 @@ By request: the Blitz clocks were too tight.
 The Iron Table and Summit chapter captions, the Rules and the Menu follow suit. The briefing, badges,
 HUD and results already read the real time. Tested: 12 s at level 5 and 5 s by 95, 120 s at 10 and 90 s
 from 70; a free-play card times out at 12 s and the next gets a fresh 12.
+
+## Prizes (campaign power-ups) — in progress
+Phase-1 foundation only. A reserved `localStorage` key `pokersquares.prizes` (`{stash, streak}`) and a per-board `boostUsed` flag are in place; `boostUsed` extends the existing bot-board guard, so a boosted board earns no third star, no personal best, no stats and no trophies. Nothing earns or spends a prize yet. Full design lives in the Games project doc `royal-draw-prizes-sketch.md`.

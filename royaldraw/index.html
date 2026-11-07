@@ -782,6 +782,18 @@ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw);
   if(o&&o.settings) Object.assign(settings,o.settings); if(o&&typeof o.best==="number") best=o.best; } }catch(e){}
 function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({settings,best})); }catch(e){} }
 
+/* ---- prizes (campaign power-ups): phase-1 foundation, Nov 2026. Stash + streak live in
+   pokersquares.prizes, beside the other keys so the planned iCloud sync carries it. Nothing
+   earns or spends yet; boostUsed just arms the integrity guards (no 3rd star / best / stats /
+   trophies on a boosted board). Design: the Games project doc royal-draw-prizes-sketch.md. ---- */
+let boostUsed=false;       // a power-up was spent on this board
+const PRIZE_KINDS=["undo","peek","burn","freeze","hint","swap","wild"];
+function loadPrizes(){ try{ const o=JSON.parse(localStorage.getItem("pokersquares.prizes"))||{}; o.stash=o.stash||{}; PRIZE_KINDS.forEach(k=>{ if(typeof o.stash[k]!=="number") o.stash[k]=0; }); if(typeof o.streak!=="number") o.streak=0; return o; }catch(e){ const s={}; PRIZE_KINDS.forEach(k=>s[k]=0); return {stash:s, streak:0}; } }
+function savePrizes(P){ try{ localStorage.setItem("pokersquares.prizes",JSON.stringify(P)); }catch(e){} }
+function prizeCount(kind){ return loadPrizes().stash[kind]||0; }
+function grantPrize(kind,n){ const P=loadPrizes(); P.stash[kind]=(P.stash[kind]||0)+(n||1); savePrizes(P); return P.stash[kind]; }
+function spendPrize(kind){ const P=loadPrizes(); if((P.stash[kind]||0)<=0) return false; P.stash[kind]--; savePrizes(P); boostUsed=true; return true; }
+
 /* ---- state ---- */
 let grid=new Array(25).fill(null);
 let queue=[];              // remaining deck (draw from end)
@@ -912,7 +924,8 @@ function levelHUD(){
 // stars: 1 at the target, 2 at +5 points of percentage, 3 at +10
 function levelJudge(total){
   const L=LV, max=Math.max(L.max||0,total), pct=max?total/max:0;
-  const stars=botTouched?0:(pct>=L.pct+.10?3:pct>=L.pct+.05?2:total>=L.target?1:0);
+  const raw=botTouched?0:(pct>=L.pct+.10?3:pct>=L.pct+.05?2:total>=L.target?1:0);
+  const stars=boostUsed?Math.min(2,raw):raw;
   const P=lvProg(), R=P[settings.scoring]; let unlocked=false;
   if(stars>0 && levelClock(L.n)!=="off") NG._earn("clock");
   if(stars>0){ R.stars[L.n]=Math.max(R.stars[L.n]||0,stars); if(R.level===L.n){ R.level=L.n+1; unlocked=true; } lvSave(P);
@@ -1054,7 +1067,7 @@ function newGame(opts){
   sfx('shuffle');
   lastMove=null; over=false;
   VIEW="mine"; stopSolve(); SOLVE=null;
-  botStop(); botTouched=false;
+  botStop(); botTouched=false; boostUsed=false;
   if(isLevels()) levelSetup(opts||{});
   else { if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
   NG.reset(); clockReset(); render();
@@ -1149,10 +1162,10 @@ function finish(fromPlace){
   startSolve();
   botStop();
   const timed=CLOCK.kind!=="off"; var beatBest=false;
-  if(timed){ if(!botTouched){ const B=clockBests(), key=CLOCK.kind+":"+settings.scoring; if(total>(B[key]||0)){ B[key]=total; beatBest=true; try{ localStorage.setItem("pokersquares.clockbest",JSON.stringify(B)); }catch(e){} } } }
+  if(timed){ if(!botTouched && !boostUsed){ const B=clockBests(), key=CLOCK.kind+":"+settings.scoring; if(total>(B[key]||0)){ B[key]=total; beatBest=true; try{ localStorage.setItem("pokersquares.clockbest",JSON.stringify(B)); }catch(e){} } } }
   else {
-  if(!botTouched){ const k=settings.scoring, S=loadStats(); S[k]=S[k]||{n:0,sum:0}; S[k].n++; S[k].sum+=total; saveStats(S); }
-  beatBest = !botTouched && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
+  if(!botTouched && !boostUsed){ const k=settings.scoring, S=loadStats(); S[k]=S[k]||{n:0,sum:0}; S[k].n++; S[k].sum+=total; saveStats(S); }
+  beatBest = !botTouched && !boostUsed && total>best;   // a new personal best gets the bigger fanfare; bot boards never count
   if(beatBest){ best=total; }
   }
   sfx(beatBest ? 'win' : 'good');
@@ -2267,7 +2280,7 @@ var NG=(function(){
     const el=document.createElement("div"); el.className="ngtro"; el.innerHTML=cup(t.g)+'<div><div class="l1">'+GN[t.g]+' trophy</div><div class="l2">'+t.n+'</div></div>';
     document.body.appendChild(el); requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add("on"); }); }); snd("ping");
     setTimeout(function(){ el.classList.remove("on"); setTimeout(function(){ el.remove(); tbusy=false; toastNext(); },500); },2800); }
-  function trophies(total){ if(botTouched || (isLevels() && LV && LV.k>0)) return; const L=computeLines(grid), keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), am=settings.scoring==="american";
+  function trophies(total){ if(botTouched || boostUsed || (isLevels() && LV && LV.k>0)) return; const L=computeLines(grid), keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), am=settings.scoring==="american";
     earn("first");
     if(keys.indexOf("flush")>=0) earn("flush");
     if(keys.indexOf("full")>=0) earn("full");
@@ -2327,7 +2340,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v219", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v220", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
