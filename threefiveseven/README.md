@@ -146,3 +146,12 @@ up cards accumulate, so the forced seat can change from the 3 to the 5 to the 7 
 cards counts, e.g. a wild 7 + Q shows a pair of Queens). `exposedScore(up,wr,o)` ranks the up set: 3+
 cards reuse `best()`/eval3, 1–2 cards get a pair-then-high ordering; highest is forced, ties all forced.
 Auto-advance (v233) is turned off for now — the plumbing (`autoTimer`) stays in place for later.
+
+## Bots' hands exposed + forced no longer auto-commits (v235)
+Opponent hands are now fully exposed during the decision — every card face-up (sorted), with the up
+cards ringed in gold (`.mc.upm`) so you can still tell which are public. (The seat row already fits a
+7-card hand from the showdown layout.) This makes 3-5-7 an open-hand game for now.
+
+Forced-in no longer auto-commits after 2 s. When you're forced, the **In** button shows and you tap it
+when you're ready — so you can sit with a good hand instead of it playing itself. (`forcedGo`'s countdown
+call is removed; Out stays hidden while forced.)

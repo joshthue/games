@@ -40,6 +40,8 @@
   .mc b{font-size:calc(11.5px*var(--cardtext,1)); font-weight:800; letter-spacing:-.05em;} .mc i{font-style:normal; font-size:calc(10px*var(--cardtext,1)); margin-top:1px;}
   .mc.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 3px,#215439 3px,#215439 6px); border:1.5px solid #f7f3e8;}
   .mc.wild{box-shadow:0 0 0 2px var(--gold);}
+  .mc.upm{box-shadow:inset 0 0 0 2px var(--gold);}
+  .mc.wild.upm{box-shadow:0 0 0 2px var(--gold), inset 0 0 0 2px #fff0bf;}
   .mc.used{transform:translateY(-4px);}
   .mc.discard{opacity:.28; transform:translateY(3px); filter:saturate(.4);}
   .mc.up{width:32px; height:45px; padding:3px 0 0 3px; border-radius:6px; margin-left:-12px;}
@@ -390,7 +392,7 @@ function suitCol(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?'#c22':'#1c2a24'
 function wr(di){ return T.wildRanks(M.o, di==null?M.di:di); }
 function cardEl(c, wild){ var e=document.createElement('div'); e.className='card'+(wild?' wild':''); e.style.color=suitCol(c.s); e.dataset.k=c.r+'_'+c.s;
   e.innerHTML='<span class="ix"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></span><span class="pip">'+T.SUITS[c.s]+'</span>'+(wild?'<span class="wtag">W</span>':''); return e; }
-function miniHTML(c, wild, used, discard, up){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+'" data-k="'+c.r+'_'+c.s+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
+function miniHTML(c, wild, used, discard, up, upm){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+(upm?' upm':'')+'" data-k="'+c.r+'_'+c.s+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
 function legsHTML(p){ var h='', need=M.o.legs; for(var i=0;i<need;i++) h+=(i<M.legs[p]?'<span class="on">●</span>':'○'); return '<span class="legs'+(need-M.legs[p]===1?' hot':'')+'">'+h+'</span>'; }
 function wildText(di){ var w=wr(di); if(!w.length) return 'No wilds'; return '<b>'+w.map(function(r){ return r+'s'; }).join(', ').replace(/, ([^,]*)$/,' & $1')+'</b> wild'; }
 
@@ -423,7 +425,8 @@ function render(){ if(!M) return;
   seats.classList.toggle('c2', M.n-1===4);
   for(var p=1;p<M.n;p++){ var hand=M.hands[p], cls='seat', badge='', row='', hn='', delta='';
     if(!showing){ var fz=T.isForced(M,p); badge = fz ? '<span class="badge in">FORCED</span>' : busy ? '<span class="badge wait">?</span>' : '';
-      if(M.up){ var ups=M.up[p], dn=hand.length-ups.length; row = ups.map(function(c){ return miniHTML(c, T.isWild(c,w), false, false, true); }).join('') + (dn>0?'<div class="mc back hid">'+dn+'</div>':''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
+      var ups=M.up?M.up[p]:[], sorted=hand.slice().sort(function(a,b){ return a.r-b.r||a.s-b.s; });
+      row = sorted.map(function(c){ var isU=ups.some(function(u){ return T.same(u,c); }); return miniHTML(c, T.isWild(c,w), false, false, false, isU); }).join(''); }
     else if(res.kind==='allout'){ var ea=res.evals[p]; row=hand.map(function(c){ var wd=T.isWild(c,w), used=wd||ea.used.some(function(u){ return T.same(u,c); }); return miniHTML(c, wd, used, !used); }).join(''); hn=T.handName(ea,true);
       if(p===res.alloutLoser){ cls+=' win'; badge='<span class="badge in">BEST</span>'; delta=' <span class="delta neg">−'+money(res.pays[p])+'</span>'; } else { badge='<span class="badge out">OUT</span>'; } }
     else { var isIn=res.ins[p];
@@ -449,17 +452,17 @@ function render(){ if(!M) return;
   // controls
   var deciding=M.phase==='decide';
   var forcedMe=M.phase==='decide' && !busy && T.isForced(M,0);
-  $('inBtn').classList.toggle('hide', !deciding || forcedMe); $('outBtn').classList.toggle('hide', !deciding || forcedMe); $('nextBtn').classList.toggle('hide', deciding);
+  $('inBtn').classList.toggle('hide', !deciding); $('outBtn').classList.toggle('hide', !deciding || forcedMe); $('nextBtn').classList.toggle('hide', deciding);
   $('inBtn').disabled=$('outBtn').disabled=busy||!deciding; if(deciding&&T.isForced(M,0)) $('outBtn').disabled=true;
   if(!deciding) $('nextBtn').textContent = M.phase==='gameover' ? 'See the winner' : 'Next deal · '+T.SIZES[M.di]+' cards';
   $('nextBtn').disabled=busy;
   // say
   var say=$('say');
   if(deciding){ var fz0=T.isForced(M,0), others=M.forced?M.forced.filter(function(q){ return q!==0; }):[];
-    say.innerHTML = busy ? '<b>1… 2… 3… drop!</b>' : fz0 ? 'Your upcard is high — <b>you’re forced in</b> (half price if you lose).'
+    say.innerHTML = busy ? '<b>1… 2… 3… drop!</b>' : fz0 ? 'Your upcard is high — <b>you’re forced in</b> (half price if you lose). Enjoy it, then tap <b>In</b>.'
       : T.SIZES[M.di]+' cards each'+(others.length?' · '+who(others)+' forced in':'')+'. <b>In</b> or <b>out</b>?'; }
   else say.innerHTML=resultLine(res);
-  if(forcedMe) forcedGo(); else clearForce();
+  clearForce();   // forced no longer auto-commits - the player taps In when ready
   var co=$('coach'); co.innerHTML = prefs.teach ? coachHint(res) : '';
 }
 function who(ps){ var n=ps.map(function(p){ return p===0?'You':M.names[p]; }); return n.length<=1?n.join(''):n.slice(0,-1).join(', ')+' & '+n[n.length-1]; }
@@ -584,7 +587,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v234", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v235", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
