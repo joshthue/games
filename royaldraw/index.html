@@ -1427,7 +1427,7 @@ function fitPS(){
     for(let i=0;i<10;i++){ const o=root.scrollHeight-innerHeight; if(o<=0||w<=320) break; w=Math.max(320, w-Math.ceil(o*.75)-2); board.style.maxWidth=w+'px'; }
     return;
   }
-  if(innerHeight>=innerWidth) return;   // v222: portrait phones keep full card shape (5/7) and allow a small scroll when the phone is short — on iOS scrolling collapses Safari's toolbar and reclaims the room; only landscape / very short screens shrink the cards
+  if(innerHeight>=innerWidth){ root.style.setProperty('--cellar','25/34'); return; }   // v222: portrait phones keep full card shape + allow a small scroll (iOS toolbar collapses on scroll); v223: a touch shorter than 5/7 (25/34 ≈ 2-3px) per feedback. Landscape / very short screens still shrink below.
   let h=cell.getBoundingClientRect().height;
   for(let i=0;i<12;i++){ const over=root.scrollHeight-innerHeight; if(over<=0||h<=38) break;
     h=Math.max(38, Math.floor(h-Math.ceil(over/5)-1)); root.style.setProperty('--cellh', h+'px'); root.style.setProperty('--cellar','auto'); }   // an explicit height: keep the full column width
@@ -2369,7 +2369,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v222", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v223", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
