@@ -51,7 +51,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
 .centerflash{animation:cflash .5s ease;}
 @keyframes cflash{0%{box-shadow:0 0 0 4px rgba(232,196,106,.9);} 100%{box-shadow:0 2px 4px rgba(0,0,0,.4);}}
 
-.mid{flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; gap:8px;}
+.mid{flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end; gap:8px; padding-bottom:2px;}
 .status{text-align:center; font-size:13px; min-height:18px; margin:4px 0;}
 .status b{color:var(--gold);}
 .hint{text-align:center; font-size:12px; opacity:.72; min-height:15px;}
@@ -95,8 +95,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
   <div id="bot" class="pside"></div>
   <div class="mid">
     <div id="centers"></div>
-    <div class="status" id="status"></div>
-    <div class="hint" id="hint"></div>
   </div>
   <div id="you" class="pside"></div>
 </div>
@@ -525,7 +523,7 @@ window.SM = (function(){
 <script>
 (function(){
 "use strict";
-var V="v233";
+var V="v234";
 var $=function(id){ return document.getElementById(id); };
 var SUITCOL=["var(--sp)","var(--he)","var(--di)","var(--cl)"];
 
@@ -656,10 +654,6 @@ function render(){
       '<div data-act="payoff" class="goalwrap"><div style="position:relative">'+cardHTML(yGoal, selExtra('payoff',0))+'<span class="cnt">×'+you.payoff.length+'</span></div><div class="lbl">Your goal</div></div>'+
       '<div class="hand">'+yhand+'</div>'+
     '</div>';
-  // status
-  var sv=you.payoff.length, bv=bot.payoff.length;
-  $('status').innerHTML='Goal — <b>you '+sv+'</b> · them '+bv+'  ·  stock '+T.stock.length;
-  $('hint').textContent = sel ? (sel.kind==='hand'?'Tap a centre to play, or a side pile to park it':'Tap a centre to play it') : 'Tap your goal card, a hand card, or a side pile';
 }
 
 function flashCenter(ci){ try{ var el=$('centers').children[ci]; if(el){ var sc=el.querySelector('.sc'); if(sc){ sc.classList.add('centerflash'); setTimeout(function(){ sc.classList.remove('centerflash'); },500); } } }catch(e){} }
