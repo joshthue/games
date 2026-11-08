@@ -111,3 +111,11 @@ button under the home bar, no hand overflow and no console errors.
   7-card deal, every hand flips up and the best hand pays half the pot (`resolve` `kind:'allout'`);
   no leg is awarded and the pot grows. On any other deal, all-drop is still a wash.
 
+
+## The up card actually stays up (v231)
+In Forced mode each player's first card is face up. The player's up card lifted above the rest and wore
+an `UP` tag during the decision, but the moment the hand resolved (`showing`) the lift was dropped and the
+card fell back in line with the others — so it only *looked* up while deciding. The up card now stays
+lifted and tagged through the showdown and result too (`upc` no longer gates on `!showing`), and it keeps
+its full brightness even when a fold dims the rest of the hand, so the public card stays the focus the
+whole deal.
