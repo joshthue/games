@@ -661,3 +661,11 @@ from 70; a free-play card times out at 12 s and the next gets a fresh 12.
 
 ## Prizes (campaign power-ups) — in progress
 Campaign power-ups stored in `localStorage` under `pokersquares.prizes` (`{stash, streak}`). A per-board `boostUsed` flag extends the bot-board guard: a boosted board earns no third star (caps at 2), no personal best, no stats and no trophies — so a prize is truly spent and can't refund itself. **Undo is live (v221):** clearing a *new* level cleanly grants +1 undo (first clear only, so replays can't farm it); on a no-undo board (level 4+, clock off) the Undo button reads “Undo ×N” and spends one. Menu → **Prizes** lists the stash. Peek / burn / freeze / hint / swap / wild and the three-star streak pick-a-prize are next. Full design: the Games project doc `royal-draw-prizes-sketch.md`.
+
+## Phones lock to portrait (v228)
+Landscape on a phone had no layout of its own — the portrait board just got crushed into the short
+height (the two-column landscape is a tablet feature). Rather than build a sideways phone layout,
+phones now lock to portrait: in landscape under 500 px tall, `html:not(.tablet)` hides the board and
+shows a “Rotate to portrait” nudge (`#rotateLock`). Tablets clear the `max-height:500px` gate and keep
+their two-column landscape (see iPad above). The native iOS app matches: `Info.plist`
+`UISupportedInterfaceOrientations` (iPhone) is now Portrait only; the `~ipad` key keeps landscape.

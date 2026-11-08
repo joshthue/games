@@ -710,9 +710,28 @@
   .ngtro .l1{font-size:12px;} .ngtro .l2{font-size:16px;}
   @media (max-width:360px){ .psboard{grid-template-columns:repeat(5,1fr) minmax(32px,auto);} .psscore .ab{font-size:11px;} .psscore .pts{font-size:14px;} .btn.sm{padding:8px 12px;} }
 </style>
+<style id="orient-lock-v228">
+  /* Phone-only portrait lock. Tablets (html.tablet, height > 500) keep their landscape layout. */
+  #rotateLock{display:none; position:fixed; inset:0; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:#0d5c3f; color:#f4efe2; gap:16px;}
+  #rotateLock .ri{font-size:48px; color:#e9c46a; animation:rlspin 2.6s ease-in-out infinite;}
+  #rotateLock .rt{font-size:20px; font-weight:800; color:#e9c46a; letter-spacing:.3px;}
+  #rotateLock .rs{font-size:15px; line-height:1.5; opacity:.85; max-width:300px;}
+  @keyframes rlspin{0%,55%{transform:rotate(0)} 78%,100%{transform:rotate(-90deg)}}
+  @media (orientation:landscape) and (max-height:500px){
+    html:not(.tablet) .wrap{display:none !important;}
+    html:not(.tablet) .ngamb{display:none !important;}
+    html:not(.tablet) .gn-build{display:none !important;}
+    html:not(.tablet) #rotateLock{display:flex;}
+  }
+</style>
 <script src="../gn-header.js"></script>
 </head>
 <body>
+<div id="rotateLock" aria-hidden="true">
+  <div class="ri">↻</div>
+  <div class="rt">Rotate to portrait</div>
+  <div class="rs">Royal Draw is built for portrait. Turn your phone upright to keep playing.</div>
+</div>
 <div class="ngamb" aria-hidden="true"><i style="width:70vmax;height:70vmax;left:-30vmax;top:-20vmax;--dx:12vmax;--dy:8vmax"></i><i style="width:55vmax;height:55vmax;right:-25vmax;top:25vh;--dx:-10vmax;--dy:-6vmax;animation-duration:41s"></i><i style="width:60vmax;height:60vmax;left:10vw;bottom:-35vmax;--dx:-8vmax;--dy:-10vmax;animation-duration:47s"></i></div>
 <div class="wrap">
   <div class="gn-hdr">
@@ -2391,7 +2410,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v226", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v228", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
