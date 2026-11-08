@@ -41,20 +41,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
   background:var(--felt2); border-radius:6px; padding:0 5px; white-space:nowrap;}
 
 .lbl{font-size:11px; letter-spacing:1.3px; opacity:.72; text-transform:uppercase;}
-.pside{display:flex; flex-direction:column; gap:5px;}
-.row{display:flex; align-items:flex-end; gap:5px; justify-content:center;}
-.sides{display:flex; gap:5px; justify-content:center;}
-.hand{display:flex; gap:4px; justify-content:center;}
-.goalwrap{display:flex; flex-direction:column; align-items:center; gap:2px;}
+.pside{display:flex; flex-direction:column;}
+.prow{display:flex; gap:5px; justify-content:center; align-items:flex-start; flex-wrap:nowrap;}
+.prow+.prow{margin-top:10px;}
+.pile{position:relative; flex:0 0 auto; touch-action:none;}
+.dragghost{position:fixed; z-index:200; pointer-events:none; transform:translate(-50%,-64%); filter:drop-shadow(0 10px 16px rgba(0,0,0,.55));}
+.sc.goalcard{box-shadow:0 0 0 2px var(--gold), 0 2px 5px rgba(0,0,0,.45);}
+.ptag{position:absolute; left:50%; transform:translateX(-50%); bottom:-13px; font-size:9px; letter-spacing:1px; color:var(--gold); opacity:.85; white-space:nowrap;}
 
-#centers{display:flex; gap:7px; justify-content:center; align-items:center; margin:2px 0;}
+#centers{display:flex; gap:7px; justify-content:center; align-items:center; margin-top:auto; margin-bottom:14px;}
 .centerflash{animation:cflash .5s ease;}
 @keyframes cflash{0%{box-shadow:0 0 0 4px rgba(232,196,106,.9);} 100%{box-shadow:0 2px 4px rgba(0,0,0,.4);}}
-
-.mid{flex:1 1 auto; display:flex; flex-direction:column; justify-content:flex-end; gap:8px; padding-bottom:2px;}
-.status{text-align:center; font-size:13px; min-height:18px; margin:4px 0;}
-.status b{color:var(--gold);}
-.hint{text-align:center; font-size:12px; opacity:.72; min-height:15px;}
 
 /* header */
 .gn-hdr{width:100%; margin:0 0 4px;}
@@ -93,9 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Ar
   </div>
 
   <div id="bot" class="pside"></div>
-  <div class="mid">
-    <div id="centers"></div>
-  </div>
+  <div id="centers"></div>
   <div id="you" class="pside"></div>
 </div>
 
@@ -523,7 +518,7 @@ window.SM = (function(){
 <script>
 (function(){
 "use strict";
-var V="v234";
+var V="v235";
 var $=function(id){ return document.getElementById(id); };
 var SUITCOL=["var(--sp)","var(--he)","var(--di)","var(--cl)"];
 
@@ -604,16 +599,51 @@ function discardOn(sideIdx){
   refill(0); sel=null; sfx('place'); hap(6); render(); checkDeadlock();
 }
 
-/* ---- board tap: a side pile is a source when nothing (or a side) is selected,
-        and a discard target when a hand card is selected ---- */
-function onBoardTap(e){
-  var el=e.target.closest('[data-act]'); if(!el) return;
-  var act=el.dataset.act, i=el.dataset.i!=null?parseInt(el.dataset.i,10):null;
+/* ---- input: drag-and-drop a card onto a centre (play) or a side pile (park),
+        with tap-to-select as a fallback ---- */
+function doTap(act,i){
   if(act==='center'){ playOn(i); return; }
   if(act==='payoff'){ selectSrc('payoff',0); return; }
   if(act==='hand'){ selectSrc('hand', i); return; }
   if(act==='side'){ if(sel && sel.kind==='hand'){ discardOn(i); } else { selectSrc('side', i); } return; }
 }
+var drag=null;
+function pileAt(x,y){ var el=document.elementFromPoint(x,y); return el?el.closest('[data-act]'):null; }
+function onDown(e){
+  if(over) return;
+  var pileEl=e.target.closest?e.target.closest('[data-act]'):null; if(!pileEl) return;
+  var act=pileEl.dataset.act, i=pileEl.dataset.i!=null?parseInt(pileEl.dataset.i,10):0;
+  var kind=act==='payoff'?'payoff':act;
+  drag={act:act,i:i,kind:kind,card:act==='center'?null:srcCard(kind,i),x0:e.clientX,y0:e.clientY,active:false,ghost:null};
+}
+function onMove(e){
+  if(!drag) return;
+  var dx=e.clientX-drag.x0, dy=e.clientY-drag.y0;
+  if(!drag.active){
+    if(Math.sqrt(dx*dx+dy*dy)<7) return;
+    if(!drag.card){ drag=null; return; }             // nothing draggable (a centre)
+    drag.active=true;
+    sel={kind:drag.kind,i:drag.i,card:drag.card}; render();   // light up the playable centres
+    var g=document.createElement('div'); g.className='dragghost'; g.innerHTML=cardHTML(drag.card,'');
+    document.body.appendChild(g); drag.ghost=g; sfx('select');
+  }
+  if(drag.ghost){ drag.ghost.style.left=e.clientX+'px'; drag.ghost.style.top=e.clientY+'px'; }
+  if(e.cancelable) e.preventDefault();
+}
+function onUp(e){
+  if(!drag) return;
+  var d=drag; drag=null;
+  if(d.ghost) d.ghost.remove();
+  if(!d.active){ doTap(d.act, d.i); return; }         // a tap, not a drag
+  var tgt=pileAt(e.clientX, e.clientY);
+  sel={kind:d.kind,i:d.i,card:d.card};
+  if(tgt){ var ta=tgt.dataset.act, ti=tgt.dataset.i!=null?parseInt(tgt.dataset.i,10):0;
+    if(ta==='center'){ playOn(ti); return; }
+    if(ta==='side' && d.kind==='hand'){ discardOn(ti); return; }
+  }
+  sel=null; render();                                 // dropped nowhere valid
+}
+function onCancel(){ if(drag){ if(drag.ghost) drag.ghost.remove(); drag=null; sel=null; render(); } }
 
 /* ---- render ---- */
 function cardHTML(c, extra){
@@ -627,33 +657,36 @@ function needLabel(ci){ var n=SM.stackNeeds(T.centers[ci], T.dir); if(!n.length)
 function render(){
   fit();
   var P=T.players, bot=P[1], you=P[0];
-  // bot area
-  var botGoal=SM.topPayoff(T,1);
-  var bsides=bot.sides.map(function(st,i){ return cardHTML(st.length?st[st.length-1]:null); }).join('');
+  // bot area — goal, face-down hand count, 4 sides, all top-aligned
   $('bot').innerHTML=
-    '<div class="lbl" style="text-align:center">Them · goal '+bot.payoff.length+'</div>'+
-    '<div class="row">'+
-      '<div class="goalwrap"><div>'+cardHTML(botGoal)+'<span class="cnt" style="position:static;display:inline-block;margin-top:2px">×'+bot.payoff.length+'</span></div></div>'+
-      '<div class="hand">'+ (bot.hand.length? '<div class="sc back"></div><span style="align-self:center;font-weight:800;color:var(--gold)">'+bot.hand.length+'</span>':'') +'</div>'+
-      '<div class="sides">'+bsides+'</div>'+
+    '<div class="lbl" style="text-align:center;margin-bottom:5px">Them · goal '+bot.payoff.length+'</div>'+
+    '<div class="prow">'+
+      pile(cardHTML(SM.topPayoff(T,1),'goalcard'), bot.payoff.length, '')+
+      pile('<div class="sc back"></div>', bot.hand.length, '')+
+      bot.sides.map(function(st){ return pile(cardHTML(st.length?st[st.length-1]:null), null, ''); }).join('')+
     '</div>';
-  // centers
+  // centers (community)
   $('centers').innerHTML=T.centers.map(function(st,ci){
     var top=st.length?st[st.length-1].card:null;
     var playable = sel && SM.canPlayOn(sel.card, st, T.dir);
-    var inner = st.length? cardHTML(top, playable?'play':'') : '<div class="sc empty '+(playable?'play':'')+'">'+needLabel(ci)+'</div>';
-    return '<div data-act="center" data-i="'+ci+'">'+ (st.length? ('<div style="position:relative">'+inner+needLabel(ci)+'</div>') : inner) +'</div>';
+    var inner = cardHTML(top, (st.length?'':'empty ')+(playable?'play':''));
+    return '<div data-act="center" data-i="'+ci+'" class="pile">'+inner+needLabel(ci)+'</div>';
   }).join('');
-  // you area
-  var ysides=you.sides.map(function(st,i){ return '<div data-act="side" data-i="'+i+'">'+cardHTML(st.length?st[st.length-1]:null, selExtra('side',i))+'</div>'; }).join('');
-  var yhand=you.hand.map(function(c,i){ return '<div data-act="hand" data-i="'+i+'">'+cardHTML(c, selExtra('hand',i))+'</div>'; }).join('');
+  // you — row 1: goal + 4 sides; row 2: your hand
   var yGoal=SM.topPayoff(T,0);
   $('you').innerHTML=
-    '<div class="sides">'+ysides+'</div>'+
-    '<div class="row">'+
-      '<div data-act="payoff" class="goalwrap"><div style="position:relative">'+cardHTML(yGoal, selExtra('payoff',0))+'<span class="cnt">×'+you.payoff.length+'</span></div><div class="lbl">Your goal</div></div>'+
-      '<div class="hand">'+yhand+'</div>'+
+    '<div class="prow">'+
+      pile(cardHTML(yGoal,'goalcard '+selExtra('payoff',0)), you.payoff.length, 'data-act="payoff"', 'YOUR GOAL')+
+      you.sides.map(function(st,i){ return pile(cardHTML(st.length?st[st.length-1]:null, selExtra('side',i)), null, 'data-act="side" data-i="'+i+'"'); }).join('')+
+    '</div>'+
+    '<div class="prow">'+
+      you.hand.map(function(c,i){ return pile(cardHTML(c, selExtra('hand',i)), null, 'data-act="hand" data-i="'+i+'"'); }).join('')+
     '</div>';
+}
+function pile(inner, count, attrs, tag){
+  return '<div '+(attrs||'')+' class="pile">'+inner
+    +(count!=null?'<span class="cnt">×'+count+'</span>':'')
+    +(tag?'<span class="ptag">'+tag+'</span>':'')+'</div>';
 }
 
 function flashCenter(ci){ try{ var el=$('centers').children[ci]; if(el){ var sc=el.querySelector('.sc'); if(sc){ sc.classList.add('centerflash'); setTimeout(function(){ sc.classList.remove('centerflash'); },500); } } }catch(e){} }
@@ -700,9 +733,10 @@ window.SPEED={ get:function(){ return {you:T.players[0], bot:T.players[1], cente
   reset:reset, T:function(){ return T; } };
 
 function boot(){
-  $('bot').addEventListener('click', onBoardTap);
-  $('centers').addEventListener('click', onBoardTap);
-  $('you').addEventListener('click', onBoardTap);
+  ['bot','centers','you'].forEach(function(id){ $(id).addEventListener('pointerdown', onDown); });
+  window.addEventListener('pointermove', onMove, {passive:false});
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onCancel);
   $('rulesBtn').addEventListener('click', function(){ showOv('rulesOv'); });
   $('menuBtn').addEventListener('click', function(){ paintSeg('segGoal','goal'); paintSeg('segDiff','diff'); paintSeg('segSound','sound'); showOv('menuOv'); });
   Array.prototype.forEach.call(document.querySelectorAll('.overlay'),function(ov){ ov.addEventListener('click',function(e){ if(e.target===ov && ov.id!=='overOv') closeOv(ov.id); }); });

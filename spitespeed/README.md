@@ -6,13 +6,17 @@ play **at the same time**, racing to empty your goal pile onto the four shared c
 time, and drives both seats seat-agnostically by setting `T.turn` per action.
 
 ## How it plays
-- **Tap a card** — your goal-pile top, a hand card, or a side-pile top — then **tap a centre**
-  to play it. Only the next rank up fits; a **★ wild** (joker) plays as anything. Fill a stack
-  to the King and it's scooped away.
+- **Drag a card** — your goal-pile top, a hand card, or a side-pile top — onto a **centre** to
+  play it (tap-to-select then tap a centre still works as a fallback). Only the next rank up
+  fits; a **★ wild** (joker) plays as anything. Fill a stack to the King and it's scooped away.
+- Drag a hand card onto a **side pile** to park it; your hand refills to five.
 - **Park a card:** tap a hand card, then a **side pile**. Your hand refills to five (from the
   shared stock). Side-pile tops can be played back out to the centres.
 - The centres are shared, so grab the rank you need before the bot does. **First goal pile
   empty wins.**
+
+## Layout
+Every card sits in a uniform `.pile` cell on a top-aligned `.prow` row, so goal/sides/hand stay in line (an earlier build staircased the goal above the hand). The centre row uses `margin-top:auto` to sit just above your hand. Drag uses pointer events with a 7px threshold; a floating `.dragghost` follows the finger and the drop is hit-tested with `elementFromPoint`.
 
 ## The bot
 - Runs on a timer (`armBot` → `botTick`), one action per tick: Easy 1200 ms, Normal 800 ms,
