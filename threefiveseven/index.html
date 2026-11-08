@@ -41,6 +41,7 @@
   .mc.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 3px,#215439 3px,#215439 6px); border:1.5px solid #f7f3e8;}
   .mc.wild{box-shadow:0 0 0 2px var(--gold);}
   .mc.used{transform:translateY(-4px);}
+  .mc.discard{opacity:.28; transform:translateY(3px); filter:saturate(.4);}
 
   .stage{flex:1 1 auto; min-height:0; position:relative;}
   .table{position:absolute; left:50%; top:50%; transform-origin:50% 50%; display:flex; flex-direction:column; align-items:center; gap:10px;}
@@ -74,7 +75,7 @@
   .me .nm{font-weight:800;} .me .badge{position:static; transform:none;}
   .hand{position:relative; flex:0 0 auto; margin:2px auto 0; width:100%;}
   .hand .card{position:absolute;}
-  .hand .card.dim{opacity:.55;}
+  .hand .card.dim{filter:saturate(.4) brightness(.84);}
   .myhn{text-align:center; font-size:13px; font-weight:800; color:var(--gold); min-height:17px;}
   .ctl{display:flex; gap:9px; margin-top:6px;}
   .ctl button{flex:1 1 0; min-height:50px; border:none; border-radius:13px; font-size:17px; font-weight:800; background:rgba(255,255,255,.13); color:var(--cream);}
@@ -368,7 +369,7 @@ function suitCol(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?'#c22':'#1c2a24'
 function wr(di){ return T.wildRanks(M.o, di==null?M.di:di); }
 function cardEl(c, wild){ var e=document.createElement('div'); e.className='card'+(wild?' wild':''); e.style.color=suitCol(c.s);
   e.innerHTML='<span class="ix"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></span><span class="pip">'+T.SUITS[c.s]+'</span>'+(wild?'<span class="wtag">W</span>':''); return e; }
-function miniHTML(c, wild, used){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
+function miniHTML(c, wild, used, discard){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
 function legsHTML(p){ var h='', need=M.o.legs; for(var i=0;i<need;i++) h+=(i<M.legs[p]?'<span class="on">●</span>':'○'); return '<span class="legs'+(need-M.legs[p]===1?' hot':'')+'">'+h+'</span>'; }
 function wildText(di){ var w=wr(di); if(!w.length) return 'No wilds'; return '<b>'+w.map(function(r){ return r+'s'; }).join(', ').replace(/, ([^,]*)$/,' & $1')+'</b> wild'; }
 
@@ -400,7 +401,7 @@ function render(){ if(!M) return;
       row=hand.map(function(c,i){ return M.up&&i===0 ? miniHTML(c, T.isWild(c,w)) : miniHTML(null); }).join(''); }
     else { var isIn=res.ins[p];
       badge='<span class="badge '+(isIn?'in':'out')+'">'+(res.forced&&res.forced.indexOf(p)>=0?'FORCED':isIn?'IN':'OUT')+'</span>';
-      if(isIn){ var e=res.evals[p]; row=hand.map(function(c){ var wd=T.isWild(c,w); return miniHTML(c, wd, !wd&&res.kind==='show'&&e.used.some(function(u){ return T.same(u,c); })); }).join(''); hn=T.handName(e,true); }
+      if(isIn){ var e=res.evals[p], showH=res.kind==='show'; row=hand.map(function(c){ var wd=T.isWild(c,w), inBest=showH&&(wd||e.used.some(function(u){ return T.same(u,c); })); return miniHTML(c, wd, inBest, showH&&!inBest); }).join(''); hn=T.handName(e,true); }
       else { cls+=' out'; row=hand.map(function(){ return miniHTML(null); }).join(''); hn='dropped'; }
       if(res.legWinners.indexOf(p)>=0){ cls+=' win'; delta=' <span class="delta leg">+LEG</span>'; }
       else if(res.losers.indexOf(p)>=0){ delta=' <span class="delta neg">−'+money(res.pays?res.pays[p]:res.pay)+'</span>'; } }
@@ -527,7 +528,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v223", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v227", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

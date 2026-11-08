@@ -62,8 +62,10 @@ points. Bots decide without seeing your choice.
 
 ## UI
 Opponent seats show small face-down cards (with their upcard under Forced). At showdown,
-stayers' hands turn face up with wilds outlined gold and the cards used in the best five
-raised, along with a short hand name and the leg or the payment. The center shows the
+stayers' hands turn face up with wilds outlined gold and the best five (the wild included)
+raised together while the two discards dim back, along with a short hand name and the leg or
+the payment. When you drop, your own hand is shown muted (desaturated, not transparent) so you
+can see what you folded. The center shows the
 3·5·7 track, the pot and what's wild. Your hand is always face up, with your best hand
 named under it.
 
