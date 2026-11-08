@@ -473,12 +473,19 @@ function handleNet(obj){
     else if(obj.t==='act'){ hostApply(obj); }
   } else if(net.role==='guest'){
     if(obj.t==='state'){ var first=!net.joined; net.joined=true; net.pending=false;
-      var d=decodeView(obj.view); G=d.G; H=d.H; up=null; knockArmed=false; save();
+      var prevHand=(H&&H.hands&&H.hands[0])?H.hands[0].slice():null, prevTurn=H?H.turn:null;
+      var d=decodeView(obj.view); G=d.G; H=d.H; up=null; knockArmed=false;
+      justDrew=null;
+      if(H&&!H.over&&H.turn===0&&H.phase==='discard'){
+        if(H.tookFromDiscard){ justDrew={s:H.tookFromDiscard.s, r:H.tookFromDiscard.r}; }
+        else if(prevHand){ var pj=H.hands[0].filter(function(c){ return !prevHand.some(function(x){ return GN.same(x,c); }); }); if(pj.length===1) justDrew=pj[0]; } }
+      if(H&&!H.over&&H.turn===0&&prevTurn===1){ sfx('turn'); if(navigator.vibrate) try{ navigator.vibrate(30); }catch(e){} }
+      save();
       if(first){ closeNet(); GNSETUP.hide('setup'); }
       render(); updateNetbar();
       if(obj.view.result){ $('hYouLab').textContent='You'; $('hBotLab').textContent='Them'; showEndFromView(obj.view.result); }
       else { $('handModal').classList.remove('show'); $('overModal').classList.remove('show'); } } } }
-function hostApply(obj){ if(!H) return;
+function hostApply(obj){ if(!H) return; var prevTurn=H.turn;
   try{
     if(obj.kind==='drawStock'){ if(H.over||H.turn!==1||H.phase!=='draw') return; if(!GN.drawStock(H,1)){ handEnd(); return; } }
     else if(obj.kind==='drawDiscard'){ if(H.over||H.turn!==1||H.phase!=='draw'||!H.discard.length) return; GN.drawDiscard(H,1); }
@@ -488,7 +495,8 @@ function hostApply(obj){ if(!H) return;
   }catch(e){ return; }
   // skip the host's own re-render when the guest lifted the discard, so the buried card doesn't
   // flash on the host's screen; still publish so the guest (who drew it) sees their new card.
-  save(); sfx('deal'); if(obj.kind!=='drawDiscard') render(); publishState(); }
+  var myTurnNow=(!H.over && H.turn===0 && prevTurn===1);
+  save(); sfx(myTurnNow?'turn':'deal'); if(myTurnNow && navigator.vibrate) try{ navigator.vibrate(30); }catch(e){} if(obj.kind!=='drawDiscard') render(); publishState(); }
 
 function meldHTMLv(bm){ if(!bm) return '<span style="opacity:.6;font-size:12px">—</span>'; var h=''; bm.melds.forEach(function(m){ h+='<div class="grp">'+m.map(function(c){ return cardMini(c); }).join('')+'</div>'; }); if(bm.deadCards.length){ h+='<div class="grp" style="background:rgba(226,70,58,.12)">'+bm.deadCards.map(function(c){ return cardMini(c); }).join('')+'</div>'; } return h||'<span style="opacity:.6;font-size:12px">—</span>'; }
 function showEndFromView(r){ if(!r) return;
@@ -567,7 +575,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v203", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v231", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

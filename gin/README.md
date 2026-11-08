@@ -64,6 +64,14 @@ commits above looked like fixes because a reload goes through `resumeOnline`, wh
 the sheet. The online tests below checked state on both pages, not what was on screen. They now
 have to assert that `#setup` is hidden on both phones after the join.
 
+**Drawn-card lift and a turn chime (v231).** The `.fresh` lift (the just-drawn card rides up)
+is driven by `justDrew`, which the bot game sets at draw time. Online, a draw round-trips through
+the host, so the guest never set it and the card stayed flat. The guest now derives `justDrew`
+from each incoming state: the taken discard (`tookFromDiscard`) if there is one, otherwise the
+single card its hand gained since the last state. Both phones also play the `turn` chime (and a
+short `navigator.vibrate`) when a state hands the turn back to them — so you hear it when the
+other phone finishes while yours is face-down.
+
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
 undercut scoring, + a 120-game bot soak all reaching 100 with a winner.
