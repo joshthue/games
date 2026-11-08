@@ -669,3 +669,15 @@ phones now lock to portrait: in landscape under 500 px tall, `html:not(.tablet
 shows a “Rotate to portrait” nudge (`#rotateLock`). Tablets clear the `max-height:500px` gate and keep
 their two-column landscape (see iPad above). The native iOS app matches: `Info.plist`
 `UISupportedInterfaceOrientations` (iPhone) is now Portrait only; the `~ipad` key keeps landscape.
+
+## No more board jump, and the best board costs an undo (v237)
+- **The board stopped jumping.** `fitPS` was re-measuring and re-applying the cell height on
+  *every* card placement, which flashed the board a pixel or two between cards. It now caches a
+  key of `innerWidth × innerHeight × tablet × card-size` and only re-fits when that changes
+  (resize, rotate, card-size), skipping the per-placement re-fit. `renderBestBar` forces a re-fit
+  when the end-of-game bar appears.
+- **The best board has to be earned.** Viewing the optimal arrangement post-game used to be a free
+  toggle. Now `showView('best')` spends one **undo** to unlock it for that board (`bestRevealed`),
+  with a toast; the Best button and results button show a ↩, and the bar explains the cost or,
+  when you have none, that you earn undos by clearing new levels.
+

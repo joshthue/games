@@ -1109,7 +1109,7 @@ function sfx(n){ if(window.SFX) SFX.play(n); }
 function newGame(opts){
   sfx('shuffle');
   lastMove=null; over=false; quadDone=new Set();
-  VIEW="mine"; stopSolve(); SOLVE=null;
+  VIEW="mine"; bestRevealed=false; stopSolve(); SOLVE=null;
   botStop(); botTouched=false; boostUsed=false;
   if(isLevels()) levelSetup(opts||{});
   else { if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
@@ -1450,9 +1450,12 @@ function render(justIdx){
 // Never scroll the main screen: if the page is taller than the phone (small phone, or a big card
 // size growing the tray's card), take the difference out of the board's cell height (v138).
 function isTablet(){ return innerWidth>=600 && innerHeight>=600; }
-function fitPS(){
+function fitPS(force){
   const root=document.documentElement, cell=document.querySelector('#psboard .pscell'); if(!cell) return;
   if(over || (curOverlay&&curOverlay.kind)) return;   // v225: don't re-fit at completion / while a panel is open — keeps the cards full-size during play; the best-board bar's small overflow at completion sits behind the results overlay, and overscroll-behavior:none on the body blocks the rubber-band drag that otherwise let the board shift under a finger.
+  var _k=innerWidth+'x'+innerHeight+'x'+(isTablet()?1:0)+'x'+(window.CARDSIZE?CARDSIZE.value():1);
+  if(!force && _k===fitPS._k) return;   // v237: re-fit only on viewport/card-size change
+  fitPS._k=_k;
   const board=document.getElementById('psboard');
   root.style.removeProperty('--cellh'); root.style.removeProperty('--cellar'); board.style.maxWidth='';
   root.classList.toggle('tablet', isTablet()); root.classList.toggle('tablet-land', isTablet() && innerWidth>innerHeight);
@@ -1532,7 +1535,7 @@ function openResults(total){
     +(botTouched?'':'<div class="hs" id="psHS">'+HS.resultsHTML(total)+'</div>')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
-    +('<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board</button>')+'</div>';
+    +('<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board \u21a9</button>')+'</div>';
   openPanel(html,"results"); resAnimate();
 }
 
@@ -1557,7 +1560,7 @@ function clockResultsHTML(total){
     +resPts(total,'Best with the clock '+cb+' · kept apart from your untimed best')
     +'<div class="solvebox" id="psSolveBox">'+solveBoxHTML()+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();newGame();">New game</button>'
-    +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board</button></div>';
+    +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>total?'':' disabled')+'>Best board \u21a9</button></div>';
 }
 function levelResultsHTML(){
   const L=LV, r=L.result, pctTxt=Math.round(r.pct*100)+'%', need=Math.max(0,L.target-r.total);
@@ -1702,6 +1705,7 @@ function workerMain(){
 }
 
 let VIEW="mine";      // which layout the full board shows: "mine" | "best"
+let bestRevealed=false;  // v237: best board must be unlocked (spend an undo) to view
 let SOLVE=null;       // {key, done, runs, max, agree, score, grid:[cards]}
 let SOLVER=null;      // live worker / fallback timer
 let ANIMATING=false;
@@ -1785,7 +1789,7 @@ function solveBoxHTML(){
     +'<div class="bar"><i style="width:'+prog+'%"></i></div></div>'
     +'<div class="stats-note">'+(!done?'Searching for the best board these 25 cards make…':(SOLVE.score<=mine?'That\'s the best board these cards make.':'Max is the best board these same 25 cards can make.'))+'</div>';
 }
-function renderBestBar(){ renderBestBar_(); try{ fitPS(); }catch(e){} }   // the bar appearing after a game can push the page; refit
+function renderBestBar(){ renderBestBar_(); try{ fitPS(true); }catch(e){} }   // the bar appearing after a game can push the page; refit
 function renderBestBar_(){
   const el=document.getElementById("psBestBar"); if(!el) return;
   if(!over || !SOLVE){ el.innerHTML=""; return; }
@@ -1794,8 +1798,8 @@ function renderBestBar_(){
   if(!SOLVE.done){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">Searching for the best board…</div>'; return; }
   if(SOLVE.score<=mine){ el.innerHTML='<div class="bbrow">'+back+'</div><div class="note">Best possible board — nothing beats '+mine+'.</div>'; return; }
   el.innerHTML='<div class="bbrow">'+back+'<div class="seg"><button class="'+(VIEW==="mine"?"on":"")+'" onclick="showView(\'mine\')">Yours '+mine+'</button>'
-    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">Best '+SOLVE.score+'</button></div></div>'
-    +'<div class="note">'+(VIEW==="best"?"Same 25 cards, rearranged.":"Tap Best to watch the cards rearrange.")+'</div>';
+    +'<button class="'+(VIEW==="best"?"on":"")+'" onclick="showView(\'best\')">Best '+SOLVE.score+(bestRevealed?'':' \u21a9')+'</button></div></div>'
+    +'<div class="note">'+(VIEW==="best"?"Same 25 cards, rearranged.":(bestRevealed?"Tap Best to watch the cards rearrange.":(prizeCount("undo")>0?"Revealing the best board spends an undo.":"Earn an undo by clearing a new level to reveal the best board.")))+'</div>';
 }
 function refreshSolveUI(){
   const box=document.getElementById("psSolveBox"); if(box) box.innerHTML=solveBoxHTML();
@@ -1807,6 +1811,7 @@ function refreshSolveUI(){
 /* ---- the move: every card that changes square lifts, spins and lands ---- */
 function showView(v){
   if(ANIMATING || v===VIEW || !over || !SOLVE || !SOLVE.done) return;
+  if(v==="best" && !bestRevealed){ if(prizeCount("undo")>0 && spendPrize("undo")){ bestRevealed=true; prizeToast("\u21a9","Spent an undo \u2014 best board unlocked"); } else { prizeToast("\ud83d\udd12","Earn an undo (clear a new level) to reveal the best board"); return; } }
   const fromG=viewGrid(), board=document.getElementById("psboard");
   const fromRects={}; board.querySelectorAll(".pscell[data-i]").forEach(el=>{ fromRects[el.dataset.i]=el.getBoundingClientRect(); });
   const fromTotal=computeLines(fromG).total;
@@ -2410,7 +2415,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v228", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v237", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
