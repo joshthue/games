@@ -42,9 +42,10 @@
   .mc.wild{box-shadow:0 0 0 2px var(--gold);}
   .mc.used{transform:translateY(-4px);}
   .mc.discard{opacity:.28; transform:translateY(3px); filter:saturate(.4);}
-  .mc.up{width:48px; height:67px; padding:5px 0 0 5px; border-radius:7px;}
-  .mc.up b{font-size:calc(22px*var(--cardtext,1)); letter-spacing:-.03em;} .mc.up i{font-size:calc(18px*var(--cardtext,1)); margin-top:3px;}
-  .mc.back.hid{width:30px; height:44px; margin-left:4px; display:flex; align-items:center; justify-content:center; color:var(--cream); opacity:.7; font-weight:800; font-size:14px;}
+  .mc.up{width:32px; height:45px; padding:3px 0 0 3px; border-radius:6px; margin-left:-12px;}
+  .seat .row .mc.up:first-child{margin-left:0;}
+  .mc.up b{font-size:calc(15px*var(--cardtext,1)); letter-spacing:-.03em;} .mc.up i{font-size:calc(12px*var(--cardtext,1)); margin-top:2px;}
+    .mc.back.hid{width:22px; height:34px; margin-left:3px; display:flex; align-items:center; justify-content:center; color:var(--cream); opacity:.7; font-weight:800; font-size:14px;}
 
   .stage{flex:1 1 auto; min-height:0; position:relative;}
   .table{position:absolute; left:50%; top:50%; transform-origin:50% 50%; display:flex; flex-direction:column; align-items:center; gap:10px;}
@@ -295,8 +296,10 @@
     // for it) must stay in, and pays only half the match if it loses. With carry the first
     // card is kept all run, so the same player stays forced through 3, 5 and 7.
     M.up=null; M.forced=[];
-    if(M.o.forced){ M.up=M.hands.map(function(h){ return h[0]; }); var hi=Math.max.apply(null, M.up.map(function(c){ return c.r; }));
-      for(p=0;p<M.n;p++) if(M.up[p].r===hi) M.forced.push(p); }
+    if(M.o.forced){ var ui=[0,3,5].filter(function(i){ return i<sz; });   // one up card per deal round: idx 0 (the 3), then 3 (the 5), then 5 (the 7)
+      M.up=M.hands.map(function(h){ return ui.map(function(i){ return h[i]; }); });
+      var hi=Math.max.apply(null, M.up.map(function(u){ return u[0].r; }));   // forced stays keyed to the opening up card
+      for(p=0;p<M.n;p++) if(M.up[p][0].r===hi) M.forced.push(p); }
     M.phase='decide'; M.deals++; M.gameDeals++; return M; }
   function isForced(M, p){ return !!M.forced && M.forced.indexOf(p)>=0; }
   function resolve(M, ins){ if(M.phase!=='decide') throw new Error('not deciding');
@@ -366,15 +369,15 @@ var prefs=Object.assign({players:4, legs:4, wilds:'round', three:'plain', lone:'
 function savePrefs(){ lsSet('tfs_prefs', prefs); }
 var stats=Object.assign({games:0, won:0, bestPot:0}, lsGet('tfs_stats',{}));
 
-var M=null, LEVEL='normal', busy=false, timer=null, myPick=null, coachMemo=null, forceTimer=null, forceN=0;
+var M=null, LEVEL='normal', busy=false, timer=null, autoTimer=null, myPick=null, coachMemo=null, forceTimer=null, forceN=0;
 
 function money(c){ return (c<0?'−':'')+'$'+(Math.abs(c)/100).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); }
 function net(c){ return c>0?'<span class="pos">+'+money(c)+'</span>':c<0?'<span class="neg">'+money(c)+'</span>':'<span>'+money(0)+'</span>'; }
 function suitCol(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?'#c22':'#1c2a24'); }
 function wr(di){ return T.wildRanks(M.o, di==null?M.di:di); }
-function cardEl(c, wild){ var e=document.createElement('div'); e.className='card'+(wild?' wild':''); e.style.color=suitCol(c.s);
+function cardEl(c, wild){ var e=document.createElement('div'); e.className='card'+(wild?' wild':''); e.style.color=suitCol(c.s); e.dataset.k=c.r+'_'+c.s;
   e.innerHTML='<span class="ix"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></span><span class="pip">'+T.SUITS[c.s]+'</span>'+(wild?'<span class="wtag">W</span>':''); return e; }
-function miniHTML(c, wild, used, discard, up){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
+function miniHTML(c, wild, used, discard, up){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+'" data-k="'+c.r+'_'+c.s+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
 function legsHTML(p){ var h='', need=M.o.legs; for(var i=0;i<need;i++) h+=(i<M.legs[p]?'<span class="on">●</span>':'○'); return '<span class="legs'+(need-M.legs[p]===1?' hot':'')+'">'+h+'</span>'; }
 function wildText(di){ var w=wr(di); if(!w.length) return 'No wilds'; return '<b>'+w.map(function(r){ return r+'s'; }).join(', ').replace(/, ([^,]*)$/,' & $1')+'</b> wild'; }
 
@@ -388,11 +391,14 @@ function renderSetup(){ function bind(id,key,num){ seg(id,prefs[key],function(v)
   seg('segTeach',prefs.teach?'on':'off',function(v){ prefs.teach=(v==='on'); savePrefs(); renderSetup(); });
   $('sizeRowsSetup').innerHTML=CARDSIZE.rowsHTML();
   var s=lsGet('tfs_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.M)); }
-function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup'); }
+function showSetup(){ clearTimeout(timer); clearTimeout(autoTimer); renderSetup(); GNSETUP.show('setup'); }
 function start(){ M=T.newMatch({players:prefs.players, legs:prefs.legs, wilds:prefs.wilds, three:prefs.three, lone:prefs.lone, cap:prefs.cap, ante:prefs.ante, forced:prefs.forced, carry:prefs.carry, allout:prefs.allout}); LEVEL=prefs.level;
   GNSETUP.hide('setup'); closeAll(); newGame(); }
 function newGame(){ T.startGame(M); sfx('chip'); dealNext(); }
-function dealNext(){ clearForce(); T.deal(M); myPick=null; busy=false; coachMemo=null; sfx('shuffle'); save(); render(); dealAnimate(); }
+function dealNext(){ clearForce(); clearTimeout(autoTimer);
+  var grow = M.o.carry && M.di>0 && M.hands && M.hands[0] && M.hands[0].length===T.SIZES[M.di-1];
+  var prevKeys = grow ? (function(){ var s={}; M.hands.forEach(function(h){ h.forEach(function(c){ s[c.r+'_'+c.s]=1; }); }); return s; })() : null;
+  T.deal(M); myPick=null; busy=false; coachMemo=null; sfx('shuffle'); save(); render(); dealAnimate(prevKeys); }
 function resume(){ var s=lsGet('tfs_game',null); if(!s||!s.M){ start(); return; } M=s.M; LEVEL=s.level||'normal'; myPick=null; busy=false; GNSETUP.hide('setup'); closeAll();
   if(M.phase==='ante'||!M.hands) dealNext(); else { render(); if(M.phase==='gameover') showOver(); } }
 function save(){ if(M) lsSet('tfs_game',{M:M, level:LEVEL}); }
@@ -404,7 +410,7 @@ function render(){ if(!M) return;
   seats.classList.toggle('c2', M.n-1===4);
   for(var p=1;p<M.n;p++){ var hand=M.hands[p], cls='seat', badge='', row='', hn='', delta='';
     if(!showing){ var fz=T.isForced(M,p); badge = fz ? '<span class="badge in">FORCED</span>' : busy ? '<span class="badge wait">?</span>' : '';
-      if(M.up){ var nh=hand.length-1; row = miniHTML(hand[0], T.isWild(hand[0],w), false, false, true) + (nh>0?'<div class="mc back hid">'+nh+'</div>':''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
+      if(M.up){ var ups=M.up[p], dn=hand.length-ups.length; row = ups.map(function(c){ return miniHTML(c, T.isWild(c,w), false, false, true); }).join('') + (dn>0?'<div class="mc back hid">'+dn+'</div>':''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
     else if(res.kind==='allout'){ var ea=res.evals[p]; row=hand.map(function(c){ var wd=T.isWild(c,w), used=wd||ea.used.some(function(u){ return T.same(u,c); }); return miniHTML(c, wd, used, !used); }).join(''); hn=T.handName(ea,true);
       if(p===res.alloutLoser){ cls+=' win'; badge='<span class="badge in">BEST</span>'; delta=' <span class="delta neg">−'+money(res.pays[p])+'</span>'; } else { badge='<span class="badge out">OUT</span>'; } }
     else { var isIn=res.ins[p];
@@ -473,11 +479,11 @@ function coachHint(res){
 function renderHand(showing, w, be){ var el=$('hand'); el.innerHTML=''; var hand=M.hands[0].slice().sort(function(a,b){ return a.r-b.r||a.s-b.s; }), n=hand.length, W=el.clientWidth||340, sz=CARDSIZE.value();
   var g=Math.round(6*sz), hs=Math.min(sz, (W-(n-1)*g)/(n*52)); if(!(hs>0)) hs=sz; el.style.setProperty('--size', hs);
   var cw=52*hs, ch=73*hs, step=cw+g, total=cw+step*(n-1), x0=Math.max(0,(W-total)/2);
-  var dim=showing&&!M.last.ins[0]&&M.last.kind!=='allout', upc=M.up?M.up[0]:null;
+  var dim=showing&&!M.last.ins[0]&&M.last.kind!=='allout', upList=M.up?M.up[0]:null;
   // v223: lift the best hand \u2014 the wild(s) plus the naturals best() picks \u2014 so your best hand is "put together" and the wild always stands up above the discards
   function inBest(c){ return T.isWild(c,w) || (be&&be.used&&be.used.some(function(u){ return T.same(u,c); })); }
-  function isUp(c){ return !!(upc&&T.same(c,upc)); }
-  var up=upc?Math.round(20*hs):0;
+  function isUp(c){ return !!(upList&&upList.some(function(u){ return T.same(c,u); })); }
+  var up=(upList&&upList.length)?Math.round(20*hs):0;
   el.style.height=(ch+up+6)+'px';
   hand.forEach(function(c,i){ var e=cardEl(c, T.isWild(c,w)); e.style.left=(x0+i*step)+'px'; e.style.top=(isUp(c)?0:up)+'px'; e.style.zIndex=isUp(c)?50:i; if(dim&&!isUp(c)) e.classList.add('dim'); if(isUp(c)){ e.title='face up'; e.insertAdjacentHTML('beforeend','<span class="uptag">UP</span>'); } el.appendChild(e); }); }
 
@@ -489,9 +495,10 @@ function choose(stay){ if(!M||busy||M.phase!=='decide'||anyModal()) return; myPi
   timer=setTimeout(function(){ var res=T.resolve(M, ins); busy=false; myPick=null; save(); sfx('flip');
     render(); bump();
     if(res.gameWinners.length){ var won=res.gameWinners.indexOf(0)>=0; sfx(won?'win':'lose'); if(won) confetti(); }
-    else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad'); }, SPEED[prefs.speed].drop); }
+    else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad');
+    if(M.phase==='result'){ clearTimeout(autoTimer); autoTimer=setTimeout(function(){ if(M&&M.phase==='result'&&!busy&&!anyModal()) next(); }, prefs.speed==='fast'?1300:prefs.speed==='relaxed'?2600:2000); } }, SPEED[prefs.speed].drop); }
 function bump(){ var p=$('pot'); if(!p||reduced()) return; p.classList.add('bump'); setTimeout(function(){ p.classList.remove('bump'); }, 220); }
-function next(){ if(!M||busy) return; if(M.phase==='gameover'){ showOver(); return; } if(M.phase==='result') dealNext(); }
+function next(){ if(!M||busy) return; clearTimeout(autoTimer); if(M.phase==='gameover'){ showOver(); return; } if(M.phase==='result') dealNext(); }
 function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
   if(!M.counted){ M.counted=M.gameNo; } if(M.counted===M.gameNo && !M.tallied){ stats.games++; if(me) stats.won++; if(me&&res.won>stats.bestPot) stats.bestPot=res.won; lsSet('tfs_stats',stats); M.tallied=true; save(); }
   $('oTitle').textContent = me ? (W.length>1?'You split the pot':'You take the pot!') : who(W)+(W.length>1?' split the pot':' takes the pot');
@@ -499,13 +506,15 @@ function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
   var order=M.names.map(function(nm,p){ return {nm:nm,v:M.net[p],p:p}; }).sort(function(a,b){ return b.v-a.v; });
   $('oTable').innerHTML='<tr><td colspan="2" style="opacity:.7;font-size:12px">Session net after '+M.gameNo+' game'+(M.gameNo>1?'s':'')+'</td></tr>'+order.map(function(o){ return '<tr class="'+(W.indexOf(o.p)>=0?'win':'')+'"><td>'+o.nm+(o.p===0?' (you)':'')+'</td><td>'+net(o.v)+'</td></tr>'; }).join('');
   $('overModal').classList.add('show'); }
-function dealAnimate(){
+function dealAnimate(prevKeys){
   if(reduced() || !document.body.animate) return;
   var mid=$('mid'); if(!mid) return;
   var mr=mid.getBoundingClientRect(), ox=mr.left+mr.width/2, oy=mr.top+mr.height/2;
-  // deal order: round-robin around the seats, then into your hand — like a dealer pitching cards
-  var hands=[].slice.call(document.querySelectorAll('#seats .seat')).map(function(s){ return [].slice.call(s.querySelectorAll('.mc')); });
-  hands.push([].slice.call(document.querySelectorAll('#hand .card')));
+  // deal order: round-robin around the seats, then into your hand — like a dealer pitching cards.
+  // On a grow (prevKeys) only the freshly dealt cards (+ the back chip for the new down card) move.
+  function isNew(el){ if(!prevKeys) return true; var k=el.dataset&&el.dataset.k; if(!k) return true; return !prevKeys[k]; }
+  var hands=[].slice.call(document.querySelectorAll('#seats .seat')).map(function(s){ return [].slice.call(s.querySelectorAll('.mc')).filter(isNew); });
+  hands.push([].slice.call(document.querySelectorAll('#hand .card')).filter(isNew));
   var order=[], maxLen=0; hands.forEach(function(h){ if(h.length>maxLen) maxLen=h.length; });
   for(var r=0;r<maxLen;r++) hands.forEach(function(h){ if(h[r]) order.push(h[r]); });
   if(!order.length) return;
@@ -552,7 +561,7 @@ $('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show
 $('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); relayout(); };
 $('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
-$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); clearForce(); busy=false; try{ localStorage.removeItem('tfs_game'); }catch(e){} showSetup(); };
+$('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); clearTimeout(autoTimer); clearForce(); busy=false; try{ localStorage.removeItem('tfs_game'); }catch(e){} showSetup(); };
 $('inBtn').onclick=function(){ choose(true); }; $('outBtn').onclick=function(){ choose(false); }; $('nextBtn').onclick=next;
 $('oAgain').onclick=function(){ $('overModal').classList.remove('show'); newGame(); };
 $('oSetup').onclick=function(){ $('overModal').classList.remove('show'); try{ localStorage.removeItem('tfs_game'); }catch(e){} showSetup(); };
@@ -563,7 +572,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v232", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v233", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

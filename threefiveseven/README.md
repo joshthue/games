@@ -127,3 +127,15 @@ rotating straight, with a soft `deal` tick and a stagger (`speed` pref: ~36 ms f
 fires on every deal (opening 3, and each grow to 5 and 7), using WAAPI `fill:'both'` so a card sits
 invisible at the deck until its turn and rests cleanly in place after. Skipped under
 `prefers-reduced-motion`. The moving attention is half the fun of 3-5-7.
+
+## Stud-style up cards + auto deal (v233)
+Forced mode now deals one up card per round, stud-style: the 3 shows 1 up, the 5 shows 2, the 7 shows 3
+(up positions are dealt-order indices 0, 3, 5). Opponents reveal every up card they hold plus a back chip
+for the hidden pile, and all of your matching up cards lift in your hand — more to read as the run builds.
+`M.up[p]` is now a list of up cards; **forced-in stays keyed to the opening up card** (`M.up[p][0]`), so
+that rule is unchanged. Seat up cards shrink and fan so three fit a narrow seat; your own stay big in hand.
+
+The deal animation deals only the *new* cards each round — `dealNext` snapshots the pre-grow card keys and
+`dealAnimate(prevKeys)` pitches just the fresh up+down cards (old cards stay put). And the **next deal
+auto-fires** ~2 s after a result (1.3 s fast / 2.6 s relaxed; `autoTimer`, cleared on manual next, new game
+or setup), so a run flows on its own. Game-over still waits for a tap.
