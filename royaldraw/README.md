@@ -696,3 +696,12 @@ anchor to one fixed spot (board centre) via a shared `psPlaceCall(el)` helper, a
 a `max-width:min(88vw,340px)` cap so a long "need …" subtitle can't overflow. Which line a call-out
 refers to is shown by the cards themselves — the `.sweep` flourish on a made hand, the blue/gold glow
 on a live draw — not by where the banner sits.
+
+## Viewing the best board limits replays (v240)
+Viewing the perfect board already costs an undo (v237). Now seeing it also caps how often you can run
+that exact board: once the best board is viewed (`showView('best')` sets `LV.bestSeen`), you may replay
+the *same* board only **once more**. A same-board replay after that consumes the one allowance
+(`levelSetup` bumps `LV.postBest`), and `canReplaySame()` (false once `postBest ≥ 1`) removes the
+"Replay board" / "Same board" button and is enforced in `levelPlay` too. A fresh board ("New board",
+next level, the level map) resets the allowance — the cap is per board, so you can't memorize the
+solution and grind the same deal.

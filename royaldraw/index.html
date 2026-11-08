@@ -948,7 +948,9 @@ function levelSolve(){
 function levelSetup(opts){
   if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; }
   const n=opts.n || (opts.same&&LV?LV.n:(LV&&!opts.top?LV.n:lvUnlocked()));
-  if(!(opts.same && LV && LV.n===n)) LV=levelDeal(n);
+  const _reuse = opts.same && LV && LV.n===n;
+  if(_reuse && LV.bestSeen) LV.postBest=(LV.postBest||0)+1;   // one replay allowed once the best board has been viewed
+  if(!_reuse) LV=levelDeal(n);
   LV.result=null; LV.onSolved=null;
   if(LV.solve){ LV.max=LV.solve.score; LV.target=Math.ceil(LV.pct*LV.max); }
   grid=LV.locks.slice(); queue=LV.order.slice().reverse(); current=queue.pop();
@@ -978,7 +980,8 @@ function levelJudge(total){
   if(L.solve) SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:L.solve.score, grid:alignToMine(L.solve.raw)};
   refreshSolveUI();
 }
-function levelPlay(n, same){ closeOverlay(); if(!isLevels()){ settings.mode="levels"; persist(); } newGame({n:n, same:!!same}); }
+function canReplaySame(){ return !(LV && LV.bestSeen && (LV.postBest||0) >= 1); }
+function levelPlay(n, same){ closeOverlay(); if(!isLevels()){ settings.mode="levels"; persist(); } if(same && !canReplaySame()) same=false; newGame({n:n, same:!!same}); }
 // switching mode (or the clock) keeps the Menu open so you can set things up first; the board deals behind it
 function setMode(m){ if(settings.mode===m) return; settings.mode=m; persist(); newGame({top:true}); openMenu(); }
 function stars(n){ let h=''; for(let i=0;i<3;i++) h+=i<n?'<b>★</b>':'★'; return h; }
@@ -1579,8 +1582,8 @@ function levelResultsHTML(){
     +'<div class="lvline">Target <b>'+L.target+'</b> ('+Math.round(L.pct*100)+'%) · <span class="nw">★★ '+Math.round((L.pct+.05)*100)+'%</span> · <span class="nw">★★★ '+Math.round((L.pct+.10)*100)+'%</span></div>'
     +'<div class="lvline">'+(botTouched?'A board the bot played doesn\'t count.':(r.cleared?(r.unlocked?'':'Best on this level: '+stars(lvProg()[settings.scoring].stars[L.n]||0)):('<b>'+need+'</b> more would have done it.')))+'</div>'
     +'<div class="res-btns">'+(r.cleared
-        ?'<button class="btn" onclick="levelPlay('+(L.n+1)+')">Level '+(L.n+1)+' ›</button><button class="btn sec" onclick="levelPlay('+L.n+',true)">Replay board</button>'
-        :'<button class="btn" onclick="levelPlay('+L.n+',true)">Same board</button><button class="btn sec" onclick="levelPlay('+L.n+')">New board</button>')+'</div>'
+        ?'<button class="btn" onclick="levelPlay('+(L.n+1)+')">Level '+(L.n+1)+' ›</button>'+(canReplaySame()?'<button class="btn sec" onclick="levelPlay('+L.n+',true)">Replay board</button>':'')
+        :(canReplaySame()?'<button class="btn" onclick="levelPlay('+L.n+',true)">Same board</button><button class="btn sec" onclick="levelPlay('+L.n+')">New board</button>':'<button class="btn" onclick="levelPlay('+L.n+')">New board</button>'))+'</div>'
     +(function(){ const can=SOLVE&&SOLVE.done&&SOLVE.score>r.total, mineBest=SOLVE&&SOLVE.done&&SOLVE.score<=r.total;
         return '<div class="res-btns"><button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(can?'':' disabled')+'>'+(mineBest?'Yours is best':'Best board')+'</button>'
           +'<button class="btn sec" onclick="openLevels()">All levels</button></div>'; })();
@@ -1814,7 +1817,7 @@ function refreshSolveUI(){
 /* ---- the move: every card that changes square lifts, spins and lands ---- */
 function showView(v){
   if(ANIMATING || v===VIEW || !over || !SOLVE || !SOLVE.done) return;
-  if(v==="best" && !bestRevealed){ if(prizeCount("undo")>0 && spendPrize("undo")){ bestRevealed=true; prizeToast("\u21a9","Spent an undo \u2014 best board unlocked"); } else { prizeToast("\ud83d\udd12","Earn an undo (clear a new level) to reveal the best board"); return; } }
+  if(v==="best" && !bestRevealed){ if(prizeCount("undo")>0 && spendPrize("undo")){ bestRevealed=true; if(isLevels()&&LV) LV.bestSeen=true; prizeToast("\u21a9","Spent an undo \u2014 best board unlocked"); } else { prizeToast("\ud83d\udd12","Earn an undo (clear a new level) to reveal the best board"); return; } }
   const fromG=viewGrid(), board=document.getElementById("psboard");
   const fromRects={}; board.querySelectorAll(".pscell[data-i]").forEach(el=>{ fromRects[el.dataset.i]=el.getBoundingClientRect(); });
   const fromTotal=computeLines(fromG).total;
@@ -2418,7 +2421,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v239", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v240", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
