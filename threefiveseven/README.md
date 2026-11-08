@@ -185,3 +185,9 @@ different players hit one-away. Revamped:
 Open for review: opponents one-away now rely on the glow + near-full pips (no text label) — can add a
 layout-neutral text cue if wanted. The decide (large up cards) vs showdown (small full hand) card sizes
 still differ by phase; seat height is stable regardless, but unifying card size is a larger change.
+
+## Seat tidy — money under the name, no down-chip in the decision (v239)
+Per feedback: the session money (`net`) moved out of the pips row to its own line directly under the
+player's name (`.snet`), so it no longer crowds or overflows past the leg pips. And the striped
+face-down count chip is dropped from the decision view — opponents show only their up cards there (the
+hidden count was redundant with the deal size). Full hands still reveal at the showdown.

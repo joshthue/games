@@ -55,6 +55,7 @@
   .seat{width:calc((100% - 16px)/3); background:rgba(0,0,0,.22); border:2px solid transparent; border-radius:12px; padding:5px 4px 5px; text-align:center; position:relative; min-height:128px;}
   .seats.c2 .seat{width:calc((100% - 8px)/2);}
   .seat .nm{font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .seat .snet{font-size:11px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; margin:1px 0 2px; line-height:1;}
   .seat .row{display:flex; justify-content:center; margin:4px 0 3px; min-height:70px; align-items:flex-end;}
   .seat .meta{display:flex; justify-content:center; gap:6px; font-size:11px; align-items:center; font-variant-numeric:tabular-nums;}
   .seat .hn{font-size:10.5px; font-weight:700; color:var(--gold); min-height:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
@@ -434,7 +435,7 @@ function render(){ if(!M) return;
   seats.classList.toggle('c2', M.n-1===4);
   for(var p=1;p<M.n;p++){ var hand=M.hands[p], cls='seat'+(M.o.legs-M.legs[p]===1?' matchpt':''), badge='', row='', hn='', delta='';
     if(!showing){ var fz=T.isForced(M,p); badge = fz ? '<span class="badge in">FORCED</span>' : busy ? '<span class="badge wait">?</span>' : '';
-      if(M.up){ var ups=M.up[p], dn=hand.length-ups.length; row = ups.map(function(c){ return miniHTML(c, T.isWild(c,w), false, false, true); }).join('') + (dn>0?'<div class="mc back hid">'+dn+'</div>':''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
+      if(M.up){ row = M.up[p].map(function(c){ return miniHTML(c, T.isWild(c,w), false, false, true); }).join(''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
     else if(res.kind==='allout'){ var ea=res.evals[p]; row=hand.map(function(c){ var wd=T.isWild(c,w), used=wd||ea.used.some(function(u){ return T.same(u,c); }); return miniHTML(c, wd, used, !used); }).join(''); hn=T.handName(ea,true);
       if(p===res.alloutLoser){ cls+=' win'; badge='<span class="badge in">BEST</span>'; delta=' <span class="delta neg">−'+money(res.pays[p])+'</span>'; } else { badge='<span class="badge out">OUT</span>'; } }
     else { var isIn=res.ins[p];
@@ -443,7 +444,7 @@ function render(){ if(!M) return;
       else { cls+=' out'; row=hand.map(function(){ return miniHTML(null); }).join(''); hn='dropped'; }
       if(res.legWinners.indexOf(p)>=0){ cls+=' win'; delta=' <span class="delta leg">+LEG</span>'; }
       else if(res.losers.indexOf(p)>=0){ delta=' <span class="delta neg">−'+money(res.pays?res.pays[p]:res.pay)+'</span>'; } }
-    h+='<div class="'+cls+'">'+badge+'<div class="nm">'+M.names[p]+'</div><div class="row n'+hand.length+'">'+row+'</div><div class="meta">'+legsHTML(p)+'<span>'+net(M.net[p])+'</span></div>'+'<div class="hn">'+hn+delta+'</div></div>'; }
+    h+='<div class="'+cls+'">'+badge+'<div class="nm">'+M.names[p]+'</div><div class="snet">'+net(M.net[p])+'</div><div class="row n'+hand.length+'">'+row+'</div><div class="meta">'+legsHTML(p)+'</div><div class="hn">'+hn+delta+'</div></div>'; }
   seats.innerHTML=h;
   var tr='<div class="track">'+T.SIZES.map(function(s,i){ return '<span class="'+(i===di?'on':'')+'">'+s+'</span>'; }).join('')+'</div>';
   $('mid').innerHTML=tr+'<div class="pot" id="pot">'+money(showing&&M.phase==='gameover'?res.won:M.pot)+'</div><div class="potl">'+(M.phase==='gameover'?'pot taken':'game '+M.gameNo+' pot · first to '+M.o.legs+' legs takes it')+'</div><div class="wildl">'+wildText(di)+'</div>';
@@ -596,7 +597,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v238", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v239", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
