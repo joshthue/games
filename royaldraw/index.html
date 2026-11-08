@@ -59,7 +59,7 @@
   .card.back{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 7px,#155a94 7px,#155a94 14px); border:2px solid #0e3f6b;}
 
   /* ---- 5x5 board + row/col score chips ---- */
-  .psboard{display:grid; grid-template-columns:repeat(5,1fr) minmax(30px,auto); gap:5px; width:100%; max-width:440px; margin:0 auto;}
+  .psboard{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)) minmax(30px,auto); gap:5px; width:100%; max-width:440px; margin:0 auto;}
   .pscell{position:relative; height:var(--cellh, clamp(50px,14.5vw,66px)); border-radius:7px; display:flex; align-items:center; justify-content:center; overflow:hidden;}
   .pscell.empty{background:rgba(0,0,0,.18); border:1.5px dashed rgba(247,243,232,.3);}
   .pscell.empty.live{border-color:var(--gold); background:rgba(240,198,116,.10); cursor:pointer;}
@@ -654,7 +654,7 @@
      and sizes the board by height; this block scales everything around it. */
   html.tablet{ --size:1.75 !important; --cardtext:1.25 !important; }
   html.tablet .wrap{max-width:min(94vw,980px); padding:14px 26px 30px;}
-  html.tablet .psboard{max-width:none; gap:10px; grid-template-columns:repeat(5,1fr) minmax(56px,auto);}
+  html.tablet .psboard{max-width:none; gap:10px; grid-template-columns:repeat(5,minmax(0,1fr)) minmax(56px,auto);}
   html.tablet .pscell{border-radius:12px;}
   html.tablet .pstray{padding:16px 22px; gap:22px; border-radius:22px; margin:10px 0 16px;}
   html.tablet .pstray-place{font-size:24px;} html.tablet .pstray-prog{font-size:17px;}
@@ -683,7 +683,7 @@
   .pstray-place{font-size:17px;} .pstray-prog{font-size:14px; letter-spacing:.8px;}
   .pstray-score .lbl{font-size:12px; letter-spacing:1.6px;} .pstray-score .best{font-size:14px; letter-spacing:.4px;} .pstray-score .best.goal b{font-size:16px;}
   /* the hand chips beside the board */
-  .psboard{grid-template-columns:repeat(5,1fr) minmax(36px,auto);}
+  .psboard{grid-template-columns:repeat(5,minmax(0,1fr)) minmax(36px,auto);}
   .psscore .ab{font-size:12px; letter-spacing:.3px;} .psscore .pts{font-size:16px;} .psscore.corner .pts{font-size:18px;}
   .psscore.ngdraw .pts{font-size:13px;}
   /* buttons and notes under the board */
@@ -708,7 +708,7 @@
   /* trophies */
   .trolist .tn{font-size:16px;} .trolist .td{font-size:14px;} .trolist .tw{font-size:13px;}
   .ngtro .l1{font-size:12px;} .ngtro .l2{font-size:16px;}
-  @media (max-width:360px){ .psboard{grid-template-columns:repeat(5,1fr) minmax(32px,auto);} .psscore .ab{font-size:11px;} .psscore .pts{font-size:14px;} .btn.sm{padding:8px 12px;} }
+  @media (max-width:360px){ .psboard{grid-template-columns:repeat(5,minmax(0,1fr)) minmax(32px,auto);} .psscore .ab{font-size:11px;} .psscore .pts{font-size:14px;} .btn.sm{padding:8px 12px;} }
 </style>
 <style id="orient-lock-v228">
   /* Phone-only portrait lock. Tablets (html.tablet, height > 500) keep their landscape layout. */
@@ -2415,7 +2415,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v237", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v238", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
