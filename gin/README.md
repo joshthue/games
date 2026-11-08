@@ -72,6 +72,13 @@ single card its hand gained since the last state. Both phones also play the `tur
 short `navigator.vibrate`) when a state hands the turn back to them — so you hear it when the
 other phone finishes while yours is face-down.
 
+**Rematch keeps the room (v232).** On game over, “Play again” used to call `netStop` and
+drop both players back to setup, so a new two-phone game meant re-pairing. Now either player’s
+“Play again” starts a fresh game on the same connection: the host re-deals (`newGame` + `startHand`
+→ `publishState`) directly; the guest sends `{t:'act',kind:'rematch'}`, which the host handles the
+same way. The other phone’s new state closes its over-modal automatically, so one tap from either
+side restarts both. “Change settings” is now the explicit leave-the-room path (it calls `netStop`).
+
 ## Testing
 `scratchpad/gin-test.js` — meld detection, min-deadwood on known hands, gin, lay-off,
 undercut scoring, + a 120-game bot soak all reaching 100 with a winner.

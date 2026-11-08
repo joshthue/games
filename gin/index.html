@@ -410,7 +410,7 @@ function cardMini(c){ return '<div class="card" style="color:'+suitCol(c.s)+'"><
 function gameOver(){ var w=G.winner; stats.played++; if(w===0) stats.won++; lsSet('gin_stats',stats); sfx(w===0?'win':'lose'); if(w===0) confetti();
   $('oTitle').textContent=w===0?'You win!':(oppLabel()+' wins'); $('oSub').textContent='Final · first to '+G.target;
   $('oTable').innerHTML='<tr class="'+(w===0?'win':'')+'"><td>You</td><td>'+G.scores[0]+'</td></tr><tr class="'+(w===1?'win':'')+'"><td>'+oppLabel()+'</td><td>'+G.scores[1]+'</td></tr>';
-  try{ localStorage.removeItem('gin_game'); }catch(e){} $('overModal').classList.add('show'); }
+  try{ localStorage.removeItem('gin_game'); }catch(e){} $('oAgain').textContent='Play again'; $('oAgain').disabled=false; $('overModal').classList.add('show'); }
 function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff']; for(var i=0;i<40;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c); c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
 
 function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),function(m){ m.classList.remove('show'); }); }
@@ -429,8 +429,8 @@ $('stockStack').onclick=stockTap; $('discardStack').onclick=discardTap;
 $('knockBtn').onclick=function(){ if($('knockBtn').disabled) return; knockArmed=!knockArmed; sfx('select'); render(); };
 $('sortBtn').onclick=function(){ prefs.sortMode = prefs.sortMode==='suit'?'rank':(prefs.sortMode==='rank'?'meld':'suit'); savePrefs(); sfx('select'); render(); };
 $('hNext').onclick=function(){ $('handModal').classList.remove('show'); if(mode==='online'&&net.role==='guest'){ if(G.over){ gameOver(); } else { netSend({t:'act',kind:'next'}); } return; } if(G.over) gameOver(); else startHand(); };
-$('oAgain').onclick=function(){ $('overModal').classList.remove('show'); if(mode==='online'){ netStop(); mode='solo'; net={online:false}; updateNetbar(); showSetup(); return; } start(); };
-$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); showSetup(); };
+$('oAgain').onclick=function(){ if(mode==='online'){ if(net.role==='host'){ $('overModal').classList.remove('show'); G=GN.newGame(prefs.target); startHand(); } else { netSend({t:'act',kind:'rematch'}); $('oAgain').textContent='Waiting…'; $('oAgain').disabled=true; } return; } $('overModal').classList.remove('show'); start(); };
+$('oSetup').onclick=function(){ $('overModal').classList.remove('show'); if(mode==='online'){ netStop(); mode='solo'; net={online:false}; updateNetbar(); } showSetup(); };
 $('startBtn').onclick=start; $('resumeBtn').onclick=resume;
 addEventListener('resize', function(){ render(); });
 
@@ -492,6 +492,7 @@ function hostApply(obj){ if(!H) return; var prevTurn=H.turn;
     else if(obj.kind==='discard'){ if(H.over||H.turn!==1||H.phase!=='discard') return; GN.discard(H,1,obj.card); }
     else if(obj.kind==='knock'){ if(H.over||H.turn!==1||H.phase!=='discard') return; GN.knock(H,1,obj.card); handEnd(); return; }
     else if(obj.kind==='next'){ if(!H.over) return; if(G.over){ publishState(); return; } startHand(); return; }
+    else if(obj.kind==='rematch'){ if(!G.over) return; $('overModal').classList.remove('show'); G=GN.newGame(prefs.target); startHand(); return; }
   }catch(e){ return; }
   // skip the host's own re-render when the guest lifted the discard, so the buried card doesn't
   // flash on the host's screen; still publish so the guest (who drew it) sees their new card.
@@ -575,7 +576,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v231", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v232", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
