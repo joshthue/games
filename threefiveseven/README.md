@@ -61,7 +61,7 @@ Normal bots use that ±4 points of noise plus a 5% stab. Easy bots use a flat ~6
 points. Bots decide without seeing your choice.
 
 ## UI
-Opponent seats show small face-down cards (with their upcard under Forced). At showdown,
+Opponent seats show small face-down cards; under Forced each seat's face-up upcard is enlarged (`.mc.up`) so two-digit ranks like 10 read cleanly. Your own face-up card rides a notch above the rest of your hand (`upX` in `renderHand`). A forced-in player who loses pays half the match (`Math.round(pay/2)` in `resolve`). At showdown,
 stayers' hands turn face up with wilds outlined gold and the best five (the wild included)
 raised together while the two discards dim back, along with a short hand name and the leg or
 the payment. When you drop, your own hand is shown muted (desaturated, not transparent) so you
