@@ -94,3 +94,12 @@ game — not the menu — then both sides re-converge and keep syncing; a guest 
 ## Test door
 `window.__GIN` exposes `G`, `H`, `drawStock()`, `drawDiscard()`, `discard(c)`, `knock(c)`,
 `start()`, plus `hostCreate()`, `guestJoin(code)`, `net()`, `mode()`, `encodeView`/`decodeView`.
+
+## Drag the stock card to draw (v233)
+The stock is now draggable instead of tap-only. Press the stock pile and the top card **flips face up**
+into a ghost that follows your finger (`stockPointerDown` → a fixed-position `.stockghost` with a
+`stockflip` reveal). Drop it on **your hand** to keep it (`drawStock`, then discard normally) or on the
+**discard pile** to throw it away (`drawStock` then immediately discard that card — legal because a
+stock draw sets no `tookFromDiscard` lock). Release anywhere else cancels. A plain tap still draws into
+the hand. Drop targets glow while hovering (`.drophot`); `touch-action:none` on the pile stops the page
+scrolling mid-drag. Online falls back to the existing tap path (`stockTap`).

@@ -46,6 +46,12 @@
   .pile .stackwrap .card{position:absolute; top:0; left:0;}
   .pile .stackwrap .discback{position:absolute; top:0; left:0; width:var(--cw); height:var(--ch); border-radius:7px; background:var(--cream); border:1px solid rgba(0,0,0,.18); box-shadow:0 2px 5px rgba(0,0,0,.4);}
   .pile.tap .stackwrap{cursor:pointer;}
+  #stockPile .stackwrap{touch-action:none;}
+  .stockghost{box-shadow:0 10px 26px rgba(0,0,0,.55); will-change:transform; border-radius:7px;}
+  @keyframes stockflip{0%{transform:perspective(320px) rotateY(88deg); opacity:.35} 60%{opacity:1} 100%{transform:perspective(320px) rotateY(0deg); opacity:1}}
+  .stockghost.flipping{animation:stockflip .2s ease-out;}
+  #discardPile.drophot .stackwrap{box-shadow:0 0 0 3px var(--gold),0 0 18px rgba(240,198,116,.6); border-radius:9px;}
+  .hand.drophot{box-shadow:0 0 0 2px rgba(240,198,116,.55),0 0 16px rgba(240,198,116,.3); border-radius:12px;}
   .pile.tap .stackwrap{box-shadow:0 0 0 3px var(--gold), 0 0 14px rgba(240,198,116,.6); border-radius:9px;}
   .pile .ct{font-size:11px; opacity:.6;}
   .pile.empty .stackwrap{border:2px dashed rgba(255,255,255,.2); border-radius:8px;}
@@ -287,7 +293,7 @@ function render(){ if(!G) return;
   else if(mode==='online' && net.pending){ say.textContent='Sending…'; }
   else if(mode==='online' && H.turn===1){ say.innerHTML='Waiting for <b>them</b>…'; }
   else if(busy && H.turn===1){ say.innerHTML='<b>Bot</b> is thinking…'; }
-  else if(H.turn===0 && H.phase==='draw'){ say.innerHTML= note||'Draw — <b>stock</b> or the <b>discard</b>.'; }
+  else if(H.turn===0 && H.phase==='draw'){ say.innerHTML= note||'Draw — <b>drag</b> the stock to your hand or the pile, or tap the <b>discard</b>.'; }
   else if(H.turn===0 && H.phase==='discard'){ say.innerHTML= knockArmed?'<b>Knock:</b> tap the card to throw.':'Tap a card to discard.'; }
   else say.textContent='';
   // deadwood readout
@@ -376,6 +382,41 @@ function discardTap(){ if(!H||busy||H.over||H.turn!==0||H.phase!=='draw'||!H.dis
   justDrew=GN.drawDiscard(H,0); sfx('deal'); up=null; note=''; save(); render();
   /* online: don't publish the card you just uncovered — the other phone keeps seeing your last
      discard until you lay one down (your discard publishes then), so no buried card flashes there. */ }
+var stockDrag=null;
+// Draw from the stock by dragging: touch flips the top card face up, then drop it on your hand to
+// keep it, or on the discard to throw it away. A plain tap still draws into your hand. Online falls
+// back to the tap path (stockTap), which already speaks the net protocol.
+function stockCanDraw(){ return H && !busy && !H.over && H.turn===0 && H.phase==='draw' && H.stock.length && !(mode==='online'&&net.pending); }
+function dropTargetAt(x,y){ var dr=rectOf('discardStack'), hr=rectOf('hand');
+  if(dr && x>=dr.left-14 && x<=dr.right+14 && y>=dr.top-14 && y<=dr.bottom+14) return 'discard';
+  if(hr && x>=hr.left-6 && x<=hr.right+6 && y>=hr.top-14 && y<=hr.bottom+14) return 'hand';
+  return null; }
+function stockDrawTo(target){
+  if(mode==='online'){ stockTap(); if(target==='discard') note='Took it from stock — now discard a card.'; return; }
+  justDrew=GN.drawStock(H,0); sfx('deal'); up=null; note='';
+  if(target==='discard'){ var c=justDrew; save(); doDiscard(c); return; }   // flip-and-toss: draw then throw it
+  save(); render(); }
+function stockPointerMove(ev){ if(!stockDrag) return; var dx=ev.clientX-stockDrag.startX, dy=ev.clientY-stockDrag.startY;
+  if(Math.abs(dx)>4||Math.abs(dy)>4) stockDrag.moved=true;
+  stockDrag.wrap.style.transform='translate('+dx+'px,'+dy+'px)';
+  var over=stockDrag.moved?dropTargetAt(ev.clientX,ev.clientY):null;
+  $('discardPile').classList.toggle('drophot', over==='discard');
+  $('hand').classList.toggle('drophot', over==='hand'); }
+function stockPointerUp(ev){ if(!stockDrag) return; var sd=stockDrag; stockDrag=null;
+  window.removeEventListener('pointermove', stockPointerMove); window.removeEventListener('pointerup', stockPointerUp); window.removeEventListener('pointercancel', stockPointerUp);
+  $('discardPile').classList.remove('drophot'); $('hand').classList.remove('drophot');
+  if(sd.wrap.parentNode) sd.wrap.parentNode.removeChild(sd.wrap);
+  var target = sd.moved ? dropTargetAt(ev.clientX, ev.clientY) : 'hand';   // a tap draws into the hand
+  if(target==='hand'||target==='discard') stockDrawTo(target); }
+function stockPointerDown(ev){ if(!stockCanDraw()) return; ev.preventDefault();
+  var top=H.stock[0], ss=$('stockStack'), r=ss.getBoundingClientRect();
+  var wrap=document.createElement('div'); wrap.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;margin:0;z-index:200;pointer-events:none;';
+  var inner=cardEl(top); inner.className='card stockghost flipping'; inner.style.color=suitCol(top.s);
+  inner.style.width=r.width+'px'; inner.style.height=r.height+'px';
+  wrap.appendChild(inner); document.body.appendChild(wrap);
+  stockDrag={ card:top, wrap:wrap, startX:ev.clientX, startY:ev.clientY, moved:false };
+  window.addEventListener('pointermove', stockPointerMove); window.addEventListener('pointerup', stockPointerUp); window.addEventListener('pointercancel', stockPointerUp);
+  sfx('select'); }
 function doDiscard(c){ if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'discard',card:{s:c.s,r:c.r}}); net.pending=true; up=null; justDrew=null; knockArmed=false; render(); return; }
   GN.discard(H,0,c); sfx('place'); up=null; justDrew=null; knockArmed=false; save(); var fr=cardRect(c); flyToDiscard(c, fr); if(mode==='online'){ publishState(); } else if(!H.over){ botGo(); } }
 function doKnock(c){ if(mode==='online'&&net.role==='guest'){ netSend({t:'act',kind:'knock',card:{s:c.s,r:c.r}}); net.pending=true; knockArmed=false; up=null; render(); return; }
@@ -425,7 +466,7 @@ $('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMe
 $('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
 $('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); if(mode==='online'){ netStop(); mode='solo'; net={online:false}; updateNetbar(); } try{ localStorage.removeItem('gin_game'); }catch(e){} showSetup(); };
-$('stockStack').onclick=stockTap; $('discardStack').onclick=discardTap;
+$('stockStack').addEventListener('pointerdown', stockPointerDown); $('discardStack').onclick=discardTap;
 $('knockBtn').onclick=function(){ if($('knockBtn').disabled) return; knockArmed=!knockArmed; sfx('select'); render(); };
 $('sortBtn').onclick=function(){ prefs.sortMode = prefs.sortMode==='suit'?'rank':(prefs.sortMode==='rank'?'meld':'suit'); savePrefs(); sfx('select'); render(); };
 $('hNext').onclick=function(){ $('handModal').classList.remove('show'); if(mode==='online'&&net.role==='guest'){ if(G.over){ gameOver(); } else { netSend({t:'act',kind:'next'}); } return; } if(G.over) gameOver(); else startHand(); };
@@ -576,7 +617,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v232", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v233", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
