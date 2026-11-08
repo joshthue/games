@@ -820,6 +820,7 @@ let grid=new Array(25).fill(null);
 let queue=[];              // remaining deck (draw from end)
 let current=null;          // card awaiting placement
 let lastMove=null;         // {i, card} — single-step undo
+let quadDone=new Set();    // lines that already popped a four-of-a-kind celebration (v226)
 let over=false;
 let curOverlay={kind:null};
 
@@ -1088,7 +1089,7 @@ function clockBests(){ try{ return JSON.parse(localStorage.getItem("pokersquares
 function sfx(n){ if(window.SFX) SFX.play(n); }
 function newGame(opts){
   sfx('shuffle');
-  lastMove=null; over=false;
+  lastMove=null; over=false; quadDone=new Set();
   VIEW="mine"; stopSolve(); SOLVE=null;
   botStop(); botTouched=false; boostUsed=false;
   if(isLevels()) levelSetup(opts||{});
@@ -1118,13 +1119,16 @@ function place(i){
 function reduceMotion(){ return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
 function dealFx(i, fromR){
   const cell=document.querySelector('#psboard .pscell[data-i="'+i+'"]');
-  const done=[]; const r=Math.floor(i/5), c=i%5;
+  const done=[], quads=[]; const r=Math.floor(i/5), c=i%5;
   [["row",r],["col",c]].forEach(function(l){
-    const cards=lineIdx(l[0],l[1]).map(x=>grid[x]);
-    if(cards.every(Boolean)) done.push({type:l[0], idx:l[1], h:scoreHand(cards)});
+    const idxs=lineIdx(l[0],l[1]), cards=idxs.map(x=>grid[x]), full=cards.every(Boolean);
+    if(full) done.push({type:l[0], idx:l[1], h:scoreHand(cards)});
+    // v226: a four-of-a-kind locks the moment the 4th matching card lands — celebrate then, not when the line fills
+    const key=l[0]+l[1];
+    if(!quadDone.has(key) && grid[i] && !full){ let n=0; for(var qi=0;qi<idxs.length;qi++){ const cd=grid[idxs[qi]]; if(cd&&cd.r===grid[i].r) n++; } if(n>=4){ quadDone.add(key); quads.push({type:l[0], idx:l[1], rank:grid[i].r}); } }
   });
   const user=!ngByBot;
-  function landed(){ NG.land(i,user); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
+  function landed(){ NG.land(i,user); quads.forEach(function(q){ quadCelebrate(q.type,q.idx,q.rank); }); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
   if(!cell || !fromR || reduceMotion() || !document.body.animate){ landed(); return; }
   NG.snd('whoosh', NG.panOfCol(i%5));
   const to=cell.getBoundingClientRect();
@@ -1161,6 +1165,24 @@ function lineFx(d){
   if(t>=4) sfx('win'); else if(t===3) { sfx('good'); setTimeout(function(){ sfx('chip'); }, 180); }
   else if(t===2) sfx('good'); else if(t===1) sfx('chip');
   NG.lineBurst(d, els, t);
+}
+/* v226: four-of-a-kind celebration — fires as soon as the 4th matching card lands in a line,
+   even with a cell still open. Sweeps the four cards, pops a callout, and sounds off. */
+function quadCelebrate(type, idx, rank){
+  sfx('win');
+  if(window.NG&&NG.hap) NG.hap(3,80,"heavy");
+  if(reduceMotion()) return;
+  const idxs=lineIdx(type,idx);
+  const quadEls=idxs.filter(function(x){ return grid[x]&&grid[x].r===rank; })
+    .map(function(x){ return document.querySelector('#psboard .pscell[data-i="'+x+'"]'); }).filter(Boolean);
+  quadEls.forEach(function(el,k){ el.classList.remove("sweep"); void el.offsetWidth; el.style.setProperty("--d",(k*60)+"ms"); el.classList.add("sweep");
+    setTimeout(function(){ el.classList.remove("sweep"); }, 820+k*60); });
+  const a=document.querySelector('#psboard .pscell[data-i="'+idxs[0]+'"]'), b=document.querySelector('#psboard .pscell[data-i="'+idxs[4]+'"]');
+  if(a&&b){ if(window.NG&&NG.clearCalls) NG.clearCalls();
+    const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
+    const call=document.createElement("div"); call.className="pscall t4"; call.innerHTML='Four of a kind!';
+    call.style.left=((ar.left+br.right)/2)+"px"; call.style.top=((ar.top+br.bottom)/2)+"px";
+    document.body.appendChild(call); setTimeout(function(){ try{ call.remove(); }catch(e){} }, 1400); }
 }
 function undo(){
   if(!lastMove || ANIMATING || !undoAllowed()) return;
@@ -2369,7 +2391,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v225", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v226", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
