@@ -681,3 +681,18 @@ their two-column landscape (see iPad above). The native iOS app matches: `Info.p
   with a toast; the Best button and results button show a ↩, and the bar explains the cost or,
   when you have none, that you earn undos by clearing new levels.
 
+
+## Locked card columns (v238)
+Placing a card could change one column's width. Each card column was a plain `1fr` track, and in
+CSS Grid `1fr` means `minmax(auto,1fr)` — so a column whose content has a larger min-content than its
+share grows and steals width from its neighbours. The five card columns are now `minmax(0,1fr)`, which
+pins them perfectly equal no matter what's inside; the score column keeps its original `minmax(...)`
+width so the cards stay the same size.
+
+## Line call-outs sit in one place (v239)
+The made-hand, four-of-a-kind and straight/royal-flush-draw banners were each positioned at the
+*midpoint of their row or column*, so an edge line pushed the banner half off-screen. All three now
+anchor to one fixed spot (board centre) via a shared `psPlaceCall(el)` helper, and `.pscall` wraps with
+a `max-width:min(88vw,340px)` cap so a long "need …" subtitle can't overflow. Which line a call-out
+refers to is shown by the cards themselves — the `.sweep` flourish on a made hand, the blue/gold glow
+on a live draw — not by where the banner sits.

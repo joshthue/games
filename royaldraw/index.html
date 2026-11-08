@@ -232,7 +232,7 @@
     box-shadow:0 0 14px rgba(240,198,116,.45);}
 
   /* a finished line calls its hand out over its five cards */
-  .pscall{position:fixed; z-index:44; pointer-events:none; transform:translate(-50%,-50%); white-space:nowrap; text-align:center;
+  .pscall{position:fixed; z-index:44; pointer-events:none; transform:translate(-50%,-50%); white-space:normal; max-width:min(88vw,340px); text-align:center;
     font:900 15px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; letter-spacing:1.5px; text-transform:uppercase;
     color:#ffe7ae; background:rgba(6,21,16,.88); border:1px solid var(--gold); border-radius:999px; padding:7px 13px 6px;
     box-shadow:0 0 18px rgba(240,198,116,.45),0 6px 16px rgba(0,0,0,.5); animation:psCall 1.25s ease-out forwards;}
@@ -1169,6 +1169,9 @@ function dealFx(i, fromR){
     if(now){ now.style.visibility=""; now.classList.remove("just"); void now.offsetWidth; now.classList.add("just"); }
     landed(); };
 }
+function psPlaceCall(el){ const b=document.getElementById("psboard");
+  const r=b?b.getBoundingClientRect():{left:0,width:innerWidth,top:innerHeight*0.3,height:innerHeight*0.4};
+  el.style.left=(r.left+r.width/2)+"px"; el.style.top=(r.top+r.height*0.44)+"px"; }
 function lineFx(d){
   const h=d.h, t=TIER[h.key], idxs=lineIdx(d.type,d.idx);
   const els=idxs.map(x=>document.querySelector('#psboard .pscell[data-i="'+x+'"]')).filter(Boolean);
@@ -1179,7 +1182,7 @@ function lineFx(d){
   NG.clearCalls();   // a made hand replaces any draw callout still up
   const call=document.createElement("div"); call.className="pscall t"+t;
   call.innerHTML = h.pts>0 ? h.name+'<b>+'+h.pts+'</b>' : 'No hand';
-  call.style.left=((a.left+b.right)/2)+"px"; call.style.top=((a.top+b.bottom)/2)+"px";
+  psPlaceCall(call);
   document.body.appendChild(call); setTimeout(function(){ call.remove(); }, 1300);
   if(t>=4) sfx('win'); else if(t===3) { sfx('good'); setTimeout(function(){ sfx('chip'); }, 180); }
   else if(t===2) sfx('good'); else if(t===1) sfx('chip');
@@ -1200,7 +1203,7 @@ function quadCelebrate(type, idx, rank){
   if(a&&b){ if(window.NG&&NG.clearCalls) NG.clearCalls();
     const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
     const call=document.createElement("div"); call.className="pscall t4"; call.innerHTML='Four of a kind!';
-    call.style.left=((ar.left+br.right)/2)+"px"; call.style.top=((ar.top+br.bottom)/2)+"px";
+    psPlaceCall(call);
     document.body.appendChild(call); setTimeout(function(){ try{ call.remove(); }catch(e){} }, 1400); }
 }
 function undo(){
@@ -2224,8 +2227,8 @@ var NG=(function(){
   function lineMid(h){ const els=h.cells.map(cellEl).filter(Boolean); if(els.length<5) return null; const a=els[0].getBoundingClientRect(), b=els[4].getBoundingClientRect();
     return {x:(a.left+b.right)/2, y:(a.top+b.bottom)/2}; }
   function clearCalls(){ document.querySelectorAll(".pscall.ngc").forEach(function(el){ el.remove(); }); }
-  function callout(h,cls,html,ms){ const m=lineMid(h); if(!m) return; clearCalls(); const el=document.createElement("div"); el.className="pscall ngc "+cls; el.innerHTML=html;
-    el.style.left=m.x+"px"; el.style.top=m.y+"px"; document.body.appendChild(el); setTimeout(function(){ el.remove(); },ms||2300); return m; }
+  function callout(h,cls,html,ms){ const m=lineMid(h); clearCalls(); const el=document.createElement("div"); el.className="pscall ngc "+cls; el.innerHTML=html;
+    psPlaceCall(el); document.body.appendChild(el); setTimeout(function(){ el.remove(); },ms||2300); return m; }
   function fire(e,myTok){ if(myTok!==tok) return; const h=e.h, pan=h.type==="col"?panOfCol(h.idx):0, need=h.outs.map(cname).join(" or ");
     if(e.k==="draw"){ callout(h,"draw"+(h.royal?" royal":""),(h.royal?"Royal flush draw":"Straight flush draw")+'<small>need '+need+' · '+pct(h.p)+'</small>',2300);
       snd("shimmer",pan); if(h.royal) snd("riser"); hap(2,80,"medium");
@@ -2415,7 +2418,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v238", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v239", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
