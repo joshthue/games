@@ -432,8 +432,7 @@ function render(){ if(!M) return;
   seats.classList.toggle('c2', M.n-1===4);
   for(var p=1;p<M.n;p++){ var hand=M.hands[p], cls='seat'+(M.o.legs-M.legs[p]===1?' matchpt':''), badge='', row='', hn='', delta='';
     if(!showing){ var fz=T.isForced(M,p); badge = fz ? '<span class="badge in">FORCED</span>' : busy ? '<span class="badge wait">?</span>' : '';
-      var ups=M.up?M.up[p]:[], sorted=hand.slice().sort(function(a,b){ return a.r-b.r||a.s-b.s; });
-      row = sorted.map(function(c){ var isU=ups.some(function(u){ return T.same(u,c); }); return miniHTML(c, T.isWild(c,w), false, false, false, isU); }).join(''); }
+      if(M.up){ var ups=M.up[p], dn=hand.length-ups.length; row = ups.map(function(c){ return miniHTML(c, T.isWild(c,w), false, false, true); }).join('') + (dn>0?'<div class="mc back hid">'+dn+'</div>':''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
     else if(res.kind==='allout'){ var ea=res.evals[p]; row=hand.map(function(c){ var wd=T.isWild(c,w), used=wd||ea.used.some(function(u){ return T.same(u,c); }); return miniHTML(c, wd, used, !used); }).join(''); hn=T.handName(ea,true);
       if(p===res.alloutLoser){ cls+=' win'; badge='<span class="badge in">BEST</span>'; delta=' <span class="delta neg">−'+money(res.pays[p])+'</span>'; } else { badge='<span class="badge out">OUT</span>'; } }
     else { var isIn=res.ins[p];
@@ -595,7 +594,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v236", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v237", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

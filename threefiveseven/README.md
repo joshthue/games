@@ -161,3 +161,9 @@ A player one leg from the pot was only a faint orange tint on the pips — easy 
 one-leg-away player (`M.o.legs - M.legs[p] === 1`) gets a pulsing orange seat glow (`.seat.matchpt`),
 pulsing leg pips, and a bright "1 TO WIN" badge next to their legs; the same glow + badge apply to your
 own row (`.me.matchpt`). All pulses are disabled under `prefers-reduced-motion`.
+
+## Opponents' down cards hidden again (v237)
+v235's full open-hand exposure spoiled the drop decision — you could see your own hand and read the
+whole table before choosing. Reverted: during the decision opponents show only their up cards (stud
+reveal, 1/2/3) plus a face-down count chip; full hands still reveal at the showdown. (The `.upm` ring /
+miniHTML param stay in the code, unused, for later.)
