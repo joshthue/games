@@ -155,3 +155,9 @@ cards ringed in gold (`.mc.upm`) so you can still tell which are public. (The se
 Forced-in no longer auto-commits after 2 s. When you're forced, the **In** button shows and you tap it
 when you're ready — so you can sit with a good hand instead of it playing itself. (`forcedGo`'s countdown
 call is removed; Out stays hidden while forced.)
+
+## Match point stands out (v236)
+A player one leg from the pot was only a faint orange tint on the pips — easy to miss. Now any
+one-leg-away player (`M.o.legs - M.legs[p] === 1`) gets a pulsing orange seat glow (`.seat.matchpt`),
+pulsing leg pips, and a bright "1 TO WIN" badge next to their legs; the same glow + badge apply to your
+own row (`.me.matchpt`). All pulses are disabled under `prefers-reduced-motion`.
