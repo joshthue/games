@@ -392,7 +392,7 @@ function showSetup(){ clearTimeout(timer); renderSetup(); GNSETUP.show('setup');
 function start(){ M=T.newMatch({players:prefs.players, legs:prefs.legs, wilds:prefs.wilds, three:prefs.three, lone:prefs.lone, cap:prefs.cap, ante:prefs.ante, forced:prefs.forced, carry:prefs.carry, allout:prefs.allout}); LEVEL=prefs.level;
   GNSETUP.hide('setup'); closeAll(); newGame(); }
 function newGame(){ T.startGame(M); sfx('chip'); dealNext(); }
-function dealNext(){ clearForce(); T.deal(M); myPick=null; busy=false; coachMemo=null; sfx('shuffle'); save(); render(); }
+function dealNext(){ clearForce(); T.deal(M); myPick=null; busy=false; coachMemo=null; sfx('shuffle'); save(); render(); dealAnimate(); }
 function resume(){ var s=lsGet('tfs_game',null); if(!s||!s.M){ start(); return; } M=s.M; LEVEL=s.level||'normal'; myPick=null; busy=false; GNSETUP.hide('setup'); closeAll();
   if(M.phase==='ante'||!M.hands) dealNext(); else { render(); if(M.phase==='gameover') showOver(); } }
 function save(){ if(M) lsSet('tfs_game',{M:M, level:LEVEL}); }
@@ -499,6 +499,27 @@ function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
   var order=M.names.map(function(nm,p){ return {nm:nm,v:M.net[p],p:p}; }).sort(function(a,b){ return b.v-a.v; });
   $('oTable').innerHTML='<tr><td colspan="2" style="opacity:.7;font-size:12px">Session net after '+M.gameNo+' game'+(M.gameNo>1?'s':'')+'</td></tr>'+order.map(function(o){ return '<tr class="'+(W.indexOf(o.p)>=0?'win':'')+'"><td>'+o.nm+(o.p===0?' (you)':'')+'</td><td>'+net(o.v)+'</td></tr>'; }).join('');
   $('overModal').classList.add('show'); }
+function dealAnimate(){
+  if(reduced() || !document.body.animate) return;
+  var mid=$('mid'); if(!mid) return;
+  var mr=mid.getBoundingClientRect(), ox=mr.left+mr.width/2, oy=mr.top+mr.height/2;
+  // deal order: round-robin around the seats, then into your hand — like a dealer pitching cards
+  var hands=[].slice.call(document.querySelectorAll('#seats .seat')).map(function(s){ return [].slice.call(s.querySelectorAll('.mc')); });
+  hands.push([].slice.call(document.querySelectorAll('#hand .card')));
+  var order=[], maxLen=0; hands.forEach(function(h){ if(h.length>maxLen) maxLen=h.length; });
+  for(var r=0;r<maxLen;r++) hands.forEach(function(h){ if(h[r]) order.push(h[r]); });
+  if(!order.length) return;
+  var STEP=prefs.speed==='fast'?36:58;
+  order.forEach(function(el,i){
+    var rb=el.getBoundingClientRect(), dx=Math.round(ox-(rb.left+rb.width/2)), dy=Math.round(oy-(rb.top+rb.height/2));
+    el.animate([
+      {transform:'translate('+dx+'px,'+dy+'px) rotate(-9deg) scale(.72)', opacity:0},
+      {transform:'translate('+Math.round(dx*0.22)+'px,'+Math.round(dy*0.22)+'px) rotate(-2deg) scale(1.03)', opacity:1, offset:.6},
+      {transform:'none', opacity:1}
+    ], {duration:330, delay:i*STEP, easing:'cubic-bezier(.33,.7,.3,1)', fill:'both'});
+    setTimeout(function(){ try{ sfx('deal'); }catch(e){} }, i*STEP);
+  });
+}
 function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe0','#38b064','#f08a2c','#fff']; for(var i=0;i<42;i++){ var c=document.createElement('div'); c.style.cssText='position:fixed;top:-20px;width:9px;height:14px;z-index:90;border-radius:2px;pointer-events:none;left:'+(Math.random()*100)+'vw;background:'+cols[i%cols.length]; document.body.appendChild(c); c.animate([{transform:'translateY(0) rotate(0)'},{transform:'translateY('+(innerHeight+60)+'px) rotate('+(Math.random()*900-450)+'deg)'}],{duration:1700+Math.random()*1300, delay:Math.random()*300}).onfinish=(function(c){ return function(){ c.remove(); }; })(c); } }
 
 /* ---- scores ---- */
@@ -542,7 +563,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v231", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v232", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

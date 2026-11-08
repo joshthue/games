@@ -119,3 +119,11 @@ card fell back in line with the others — so it only *looked* up while deciding
 lifted and tagged through the showdown and result too (`upc` no longer gates on `!showing`), and it keeps
 its full brightness even when a fold dims the rest of the hand, so the public card stays the focus the
 whole deal.
+
+## Dealing the cards (v232)
+Deals used to pop in instantly. Now `dealAnimate()` pitches every card in from the centre of the table
+in true dealer order — round-robin around the seats, then into your hand — each card flying from the pot,
+rotating straight, with a soft `deal` tick and a stagger (`speed` pref: ~36 ms fast / 58 ms normal). It
+fires on every deal (opening 3, and each grow to 5 and 7), using WAAPI `fill:'both'` so a card sits
+invisible at the deck until its turn and rests cleanly in place after. Skipped under
+`prefers-reduced-motion`. The moving attention is half the fun of 3-5-7.
