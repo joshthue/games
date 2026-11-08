@@ -297,12 +297,12 @@
   @keyframes ngThump{40%{transform:translateY(1.5px)}}
 
   /* ---- draws: blue = straight flush still possible, gold = royal still possible ---- */
-  .pscell.h1{box-shadow:0 0 0 1.5px rgba(124,196,255,.7),0 0 10px rgba(124,196,255,.35);}
-  .pscell.h1.royal{box-shadow:0 0 0 1.5px rgba(255,207,90,.8),0 0 12px rgba(255,170,60,.45);}
+  .pscell.h1{box-shadow:inset 0 0 0 2px rgba(124,196,255,.85),0 0 7px rgba(124,196,255,.28);}
+  .pscell.h1.royal{box-shadow:inset 0 0 0 2px rgba(255,207,90,.9),0 0 8px rgba(255,170,60,.4);}
   .pscell.h2,.pscell.empty.live.h2{animation:ngPlasma 1.15s ease-in-out infinite;}
   .pscell.h2.royal,.pscell.empty.live.h2.royal{animation-name:ngFire;}
-  @keyframes ngPlasma{0%,100%{box-shadow:0 0 0 2px var(--pl),0 0 10px rgba(124,196,255,.55)} 50%{box-shadow:0 0 0 2px #e4f2ff,0 0 24px rgba(169,139,255,.9),0 0 4px #fff}}
-  @keyframes ngFire{0%,100%{box-shadow:0 0 0 2px var(--fire),0 0 12px rgba(255,140,60,.6)} 50%{box-shadow:0 0 0 2px #fff4d0,0 0 28px rgba(255,170,60,.95),0 0 6px #fff}}
+  @keyframes ngPlasma{0%,100%{box-shadow:inset 0 0 0 2px var(--pl),0 0 8px rgba(124,196,255,.45)} 50%{box-shadow:inset 0 0 0 2.5px #e4f2ff,0 0 14px rgba(169,139,255,.7)}}
+  @keyframes ngFire{0%,100%{box-shadow:inset 0 0 0 2px var(--fire),0 0 9px rgba(255,140,60,.5)} 50%{box-shadow:inset 0 0 0 2.5px #fff4d0,0 0 16px rgba(255,170,60,.75)}}
   .pscell.target{background:radial-gradient(closest-side,rgba(124,196,255,.26),rgba(0,0,0,.22));}
   .pscell.target.royal{background:radial-gradient(closest-side,rgba(255,207,90,.30),rgba(0,0,0,.22));}
   .ng-ghost{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:3px; font-weight:900; line-height:1; pointer-events:none;
@@ -321,7 +321,7 @@
   .pstray.jackpot.royal #psCurrent .card:not(.dealin){animation-name:ngTrayJackR;}
   @keyframes ngTrayJack{to{box-shadow:0 0 0 2px #fff,0 0 24px var(--pl2),0 0 46px rgba(124,196,255,.6); transform:translateY(-3px)}}
   @keyframes ngTrayJackR{to{box-shadow:0 0 0 2px #fff,0 0 26px var(--fire),0 0 50px rgba(255,160,60,.65); transform:translateY(-3px)}}
-  .psscore.ngdraw{border-color:var(--pl); background:linear-gradient(180deg,rgba(124,196,255,.24),rgba(169,139,255,.14)); box-shadow:0 0 10px rgba(124,196,255,.45); animation:ngChip 1.15s ease-in-out infinite;}
+  .psscore.ngdraw{border-color:var(--pl); background:linear-gradient(180deg,rgba(124,196,255,.24),rgba(169,139,255,.14)); box-shadow:inset 0 0 0 2px var(--pl),0 0 6px rgba(124,196,255,.28); animation:ngChip 1.15s ease-in-out infinite;}
   .psscore.ngdraw .ab{color:#d8ecff; opacity:1;} .psscore.ngdraw .pts{color:#fff; font-size:11px;}
   .psscore.ngdraw.royal{border-color:var(--fire); background:linear-gradient(180deg,rgba(255,207,90,.32),rgba(255,138,61,.16)); box-shadow:0 0 12px rgba(255,170,60,.55);}
   .psscore.ngdraw.royal .ab{color:#ffe7ae;}
@@ -2369,7 +2369,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v223", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v224", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
