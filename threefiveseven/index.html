@@ -273,6 +273,18 @@
       case 'pair': return 'Pair of '+rplural(k[0]);
       default: return rword(k[0])+' high'; } }
   function evalFor(M, cards, di){ di=di==null?M.di:di; return best(cards, wildRanks(M.o,di), M.o, di===0?3:5); }
+  // Rank a player's EXPOSED up cards as a hand (for the forced rule). All players hold the same
+  // count each deal, so scores are only ever compared like-for-like. 3+ cards reuse best()/eval3;
+  // 1–2 cards get a pair-then-high ordering (a wild pairs with its neighbour / is the top single).
+  function exposedScore(u, wr, o){
+    if(u.length>=3){ var e=best(u, wr, o, 3); return e?e.score:0; }
+    var w=0, nat=[]; u.forEach(function(c){ if(isWild(c,wr)) w++; else nat.push(c.r); });
+    nat.sort(function(a,b){ return b-a; });
+    if(u.length===1) return w?1000:nat[0];
+    if(w>=1) return 100000+(w>=2?14:nat[0]);          // wild makes a pair
+    if(nat[0]===nat[1]) return 100000+nat[0];          // natural pair
+    return nat[0]*15+nat[1];                            // two high cards
+  }
 
   /* ---- the match: a session of games, each played to the legs target ---- */
   function newMatch(opts){ var o=Object.assign({}, DEFAULTS, opts||{}), n=o.players;
@@ -298,8 +310,9 @@
     M.up=null; M.forced=[];
     if(M.o.forced){ var ui=[0,3,5].filter(function(i){ return i<sz; });   // one up card per deal round: idx 0 (the 3), then 3 (the 5), then 5 (the 7)
       M.up=M.hands.map(function(h){ return ui.map(function(i){ return h[i]; }); });
-      var hi=Math.max.apply(null, M.up.map(function(u){ return u[0].r; }));   // forced stays keyed to the opening up card
-      for(p=0;p<M.n;p++) if(M.up[p][0].r===hi) M.forced.push(p); }
+      var wrr=wildRanks(M.o, M.di), es=M.up.map(function(u){ return exposedScore(u, wrr, M.o); });   // forced = highest exposed hand, recomputed each deal
+      var hi=Math.max.apply(null, es);
+      for(p=0;p<M.n;p++) if(es[p]===hi) M.forced.push(p); }
     M.phase='decide'; M.deals++; M.gameDeals++; return M; }
   function isForced(M, p){ return !!M.forced && M.forced.indexOf(p)>=0; }
   function resolve(M, ins){ if(M.phase!=='decide') throw new Error('not deciding');
@@ -495,8 +508,7 @@ function choose(stay){ if(!M||busy||M.phase!=='decide'||anyModal()) return; myPi
   timer=setTimeout(function(){ var res=T.resolve(M, ins); busy=false; myPick=null; save(); sfx('flip');
     render(); bump();
     if(res.gameWinners.length){ var won=res.gameWinners.indexOf(0)>=0; sfx(won?'win':'lose'); if(won) confetti(); }
-    else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad');
-    if(M.phase==='result'){ clearTimeout(autoTimer); autoTimer=setTimeout(function(){ if(M&&M.phase==='result'&&!busy&&!anyModal()) next(); }, prefs.speed==='fast'?1300:prefs.speed==='relaxed'?2600:2000); } }, SPEED[prefs.speed].drop); }
+    else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad'); }, SPEED[prefs.speed].drop); }
 function bump(){ var p=$('pot'); if(!p||reduced()) return; p.classList.add('bump'); setTimeout(function(){ p.classList.remove('bump'); }, 220); }
 function next(){ if(!M||busy) return; clearTimeout(autoTimer); if(M.phase==='gameover'){ showOver(); return; } if(M.phase==='result') dealNext(); }
 function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
@@ -572,7 +584,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v233", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v234", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

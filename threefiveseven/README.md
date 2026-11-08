@@ -139,3 +139,10 @@ The deal animation deals only the *new* cards each round — `dealNext` snapshot
 `dealAnimate(prevKeys)` pitches just the fresh up+down cards (old cards stay put). And the **next deal
 auto-fires** ~2 s after a result (1.3 s fast / 2.6 s relaxed; `autoTimer`, cleared on manual next, new game
 or setup), so a run flows on its own. Game-over still waits for a tap.
+
+## Forced = highest exposed hand (v234)
+Forced-in is now the best *exposed* hand each deal, not the opening up card — recomputed every round as
+up cards accumulate, so the forced seat can change from the 3 to the 5 to the 7 (and a wild in the up
+cards counts, e.g. a wild 7 + Q shows a pair of Queens). `exposedScore(up,wr,o)` ranks the up set: 3+
+cards reuse `best()`/eval3, 1–2 cards get a pair-then-high ordering; highest is forced, ties all forced.
+Auto-advance (v233) is turned off for now — the plumbing (`autoTimer`) stays in place for later.
