@@ -167,3 +167,21 @@ v235's full open-hand exposure spoiled the drop decision — you could see your 
 whole table before choosing. Reverted: during the decision opponents show only their up cards (stud
 reveal, 1/2/3) plus a face-down count chip; full hands still reveal at the showdown. (The `.upm` ring /
 miniHTML param stay in the code, unused, for later.)
+
+## Match-point revamp — stable, layout-neutral, gold (v238)
+The orange "1 TO WIN" badge in the seat was overlapping the pips/net, wrapping to three lines, and —
+worst — adding a line that changed the flagged seat's height, so the board jumped between deals as
+different players hit one-away. Revamped:
+- **Layout-neutral cue.** A one-leg-away opponent is now shown by a gold pulsing seat glow
+  (`.seat.matchpt`, border-color + box-shadow — no size change) and gold pulsing leg pips only. No
+  seat text badge. Every seat stays the same height (~135 px) in every phase, so nothing shifts
+  between deals or between decide and showdown. Verified: seat heights equal and identical across
+  decide/result.
+- **Gold, not orange.** The whole cue matches the game's gold theme instead of the clashing orange
+  block; the pulse (not a static border) distinguishes a match-point seat from a static leg-winner.
+- **"1 TO WIN" pill kept only in the wide "You" row**, where it fits inline and can't shift the board.
+- Pulses respect `prefers-reduced-motion`.
+
+Open for review: opponents one-away now rely on the glow + near-full pips (no text label) — can add a
+layout-neutral text cue if wanted. The decide (large up cards) vs showdown (small full hand) card sizes
+still differ by phase; seat height is stable regardless, but unifying card size is a larger change.

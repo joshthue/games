@@ -59,16 +59,18 @@
   .seat .meta{display:flex; justify-content:center; gap:6px; font-size:11px; align-items:center; font-variant-numeric:tabular-nums;}
   .seat .hn{font-size:10.5px; font-weight:700; color:var(--gold); min-height:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .seat.win{border-color:var(--gold); background:rgba(240,198,116,.14);}
-  .seat.matchpt{border-color:#ff9d5c; box-shadow:0 0 0 2px rgba(255,157,92,.5),0 0 16px rgba(255,157,92,.4); animation:seatpulse 1.4s ease-in-out infinite;}
+  .seat.matchpt{border-color:var(--gold); box-shadow:0 0 0 1px rgba(240,198,116,.45),0 0 16px rgba(240,198,116,.38); animation:seatpulse 1.6s ease-in-out infinite;}
   .seat.matchpt.win{border-color:var(--gold);}
-  @keyframes seatpulse{0%,100%{box-shadow:0 0 0 2px rgba(255,157,92,.42),0 0 13px rgba(255,157,92,.3)} 50%{box-shadow:0 0 0 2px rgba(255,157,92,.92),0 0 26px rgba(255,157,92,.62)}}
+  @keyframes seatpulse{0%,100%{box-shadow:0 0 0 1px rgba(240,198,116,.4),0 0 12px rgba(240,198,116,.26)} 50%{box-shadow:0 0 0 1px rgba(240,198,116,.8),0 0 22px rgba(240,198,116,.5)}}
   .seat.out .row{opacity:.4;} .seat.out .hn{color:var(--cream); opacity:.55;}
   .badge{position:absolute; top:-9px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:900; border-radius:7px; padding:1px 7px; letter-spacing:.4px; white-space:nowrap;}
   .badge.in{background:var(--gold); color:var(--ink);} .badge.out{background:#5b6b64; color:#fff;} .badge.wait{background:var(--cream); color:var(--ink);}
   .delta{font-weight:900;} .delta.neg{color:#ff9a8a;} .delta.leg{color:var(--gold);}
-  .legs{letter-spacing:1px; font-size:11px; color:rgba(247,243,232,.5);} .legs .on{color:var(--gold);} .legs.hot .on{color:#ff9d5c; animation:legpulse 1s ease-in-out infinite;}
-  @keyframes legpulse{0%,100%{opacity:1} 50%{opacity:.5; text-shadow:0 0 7px #ff9d5c}}
-  .legaway{display:inline-block; margin-left:5px; font-size:9.5px; font-weight:900; letter-spacing:.4px; color:#2a1c05; background:#ff9d5c; border-radius:6px; padding:1px 5px; vertical-align:middle; box-shadow:0 0 8px rgba(255,157,92,.55);}
+  .legs{letter-spacing:1px; font-size:11px; color:rgba(247,243,232,.5);} .legs .on{color:var(--gold);} .legs.hot .on{animation:legpulse 1.1s ease-in-out infinite;}
+  @keyframes legpulse{0%,100%{opacity:1} 50%{opacity:.55; text-shadow:0 0 6px var(--gold)}}
+  .legaway{display:inline-block; white-space:nowrap; font-size:8px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--gold); background:rgba(240,198,116,.12); border:1px solid rgba(240,198,116,.65); border-radius:999px; padding:1.5px 7px; vertical-align:middle; box-shadow:0 0 7px rgba(240,198,116,.3);}
+  .me .legaway{margin:0 2px;}
+  .legawayrow{text-align:center; margin-top:3px; line-height:1;}
   .me.matchpt{text-shadow:0 0 8px rgba(255,157,92,.5);}
   @media (prefers-reduced-motion:reduce){ .seat.matchpt,.legs.hot .on{animation:none;} }
   .neg{color:#ff9a8a;} .pos{color:#8fe3a8;}
@@ -400,7 +402,7 @@ function wr(di){ return T.wildRanks(M.o, di==null?M.di:di); }
 function cardEl(c, wild){ var e=document.createElement('div'); e.className='card'+(wild?' wild':''); e.style.color=suitCol(c.s); e.dataset.k=c.r+'_'+c.s;
   e.innerHTML='<span class="ix"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></span><span class="pip">'+T.SUITS[c.s]+'</span>'+(wild?'<span class="wtag">W</span>':''); return e; }
 function miniHTML(c, wild, used, discard, up, upm){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+(upm?' upm':'')+'" data-k="'+c.r+'_'+c.s+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
-function legsHTML(p){ var h='', need=M.o.legs, hot=need-M.legs[p]===1; for(var i=0;i<need;i++) h+=(i<M.legs[p]?'<span class="on">●</span>':'○'); return '<span class="legs'+(hot?' hot':'')+'">'+h+'</span>'+(hot?'<span class="legaway">1 TO WIN</span>':''); }
+function legsHTML(p){ var h='', need=M.o.legs, hot=need-M.legs[p]===1; for(var i=0;i<need;i++) h+=(i<M.legs[p]?'<span class="on">●</span>':'○'); return '<span class="legs'+(hot?' hot':'')+'">'+h+'</span>'; }
 function wildText(di){ var w=wr(di); if(!w.length) return 'No wilds'; return '<b>'+w.map(function(r){ return r+'s'; }).join(', ').replace(/, ([^,]*)$/,' & $1')+'</b> wild'; }
 
 /* ---- setup ---- */
@@ -441,7 +443,7 @@ function render(){ if(!M) return;
       else { cls+=' out'; row=hand.map(function(){ return miniHTML(null); }).join(''); hn='dropped'; }
       if(res.legWinners.indexOf(p)>=0){ cls+=' win'; delta=' <span class="delta leg">+LEG</span>'; }
       else if(res.losers.indexOf(p)>=0){ delta=' <span class="delta neg">−'+money(res.pays?res.pays[p]:res.pay)+'</span>'; } }
-    h+='<div class="'+cls+'">'+badge+'<div class="nm">'+M.names[p]+'</div><div class="row n'+hand.length+'">'+row+'</div><div class="meta">'+legsHTML(p)+'<span>'+net(M.net[p])+'</span></div><div class="hn">'+hn+delta+'</div></div>'; }
+    h+='<div class="'+cls+'">'+badge+'<div class="nm">'+M.names[p]+'</div><div class="row n'+hand.length+'">'+row+'</div><div class="meta">'+legsHTML(p)+'<span>'+net(M.net[p])+'</span></div>'+'<div class="hn">'+hn+delta+'</div></div>'; }
   seats.innerHTML=h;
   var tr='<div class="track">'+T.SIZES.map(function(s,i){ return '<span class="'+(i===di?'on':'')+'">'+s+'</span>'; }).join('')+'</div>';
   $('mid').innerHTML=tr+'<div class="pot" id="pot">'+money(showing&&M.phase==='gameover'?res.won:M.pot)+'</div><div class="potl">'+(M.phase==='gameover'?'pot taken':'game '+M.gameNo+' pot · first to '+M.o.legs+' legs takes it')+'</div><div class="wildl">'+wildText(di)+'</div>';
@@ -451,7 +453,7 @@ function render(){ if(!M) return;
     if(res.legWinners.indexOf(0)>=0) meD='<span class="badge in">+LEG</span>'; else if(res.losers.indexOf(0)>=0) meD='<span class="badge" style="background:#b23b3b;color:#fff">−'+money(res.pays?res.pays[0]:res.pay)+'</span>'; }
   else if(T.isForced(M,0)){ meB='<span class="badge in">FORCED IN</span>'; }
   else if(myPick!=null){ meB='<span class="badge '+(myPick?'in':'out')+'">'+(myPick?'IN':'OUT')+'</span>'; }
-  $('me').innerHTML='<span class="nm">You</span>'+legsHTML(0)+'<span>'+net(M.net[0])+'</span>'+meB+meD;
+  $('me').innerHTML='<span class="nm">You</span>'+legsHTML(0)+(M.o.legs-M.legs[0]===1?'<span class="legaway">1 TO WIN</span>':'')+'<span>'+net(M.net[0])+'</span>'+meB+meD;
   $('me').classList.toggle('matchpt', M.o.legs-M.legs[0]===1);
   var mine=T.evalFor(M, M.hands[0], di);
   renderHand(showing, w, mine);
@@ -594,7 +596,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v237", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v238", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
