@@ -97,3 +97,17 @@ button under the home bar, no hand overflow and no console errors.
 ## Test door
 `window.__TF` exposes `M`, `busy`, `choose(stay)`, `next()`, `start()`, `overOpen()`,
 `again()`.
+
+## Forced play, focal up cards, and the all-out-7 rule (v230)
+- **Up cards are large and focal.** In Forced play each seat shows its one face-up card big
+  (`.mc.up`, enlarged) with a small hidden-count chip (`.mc.back.hid`) for the rest of the hand,
+  so the exposed cards — the real information — read at a glance.
+- **Your hand is clean.** `renderHand` now lays the cards out with no overlap (it shrinks the
+  hand's `--size` to fit) and lifts **only** the face-up card (it "stays up"); everything else
+  sits flat. The old multi-tier best-hand lift that staircased the hand is gone.
+- **Forced auto-in.** When your upcard forces you in there's nothing to decide, so the In/Out
+  buttons hide and a 2-count (`forcedGo`) auto-plays In.
+- **All-out 7 (house rule, Menu → More options, on by default).** If everyone drops on the
+  7-card deal, every hand flips up and the best hand pays half the pot (`resolve` `kind:'allout'`);
+  no leg is awarded and the pot grows. On any other deal, all-drop is still a wash.
+
