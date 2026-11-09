@@ -410,8 +410,11 @@ function stockPointerUp(ev){ if(!stockDrag) return; var sd=stockDrag; stockDrag=
   if(target==='hand'||target==='discard') stockDrawTo(target); }
 function stockPointerDown(ev){ if(!stockCanDraw()) return; ev.preventDefault();
   var top=H.stock[0], ss=$('stockStack'), r=ss.getBoundingClientRect();
+  var known = top && typeof top.r==='number';   // the guest's stock is hidden placeholders — never reveal a face
   var wrap=document.createElement('div'); wrap.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;margin:0;z-index:200;pointer-events:none;';
-  var inner=cardEl(top); inner.className='card stockghost flipping'; inner.style.color=suitCol(top.s);
+  var inner;
+  if(known){ inner=cardEl(top); inner.className='card stockghost flipping'; inner.style.color=suitCol(top.s); }
+  else { inner=cardEl(null,true); inner.className='card stockghost back'; }
   inner.style.width=r.width+'px'; inner.style.height=r.height+'px';
   wrap.appendChild(inner); document.body.appendChild(wrap);
   stockDrag={ card:top, wrap:wrap, startX:ev.clientX, startY:ev.clientY, moved:false };
@@ -617,7 +620,7 @@ var o0=lsGet('gin_online',null), s0=lsGet('gin_game',null);
 if(onlineLive(o0)){ resumeOnline(o0); }
 else if(s0&&s0.G&&!s0.G.over){ resume(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v233", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v234", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

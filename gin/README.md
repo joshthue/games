@@ -103,3 +103,10 @@ into a ghost that follows your finger (`stockPointerDown` → a fixed-position `
 stock draw sets no `tookFromDiscard` lock). Release anywhere else cancels. A plain tap still draws into
 the hand. Drop targets glow while hovering (`.drophot`); `touch-action:none` on the pile stops the page
 scrolling mid-drag. Online falls back to the existing tap path (`stockTap`).
+
+## Stock drag: face-down when the card is hidden (v234)
+v233's stock drag rendered the ghost face-up from `H.stock[0]`. Online as **Guest** you don't hold the
+real deck — the host does — so the top stock card is a hidden placeholder with no rank, and the ghost
+showed the literal text "undefined". A guest must not see the stock card before drawing anyway. Now the
+ghost only flips face-up when the top card is actually known (`typeof top.r==='number'` — solo, and the
+host); otherwise it drags a face-**down** back. Drop-on-hand still sends the draw to the host.
