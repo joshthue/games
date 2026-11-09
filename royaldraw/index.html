@@ -911,6 +911,10 @@ let LV=null, LVSOLVER=null;
 function lvProg(){ let P; try{ P=JSON.parse(localStorage.getItem("pokersquares.levels"))||{}; }catch(e){ P={}; }
   const k=settings.scoring; P[k]=P[k]||{level:1,stars:{}}; return P; }
 function lvSave(P){ try{ localStorage.setItem("pokersquares.levels",JSON.stringify(P)); }catch(e){} }
+// Game Center (app only): report the furthest level reached to the "Level leaderboard". window.GN_GC
+// is defined by the app shim; on the website it is undefined, so all of this is inert.
+function gcHighestLevel(){ let P; try{ P=JSON.parse(localStorage.getItem("pokersquares.levels"))||{}; }catch(e){ P={}; } let m=1; ["american","english"].forEach(k=>{ if(P[k]&&P[k].level>m) m=P[k].level; }); return m; }
+function gcSubmit(){ try{ if(window.GN_GC && GN_GC.authenticated && GN_GC.submitLevel) GN_GC.submitLevel(gcHighestLevel()); }catch(e){} }
 function lvUnlocked(){ return lvProg()[settings.scoring].level; }
 // A fresh deal for level n: 25 cards, the locked squares (from the best board for them), the order
 // the rest come to you, and the full layout the solver starts from.
@@ -976,6 +980,7 @@ function levelJudge(total){
     if(stars===3) NG._earn("stars3"); if(L.n>=5) NG._earn("lv5"); if(L.n>=10) NG._earn("lv10");
     if(!boostUsed && prevStars===0){ grantPrize("undo",1); prizeToast("↩","Undo earned — use it on a no-undo board"); } }
   L.result={total, max, pct, stars, cleared:stars>0, unlocked};
+  gcSubmit();
   // the best board these cards make (respecting the locks) is the end-of-game "Best board" too
   if(L.solve) SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:L.solve.score, grid:alignToMine(L.solve.raw)};
   refreshSolveUI();
@@ -1513,7 +1518,7 @@ function openRules(){
     +'<p class="muted">Switch between the American and English point systems in the Menu. American mirrors real-poker rarity; English rewards how hard each hand is to build inside the grid.</p>';
   openPanel(html,"rules");
 }
-function openMenu(){
+function openMenu(){ gcSubmit();
   const seg=(label,opts,cur,fn)=>'<div class="mlabel">'+label+'</div><div class="seg">'+opts.map(o=>'<button class="'+(cur===o[0]?'on':'')+'" onclick="'+fn+'(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
   const tog=(on,fn,label)=>'<div class="switch" style="display:flex;margin:12px 0 2px;"><button class="toggle '+(on?'on':'')+'" onclick="'+fn+'"></button><span>'+label+'</span></div>';
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Menu</h2>'
@@ -1522,6 +1527,7 @@ function openMenu(){
     +'<button class="setup-opt" style="margin-top:12px" onclick="closeOverlay();newGame();">'+(isLevels()?'New board, same level':'New game')+'</button>'
     +'<button class="setup-opt" onclick="NG.openTrophies()">Trophies</button>'
     +'<button class="setup-opt" onclick="openPrizes()">Prizes</button>'
+    +((window.GN_GC && window.GN_GC.authenticated)?'<button class="setup-opt" onclick="if(window.GN_GC&&GN_GC.showLeaderboard)GN_GC.showLeaderboard()">Level leaderboard ›</button>':'')
     +seg('Theme',[['auto','Auto'],['day','Day'],['night','Night']],settings.theme||'auto','setTheme')
     +seg('Scoring',[['american','American'],['english','English']],settings.scoring,'setScoring')
     +tog(settings.fourColor,'menuToggleFour()','Four-color deck')
@@ -1870,6 +1876,7 @@ function showView(v){
     renderBestBar();
   }
 }
+setTimeout(function(){ try{ gcSubmit(); }catch(e){} }, 3500);
 window.__PS={ get state(){ return {over,VIEW,SOLVE,ANIMATING,grid}; }, showView, startSolve, alignToMine,
   deal:function(cards){ grid=cards.slice(); queue=[]; current=null; lastMove=null; finish(); } };
 
@@ -2421,7 +2428,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v240", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v241", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

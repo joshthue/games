@@ -705,3 +705,11 @@ the *same* board only **once more**. A same-board replay after that consumes the
 "Replay board" / "Same board" button and is enforced in `levelPlay` too. A fresh board ("New board",
 next level, the level map) resets the allowance — the cap is per board, so you can't memorize the
 solution and grind the same deal.
+
+## Game Center level leaderboard (v241, app only)
+The app reports your furthest level reached to a Game Center leaderboard. `gcHighestLevel()` reads the
+max `level` across the American/English level progress; `gcSubmit()` calls `window.GN_GC.submitLevel(n)`
+when the shim has it (app, signed in) — inert on the website. It fires after each level is judged, when
+the Menu opens, and once ~3.5 s after load. The Menu shows a **"Level leaderboard"** button (only in the
+app, once Game Center is signed in) that calls `GN_GC.showLeaderboard()`. Leaderboard ID: `rd_highest_level`
+(create it in App Store Connect; the native plugin's submitScore/showLeaderboard target it via the shim).
