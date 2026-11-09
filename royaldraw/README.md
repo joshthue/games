@@ -310,6 +310,8 @@ scoring system, with a separate ladder for each, and changing it starts a fresh 
 
 **Undo** works on levels 1-3 only. From 4 the button reads "No undo".
 
+**Spending an undo caps the board at two stars.** From level 4 an undo — or revealing the best board, which also spends one — trips the integrity guard `boostUsed`: no third star, no personal best, no stats (the same guard that blocks a power-up board). The results panel shows **↩ Undo used · max ★★** under the stars so a capped board doesn’t read as a bug.
+
 **Results** fit one screen at 320×568:
 - the stars;
 - your points and share of the best board;

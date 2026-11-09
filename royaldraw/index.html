@@ -525,6 +525,7 @@
   @keyframes lvIntro{0%{opacity:0; transform:translate(-50%,-50%) scale(1.35); filter:blur(6px)} 16%{opacity:1; transform:translate(-50%,-50%) scale(1); filter:blur(0)} 78%{opacity:1} 100%{opacity:0; transform:translate(-50%,-62%) scale(.96)}}
   /* results: stars pop, unlock banner */
   .lvstars .lst{display:inline-block; color:rgba(255,255,255,.16);} .lvstars .lst.on{color:var(--gold); text-shadow:0 0 12px rgba(240,198,116,.7); animation:lvStar .5s cubic-bezier(.2,1.7,.4,1) both;}
+  .lvboost{font-size:12px; color:var(--gold); opacity:.78; letter-spacing:.3px; text-align:center; margin:3px 0 0;}
   @keyframes lvStar{from{transform:scale(0) rotate(-40deg); opacity:0}}
   .lvunlock{position:relative; overflow:hidden; margin:6px 0 2px; padding:7px 12px; border-radius:10px; font-weight:800; font-size:14px; color:#2a1c05;
     background:linear-gradient(120deg,#c9973d,#ffe29a,#c9973d); box-shadow:0 0 16px rgba(240,198,116,.45);}
@@ -979,7 +980,7 @@ function levelJudge(total){
   if(stars>0){ R.stars[L.n]=Math.max(prevStars,stars); if(R.level===L.n){ R.level=L.n+1; unlocked=true; } lvSave(P);
     if(stars===3) NG._earn("stars3"); if(L.n>=5) NG._earn("lv5"); if(L.n>=10) NG._earn("lv10");
     if(!boostUsed && prevStars===0){ grantPrize("undo",1); prizeToast("↩","Undo earned — use it on a no-undo board"); } }
-  L.result={total, max, pct, stars, cleared:stars>0, unlocked};
+  L.result={total, max, pct, stars, cleared:stars>0, unlocked, boosted:boostUsed};
   gcSubmit();
   // the best board these cards make (respecting the locks) is the end-of-game "Best board" too
   if(L.solve) SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:L.solve.score, grid:alignToMine(L.solve.raw)};
@@ -1582,6 +1583,7 @@ function levelResultsHTML(){
   return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
     +resHero('Level',L.n,title,chapterOf(L.n).name,r.cleared)
     +'<div class="lvstars">'+[0,1,2].map(i=>'<span class="lst'+(i<r.stars?' on':'')+'" style="animation-delay:'+(250+i*260)+'ms">★</span>').join('')+'</div>'
+    +(r.boosted?'<div class="lvboost">↩ Undo used · max ★★</div>':'')
     +(r.unlocked?'<div class="lvunlock">Level '+(L.n+1)+' unlocked'+(chapterOf(L.n+1).from===L.n+1?' · '+chapterOf(L.n+1).name:'')+'</div>':'')
     +resPts(r.total,pctTxt+' of the best board ('+r.max+')')
     +'<div class="lvbar"><i data-w="'+Math.min(100,r.pct*100).toFixed(1)+'" style="width:'+(reduceMotion()?Math.min(100,r.pct*100).toFixed(1):0)+'%"></i>'+mark(L.pct,'')+mark(L.pct+.05,'s')+mark(L.pct+.10,'s')+'</div>'
@@ -2428,7 +2430,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v241", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v242", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
