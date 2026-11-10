@@ -32,6 +32,22 @@
   .card .wtag{position:absolute; left:calc(3px*var(--size)); bottom:calc(3px*var(--size)); font-size:calc(9px*var(--size)); font-weight:900; background:var(--gold); color:var(--ink); border-radius:4px; padding:0 3px; line-height:1.35;}
   .card .uptag{position:absolute; right:calc(3px*var(--size)); top:calc(3px*var(--size)); font-size:calc(8px*var(--size)); font-weight:900; background:var(--ink); color:var(--cream); border-radius:4px; padding:0 3px; line-height:1.35;}
   .card.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 5px,#215439 5px,#215439 10px); border:2px solid #f7f3e8;}
+  .fester-stage{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:20px; background:radial-gradient(130% 100% at 50% 0%,rgba(12,58,40,.97),rgba(3,16,11,.985));}
+  .fester-stage.show{display:flex;}
+  .fester-inner{width:100%; max-width:430px; text-align:center;}
+  .fester-title{font-family:Georgia,"Times New Roman",serif; font-size:44px; font-weight:800; letter-spacing:7px; color:var(--gold); text-shadow:0 0 26px rgba(240,198,116,.55); margin:0 0 2px;}
+  .fester-sub{font-size:13px; color:rgba(247,243,232,.72); margin-bottom:14px;}
+  .fester-who{font-size:15px; color:var(--cream); margin-bottom:8px;}
+  .fester-mini{display:flex; justify-content:center; padding-left:14px; margin-bottom:6px; min-height:35px;}
+  .fester-bar{font-size:13px; color:rgba(247,243,232,.8); margin-bottom:18px;} .fester-bar b{color:var(--gold);}
+  .fester-cards{display:flex; justify-content:center; gap:6px; flex-wrap:wrap; perspective:1000px; --size:.82; min-height:100px; align-items:center;}
+  .fester-card.up{box-shadow:0 0 14px rgba(240,198,116,.4),0 2px 6px rgba(0,0,0,.5);}
+  .fester-card.used{box-shadow:0 0 20px rgba(240,198,116,.9),0 2px 6px rgba(0,0,0,.5);}
+  .fester-verdict{min-height:44px; margin-top:20px; font-size:21px; font-weight:800; line-height:1.2;}
+  .fester-verdict.win{color:#7ee0a0; text-shadow:0 0 18px rgba(126,224,160,.4);}
+  .fester-verdict.lose{color:#f09090;}
+  .fester-verdict .fname{display:block; font-size:13px; font-weight:600; color:rgba(247,243,232,.72); margin-bottom:4px;}
+  #festerGo{max-width:220px; margin:16px auto 0;}
 
   /* opponents' little cards - fixed size, they only need to be read at showdown */
   .mc{width:25px; height:35px; border-radius:4px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.45); border:1px solid rgba(0,0,0,.2); flex:0 0 auto; margin-left:-14px; display:flex; flex-direction:column; align-items:flex-start; padding:2px 0 0 2px; line-height:1;}
@@ -139,7 +155,7 @@
         <div class="gn-row"><span>Carry cards</span><div class="seg" id="segCarry"><button data-v="on">Keep &amp; draw up</button><button data-v="off">Fresh each deal</button></div></div>
         <div class="gn-row"><span>Wild cards</span><div class="seg" id="segWild"><button data-v="round">Deal's own</button><button data-v="all">3s, 5s &amp; 7s</button><button data-v="none">None</button></div></div>
         <div class="gn-row"><span>3-card deal</span><div class="seg" id="segThree"><button data-v="plain">Pairs &amp; trips</button><button data-v="sf">+ straights, flushes</button></div></div>
-        <div class="gn-row"><span>Alone in</span><div class="seg" id="segLone"><button data-v="leg">Wins a leg</button><button data-v="none">Wins nothing</button></div></div>
+        <div class="gn-row"><span>Alone in</span><div class="seg" id="segLone"><button data-v="leg">Wins a leg</button><button data-v="none">Wins nothing</button><button data-v="fester">Beat the deck</button></div></div>
         <div class="gn-row"><span>Match cap</span><div class="seg" id="segCap"><button data-v="200">$2</button><button data-v="500">$5</button><button data-v="1000">$10</button><button data-v="0">None</button></div></div>
         <div class="gn-row"><span>Forced</span><div class="seg" id="segForced"><button data-v="off">Off</button><button data-v="on">High upcard in</button></div></div>
         <div class="gn-row"><span>All-out 7</span><div class="seg" id="segAllout"><button data-v="on">Best pays ½</button><button data-v="off">Off</button></div></div>
@@ -165,6 +181,7 @@
 </div>
 <div class="gn-build" id="build"></div>
 
+<div class="fester-stage" id="festerStage"><div class="fester-inner"><div class="fester-title">FESTER</div><div class="fester-sub">Alone on the seven — beat the deck or no leg.</div><div class="fester-who" id="festerWho"></div><div class="fester-mini" id="festerMini"></div><div class="fester-bar" id="festerBar"></div><div class="fester-cards" id="festerCards"></div><div class="fester-verdict" id="festerVerdict"></div><button class="bigbtn" id="festerGo" style="display:none">Continue</button></div></div>
 <div class="modal" id="menuModal"><div class="box"><h2>Menu</h2>
   <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
   <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
@@ -179,13 +196,14 @@
   <p>After each deal, everyone decides <b>in</b> or <b>out</b> at the same time — at the table it's a chip in a closed fist, "1, 2, 3, drop." Here you tap In or Out, and the bots have already made up their minds.</p>
   <ul>
     <li><b>Two or more in:</b> best hand wins a <b>leg</b>. Every other player who stayed in <b>matches the pot</b> (up to the match cap), so the pot grows.</li>
-    <li><b>Only one in:</b> they win a leg free (unless "Alone in" is set to win nothing).</li>
+    <li><b>Only one in:</b> on the 3 and 5 they win a leg free; on the <b>7</b> the <b>Fester</b> rule makes them beat the deck (see below). "Alone in" can set this to a free leg, nothing, or Fester.</li>
     <li><b>Nobody in:</b> nothing happens; on to the next deal.</li>
     <li><b>Tie:</b> everyone tied for best gets a leg and nobody tied pays.</li>
   </ul>
   <p><b>Carry cards</b> (More options, on by default): you keep your hand and draw it up through a run — your 3 become 5, then 7 — instead of a fresh deal each time. Turn it off for a fresh shuffle every deal. Either way a new run opens with a fresh 3.</p>
   <p><b>Forced</b> (optional, in More options): each player's first card is dealt face up, and whoever shows the highest upcard — everyone tied for it — must stay in. A forced player who loses pays only <b>half</b> the match.</p>
   <p><b>All-out 7</b> (house rule, on by default): if everyone drops on the 7-card deal, all hands flip up and the <b>best hand pays half the pot</b> — no leg, and the pot grows. Punishes a table full of cowards.</p>
+  <p><b>Fester</b> (the "beat the deck" rule, on by default): if you’re the only one in on the <b>7-card</b> deal, the leg isn’t free — the deck turns its top seven cards face up, one at a time, and you only take the leg if your hand <b>beats Fester’s</b>. Set it under <b>Alone in → Beat the deck</b>.</p>
   <p>First to the legs target (4 by default) takes the whole pot, and a new game starts with a fresh ante.</p>
   <h3>Wild cards</h3>
   <p>By default each deal's own number is wild: <b>3s</b> in the 3-card deal, <b>5s</b> in the 5-card, <b>7s</b> in the 7-card. A wild can be any card, so <b>five of a kind</b> is possible and beats a straight flush. Wilds are outlined in gold.</p>
@@ -205,7 +223,7 @@
 (function(G){
   var SUITS=['♣','♦','♥','♠'], SIZES=[3,5,7];
   var NAMES=['You','Dale','Marv','Arlene','Butch','Deb'];
-  var DEFAULTS={ players:4, legs:4, wilds:'round', three:'plain', lone:'leg', cap:500, ante:25, forced:false, carry:false, allout:true };
+  var DEFAULTS={ players:4, legs:4, wilds:'round', three:'plain', lone:'fester', cap:500, ante:25, forced:false, carry:false, allout:true };
   function rname(r){ return r===14?'A':r===13?'K':r===12?'Q':r===11?'J':String(r); }
   function rword(r){ return r===14?'Ace':r===13?'King':r===12?'Queen':r===11?'Jack':String(r); }
   function rplural(r){ return r===14?'Aces':r===13?'Kings':r===12?'Queens':r===11?'Jacks':r+'s'; }
@@ -332,7 +350,12 @@
     var o=M.o, stay=[], p, res={ di:M.di, ins:ins.slice(), forced:(M.forced||[]).slice(), pays:zeros(M.n), evals:[], legWinners:[], losers:[], pay:0, potBefore:M.pot, gameWinners:[], won:0, kind:'' };
     for(p=0;p<M.n;p++) if(ins[p]){ stay.push(p); res.evals[p]=evalFor(M, M.hands[p]); }
     if(stay.length===0){ if(o.allout && SIZES[M.di]===7){ res.kind='allout'; var abest=-1, abi=0; for(p=0;p<M.n;p++){ res.evals[p]=evalFor(M, M.hands[p]); if(res.evals[p].score>abest){ abest=res.evals[p].score; abi=p; } } var ahalf=Math.round(M.pot/2); res.alloutLoser=abi; res.pay=ahalf; res.pays[abi]=ahalf; M.net[abi]-=ahalf; M.pot+=ahalf; res.losers=[abi]; } else res.kind='none'; }
-    else if(stay.length===1){ res.kind='lone'; if(o.lone==='leg') res.legWinners=[stay[0]]; }
+    else if(stay.length===1){ res.kind='lone'; var lp=stay[0];
+      var canFester=(o.lone==='fester' && SIZES[M.di]===7 && M.deck && M.deck.length>=7);
+      if(canFester){ res.kind='fester'; var fc=M.deck.slice(0,7), fe=evalFor(M, fc);
+        res.fester={ cards:fc, eval:fe }; res.lonePlayer=lp; res.festerBeat=res.evals[lp].score>fe.score;
+        if(res.festerBeat) res.legWinners=[lp]; }
+      else if(o.lone==='leg' || o.lone==='fester') res.legWinners=[lp]; }   // 3 & 5 (or short deck): alone still wins free
     else { res.kind='show'; var top=Math.max.apply(null, stay.map(function(q){ return res.evals[q].score; }));
       res.legWinners=stay.filter(function(q){ return res.evals[q].score===top; });
       res.losers=stay.filter(function(q){ return res.evals[q].score!==top; });
@@ -390,7 +413,7 @@ function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:JSON.p
 function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
 function sfx(n){ if(window.SFX) try{ SFX.play(n); }catch(e){} }
 function reduced(){ return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
-var prefs=Object.assign({players:4, legs:4, wilds:'round', three:'plain', lone:'leg', cap:500, ante:25, forced:false, carry:true, allout:true, level:'normal', speed:'normal', four:false, teach:false}, lsGet('tfs_prefs',{}));
+var prefs=Object.assign({players:4, legs:4, wilds:'round', three:'plain', lone:'fester', cap:500, ante:25, forced:false, carry:true, allout:true, level:'normal', speed:'normal', four:false, teach:false}, lsGet('tfs_prefs',{}));
 function savePrefs(){ lsSet('tfs_prefs', prefs); }
 var stats=Object.assign({games:0, won:0, bestPot:0}, lsGet('tfs_stats',{}));
 
@@ -440,7 +463,7 @@ function render(){ if(!M) return;
       if(p===res.alloutLoser){ cls+=' win'; badge='<span class="badge in">BEST</span>'; delta=' <span class="delta neg">−'+money(res.pays[p])+'</span>'; } else { badge='<span class="badge out">OUT</span>'; } }
     else { var isIn=res.ins[p];
       badge='<span class="badge '+(isIn?'in':'out')+'">'+(res.forced&&res.forced.indexOf(p)>=0?'FORCED':isIn?'IN':'OUT')+'</span>';
-      if(isIn){ var e=res.evals[p], showH=res.kind==='show'; row=hand.map(function(c){ var wd=T.isWild(c,w), inBest=showH&&(wd||e.used.some(function(u){ return T.same(u,c); })); return miniHTML(c, wd, inBest, showH&&!inBest); }).join(''); hn=T.handName(e,true); }
+      if(isIn){ var e=res.evals[p], showH=res.kind==='show'||res.kind==='fester'; row=hand.map(function(c){ var wd=T.isWild(c,w), inBest=showH&&(wd||e.used.some(function(u){ return T.same(u,c); })); return miniHTML(c, wd, inBest, showH&&!inBest); }).join(''); hn=T.handName(e,true); }
       else { cls+=' out'; row=hand.map(function(){ return miniHTML(null); }).join(''); hn='dropped'; }
       if(res.legWinners.indexOf(p)>=0){ cls+=' win'; delta=' <span class="delta leg">+LEG</span>'; }
       else if(res.losers.indexOf(p)>=0){ delta=' <span class="delta neg">−'+money(res.pays?res.pays[p]:res.pay)+'</span>'; } }
@@ -480,6 +503,9 @@ function resultLine(res){
   if(res.kind==='allout'){ var ab=res.alloutLoser, ae=res.evals[ab]; return 'Everyone dropped on the 7! <b>'+who([ab])+'</b> had the best hand ('+T.handName(ae)+') and '+(ab===0?'you pay':'pays')+' half the pot, <b>'+money(res.pays[ab])+'</b>.'; }
   if(res.kind==='none') return 'Everybody dropped. On to the next deal.';
   var over=res.gameWinners.length?' — and '+(res.gameWinners.length>1?'they split':res.gameWinners[0]===0?'you take':'takes')+' the <b>'+money(res.won)+'</b> pot!':'';
+  if(res.kind==='fester'){ var fp=res.ins.indexOf(true), ff=res.fester.eval;
+    if(res.festerBeat) return '<b>'+who([fp])+'</b> faced <b>Fester</b> alone and won — '+T.handName(res.evals[fp])+' tops the deck’s '+T.handName(ff)+'. Leg earned.';
+    return '<b>'+who([fp])+'</b> faced <b>Fester</b> alone and came up short — the deck’s '+T.handName(ff)+' held off '+T.handName(res.evals[fp])+'. No leg.'; }
   if(res.kind==='lone'){ var p=res.ins.indexOf(true); if(!res.legWinners.length) return '<b>'+who([p])+'</b> stayed in alone — no leg for that.';
     return '<b>'+who([p])+'</b> '+(p===0?'were':'was')+' the only one in'+(over?'':' — a free leg')+over+'.'; }
   var L=res.legWinners, e=res.evals[L[0]], s='<b>'+who(L)+'</b> '+(L.length>1?'tie with ':L[0]===0?'win with ':'wins with ')+T.handName(e)+over;
@@ -518,10 +544,11 @@ function clearForce(){ if(forceTimer){ clearTimeout(forceTimer); forceTimer=null
 function forcedGo(){ if(forceTimer) return; forceN=2; (function tick(){ if(!(M && M.phase==='decide' && !busy && T.isForced(M,0) && !anyModal())){ forceTimer=null; return; } if(forceN<=0){ forceTimer=null; choose(true); return; } $('say').innerHTML='You’re <b>forced in</b> — '+forceN+'…'; forceN--; forceTimer=setTimeout(tick, 900); })(); }
 function choose(stay){ if(!M||busy||M.phase!=='decide'||anyModal()) return; myPick=stay; busy=true; sfx('chip'); render();
   var ins=[stay]; for(var p=1;p<M.n;p++) ins.push(T.botIn(M,p,LEVEL));
-  timer=setTimeout(function(){ var res=T.resolve(M, ins); busy=false; myPick=null; save(); sfx('flip');
-    render(); bump();
-    if(res.gameWinners.length){ var won=res.gameWinners.indexOf(0)>=0; sfx(won?'win':'lose'); if(won) confetti(); }
-    else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad'); }, SPEED[prefs.speed].drop); }
+  timer=setTimeout(function(){ var res=T.resolve(M, ins); myPick=null; save();
+    var finish=function(){ busy=false; sfx('flip'); render(); bump();
+      if(res.gameWinners.length){ var won=res.gameWinners.indexOf(0)>=0; sfx(won?'win':'lose'); if(won) confetti(); }
+      else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad'); };
+    if(res.kind==='fester' && !reduced() && document.body.animate){ festerReveal(res, finish); } else finish(); }, SPEED[prefs.speed].drop); }
 function bump(){ var p=$('pot'); if(!p||reduced()) return; p.classList.add('bump'); setTimeout(function(){ p.classList.remove('bump'); }, 220); }
 function next(){ if(!M||busy) return; clearTimeout(autoTimer); if(M.phase==='gameover'){ showOver(); return; } if(M.phase==='result') dealNext(); }
 function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
@@ -531,6 +558,43 @@ function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
   var order=M.names.map(function(nm,p){ return {nm:nm,v:M.net[p],p:p}; }).sort(function(a,b){ return b.v-a.v; });
   $('oTable').innerHTML='<tr><td colspan="2" style="opacity:.7;font-size:12px">Session net after '+M.gameNo+' game'+(M.gameNo>1?'s':'')+'</td></tr>'+order.map(function(o){ return '<tr class="'+(W.indexOf(o.p)>=0?'win':'')+'"><td>'+o.nm+(o.p===0?' (you)':'')+'</td><td>'+net(o.v)+'</td></tr>'; }).join('');
   $('overModal').classList.add('show'); }
+var festerTimer=null;
+function festerReveal(res, done){
+  var st=$('festerStage'), cardsEl=$('festerCards'), vEl=$('festerVerdict'), go=$('festerGo');
+  var lp=res.lonePlayer, w=wr(res.di), me=res.evals[lp], fh=res.fester.cards, fe=res.fester.eval;
+  $('festerWho').innerHTML=(lp===0?'<b>You</b> stayed in alone':'<b>'+M.names[lp]+'</b> stayed in alone')+' on the seven.';
+  var mh=M.hands[lp].slice().sort(function(a,b){ return a.r-b.r||a.s-b.s; });
+  $('festerMini').innerHTML=mh.map(function(c){ return miniHTML(c, T.isWild(c,w), me.used.some(function(u){ return T.same(u,c); }), false); }).join('');
+  $('festerBar').innerHTML=(lp===0?'Your':'Their')+' hand to beat: <b>'+T.handName(me)+'</b>';
+  cardsEl.innerHTML=''; vEl.innerHTML=''; vEl.className='fester-verdict'; go.style.display='none';
+  var els=[]; fh.forEach(function(){ var b=document.createElement('div'); b.className='card back fester-card'; cardsEl.appendChild(b); els.push(b); });
+  st.classList.add('show'); st.onclick=null; try{ sfx('shuffle'); }catch(e){}
+  var i=0, GAP=prefs.speed==='fast'?340:620;
+  function flip(){
+    if(i>=fh.length){ return verdict(); }
+    var el=els[i], c=fh[i], wild=T.isWild(c,w); i++;
+    try{ sfx('flip'); }catch(e){}
+    el.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(90deg)'}],{duration:200,easing:'ease-in',fill:'forwards'}).onfinish=function(){
+      el.className='card'+(wild?' wild':'')+' fester-card up'; el.style.color=suitCol(c.s);
+      el.innerHTML='<span class="ix"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></span><span class="pip">'+T.SUITS[c.s]+'</span>'+(wild?'<span class="wtag">W</span>':'');
+      el.animate([{transform:'rotateY(90deg)'},{transform:'rotateY(0deg)'}],{duration:200,easing:'ease-out',fill:'forwards'}).onfinish=function(){ festerTimer=setTimeout(flip, GAP); };
+    };
+  }
+  function verdict(){
+    els.forEach(function(el,k){ if(fe.used.some(function(u){ return T.same(u,fh[k]); })) el.classList.add('used'); });
+    var win=res.festerBeat, you=(lp===0), subj=you?'You':M.names[lp];
+    var line = win ? (subj+' beat'+(you?'':'s')+' Fester \u2014 '+(you?'the leg is yours!':'leg earned.'))
+                   : ('Fester holds \u2014 '+(you?'no leg this time.':'no leg for '+M.names[lp]+'.'));
+    vEl.innerHTML='<span class="fname">Fester turns up '+T.handName(fe)+'</span>'+line;
+    vEl.className='fester-verdict '+(win?'win':'lose');
+    try{ sfx(win?'good':'bad'); }catch(e){}
+    if(win && you) confetti();
+    var fin=function(){ if(!st.classList.contains('show')) return; if(festerTimer){ clearTimeout(festerTimer); festerTimer=null; } st.classList.remove('show'); st.onclick=null; done(); };
+    go.style.display='block'; go.onclick=fin; st.onclick=fin;
+    festerTimer=setTimeout(fin, 3200);
+  }
+  festerTimer=setTimeout(flip, 520);
+}
 function dealAnimate(prevKeys){
   if(reduced() || !document.body.animate) return;
   var mid=$('mid'); if(!mid) return;
@@ -560,7 +624,7 @@ function confetti(){ if(reduced()) return; var cols=['#e8463a','#f2c531','#3d7fe
 function renderScores(){ if(!M){ $('scoreTable').innerHTML=''; $('logTable').innerHTML=''; return; }
   $('scoreTable').innerHTML='<tr><td style="opacity:.7;font-size:12px">Game '+M.gameNo+' · pot '+money(M.pot)+'</td><td style="opacity:.7;font-size:12px;font-weight:400">legs · net</td></tr>'+M.names.map(function(nm,p){ return '<tr><td>'+nm+(p===0?' (you)':'')+(M.won[p]?' · '+M.won[p]+' pot'+(M.won[p]>1?'s':''):'')+'</td><td>'+M.legs[p]+' · '+net(M.net[p])+'</td></tr>'; }).join('');
   $('logTable').innerHTML=M.log.slice(-10).reverse().map(function(L){ var nm=function(ps){ return ps.map(function(p){ return M.names[p]; }).join(' & '); }, t;
-    if(L.kind==='none') t='all out'; else if(L.kind==='lone') t=nm([L.ins.indexOf(true)])+' alone'+(L.legs.length?' · leg':'');
+    if(L.kind==='none') t='all out'; else if(L.kind==='fester') t=nm([L.ins.indexOf(true)])+' vs Fester'+(L.legs.length?' · leg':' · no leg'); else if(L.kind==='lone') t=nm([L.ins.indexOf(true)])+' alone'+(L.legs.length?' · leg':'');
     else t=nm(L.legs)+' · '+L.hand+(L.losers.length?' · '+L.losers.length+' paid '+money(L.paid!=null?L.paid:L.pay*L.losers.length):'');
     if(L.over.length) t+=' · <b style="color:var(--gold)">took '+money(L.won)+'</b>';
     return '<tr><td>G'+L.g+' · '+L.size+'</td><td>'+t+'</td></tr>'; }).join('') || '<tr><td>No deals yet</td><td></td></tr>';
@@ -597,7 +661,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v239", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v240", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

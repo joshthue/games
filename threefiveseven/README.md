@@ -4,8 +4,8 @@ The bar-table poker game, you vs 3 to 5 bots. Everybody antes, then the deals go
 5 cards, 7 cards** and around again — you **carry** your hand up through a run by default
 (your 3 grow to 5, then 7; a fresh 3 opens each new run). After each deal everyone drops **in** or **out** at once
 (at the table: a chip in a closed fist, "1, 2, 3, drop"). The best hand still in wins a
-**leg**; everyone else who stayed in **matches the pot**, so it grows. Alone in wins a free
-leg; nobody in, next deal. First to the legs target takes the whole pot, and a new game
+**leg**; everyone else who stayed in **matches the pot**, so it grows. Alone in on the 3 or 5 wins a free
+leg; on the 7 the **Fester** rule makes you beat the deck. Nobody in, next deal. First to the legs target takes the whole pot, and a new game
 antes up. Each deal's own number is wild by default (3s, then 5s, then 7s), so five of a
 kind is live and tops a straight flush.
 
@@ -18,7 +18,7 @@ Your net carries across games for the session (Menu → New session resets it).
 - **Wild cards** — the deal's own number / 3s, 5s & 7s every deal / none
 - **3-card deal** — pairs & trips only (default) / also straights & flushes, ranked the
   Three-Card Poker way (straight above flush)
-- **Alone in** — wins a leg (default) / wins nothing
+- **Alone in** — **Fester** (default): alone on the 7 must beat the deck / wins a leg free / wins nothing
 - **Match cap** — $2 / $5 (default) / $10 / none. A loser pays the pot or the cap, whichever
   is less; with no cap the pot grows by the number of losers every showdown.
 - **Forced** — off by default. Each player's first card is dealt face up; whoever shows the
@@ -191,3 +191,21 @@ Per feedback: the session money (`net`) moved out of the pips row to its own lin
 player's name (`.snet`), so it no longer crowds or overflows past the leg pips. And the striped
 face-down count chip is dropped from the decision view — opponents show only their up cards there (the
 hidden count was redundant with the deal size). Full hands still reveal at the showdown.
+
+## The Fester rule — alone on the seven, beat the deck (v240)
+Staying in **alone on the 7-card deal** no longer hands you a free leg. The deck deals its own
+seven off the top (`M.deck.slice(0,7)`), turns them **face up one at a time**, and you take the leg
+only if your best hand **strictly beats** that house hand — "Fester." Lose or tie, no leg.
+
+- Engine: `resolve` gets a `kind:'fester'` branch in the lone case, gated on `o.lone==='fester'` and
+  `SIZES[M.di]===7` (and a ≥7-card deck). It records `res.fester={cards,eval}`, `res.lonePlayer`
+  and `res.festerBeat`, and awards the leg only when `festerBeat`. The **3 and 5** rounds (and a short
+  deck) still give the free leg, so Fester only bites on the seven. Lester's hand uses the deal's own
+  wilds, like yours — a fair fight.
+- UI: `festerReveal()` overlays a full-screen stage (`#festerStage`) showing who's alone, their hand to
+  beat, then seven face-down cards that flip over (`rotateY`, swapped at 90°) on a slow cadence, and
+  the verdict. Reduced motion / no Web-Animations skips straight to the result; the narration still
+  states the outcome. Bots alone on the seven face Fester too.
+- **Alone in** is now a three-way setting: **Fester** (default), **wins a leg free**, **wins nothing**.
+- Open: Fester currently costs only the leg on a loss — no pot match. Add a pot-match penalty if the
+  table wants real teeth.
