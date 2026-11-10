@@ -237,3 +237,13 @@ the **“1 TO WIN”** pill, now pulsing to match. All of it stills under reduce
 When the all-out-7 showdown ends with someone paying half the pot, the reveal no longer auto-dismisses
 — it holds on the verdict until you tap **Continue** (or the screen). A pot being paid is worth a beat.
 (The Fester reveal still auto-advances, since no money changes hands there.)
+
+## Random opponents + a bankroll that sticks (v245)
+- **Roster.** `NAMES` holds `You` plus a pool of bots (Dave Kim, Radz, Hoff, Snippy, Ring Tone, Big Steve,
+  Vinny). `pickNames(n)` shuffles the pool and seats `n-1` of them each new session, so the table changes
+  from game to game. Max players is still 6, so five of the seven show per session. Resume keeps the
+  session's opponents; only a new session re-draws.
+- **Bankroll.** The player's running net now persists in `localStorage` (`tfs_bank`) and is carried into
+  `M.net[0]` at the start of every session, so antes and winnings accrue over time instead of resetting to
+  $0 each "New session." `save()` writes it on every deal. **Menu → Reset bankroll** zeroes it (and the
+  current session's total). Only the player's money carries; the random bots start fresh each session.

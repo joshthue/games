@@ -220,6 +220,8 @@
   <div class="switchrow"><span>Sound</span><button class="toggle" id="soundTog"></button></div>
   <div class="gn-row"><span>Speed</span><div class="seg" id="segS2"><button data-v="relaxed">Relaxed</button><button data-v="normal">Normal</button><button data-v="fast">Fast</button></div></div>
   <div id="sizeRows"></div>
+  <div class="gn-row"><span>Bankroll</span><span id="bankVal" style="font-weight:800;font-variant-numeric:tabular-nums"></span></div>
+  <button class="bigbtn ghost" id="menuResetBank">Reset bankroll</button>
   <button class="bigbtn ghost" id="menuNew">New session</button><button class="bigbtn ghost" id="menuRules">Rules</button>
   <a class="bigbtn ghost" href="../">Back to all games</a><button class="bigbtn" data-close>Close</button></div></div>
 
@@ -254,7 +256,7 @@
    ============================================================ */
 (function(G){
   var SUITS=['♣','♦','♥','♠'], SIZES=[3,5,7];
-  var NAMES=['You','Dale','Marv','Arlene','Butch','Deb'];
+  var NAMES=['You','Dave Kim','Radz','Hoff','Snippy','Ring Tone','Big Steve','Vinny'];
   var DEFAULTS={ players:4, legs:4, wilds:'round', three:'plain', lone:'fester', cap:500, ante:25, forced:false, carry:false, allout:true };
   function rname(r){ return r===14?'A':r===13?'K':r===12?'Q':r===11?'J':String(r); }
   function rword(r){ return r===14?'Ace':r===13?'King':r===12?'Queen':r===11?'Jack':String(r); }
@@ -472,7 +474,9 @@ function renderSetup(){ function bind(id,key,num){ seg(id,prefs[key],function(v)
   $('sizeRowsSetup').innerHTML=CARDSIZE.rowsHTML();
   var s=lsGet('tfs_game',null); $('resumeBtn').classList.toggle('hide', !(s&&s.M)); }
 function showSetup(){ clearTimeout(timer); clearTimeout(autoTimer); renderSetup(); GNSETUP.show('setup'); }
+function pickNames(n){ var b=T.NAMES.slice(1); for(var i=b.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=b[i]; b[i]=b[j]; b[j]=t; } return [T.NAMES[0]].concat(b.slice(0,n-1)); }
 function start(){ M=T.newMatch({players:prefs.players, legs:prefs.legs, wilds:prefs.wilds, three:prefs.three, lone:prefs.lone, cap:prefs.cap, ante:prefs.ante, forced:prefs.forced, carry:prefs.carry, allout:prefs.allout}); LEVEL=prefs.level;
+  M.names=pickNames(M.n); M.net[0]=lsGet('tfs_bank',0);   // random opponents; carry the player's running bankroll across sessions
   GNSETUP.hide('setup'); closeAll(); newGame(); }
 function newGame(){ T.startGame(M); sfx('chip'); dealNext(); }
 function dealNext(){ clearForce(); clearTimeout(autoTimer);
@@ -481,7 +485,7 @@ function dealNext(){ clearForce(); clearTimeout(autoTimer);
   T.deal(M); myPick=null; busy=false; coachMemo=null; sfx('shuffle'); save(); render(); dealAnimate(prevKeys); }
 function resume(){ var s=lsGet('tfs_game',null); if(!s||!s.M){ start(); return; } M=s.M; LEVEL=s.level||'normal'; myPick=null; busy=false; GNSETUP.hide('setup'); closeAll();
   if(M.phase==='ante'||!M.hands) dealNext(); else { render(); if(M.phase==='gameover') showOver(); } }
-function save(){ if(M) lsSet('tfs_game',{M:M, level:LEVEL}); }
+function save(){ if(M){ lsSet('tfs_game',{M:M, level:LEVEL}); lsSet('tfs_bank', M.net[0]); } }
 
 /* ---- table ---- */
 function render(){ if(!M) return;
@@ -722,12 +726,13 @@ function closeAll(){ [].forEach.call(document.querySelectorAll('.modal.show'),fu
 $('rulesBtn').onclick=function(){ $('rulesModal').classList.add('show'); };
 $('menuRules').onclick=function(){ $('menuModal').classList.remove('show'); $('rulesModal').classList.add('show'); };
 $('scoreBtn').onclick=function(){ renderScores(); $('scoreModal').classList.add('show'); };
-function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); $('sizeRows').innerHTML=CARDSIZE.rowsHTML(); }
+function paintMenu(){ $('teachTog').classList.toggle('on',!!prefs.teach); $('fourTog').classList.toggle('on',!!prefs.four); $('soundTog').classList.toggle('on', !!(window.SFX&&SFX.isOn())); seg('segS2',prefs.speed,function(v){ prefs.speed=v; savePrefs(); paintMenu(); }); $('sizeRows').innerHTML=CARDSIZE.rowsHTML(); $('bankVal').innerHTML=net(lsGet('tfs_bank',0)); }
 $('menuBtn').onclick=function(){ paintMenu(); $('menuModal').classList.add('show'); };
 $('teachTog').onclick=function(){ prefs.teach=!prefs.teach; savePrefs(); paintMenu(); relayout(); };
 $('fourTog').onclick=function(){ prefs.four=!prefs.four; savePrefs(); paintMenu(); render(); };
 $('soundTog').onclick=function(){ if(window.SFX) SFX.setOn(!SFX.isOn()); paintMenu(); };
 $('menuNew').onclick=function(){ $('menuModal').classList.remove('show'); clearTimeout(timer); clearTimeout(autoTimer); clearForce(); busy=false; try{ localStorage.removeItem('tfs_game'); }catch(e){} showSetup(); };
+$('menuResetBank').onclick=function(){ if(!confirm('Reset your bankroll to $0?')) return; lsSet('tfs_bank',0); if(M){ M.net[0]=0; save(); render(); } paintMenu(); };
 $('inBtn').onclick=function(){ choose(true); }; $('outBtn').onclick=function(){ choose(false); }; $('nextBtn').onclick=next;
 $('oAgain').onclick=function(){ $('overModal').classList.remove('show'); newGame(); };
 $('oSetup').onclick=function(){ $('overModal').classList.remove('show'); try{ localStorage.removeItem('tfs_game'); }catch(e){} showSetup(); };
@@ -738,7 +743,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v244", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v245", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
