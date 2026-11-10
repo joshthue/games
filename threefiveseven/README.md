@@ -209,3 +209,11 @@ only if your best hand **strictly beats** that house hand — "Fester." Lose or 
 - **Alone in** is now a three-way setting: **Fester** (default), **wins a leg free**, **wins nothing**.
 - Open: Fester currently costs only the leg on a loss — no pot match. Add a pot-match penalty if the
   table wants real teeth.
+
+## All-out 7 gets the drama too (v241)
+When everyone drops on the 7, the hands no longer snap face-up all at once. `alloutReveal()` overlays a
+stage (`#alloutStage`) with one row per player and deals the reveal **around the table**: column by
+column, every seat flips its next card (mini `rotateY`, swapped at 90°), so all hands build together
+like a live showdown. When the last card lands it names each hand, rings the winner's row, and shows
+who pays half the pot. Reduced motion / no Web-Animations skips to the result. The engine is unchanged
+(`kind:'allout'`, best hand pays half) — this is purely the reveal.

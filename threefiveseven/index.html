@@ -48,6 +48,24 @@
   .fester-verdict.lose{color:#f09090;}
   .fester-verdict .fname{display:block; font-size:13px; font-weight:600; color:rgba(247,243,232,.72); margin-bottom:4px;}
   #festerGo{max-width:220px; margin:16px auto 0;}
+  .ao-stage{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center; padding:18px; background:radial-gradient(130% 100% at 50% 0%,rgba(12,58,40,.97),rgba(3,16,11,.985)); overflow-y:auto;}
+  .ao-stage.show{display:flex;}
+  .ao-inner{width:100%; max-width:470px; text-align:center;}
+  .ao-title{font-family:Georgia,"Times New Roman",serif; font-size:30px; font-weight:800; letter-spacing:3px; color:var(--gold); text-shadow:0 0 22px rgba(240,198,116,.5); margin:0 0 2px;}
+  .ao-sub{font-size:12.5px; color:rgba(247,243,232,.72); margin-bottom:12px;}
+  .ao-rows{display:flex; flex-direction:column; gap:7px; margin:8px 0 4px;}
+  .ao-row{display:flex; align-items:center; gap:7px; padding:6px 8px; border-radius:11px; background:rgba(0,0,0,.24); border:2px solid transparent; transition:border-color .3s,background .3s;}
+  .ao-row.win{border-color:var(--gold); background:rgba(240,198,116,.14);}
+  .ao-name{width:54px; text-align:left; font-weight:800; font-size:13px; color:var(--cream); flex:0 0 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .ao-cards{display:flex; perspective:800px; flex:1 1 auto; justify-content:center; gap:1px;}
+  .ao-cards .mc{margin-left:0;}
+  .ao-hand{width:66px; text-align:right; font-size:10.5px; font-weight:700; color:var(--gold); flex:0 0 auto; opacity:0; transition:opacity .35s;}
+  .ao-row.shown .ao-hand{opacity:1;}
+  .ao-verdict{min-height:40px; margin-top:14px; font-size:19px; font-weight:800; line-height:1.25;}
+  .ao-verdict.win{color:#7ee0a0; text-shadow:0 0 18px rgba(126,224,160,.4);}
+  .ao-verdict.lose{color:#f09090;}
+  .ao-verdict .fname{display:block; font-size:12.5px; font-weight:600; color:rgba(247,243,232,.72); margin-bottom:4px;}
+  #alloutGo{max-width:220px; margin:14px auto 0;}
 
   /* opponents' little cards - fixed size, they only need to be read at showdown */
   .mc{width:25px; height:35px; border-radius:4px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.45); border:1px solid rgba(0,0,0,.2); flex:0 0 auto; margin-left:-14px; display:flex; flex-direction:column; align-items:flex-start; padding:2px 0 0 2px; line-height:1;}
@@ -182,6 +200,7 @@
 <div class="gn-build" id="build"></div>
 
 <div class="fester-stage" id="festerStage"><div class="fester-inner"><div class="fester-title">FESTER</div><div class="fester-sub">Alone on the seven — beat the deck or no leg.</div><div class="fester-who" id="festerWho"></div><div class="fester-mini" id="festerMini"></div><div class="fester-bar" id="festerBar"></div><div class="fester-cards" id="festerCards"></div><div class="fester-verdict" id="festerVerdict"></div><button class="bigbtn" id="festerGo" style="display:none">Continue</button></div></div>
+<div class="ao-stage" id="alloutStage"><div class="ao-inner"><div class="ao-title">ALL OUT ON THE SEVEN</div><div class="ao-sub">Nobody stayed — every hand flips up. Best hand pays half the pot.</div><div class="ao-rows" id="alloutRows"></div><div class="ao-verdict" id="alloutVerdict"></div><button class="bigbtn" id="alloutGo" style="display:none">Continue</button></div></div>
 <div class="modal" id="menuModal"><div class="box"><h2>Menu</h2>
   <div class="switchrow"><span>Teaching mode</span><button class="toggle" id="teachTog"></button></div>
   <div class="switchrow"><span>Four-color deck</span><button class="toggle" id="fourTog"></button></div>
@@ -548,7 +567,9 @@ function choose(stay){ if(!M||busy||M.phase!=='decide'||anyModal()) return; myPi
     var finish=function(){ busy=false; sfx('flip'); render(); bump();
       if(res.gameWinners.length){ var won=res.gameWinners.indexOf(0)>=0; sfx(won?'win':'lose'); if(won) confetti(); }
       else if(res.legWinners.indexOf(0)>=0) sfx('good'); else if(res.losers.indexOf(0)>=0) sfx('bad'); };
-    if(res.kind==='fester' && !reduced() && document.body.animate){ festerReveal(res, finish); } else finish(); }, SPEED[prefs.speed].drop); }
+    if(res.kind==='fester' && !reduced() && document.body.animate){ festerReveal(res, finish); }
+    else if(res.kind==='allout' && !reduced() && document.body.animate){ alloutReveal(res, finish); }
+    else finish(); }, SPEED[prefs.speed].drop); }
 function bump(){ var p=$('pot'); if(!p||reduced()) return; p.classList.add('bump'); setTimeout(function(){ p.classList.remove('bump'); }, 220); }
 function next(){ if(!M||busy) return; clearTimeout(autoTimer); if(M.phase==='gameover'){ showOver(); return; } if(M.phase==='result') dealNext(); }
 function showOver(){ var res=M.last, W=res.gameWinners, me=W.indexOf(0)>=0;
@@ -594,6 +615,49 @@ function festerReveal(res, done){
     festerTimer=setTimeout(fin, 3200);
   }
   festerTimer=setTimeout(flip, 520);
+}
+function alloutReveal(res, done){
+  var st=$('alloutStage'), rowsEl=$('alloutRows'), vEl=$('alloutVerdict'), go=$('alloutGo');
+  var w=wr(res.di), order=[]; for(var p=1;p<M.n;p++) order.push(p); order.push(0);
+  rowsEl.innerHTML=''; vEl.innerHTML=''; vEl.className='ao-verdict'; go.style.display='none';
+  var rowObjs=[];
+  order.forEach(function(p){
+    var row=document.createElement('div'); row.className='ao-row'; row.dataset.p=p;
+    var nm=document.createElement('span'); nm.className='ao-name'; nm.textContent=(p===0?'You':M.names[p]);
+    var cw=document.createElement('div'); cw.className='ao-cards';
+    var hn=document.createElement('span'); hn.className='ao-hand';
+    var hand=M.hands[p].slice().sort(function(a,b){ return a.r-b.r||a.s-b.s; });
+    var cards=hand.map(function(c){ var el=document.createElement('div'); el.className='mc back ao-card'; cw.appendChild(el); return {el:el,c:c}; });
+    row.appendChild(nm); row.appendChild(cw); row.appendChild(hn); rowsEl.appendChild(row);
+    rowObjs.push({p:p,row:row,hn:hn,cards:cards});
+  });
+  st.classList.add('show'); st.onclick=null; try{ sfx('shuffle'); }catch(e){}
+  var seq=[], maxc=0; rowObjs.forEach(function(r){ if(r.cards.length>maxc) maxc=r.cards.length; });
+  for(var ci=0; ci<maxc; ci++) rowObjs.forEach(function(r){ if(r.cards[ci]) seq.push(r.cards[ci]); });
+  var STEP=prefs.speed==='fast'?80:112;
+  seq.forEach(function(it,i){ setTimeout(function(){
+    var el=it.el, c=it.c, wild=T.isWild(c,w);
+    try{ sfx('flip'); }catch(e){}
+    el.animate([{transform:'rotateY(0deg)'},{transform:'rotateY(90deg)'}],{duration:140,easing:'ease-in',fill:'forwards'}).onfinish=function(){
+      el.className='mc ao-card'+(wild?' wild':''); el.style.color=suitCol(c.s);
+      el.innerHTML='<b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i>';
+      el.animate([{transform:'rotateY(90deg)'},{transform:'rotateY(0deg)'}],{duration:140,easing:'ease-out',fill:'forwards'});
+    };
+  }, i*STEP); });
+  var total=(seq.length-1)*STEP+360;
+  festerTimer=setTimeout(verdict, total+480);
+  function verdict(){
+    var lp=res.alloutLoser, le=res.evals[lp], you=(lp===0), who=you?'You':M.names[lp];
+    rowObjs.forEach(function(r){ r.hn.textContent=T.handName(res.evals[r.p], true); r.row.classList.add('shown');
+      r.cards.forEach(function(it){ if(res.evals[r.p].used.some(function(u){ return T.same(u,it.c); })) it.el.classList.add('used'); });
+      if(r.p===lp) r.row.classList.add('win'); });
+    vEl.innerHTML='<span class="fname">Best hand: '+T.handName(le)+'</span>'+who+' pay'+(you?'':'s')+' half the pot, <b>'+money(res.pays[lp])+'</b>.';
+    vEl.className='ao-verdict '+(you?'lose':'win');
+    try{ sfx(you?'bad':'good'); }catch(e){}
+    var fin=function(){ if(!st.classList.contains('show')) return; if(festerTimer){ clearTimeout(festerTimer); festerTimer=null; } st.classList.remove('show'); st.onclick=null; done(); };
+    go.style.display='block'; go.onclick=fin; st.onclick=fin;
+    festerTimer=setTimeout(fin, 3400);
+  }
 }
 function dealAnimate(prevKeys){
   if(reduced() || !document.body.animate) return;
@@ -661,7 +725,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v240", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v241", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
