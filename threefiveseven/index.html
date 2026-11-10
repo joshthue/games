@@ -104,20 +104,23 @@
   .seat .meta{display:flex; justify-content:center; gap:6px; font-size:11px; align-items:center; font-variant-numeric:tabular-nums;}
   .seat .hn{font-size:11.5px; font-weight:700; color:var(--gold); min-height:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .seat.win{border-color:var(--gold); background:rgba(240,198,116,.14);}
-  .seat.matchpt{border-color:var(--gold); box-shadow:0 0 0 1px rgba(240,198,116,.45),0 0 16px rgba(240,198,116,.38); animation:seatpulse 1.6s ease-in-out infinite;}
+  .seat.matchpt{border-color:var(--gold); box-shadow:0 0 0 2px rgba(240,198,116,.6),0 0 24px rgba(240,198,116,.55); animation:seatpulse 1.2s ease-in-out infinite;}
   .seat.matchpt.win{border-color:var(--gold);}
-  @keyframes seatpulse{0%,100%{box-shadow:0 0 0 1px rgba(240,198,116,.4),0 0 12px rgba(240,198,116,.26)} 50%{box-shadow:0 0 0 1px rgba(240,198,116,.8),0 0 22px rgba(240,198,116,.5)}}
+  @keyframes seatpulse{0%,100%{box-shadow:0 0 0 2px rgba(240,198,116,.45),0 0 14px rgba(240,198,116,.3)} 50%{box-shadow:0 0 0 2px rgba(240,198,116,1),0 0 30px rgba(240,198,116,.72)}}
   .seat.out .row{opacity:.4;} .seat.out .hn{color:var(--cream); opacity:.55;}
   .badge{position:absolute; top:-9px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:900; border-radius:7px; padding:1px 7px; letter-spacing:.4px; white-space:nowrap;}
   .badge.in{background:var(--gold); color:var(--ink);} .badge.out{background:#5b6b64; color:#fff;} .badge.wait{background:var(--cream); color:var(--ink);}
   .delta{font-weight:900;} .delta.neg{color:#ff9a8a;} .delta.leg{color:var(--gold);}
   .legs{letter-spacing:1px; font-size:11px; color:rgba(247,243,232,.5);} .legs .on{color:var(--gold);} .legs.hot .on{animation:legpulse 1.1s ease-in-out infinite;}
   @keyframes legpulse{0%,100%{opacity:1} 50%{opacity:.55; text-shadow:0 0 6px var(--gold)}}
-  .legaway{display:inline-block; white-space:nowrap; font-size:8px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--gold); background:rgba(240,198,116,.12); border:1px solid rgba(240,198,116,.65); border-radius:999px; padding:1.5px 7px; vertical-align:middle; box-shadow:0 0 7px rgba(240,198,116,.3);}
+  .legaway{display:inline-block; white-space:nowrap; font-size:8px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--gold); background:rgba(240,198,116,.16); border:1px solid rgba(240,198,116,.8); border-radius:999px; padding:1.5px 7px; vertical-align:middle; box-shadow:0 0 7px rgba(240,198,116,.3); animation:awaypulse 1.1s ease-in-out infinite;}
   .me .legaway{margin:0 2px;}
   .legawayrow{text-align:center; margin-top:3px; line-height:1;}
   .me.matchpt{text-shadow:0 0 8px rgba(255,157,92,.5);}
-  @media (prefers-reduced-motion:reduce){ .seat.matchpt,.legs.hot .on{animation:none;} }
+  .seat.matchpt .nm{color:var(--gold); text-shadow:0 0 9px rgba(240,198,116,.55);}
+  .seat .awayflag{position:absolute; top:-9px; right:5px; z-index:4; font-size:8.5px; font-weight:900; letter-spacing:.9px; color:#2a1c05; background:linear-gradient(180deg,#ffe8ad,var(--gold) 55%,#e0a94e); border-radius:999px; padding:2px 7px; box-shadow:0 0 12px rgba(240,198,116,.9); animation:awaypulse 1.05s ease-in-out infinite;}
+  @keyframes awaypulse{0%,100%{transform:scale(1); box-shadow:0 0 8px rgba(240,198,116,.6)} 50%{transform:scale(1.12); box-shadow:0 0 18px rgba(240,198,116,1)}}
+  @media (prefers-reduced-motion:reduce){ .seat.matchpt,.legs.hot .on,.awayflag,.legaway{animation:none;} }
   .neg{color:#ff9a8a;} .pos{color:#8fe3a8;}
 
   .mid{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:200px;}
@@ -485,7 +488,7 @@ function render(){ if(!M) return;
   var showing=M.phase==='result'||M.phase==='gameover', res=showing?M.last:null, di=showing?res.di:M.di, w=wr(di);
   var seats=$('seats'), h='';
   seats.classList.toggle('c2', M.n-1===4);
-  for(var p=1;p<M.n;p++){ var hand=M.hands[p], cls='seat'+(M.o.legs-M.legs[p]===1?' matchpt':''), badge='', row='', hn='', delta='';
+  for(var p=1;p<M.n;p++){ var hand=M.hands[p], away=(M.o.legs-M.legs[p]===1), cls='seat'+(away?' matchpt':''), badge='', row='', hn='', delta='';
     if(!showing){ var fz=T.isForced(M,p); badge = fz ? '<span class="badge in">FORCED</span>' : busy ? '<span class="badge wait">?</span>' : '';
       if(M.up){ row = M.up[p].map(function(c){ return miniHTML(c, T.isWild(c,w), false, false, true); }).join(''); } else { row=hand.map(function(){ return miniHTML(null); }).join(''); } }
     else if(res.kind==='allout'){ var ea=res.evals[p]; row=hand.map(function(c){ var wd=T.isWild(c,w), used=wd||ea.used.some(function(u){ return T.same(u,c); }); return miniHTML(c, wd, used, !used); }).join(''); hn=T.handName(ea,true);
@@ -496,7 +499,7 @@ function render(){ if(!M) return;
       else { cls+=' out'; row=hand.map(function(){ return miniHTML(null); }).join(''); hn='dropped'; }
       if(res.legWinners.indexOf(p)>=0){ cls+=' win'; delta=' <span class="delta leg">+LEG</span>'; }
       else if(res.losers.indexOf(p)>=0){ delta=' <span class="delta neg">−'+money(res.pays?res.pays[p]:res.pay)+'</span>'; } }
-    h+='<div class="'+cls+'">'+badge+'<div class="nm">'+M.names[p]+'</div><div class="snet">'+net(M.net[p])+'</div><div class="row n'+hand.length+'">'+row+'</div><div class="meta">'+legsHTML(p)+'</div><div class="hn">'+hn+delta+'</div></div>'; }
+    h+='<div class="'+cls+'">'+badge+(away?'<span class="awayflag">1 AWAY</span>':'')+'<div class="nm">'+M.names[p]+'</div><div class="snet">'+net(M.net[p])+'</div><div class="row n'+hand.length+'">'+row+'</div><div class="meta">'+legsHTML(p)+'</div><div class="hn">'+hn+delta+'</div></div>'; }
   seats.innerHTML=h;
   var tr='<div class="track">'+T.SIZES.map(function(s,i){ return '<span class="'+(i===di?'on':'')+'">'+s+'</span>'; }).join('')+'</div>';
   $('mid').innerHTML=tr+'<div class="pot" id="pot">'+money(showing&&M.phase==='gameover'?res.won:M.pot)+'</div><div class="potl">'+(M.phase==='gameover'?'pot taken':'game '+M.gameNo+' pot · first to '+M.o.legs+' legs takes it')+'</div><div class="wildl">'+wildText(di)+'</div>';
@@ -735,7 +738,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v242", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v243", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

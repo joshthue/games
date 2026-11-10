@@ -226,3 +226,9 @@ who pays half the pot. Reduced motion / no Web-Animations skips to the result. T
   grow at `min-width:380px` (28×42) and again at `430px` (31×46), with the 5- and 7-card overlaps
   loosened to match. Below 380px the geometry is unchanged (the 7-card hand is tuned to fit a 320px
   seat), so only the font nudges there. Seat name and hand-name text bumped too.
+
+## More spice at match point (v243)
+Someone one leg from the pot now reads at a glance. Each opponent seat at match point gets a pulsing
+gold **“1 AWAY”** corner flag (`.awayflag`, `position:absolute` — so seat heights never change,
+per the v238 rule), its name turns gold, and the seat glow is brighter and faster. Your own row keeps
+the **“1 TO WIN”** pill, now pulsing to match. All of it stills under reduced motion.
