@@ -232,3 +232,8 @@ Someone one leg from the pot now reads at a glance. Each opponent seat at match 
 gold **“1 AWAY”** corner flag (`.awayflag`, `position:absolute` — so seat heights never change,
 per the v238 rule), its name turns gold, and the seat glow is brighter and faster. Your own row keeps
 the **“1 TO WIN”** pill, now pulsing to match. All of it stills under reduced motion.
+
+## All-out reveal waits for you (v244)
+When the all-out-7 showdown ends with someone paying half the pot, the reveal no longer auto-dismisses
+— it holds on the verdict until you tap **Continue** (or the screen). A pot being paid is worth a beat.
+(The Fester reveal still auto-advances, since no money changes hands there.)

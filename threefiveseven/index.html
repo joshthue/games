@@ -669,7 +669,7 @@ function alloutReveal(res, done){
     try{ sfx(you?'bad':'good'); }catch(e){}
     var fin=function(){ if(!st.classList.contains('show')) return; if(festerTimer){ clearTimeout(festerTimer); festerTimer=null; } st.classList.remove('show'); st.onclick=null; done(); };
     go.style.display='block'; go.onclick=fin; st.onclick=fin;
-    festerTimer=setTimeout(fin, 3400);
+    /* paying half the pot -- no auto-continue; wait for the tap */
   }
 }
 function dealAnimate(prevKeys){
@@ -738,7 +738,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v243", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v244", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
