@@ -71,7 +71,7 @@
   .mc{width:25px; height:35px; border-radius:4px; background:var(--cream); color:var(--ink); position:relative; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.45); border:1px solid rgba(0,0,0,.2); flex:0 0 auto; margin-left:-14px; display:flex; flex-direction:column; align-items:flex-start; padding:2px 0 0 2px; line-height:1;}
   .row.n3 .mc{margin-left:2px;} .row.n5 .mc{margin-left:-9px;}
   .mc:first-child{margin-left:0;}
-  .mc b{font-size:calc(11.5px*var(--cardtext,1)); font-weight:800; letter-spacing:-.05em;} .mc i{font-style:normal; font-size:calc(10px*var(--cardtext,1)); margin-top:1px;}
+  .mc b{font-size:calc(12px*var(--cardtext,1)); font-weight:900; letter-spacing:-.05em;} .mc i{font-style:normal; font-size:calc(10.5px*var(--cardtext,1)); margin-top:1px;}
   .mc.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 3px,#215439 3px,#215439 6px); border:1.5px solid #f7f3e8;}
   .mc.wild{box-shadow:0 0 0 2px var(--gold);}
   .mc.upm{box-shadow:inset 0 0 0 2px var(--gold);}
@@ -82,17 +82,27 @@
   .seat .row .mc.up:first-child{margin-left:0;}
   .mc.up b{font-size:calc(15px*var(--cardtext,1)); letter-spacing:-.03em;} .mc.up i{font-size:calc(12px*var(--cardtext,1)); margin-top:2px;}
     .mc.back.hid{width:22px; height:34px; margin-left:3px; display:flex; align-items:center; justify-content:center; color:var(--cream); opacity:.7; font-weight:800; font-size:14px;}
+  @media (min-width:380px){
+    .seat .mc{width:28px; height:42px; border-radius:5px;}
+    .seat .mc b{font-size:calc(14px*var(--cardtext,1));} .seat .mc i{font-size:calc(11.5px*var(--cardtext,1));}
+    .seat .row.n5 .mc{margin-left:-7px;}
+  }
+  @media (min-width:430px){
+    .seat .mc{width:31px; height:46px;}
+    .seat .mc b{font-size:calc(15px*var(--cardtext,1));} .seat .mc i{font-size:calc(12px*var(--cardtext,1));}
+    .seat .row.n5 .mc{margin-left:-7px;} .seat .row.n7 .mc{margin-left:-15px;}
+  }
 
   .stage{flex:1 1 auto; min-height:0; position:relative;}
   .table{position:absolute; left:50%; top:50%; transform-origin:50% 50%; display:flex; flex-direction:column; align-items:center; gap:10px;}
   .seats{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; width:100%;}
   .seat{width:calc((100% - 16px)/3); background:rgba(0,0,0,.22); border:2px solid transparent; border-radius:12px; padding:5px 4px 5px; text-align:center; position:relative; min-height:128px;}
   .seats.c2 .seat{width:calc((100% - 8px)/2);}
-  .seat .nm{font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .seat .nm{font-size:13.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .seat .snet{font-size:11px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; margin:1px 0 2px; line-height:1;}
   .seat .row{display:flex; justify-content:center; margin:4px 0 3px; min-height:70px; align-items:flex-end;}
   .seat .meta{display:flex; justify-content:center; gap:6px; font-size:11px; align-items:center; font-variant-numeric:tabular-nums;}
-  .seat .hn{font-size:10.5px; font-weight:700; color:var(--gold); min-height:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .seat .hn{font-size:11.5px; font-weight:700; color:var(--gold); min-height:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .seat.win{border-color:var(--gold); background:rgba(240,198,116,.14);}
   .seat.matchpt{border-color:var(--gold); box-shadow:0 0 0 1px rgba(240,198,116,.45),0 0 16px rgba(240,198,116,.38); animation:seatpulse 1.6s ease-in-out infinite;}
   .seat.matchpt.win{border-color:var(--gold);}
@@ -320,7 +330,7 @@
       case 'trips': return 'Three '+rplural(k[0]);
       case 'two': return 'Two pair, '+rplural(k[0])+' & '+rplural(k[1]);
       case 'pair': return 'Pair of '+rplural(k[0]);
-      default: return rword(k[0])+' high'; } }
+      default: return rword(k[0]); } }   // high card = just the rank (so "8 high" never reads as an 8-high straight)
   function evalFor(M, cards, di){ di=di==null?M.di:di; return best(cards, wildRanks(M.o,di), M.o, di===0?3:5); }
   // Rank a player's EXPOSED up cards as a hand (for the forced rule). All players hold the same
   // count each deal, so scores are only ever compared like-for-like. 3+ cards reuse best()/eval3;
@@ -725,7 +735,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v241", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v242", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>

@@ -217,3 +217,12 @@ column, every seat flips its next card (mini `rotateY`, swapped at 90°), so all
 like a live showdown. When the last card lands it names each hand, rings the winner's row, and shows
 who pays half the pot. Reduced motion / no Web-Animations skips to the result. The engine is unchanged
 (`kind:'allout'`, best hand pays half) — this is purely the reveal.
+
+## Readability: bare high card, bigger bot cards (v242)
+- **High card shows just the rank.** `handName`'s default case returned `"<rank> high"` (e.g. "8 high"),
+  which reads as "8-high straight" at a glance and invites a fast misplay. It now returns the bare rank
+  ("8", "King") — a made straight is still "<rank>-high straight", so the two never blur.
+- **Opponent seat cards scale up on roomier phones.** The mini cards (`.mc`) and their rank/suit text
+  grow at `min-width:380px` (28×42) and again at `430px` (31×46), with the 5- and 7-card overlaps
+  loosened to match. Below 380px the geometry is unchanged (the 7-card hand is tuned to fit a 320px
+  seat), so only the font nudges there. Seat name and hand-name text bumped too.
