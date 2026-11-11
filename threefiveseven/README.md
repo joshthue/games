@@ -67,7 +67,7 @@ raised together while the two discards dim back, along with a short hand name an
 the payment. When you drop, your own hand is shown muted (desaturated, not transparent) so you
 can see what you folded. The center shows the
 3·5·7 track, the pot and what's wild. Your hand is always face up, with your best hand
-named under it.
+named under it. At showdown the seven seat cards overlap tightly, so a two-digit **10** shrinks a step (`.mc b.t2`, tagged in `miniHTML`) to stay legible where the next card would otherwise clip it (v260).
 
 **Teaching mode** puts a coach line on every decision, built from the bots' own
 `strength`/`threshold`: what your hand beats and what a steady player wants here

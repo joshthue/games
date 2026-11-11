@@ -72,6 +72,8 @@
   .row.n3 .mc{margin-left:2px;} .row.n5 .mc{margin-left:-9px;}
   .mc:first-child{margin-left:0;}
   .mc b{font-size:calc(12px*var(--cardtext,1)); font-weight:900; letter-spacing:-.05em;} .mc i{font-style:normal; font-size:calc(10.5px*var(--cardtext,1)); margin-top:1px;}
+  .mc b.t2{font-size:calc(9.5px*var(--cardtext,1)); letter-spacing:-.12em;}
+  .mc.up b.t2{font-size:calc(12px*var(--cardtext,1)); letter-spacing:-.08em;}
   .mc.back{background:repeating-linear-gradient(45deg,#2b6a4a,#2b6a4a 3px,#215439 3px,#215439 6px); border:1.5px solid #f7f3e8;}
   .mc.wild{box-shadow:0 0 0 2px var(--gold);}
   .mc.upm{box-shadow:inset 0 0 0 2px var(--gold);}
@@ -85,11 +87,13 @@
   @media (min-width:380px){
     .seat .mc{width:28px; height:42px; border-radius:5px;}
     .seat .mc b{font-size:calc(14px*var(--cardtext,1));} .seat .mc i{font-size:calc(11.5px*var(--cardtext,1));}
+    .seat .mc b.t2{font-size:calc(11px*var(--cardtext,1));}
     .seat .row.n5 .mc{margin-left:-7px;}
   }
   @media (min-width:430px){
     .seat .mc{width:31px; height:46px;}
     .seat .mc b{font-size:calc(15px*var(--cardtext,1));} .seat .mc i{font-size:calc(12px*var(--cardtext,1));}
+    .seat .mc b.t2{font-size:calc(12px*var(--cardtext,1));}
     .seat .row.n5 .mc{margin-left:-7px;} .seat .row.n7 .mc{margin-left:-15px;}
   }
 
@@ -459,7 +463,7 @@ function suitCol(s){ return prefs.four?FOURCOL[s]:(s===1||s===2?'#c22':'#1c2a24'
 function wr(di){ return T.wildRanks(M.o, di==null?M.di:di); }
 function cardEl(c, wild){ var e=document.createElement('div'); e.className='card'+(wild?' wild':''); e.style.color=suitCol(c.s); e.dataset.k=c.r+'_'+c.s;
   e.innerHTML='<span class="ix"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></span><span class="pip">'+T.SUITS[c.s]+'</span>'+(wild?'<span class="wtag">W</span>':''); return e; }
-function miniHTML(c, wild, used, discard, up, upm){ if(!c) return '<div class="mc back"></div>'; return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+(upm?' upm':'')+'" data-k="'+c.r+'_'+c.s+'" style="color:'+suitCol(c.s)+'"><b>'+T.rname(c.r)+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
+function miniHTML(c, wild, used, discard, up, upm){ if(!c) return '<div class="mc back"></div>'; var rn=T.rname(c.r); return '<div class="mc'+(wild?' wild':'')+(used?' used':'')+(discard?' discard':'')+(up?' up':'')+(upm?' upm':'')+'" data-k="'+c.r+'_'+c.s+'" style="color:'+suitCol(c.s)+'"><b'+(rn.length>1?' class="t2"':'')+'>'+rn+'</b><i>'+T.SUITS[c.s]+'</i></div>'; }
 function legsHTML(p){ var h='', need=M.o.legs, hot=need-M.legs[p]===1; for(var i=0;i<need;i++) h+=(i<M.legs[p]?'<span class="on">●</span>':'○'); return '<span class="legs'+(hot?' hot':'')+'">'+h+'</span>'; }
 function wildText(di){ var w=wr(di); if(!w.length) return 'No wilds'; return '<b>'+w.map(function(r){ return r+'s'; }).join(', ').replace(/, ([^,]*)$/,' & $1')+'</b> wild'; }
 
@@ -743,7 +747,7 @@ window.__TF={ get M(){ return M; }, get busy(){ return busy; }, choose:choose, n
 var s0=lsGet('tfs_game',null);
 if(s0&&s0.M){ resume(); fit(); } else { showSetup(); }
 if("serviceWorker" in navigator){ addEventListener("load", function(){ navigator.serviceWorker.register("../sw.js", {updateViaCache:"none"}).catch(function(){}); }); }
-(function(){ var V="v245", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
+(function(){ var V="v260", d=new Date(document.lastModified); var when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"}); $("build").textContent="build "+V+(when?" · "+when:""); })();
 })();
 </script>
 </body>
