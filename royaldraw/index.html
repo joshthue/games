@@ -1528,7 +1528,7 @@ function openMenu(){ gcSubmit();
     +'<button class="setup-opt" style="margin-top:12px" onclick="closeOverlay();newGame();">'+(isLevels()?'New board, same level':'New game')+'</button>'
     +'<button class="setup-opt" onclick="NG.openTrophies()">Trophies</button>'
     +'<button class="setup-opt" onclick="openPrizes()">Prizes</button>'
-    +((window.GN_GC && window.GN_GC.authenticated)?'<button class="setup-opt" onclick="if(window.GN_GC&&GN_GC.showLeaderboard)GN_GC.showLeaderboard()">Level leaderboard ›</button>':'')
+    +((window.GN_GC && window.GN_GC.showLeaderboard)?'<button class="setup-opt" onclick="if(window.GN_GC&&GN_GC.showLeaderboard)GN_GC.showLeaderboard()">Level leaderboard ›</button>':'')
     +seg('Theme',[['auto','Auto'],['day','Day'],['night','Night']],settings.theme||'auto','setTheme')
     +seg('Scoring',[['american','American'],['english','English']],settings.scoring,'setScoring')
     +tog(settings.fourColor,'menuToggleFour()','Four-color deck')
@@ -1803,7 +1803,7 @@ function solveBoxHTML(){
     +'<div class="bar"><i style="width:'+prog+'%"></i></div></div>'
     +'<div class="stats-note">'+(!done?'Searching for the best board these 25 cards make…':(SOLVE.score<=mine?'That\'s the best board these cards make.':'Max is the best board these same 25 cards can make.'))+'</div>';
 }
-function renderBestBar(){ renderBestBar_(); try{ fitPS(true); }catch(e){} }   // the bar appearing after a game can push the page; refit
+function renderBestBar(){ renderBestBar_(); try{ fitPS(); }catch(e){} }   // non-forced: the forced refit only ever fired mid-play (fitPS bails once over), where it recomputed the shrink against the shifting draw-odds readouts and jittered the cards. The _k guard now holds the size steady while placing.
 function renderBestBar_(){
   const el=document.getElementById("psBestBar"); if(!el) return;
   if(!over || !SOLVE){ el.innerHTML=""; return; }
@@ -2079,13 +2079,17 @@ var NG=(function(){
   /* ---- sound: a small spatial synth beside sfx.js, behind the same mute ---- */
   let AC=null, OUT=null, NB=null;
   function ac(){ if(!(window.SFX && SFX.isOn())) return null;
-    if(AC){ if(AC.state==="suspended") AC.resume(); return AC; }
+    if(AC){ if(AC.state!=="running") AC.resume(); return AC; }
     const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
     try{ AC=new C(); }catch(e){ return null; }
     OUT=AC.createGain(); OUT.gain.value=.45; const comp=AC.createDynamicsCompressor(); OUT.connect(comp); comp.connect(AC.destination);
     NB=AC.createBuffer(1,AC.sampleRate,AC.sampleRate); const d=NB.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
     return AC; }
   addEventListener("pointerdown",function(){ ac(); },{passive:true});
+  // iOS parks the AudioContext (suspended/interrupted) when the app backgrounds; resume on return so sound survives an app switch.
+  function wake(){ if(AC && AC.state!=="running") AC.resume(); }
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden) wake(); });
+  addEventListener("pageshow",wake); addEventListener("focus",wake);
   function bus(pan){ const g=AC.createGain();
     if(AC.createStereoPanner){ const p=AC.createStereoPanner(); p.pan.value=Math.max(-1,Math.min(1,pan||0)); g.connect(p); p.connect(OUT); } else g.connect(OUT);
     return g; }
@@ -2430,7 +2434,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v242", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v261", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

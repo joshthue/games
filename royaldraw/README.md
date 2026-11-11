@@ -233,6 +233,9 @@ a sub-bass hit, confetti and a 4-pulse haptic. 2.6 s, and it doesn't block taps.
 **Sound and haptics**
 - `NG.snd` is a small WebAudio synth beside `sfx.js`, behind the same mute (`SFX.isOn()`): whoosh,
   panned thud, heartbeat, riser, shimmer, fizzle, boom, tally ticks, trophy ping.
+- The context resumes on any non-running state and on `visibilitychange`/`pageshow`/`focus` (v261): iOS
+  parks a backgrounded `AudioContext` as `interrupted`, not just `suspended`, so the old suspended-only
+  check left the sound dead after an app switch until reload.
 - Haptics use `navigator.vibrate` where it exists. On iPhone it's Safari's `<input type=checkbox
   switch>`, which ticks the Taptic Engine when toggled from a tap (iOS 18+). That only fires inside a
   gesture, so on iPhone you feel the pick-up and the drop, not the delayed effects.
@@ -676,8 +679,9 @@ their two-column landscape (see iPad above). The native iOS app matches: `Info.p
 - **The board stopped jumping.** `fitPS` was re-measuring and re-applying the cell height on
   *every* card placement, which flashed the board a pixel or two between cards. It now caches a
   key of `innerWidth × innerHeight × tablet × card-size` and only re-fits when that changes
-  (resize, rotate, card-size), skipping the per-placement re-fit. `renderBestBar` forces a re-fit
-  when the end-of-game bar appears.
+  (resize, rotate, card-size), skipping the per-placement re-fit. (v261: `renderBestBar` was still
+  forcing a re-fit every render — it runs on *every* render, not only at end-of-game — which
+  defeated the cache and brought the per-placement flash back; that call is now non-forced.)
 - **The best board has to be earned.** Viewing the optimal arrangement post-game used to be a free
   toggle. Now `showView('best')` spends one **undo** to unlock it for that board (`bestRevealed`),
   with a toast; the Best button and results button show a ↩, and the bar explains the cost or,
@@ -712,6 +716,8 @@ solution and grind the same deal.
 The app reports your furthest level reached to a Game Center leaderboard. `gcHighestLevel()` reads the
 max `level` across the American/English level progress; `gcSubmit()` calls `window.GN_GC.submitLevel(n)`
 when the shim has it (app, signed in) — inert on the website. It fires after each level is judged, when
-the Menu opens, and once ~3.5 s after load. The Menu shows a **"Level leaderboard"** button (only in the
-app, once Game Center is signed in) that calls `GN_GC.showLeaderboard()`. Leaderboard ID: `rd_highest_level`
+the Menu opens, and once ~3.5 s after load. The Menu shows a **"Level leaderboard"** button (shown in the app
+whenever the shim exposes `showLeaderboard`) that calls `GN_GC.showLeaderboard()`. (v261: it no longer
+gates on the `authenticated` flag — that could read false at the instant the Menu rendered and hide the
+button even when signed in; the native side handles auth/presentation on tap.) Leaderboard ID: `rd_highest_level`
 (create it in App Store Connect; the native plugin's submitScore/showLeaderboard target it via the shim).
