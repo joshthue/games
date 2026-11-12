@@ -359,7 +359,8 @@ Two kinds:
 
 **Where it applies:**
 - **Levels:** every 5th level is **Blitz** (`levelClock`). Levels 5, 15, 25… use the shot clock;
-  10, 20… use the board clock. Their targets are 4 points of percentage lower than the curve.
+  10, 20… use the board clock. Their targets are 4 points of percentage lower than the curve. The board
+  clock tightens from 120 s (level 10) down to 90 s by level 70, then steps to 80 s from level 150 (v262).
 - **Free play:** Menu → Clock: Off / 8 s a card / 90 s board (`settings.clock`). Changing it starts
   a new game.
   - A timed board keeps its own best (`pokersquares.clockbest`, keyed `shot:american` and so on) and

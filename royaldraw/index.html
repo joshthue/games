@@ -905,7 +905,8 @@ function levelClock(n){ return n%5!==0?"off":(n%10===0?"board":"shot"); }
 // down to 3 s at 55. Board clock (10, 20, 30…): 90 s, 5 s less every 10 levels, down to 60 s at 70.
 // v218: more time, by request. Shot clock 12 s at level 5, a second less every ten levels, never under 5 s
 // (from 75). Board clock 120 s at level 10, 5 s less every ten levels, never under 90 s (from 70).
-function levelSecs(n){ const k=levelClock(n); return k==="shot"?Math.max(5,12-Math.floor((n-5)/10)):(k==="board"?Math.max(90,120-5*Math.floor((n-10)/10)):0); }
+// v262: for strong players at the top, the board clock drops to 80 s from level 150 (140 stays 90).
+function levelSecs(n){ const k=levelClock(n); return k==="shot"?Math.max(5,12-Math.floor((n-5)/10)):(k==="board"?(n>=150?80:Math.max(90,120-5*Math.floor((n-10)/10))):0); }
 function clockLabel(k,secs){ return k==="shot"?secs+' s a card':secs+' s board'; }
 function isLevels(){ return settings.mode==="levels"; }
 let LV=null, LVSOLVER=null;
@@ -2434,7 +2435,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v261", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v262", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
