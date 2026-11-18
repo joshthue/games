@@ -313,7 +313,7 @@ scoring system, with a separate ladder for each, and changing it starts a fresh 
 
 **Undo** works on levels 1-3 only. From 4 the button reads "No undo".
 
-**Spending an undo caps the board at two stars.** From level 4 an undo — or revealing the best board, which also spends one — trips the integrity guard `boostUsed`: no third star, no personal best, no stats (the same guard that blocks a power-up board). The results panel shows **↩ Undo used · max ★★** under the stars so a capped board doesn’t read as a bug.
+**Spending an undo caps the board at two stars.** From level 4 an undo — or revealing the best board, which also spends one — trips the integrity guard `boostUsed`: no third star, no personal best, no stats (the same guard that blocks a power-up board). The results panel shows the icons of every prize spent, e.g. **↩ 🔥 Prizes used · max ★★ · no prizes won**, under the stars so a capped board doesn’t read as a bug (v263; was “↩ Undo used · max ★★”).
 
 **Results** fit one screen at 320×568:
 - the stars;
@@ -665,7 +665,7 @@ The Iron Table and Summit chapter captions, the Rules and the Menu follow suit. 
 HUD and results already read the real time. Tested: 12 s at level 5 and 5 s by 95, 120 s at 10 and 90 s
 from 70; a free-play card times out at 12 s and the next gets a fresh 12.
 
-## Prizes (campaign power-ups) — in progress
+## Prizes (campaign power-ups) — the Undo step (v220–v221; all seven since v263, see the end)
 Campaign power-ups stored in `localStorage` under `pokersquares.prizes` (`{stash, streak}`). A per-board `boostUsed` flag extends the bot-board guard: a boosted board earns no third star (caps at 2), no personal best, no stats and no trophies — so a prize is truly spent and can't refund itself. **Undo is live (v221):** clearing a *new* level cleanly grants +1 undo (first clear only, so replays can't farm it); on a no-undo board (level 4+, clock off) the Undo button reads “Undo ×N” and spends one. Menu → **Prizes** lists the stash. Peek / burn / freeze / hint / swap / wild and the three-star streak pick-a-prize are next. Full design: the Games project doc `royal-draw-prizes-sketch.md`.
 
 ## Phones lock to portrait (v228)
@@ -722,3 +722,67 @@ whenever the shim exposes `showLeaderboard`) that calls `GN_GC.showLeaderboard()
 gates on the `authenticated` flag — that could read false at the instant the Menu rendered and hide the
 button even when signed in; the native side handles auth/presentation on tap.) Leaderboard ID: `rd_highest_level`
 (create it in App Store Connect; the native plugin's submitScore/showLeaderboard target it via the shim).
+
+## Prizes, all seven (v263)
+Every prize now earns and spends. Levels only: Free play and the shared high scores never see one.
+The single source of truth is `PRIZE_DEF` (icon, name, what it does, how it's won); the Prizes panel,
+the starter panel, the strip, the confirm sheet and the results all read it.
+
+**The strip.** A row of chips under the board on Levels boards (`#przStrip`, `renderStrip()`): icon,
+name and a gold count badge, only for prizes you own that work on this board (Freeze only on Blitz;
+Swap once there is a non-locked card to move; Peek while cards remain; Burn while spare cards remain).
+Undo isn't in the strip; the Undo button still spends those ("Undo ×N"). The row is always there on
+Levels (a muted line when empty), so the board size never changes mid-board; `fitPS`'s key includes
+the mode. Short phones (≤700 px tall) drop the labels and tighten the row; at 320×568 nothing scrolls.
+On a modern phone (390×844 and up) the board doesn't shrink at all; on an SE-size phone (375×667) the
+cells go from 62 to 53 px. Landscape tablets put the strip in the left column (`grid-area:prz`).
+
+**Using one.** The first prize on a clean board asks first (`przConfirm`): it says the board will cap
+at two stars and win no prizes. After that, prizes on the same board fire on one tap. Swap and Wild
+have their own confirm step (pick the target / pick the card), so they never show the sheet.
+- 👁️ **Peek** — the next two cards show in the tray ("Next 7♥ K♠") until you place a card.
+- 🔥 **Burn** — the tray card burns away and a fresh card comes from the 27 the level didn't deal
+  (`spareCards()`: deck minus `LV.deal` minus earlier burns). A shot clock restarts for the new card.
+- 💡 **Hint** — runs the best-board search (`runSolver`, short budget: `iters/maxRuns/minRuns/budget`
+  on the message) with every placed card fixed and the tray card plus the rest of the deal free; the
+  square it puts the tray card in glows with a bulb. The clock pauses while it thinks (~1 s).
+- ❄️ **Freeze** — Blitz only: the clock stops (ring turns ice blue) until you place a card.
+- 🔀 **Swap** — tap Swap, tap a placed card, tap any square: an empty one moves it, a filled one
+  trades them. Pre-filled (locked) squares can't move. Nothing is spent until the move happens, so
+  tapping Swap again cancels for free. The clock pauses while you pick; Undo can't reach past a swap.
+- 🃏 **Wild** — a picker (13 ranks × 4 suits) turns the tray card into any card, as a **new** object
+  (`{r,s,wild:true}`), so replaying the same board deals the original. A wild wears a gold ★. Five of a
+  kind (only possible with a wild) scores as four of a kind (`scoreHand`, the solver's `ev`).
+
+Peek, Hint and Freeze last for one card: `place()` clears them. Undo clears a hint. After a Burn or a
+Wild the board's cards aren't the deal any more (`PRZ.altered`), so the end-of-board best board is
+searched from the cards actually on the board (`startSolve`, holding a level's pre-filled squares);
+the target and the stars still come from the level's original deal.
+
+**Winning them** (`prizeEarns`, at `levelJudge`). Only on the first clear of a level and only on a
+clean board (no prize spent), one of each kind the board earned: clear → ↩ Undo; a Blitz level →
+❄️ Freeze; a flush → 👁️ Peek; a full house, four of a kind or straight flush → 🔥 Burn; a straight →
+💡 Hint. The results list them ("Prizes won: ↩ +1 · 👁️ +1"). A boosted board pays nothing.
+
+**The streak → pick-a-prize.** Three first-time three-star clears in a row, all clean (`przStreak`).
+Anything else breaks it: a 2-star clear, a miss, a replay of a level already at three stars, or
+leaving a level mid-board (`newGame` checks). The results show the streak ("2 of 3"); at three a
+**Pick a prize** button opens three face-down cards (`PICK_POOL`: Swap ×1, Wild ×1, Freeze ×3,
+shuffled). Pick one, it flips, the others reveal. A pick you don't take waits (`pick` in the store)
+and is offered from the results and Menu → Prizes. The random pick is earned only, never sold.
+
+**Starter kit.** Once per device, everyone gets 3 each of Undo, Peek, Burn, Hint and Freeze plus 1
+Swap and 1 Wild (`STARTER_KIT`, `starter` timestamp in the store), with a one-time "New: Prizes"
+panel before the first deal.
+
+**Store.** `pokersquares.prizes` = `{stash:{undo,peek,burn,freeze,hint,swap,wild}, streak, pick, starter}`.
+Per-board state is `PRZ` (`przFresh()`, reset in `newGame`). The Perfect Board trophy now also skips a
+boosted board.
+
+**Tested** headless (Chromium, 320×568 / 360×740 / 390×844 / 744×1133 night / 1024×768): every
+prize spends and decrements, the confirm shows once per board, Burn draws outside the deal, Hint
+lands on an empty square, Swap moves/cancels for free and blocks placing and Undo, Wild plays as the
+chosen card, Freeze holds the shot clock to the millisecond and lets go on placement; three perfect
+first clears in a row (levels 4, 5 Blitz, 6) pay Undo/Peek/Burn/Hint (+ Freeze on 5), count the
+streak 1-2-3 and raise a pick; a replay pays nothing and resets the streak; quitting mid-board resets
+it; Free play hides the strip; no page errors.

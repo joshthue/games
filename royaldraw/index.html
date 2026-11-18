@@ -711,6 +711,65 @@
   .ngtro .l1{font-size:12px;} .ngtro .l2{font-size:16px;}
   @media (max-width:360px){ .psboard{grid-template-columns:repeat(5,minmax(0,1fr)) minmax(32px,auto);} .psscore .ab{font-size:11px;} .psscore .pts{font-size:14px;} .btn.sm{padding:8px 12px;} }
 </style>
+<style id="prizes-v263">
+  /* v263: prizes — the strip under the board (Levels only), the hint glow, swap targets, the
+     wild marker, the pick-a-prize cards and the Wild picker. Decoration only: no rule reads it. */
+  .przstrip{display:flex; justify-content:center; align-items:center; gap:7px; flex-wrap:nowrap; max-width:440px; min-height:48px; margin:10px auto 0;}
+  .przstrip.off{display:none;}
+  .przstrip .przempty{font-size:13px; opacity:.6; text-align:center; line-height:1.3;}
+  .przc{position:relative; flex:0 1 58px; min-width:0; height:46px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:3px 4px;
+    background:rgba(0,0,0,.28); color:var(--cream); border:1px solid rgba(240,198,116,.45); border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,.3);}
+  .przc .pi{font-size:19px; line-height:1;} .przc .pl{font-size:11px; font-weight:700; letter-spacing:.2px; opacity:.85; line-height:1.1; white-space:nowrap;}
+  .przc .pn{position:absolute; top:-7px; right:-5px; min-width:19px; height:19px; padding:0 5px; border-radius:10px; background:var(--gold); color:var(--ink); font-size:12px; font-weight:900; line-height:19px; text-align:center;}
+  .przc.on{background:rgba(240,198,116,.28); border-color:var(--gold); box-shadow:0 0 12px rgba(240,198,116,.55);}
+  .przc.busy .pi{animation:przSpin 1s linear infinite;}
+  @keyframes przSpin{to{transform:rotate(360deg)}}
+  @media (max-width:360px){ .przstrip{gap:5px;} .przc .pl{font-size:10px;} }
+  /* short phones (SE-size): icon + count only, and a tighter row, so the cards keep their room */
+  @media (max-height:700px){ .przstrip{min-height:40px; margin-top:6px;} .przc{height:38px;} .przc .pl{display:none;} .przc .pi{font-size:20px;} .mode-levels .controls{margin-top:8px;} }
+  @media (max-height:600px){ .przstrip{min-height:36px; margin-top:4px;} .przc{height:34px;} .przc .pi{font-size:18px;} .przc .pn{top:-5px; height:17px; line-height:17px; min-width:17px;} }
+  html.tablet .przc{height:64px; flex-basis:84px; border-radius:16px;} html.tablet .przc .pi{font-size:28px;} html.tablet .przc .pl{font-size:15px;} html.tablet .przstrip{min-height:68px; gap:12px; max-width:none;}
+  /* hint: the square the best board puts this card in */
+  .pscell.empty.hintc{border:2px solid var(--gold); background:rgba(240,198,116,.26); animation:przHint .9s ease-in-out infinite alternate;}
+  .pscell .hintb{font-size:22px; pointer-events:none;}
+  @keyframes przHint{from{box-shadow:0 0 3px rgba(240,198,116,.35)} to{box-shadow:0 0 18px rgba(240,198,116,.95)}}
+  /* swap: pick a placed card, then a square */
+  .pscell.filled.swpok{cursor:pointer; outline:2px dashed rgba(240,198,116,.8); outline-offset:-3px;}
+  .pscell.filled.swpsel{outline:3px solid var(--gold); outline-offset:-3px; box-shadow:0 0 14px rgba(240,198,116,.8);}
+  .pscell.empty.swpto{border-color:var(--gold); background:rgba(240,198,116,.14); cursor:pointer;}
+  /* a wild card wears a star */
+  .wildmk{position:absolute; top:2px; right:3px; font-size:11px; line-height:1; color:#b8860b; pointer-events:none;}
+  .card .wildmk{font-size:calc(13px * var(--size)); top:4px; right:5px;}
+  /* peek: the next two cards, small, in the tray */
+  .pkc{display:inline-block; margin:0 2px; padding:1px 6px; border-radius:5px; background:var(--cream); font-weight:800; font-size:15px; line-height:1.3; text-shadow:none; box-shadow:0 1px 3px rgba(0,0,0,.4);}
+  /* freeze: the clock ring goes ice blue and stops */
+  .ngclock.frozen rect{stroke:#8fd3ff !important; filter:drop-shadow(0 0 6px rgba(143,211,255,.9)) !important; animation:none !important;}
+  /* results */
+  .lvprz{font-size:14px; text-align:center; margin:6px 0 0; color:var(--cream);} .lvprz b{color:var(--gold);}
+  .btn.lvpick{display:block; width:100%; margin:10px 0 2px; font-size:16px;}
+  .stickbtns{position:sticky; bottom:-18px; margin:0 -18px -18px; padding:12px 18px 18px; background:linear-gradient(180deg,rgba(12,61,44,0),#0c3d2c 35%);}
+  html[data-theme="night"] .stickbtns{background:linear-gradient(180deg,rgba(26,22,18,0),#1a1612 35%);}
+  /* pick-a-prize: three face-down cards */
+  .pkrow{display:flex; justify-content:center; gap:14px; margin:18px 0 10px;}
+  .pkcard{width:88px; height:124px; padding:0; background:none; box-shadow:none; perspective:700px; position:relative;}
+  .pkcard .in{position:absolute; inset:0; transition:transform .65s cubic-bezier(.3,1.35,.5,1); transform-style:preserve-3d;}
+  .pkcard.up .in{transform:rotateY(180deg);}
+  .pkcard .b,.pkcard .f{position:absolute; inset:0; border-radius:12px; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .pkcard .b{background:repeating-linear-gradient(45deg,#1b6fb3,#1b6fb3 8px,#155a94 8px,#155a94 16px); border:2px solid #e8c46a; box-shadow:0 6px 16px rgba(0,0,0,.5);}
+  .pkcard .f{transform:rotateY(180deg); background:var(--cream); color:var(--ink); border:2px solid var(--gold); box-shadow:0 0 18px rgba(240,198,116,.6);}
+  .pkcard .f .i{font-size:36px; line-height:1;} .pkcard .f .n{font-size:15px; font-weight:800; margin-top:6px;} .pkcard .f .x{font-size:13px; opacity:.7;}
+  .pkcard.dim{opacity:.5;} .pkcard.chosen .f{box-shadow:0 0 26px rgba(240,198,116,.95);}
+  /* the Wild picker */
+  .wdprev{display:flex; justify-content:center; margin:8px 0 12px; --size:1.4;}
+  .wdgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin:6px 0;}
+  .wdgrid button{background:rgba(255,255,255,.12); color:var(--cream); padding:9px 0; font-size:16px; font-weight:800; border-radius:9px;}
+  .wdgrid button.on{background:var(--gold); color:var(--ink);}
+  .wdsuits{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 4px;}
+  .wdsuits button{background:var(--cream); font-size:26px; padding:4px 0; border-radius:10px; opacity:.6;}
+  .wdsuits button.on{opacity:1; outline:3px solid var(--gold); outline-offset:1px;}
+  html.tablet-land #przStrip{grid-area:prz;}
+  html.tablet-land .wrap{grid-template-areas:"hdr hdr" "tray board" "bar board" "prz board" "ctrl board" "rest board"; grid-template-rows:auto auto auto auto auto 1fr;}
+</style>
 <style id="orient-lock-v228">
   /* Phone-only portrait lock. Tablets (html.tablet, height > 500) keep their landscape layout. */
   #rotateLock{display:none; position:fixed; inset:0; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:#0d5c3f; color:#f4efe2; gap:16px;}
@@ -761,7 +820,7 @@
   <div class="psboard" id="psboard"></div>
 
   <div class="bestbar" id="psBestBar"></div>
-
+  <div class="przstrip off" id="przStrip"></div>
 
   <div class="controls" id="psControls">
     <button class="btn sec sm" id="psUndo">Undo</button>
@@ -802,17 +861,34 @@ try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw);
   if(o&&o.settings) Object.assign(settings,o.settings); if(o&&typeof o.best==="number") best=o.best; } }catch(e){}
 function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({settings,best})); }catch(e){} }
 
-/* ---- prizes (campaign power-ups): phase-1 foundation, Nov 2026. Stash + streak live in
-   pokersquares.prizes, beside the other keys so the planned iCloud sync carries it. Nothing
-   earns or spends yet; boostUsed just arms the integrity guards (no 3rd star / best / stats /
-   trophies on a boosted board). Design: the Games project doc royal-draw-prizes-sketch.md. ---- */
+/* ---- prizes (campaign power-ups), Nov 2026 — all seven live since v263. The stash, the 3-star
+   streak and any waiting pick-a-prize live in pokersquares.prizes, beside the other keys so the
+   planned iCloud sync carries it. Spending any prize sets boostUsed: the board still clears and
+   advances, but caps at two stars, sets no personal best / stats / trophies and wins no prizes.
+   Levels only: Free play and the shared high scores never see one. Design: the Games project doc
+   royal-draw-prizes-sketch.md. ---- */
 let boostUsed=false;       // a power-up was spent on this board
-const PRIZE_KINDS=["undo","peek","burn","freeze","hint","swap","wild"];
-function loadPrizes(){ try{ const o=JSON.parse(localStorage.getItem("pokersquares.prizes"))||{}; o.stash=o.stash||{}; PRIZE_KINDS.forEach(k=>{ if(typeof o.stash[k]!=="number") o.stash[k]=0; }); if(typeof o.streak!=="number") o.streak=0; return o; }catch(e){ const s={}; PRIZE_KINDS.forEach(k=>s[k]=0); return {stash:s, streak:0}; } }
+// the one table every prize screen reads: icon, name, what it does, how you win it
+const PRIZE_DEF={
+  undo:  {i:"↩",  n:"Undo",   d:"Take back your last card on a no-undo board. Spend it with the Undo button.", e:"Clear a new level"},
+  peek:  {i:"👁️", n:"Peek",   d:"See the next two cards before you place this one.", e:"Make a flush"},
+  burn:  {i:"🔥", n:"Burn",   d:"Throw away the card in the tray and draw a fresh one from outside the deal.", e:"Make a full house, four of a kind or a straight flush"},
+  hint:  {i:"💡", n:"Hint",   d:"Light up the square the best board puts this card in.", e:"Make a straight"},
+  freeze:{i:"❄️", n:"Freeze", d:"Blitz only: the clock stops until you place this card.", e:"Clear a Blitz level"},
+  swap:  {i:"🔀", n:"Swap",   d:"Move a card you already placed, or trade two of them.", e:"Pick-a-prize", prem:true},
+  wild:  {i:"🃏", n:"Wild",   d:"Turn the card in the tray into any card you like.", e:"Pick-a-prize", prem:true}};
+const PRIZE_KINDS=Object.keys(PRIZE_DEF);
+const STARTER_KIT={undo:3, peek:3, burn:3, hint:3, freeze:3, swap:1, wild:1};   // one time, for everyone, when prizes shipped
+const PICK_POOL=[["swap",1],["wild",1],["freeze",3]];                          // the three face-down cards
+function loadPrizes(){ try{ const o=JSON.parse(localStorage.getItem("pokersquares.prizes"))||{}; o.stash=o.stash||{}; PRIZE_KINDS.forEach(k=>{ if(typeof o.stash[k]!=="number") o.stash[k]=0; }); if(typeof o.streak!=="number") o.streak=0; if(typeof o.pick!=="number") o.pick=0; return o; }catch(e){ const s={}; PRIZE_KINDS.forEach(k=>s[k]=0); return {stash:s, streak:0, pick:0}; } }
 function savePrizes(P){ try{ localStorage.setItem("pokersquares.prizes",JSON.stringify(P)); }catch(e){} }
 function prizeCount(kind){ return loadPrizes().stash[kind]||0; }
 function grantPrize(kind,n){ const P=loadPrizes(); P.stash[kind]=(P.stash[kind]||0)+(n||1); savePrizes(P); return P.stash[kind]; }
-function spendPrize(kind){ const P=loadPrizes(); if((P.stash[kind]||0)<=0) return false; P.stash[kind]--; savePrizes(P); boostUsed=true; return true; }
+function spendPrize(kind){ const P=loadPrizes(); if((P.stash[kind]||0)<=0) return false; P.stash[kind]--; savePrizes(P); boostUsed=true; if(PRZ.used.indexOf(kind)<0) PRZ.used.push(kind); return true; }
+// this board's prize state: what was spent, and what is working on the card in the tray
+let PRZ=null, hintTok=0;
+function przFresh(){ return {used:[], peek:false, hint:-1, hintBusy:false, hintRun:null, mode:null, sel:-1, frozen:false, fresh:[], altered:false}; }
+PRZ=przFresh();
 function prizeToast(icon,text){ try{
   const el=document.createElement("div"); el.textContent=icon+"  "+text;
   el.style.cssText="position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 16px);transform:translate(-50%,-20px);z-index:80;background:rgba(13,59,38,.96);color:#e8c46a;border:1px solid rgba(232,196,106,.5);border-radius:14px;padding:10px 16px;font:600 15px Georgia,serif;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:opacity .25s ease,transform .25s ease;pointer-events:none;max-width:86vw;text-align:center;";
@@ -821,19 +897,186 @@ function prizeToast(icon,text){ try{
   if(window.NG&&NG.snd) NG.snd("ping");
   setTimeout(function(){ el.style.opacity="0"; el.style.transform="translate(-50%,-20px)"; setTimeout(function(){ el.remove(); },300); },2400);
 }catch(e){} }
-function prizesHTML(){ const S=loadPrizes().stash;
-  const DEF=[["undo","↩","Undo","Take back your last placement on a no-undo board. Earn one by clearing a new level.",true],
-    ["peek","👁","Peek","See the next card before you place it.",false],
-    ["burn","🔥","Burn","Discard a card you can't use and draw the next.",false],
-    ["freeze","⏱","Freeze","Pause the Blitz clock for one card.",false],
-    ["hint","💡","Hint","Light up the best square for the current card.",false],
-    ["swap","🔀","Swap","Move a card you already placed.",false],
-    ["wild","🃏","Wild","Play a card as any rank.",false]];
+function prizeRowsHTML(counts, brief){ return '<ul class="trolist">'+PRIZE_KINDS.map(function(k){ const d=PRIZE_DEF[k], n=counts[k]||0;
+  return '<li class="'+(n>0?'':'lock')+'"><span style="font-size:24px;width:30px;text-align:center;flex:0 0 auto">'+d.i+'</span><div><div class="tn">'+d.n+(d.prem?' <span class="muted" style="font-weight:400">· rare</span>':'')+'</div><div class="td">'+d.d+'</div>'+(brief?'':'<div class="td" style="opacity:.7">Win it: '+d.e+'</div>')+'</div><span class="tw">×'+n+'</span></li>'; }).join('')+'</ul>'; }
+function prizesHTML(){ const P=loadPrizes();
   return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Prizes</h2>'
-    +'<p class="muted" style="margin-top:0;">Win power-ups by clearing levels, then spend them on tough boards. Campaign only — Free play and the shared high scores stay pure. A boosted board scores no personal best and caps at two stars.</p>'
-    +'<ul class="trolist">'+DEF.map(function(d){ const n=S[d[0]]||0; return '<li class="'+(n>0?'':'lock')+'"><span style="font-size:24px;width:30px;text-align:center;flex:0 0 auto">'+d[1]+'</span><div><div class="tn">'+d[2]+(d[4]?'':' <span class="muted" style="font-weight:400">· soon</span>')+'</div><div class="td">'+d[3]+'</div></div><span class="tw">×'+n+'</span></li>'; }).join('')+'</ul>';
+    +'<p class="muted" style="margin-top:0;">Power-ups for Levels. Tap one in the strip under the board to use it. A board you use one on still clears and moves you on, but it tops out at two stars and wins no prizes. Free play and the shared high scores never see them.</p>'
+    +(P.pick>0?'<button class="btn lvpick" onclick="openPick()">🎁 Pick a prize'+(P.pick>1?' (×'+P.pick+')':'')+'</button>':'')
+    +prizeRowsHTML(P.stash)
+    +'<p class="muted">The common ones are won the first time you clear a level without using a prize, one of each for what your board made. Three first-time three-star clears in a row win a pick-a-prize: three face-down cards hiding a Swap, a Wild and three Freezes. Your streak: <b>'+P.streak+' of 3</b>.</p>';
 }
 function openPrizes(){ openPanel(prizesHTML(),"prizes"); }
+// one time, for everyone (a new player and everyone who played before prizes worked)
+function starterKit(){ const P=loadPrizes(); if(P.starter) return false; PRIZE_KINDS.forEach(k=>{ P.stash[k]=(P.stash[k]||0)+(STARTER_KIT[k]||0); }); P.starter=Date.now(); savePrizes(P); return true; }
+function openStarter(){ openPanel('<h2>🎁 New: Prizes</h2>'
+  +'<p style="margin-top:0">Power-ups for Levels. They sit in a strip under the board; tap one to use it. Here\'s a starter kit to try them:</p>'
+  +prizeRowsHTML(STARTER_KIT,true)
+  +'<p class="muted">A board you use a prize on still clears and moves you on, but it tops out at two stars and wins no prizes. Win more by clearing new levels without them. Menu → Prizes shows what you have.</p>'
+  +'<div class="res-btns stickbtns"><button class="btn" onclick="closeOverlay()">Let\'s play</button></div>',"starter"); }
+// what a clean first clear pays: one of each kind the board earned
+function prizeEarns(L, blitz){ const keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), has=k=>keys.indexOf(k)>=0, out=["undo"];
+  if(blitz) out.push("freeze");
+  if(has("flush")) out.push("peek");
+  if(has("full")||has("four")||has("sflush")||has("royal")) out.push("burn");
+  if(has("straight")) out.push("hint");
+  return out; }
+// the premium streak: three first-time 3-star clears in a row (no prize spent) → a pick-a-prize
+function przStreak(clean3){ const P=loadPrizes(); let pick=false;
+  P.streak=clean3?P.streak+1:0; if(P.streak>=3){ P.streak=0; P.pick=(P.pick||0)+1; pick=true; }
+  savePrizes(P); return {streak:P.streak, pick}; }
+function przStreakBreak(){ const P=loadPrizes(); if(P.streak){ P.streak=0; savePrizes(P); } }
+
+/* ---- spending them: the strip under the board ---- */
+function movableIdx(){ const a=[]; grid.forEach((c,i)=>{ if(c && !(LV&&LV.locks[i])) a.push(i); }); return a; }
+// the 27 cards the level didn't deal (minus any already drawn by a Burn)
+function spareCards(){ if(!LV) return []; const used=new Set(LV.deal.map(cardKey).concat(PRZ.fresh)); return makeDeck().filter(c=>!used.has(cardKey(c))); }
+function prizeApplies(k){
+  if(!isLevels()||!LV||over||!current||BOT.on||VIEW!=="mine") return false;
+  if(k==="undo") return false;                         // the Undo button spends these
+  if(k==="freeze") return clockKind()!=="off";
+  if(k==="peek") return queue.length>0;
+  if(k==="burn") return spareCards().length>0;
+  if(k==="swap") return movableIdx().length>0;
+  return true; }                                       // hint, wild
+function przActive(k){ return k==="peek"?PRZ.peek:k==="hint"?(PRZ.hint>=0||PRZ.hintBusy):k==="freeze"?PRZ.frozen:k==="swap"?PRZ.mode==="swap":false; }
+function renderStrip(){
+  const el=document.getElementById("przStrip"); if(!el) return;
+  if(!isLevels()||over){ el.className="przstrip off"; el.innerHTML=""; return; }
+  el.className="przstrip";
+  const S=loadPrizes().stash, list=PRIZE_KINDS.filter(k=>(S[k]||0)>0 && prizeApplies(k));
+  if(!list.length){ const any=PRIZE_KINDS.some(k=>k!=="undo"&&(S[k]||0)>0);
+    el.innerHTML='<div class="przempty">'+(any?'None of your prizes work on this board':'No prizes yet · clear a new level to win some')+'</div>'; return; }
+  el.innerHTML=list.map(function(k){ const d=PRIZE_DEF[k], on=przActive(k), busy=k==="hint"&&PRZ.hintBusy;
+    return '<button class="przc'+(on?' on':'')+(busy?' busy':'')+'" onclick="usePrize(\''+k+'\')" aria-label="'+d.n+', '+S[k]+' left"><span class="pi">'+d.i+'</span><span class="pl">'+d.n+'</span><span class="pn">'+S[k]+'</span></button>'; }).join('');
+}
+function usePrize(k){
+  if(!prizeApplies(k) || prizeCount(k)<=0 || ANIMATING || GATE || CLOCK.dumping || PRZ.hintBusy || curOverlay.kind) return;
+  if(k==="swap"){ PRZ.mode=PRZ.mode==="swap"?null:"swap"; PRZ.sel=-1; NG.cancelDrag(); NG.snd("hover",0);
+    if(PRZ.mode && !boostUsed) prizeToast("🔀","Swap caps this board at ★★ · tap Swap again to cancel");
+    render(); return; }
+  if(PRZ.mode){ PRZ.mode=null; PRZ.sel=-1; }           // another prize cancels a half-done swap
+  if(przActive(k)) return;
+  if(k==="wild"){ openWild(); return; }                // the picker is its own confirmation
+  if(!boostUsed){ przConfirm(k); return; }             // the first prize on a clean board asks first
+  przDo(k);
+}
+function przConfirm(k){ const d=PRIZE_DEF[k];
+  openPanel('<h2>'+d.i+' Use '+d.n+'?</h2><p style="margin-top:0">'+d.d+'</p>'
+    +'<p class="muted">Using a prize caps this board at two stars, and it won\'t win any prizes. More prizes on this board after that cost nothing extra.</p>'
+    +'<div class="res-btns"><button class="btn" onclick="closeOverlay();przDo(\''+k+'\')">Use '+d.n+'</button><button class="btn sec" onclick="closeOverlay()">Not now</button></div>',"przconfirm"); }
+function przDo(k){
+  if(!prizeApplies(k)){ render(); return; }
+  let msg=null; if(k==="hint"){ msg=hintMsg(); if(!msg){ render(); return; } }
+  if(!spendPrize(k)){ render(); return; }
+  NG.hap(1,0,"medium");
+  if(k==="peek"){ PRZ.peek=true; NG.snd("glint",0); }
+  else if(k==="freeze"){ PRZ.frozen=true; NG.snd("shimmer",0); }
+  else if(k==="burn"){ burnCurrent(); return; }
+  else if(k==="hint"){ hintStart(msg); }
+  render();
+}
+// Burn: the tray card goes up in smoke and a fresh one comes from the cards the level didn't deal
+function burnCurrent(){
+  const sp=spareCards(); if(!sp.length) return;
+  const from=document.querySelector('#psCurrent .card');
+  if(from && !reduceMotion() && document.body.animate){ const r=from.getBoundingClientRect(), f=from.cloneNode(true); f.classList.remove("dealin");
+    Object.assign(f.style,{position:"fixed",left:r.left+"px",top:r.top+"px",margin:"0",zIndex:"46",pointerEvents:"none"}); document.body.appendChild(f);
+    f.animate([{transform:"none",opacity:1,filter:"none"},{transform:"translateY(-50px) scale(.5) rotate(-16deg)",opacity:0,filter:"brightness(1.8) sepia(1) saturate(5) hue-rotate(-25deg)"}],{duration:520,easing:"ease-in"}).onfinish=function(){ f.remove(); }; }
+  const c=sp[(Math.random()*sp.length)|0]; PRZ.fresh.push(cardKey(c)); PRZ.altered=true; przHintClear();
+  current=c;
+  if(CLOCK.kind==="shot"){ CLOCK.left=CLOCK.shotMs; CLOCK.lastSec=-1; CLOCK.grace=performance.now()+GRACE_MS; }   // a fresh card, a fresh shot clock
+  sfx('shuffle'); NG.snd("fizzle",0); render();
+}
+// Hint: the same search as the best board, with your placed cards held where they are and the rest
+// of the deal (the tray card plus the cards still to come) free; where it puts the tray card glows.
+function hintMsg(){
+  const rest=[current].concat(queue.slice().reverse()), cards=[], fixed=[]; let ri=0, at=-1;
+  for(let i=0;i<25;i++){ if(grid[i]){ cards.push(grid[i]); fixed.push(true); }
+    else { if(ri>=rest.length) return null; if(at<0) at=i; cards.push(rest[ri++]); fixed.push(false); } }
+  if(at<0) return null;
+  return {at, cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:cards.map((c,i)=>i), fixed, iters:600000, maxRuns:4, minRuns:2, budget:3000};
+}
+function hintStart(msg){
+  przHintClear(); const tok=hintTok, t0=performance.now(); PRZ.hintBusy=true;
+  PRZ.hintRun=runSolver(msg,function(m){ if(tok!==hintTok || !m.done) return;
+    try{ PRZ.hintRun&&PRZ.hintRun.stop(); }catch(e){} PRZ.hintRun=null;
+    const pos=m.grid.indexOf(msg.at);
+    setTimeout(function(){ if(tok!==hintTok) return; PRZ.hintBusy=false; PRZ.hint=pos; NG.snd("glint",NG.panOfCol(pos%5)); NG.hap(1,0,"light"); render(); }, Math.max(0,650-(performance.now()-t0)));   // the bulb spins a beat so it reads as thinking
+  });
+}
+function przHintClear(){ hintTok++; if(PRZ.hintRun){ try{ PRZ.hintRun.stop(); }catch(e){} PRZ.hintRun=null; } PRZ.hintBusy=false; PRZ.hint=-1; }
+// Swap: tap a placed card, then any square: an empty one moves it there, a filled one trades the two.
+// Nothing is spent until the move happens, so tapping Swap again cancels for free.
+function przCell(i){
+  if(PRZ.mode!=="swap" || over || ANIMATING) return;
+  const locked=!!(LV&&LV.locks[i]);
+  if(PRZ.sel<0){ if(grid[i] && !locked){ PRZ.sel=i; NG.snd("hover",NG.panOfCol(i%5)); NG.hap(1,0,"select"); render(); } return; }
+  if(i===PRZ.sel){ PRZ.sel=-1; render(); return; }
+  if(locked) return;
+  const a=PRZ.sel, b=i, rect=x=>{ const el=document.querySelector('#psboard .pscell[data-i="'+x+'"]'); return el?el.getBoundingClientRect():null; };
+  const ra=rect(a), rb=rect(b), before=computeLines(grid);
+  if(!spendPrize("swap")){ PRZ.mode=null; PRZ.sel=-1; render(); return; }
+  const t=grid[a]; grid[a]=grid[b]; grid[b]=t;
+  PRZ.mode=null; PRZ.sel=-1; przHintClear(); lastMove=null;   // Undo can't reach back past a swap
+  sfx('place'); NG.hap(1,0,"medium"); render();
+  flyCell(b,ra); if(grid[a]) flyCell(a,rb);
+  // a line the move finished (or changed) calls itself out, the same as a placement
+  const after=computeLines(grid), seen={};
+  [a,b].forEach(function(x){ [["row",(x/5)|0],["col",x%5]].forEach(function(l){ const key=l[0]+l[1]; if(seen[key]) return; seen[key]=1;
+    const h=(l[0]==="row"?after.rows:after.cols)[l[1]], h0=(l[0]==="row"?before.rows:before.cols)[l[1]];
+    if(h && (!h0 || h0.key!==h.key)) setTimeout(function(){ lineFx({type:l[0], idx:l[1], h:h}); },440); }); });
+}
+function flyCell(to, fromR){
+  const el=document.querySelector('#psboard .pscell[data-i="'+to+'"]'); if(!el||!fromR||reduceMotion()||!document.body.animate) return;
+  const b=el.getBoundingClientRect(), f=document.createElement("div"); f.className="flycard"; f.innerHTML=el.innerHTML;
+  Object.assign(f.style,{left:b.left+"px", top:b.top+"px", width:b.width+"px", height:b.height+"px"}); document.body.appendChild(f); el.classList.add("ghost");
+  const dx=fromR.left-b.left, dy=fromR.top-b.top;
+  f.animate([{transform:'translate('+dx+'px,'+dy+'px)'},{transform:'translate('+(dx*.5)+'px,'+(dy*.5-26)+'px) scale(1.18)', offset:.5},{transform:'none'}],{duration:420, easing:'cubic-bezier(.45,.05,.25,1)'})
+    .onfinish=function(){ f.remove(); const now=document.querySelector('#psboard .pscell[data-i="'+to+'"]'); if(now) now.classList.remove("ghost"); }; }
+// Wild: pick any rank and suit for the tray card (a new card object, so a replay of the same board is untouched)
+let WILD=null;
+function openWild(){ if(!current) return; WILD={r:current.r, s:current.s}; wildPaint(); }
+function wildSet(k,v){ if(!WILD) return; WILD[k]=v; NG.snd("hover",0); wildPaint(); }
+function wildPaint(){
+  const c={r:WILD.r, s:WILD.s, wild:true}, same=c.r===current.r && c.s===current.s;
+  openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🃏 Wild card</h2>'
+    +'<p class="muted" style="margin-top:0">Turn the '+rankStr(current.r)+SUITS[current.s]+' into any card.'+(boostUsed?'':' Using a prize caps this board at two stars, and it won\'t win prizes.')+'</p>'
+    +'<div class="wdprev">'+bigCardHTML(c)+'</div>'
+    +'<div class="wdgrid">'+[2,3,4,5,6,7,8,9,10,11,12,13,14].map(r=>'<button class="'+(r===WILD.r?'on':'')+'" onclick="wildSet(\'r\','+r+')">'+rankStr(r)+'</button>').join('')+'</div>'
+    +'<div class="wdsuits">'+[0,1,2,3].map(s=>'<button class="'+(s===WILD.s?'on':'')+'" style="color:'+suitColor(s)+'" onclick="wildSet(\'s\','+s+')">'+SUITS[s]+'</button>').join('')+'</div>'
+    +'<div class="res-btns"><button class="btn" onclick="wildPlay()"'+(same?' disabled':'')+'>'+(same?'Pick a different card':'Use Wild · '+rankStr(c.r)+SUITS[c.s])+'</button></div>',"wild");
+}
+function wildPlay(){ if(!WILD||!current||over) return; if(WILD.r===current.r && WILD.s===current.s) return;
+  if(!spendPrize("wild")){ closeOverlay(); return; }
+  current={r:WILD.r, s:WILD.s, wild:true}; WILD=null; PRZ.altered=true; przHintClear();
+  closeOverlay(); sfx('select'); NG.snd("glint",0); NG.hap(2,60,"medium"); render(); }
+// what the tray says while a prize is working on this card (null = the usual line)
+function przTrayMsg(){
+  if(!isLevels()||over||!current) return null;
+  if(PRZ.mode==="swap") return PRZ.sel<0?'🔀 Tap a card to move':'🔀 Now tap where it goes';
+  if(PRZ.hintBusy) return '💡 Thinking…';
+  if(PRZ.peek && queue.length) return 'Next '+queue.slice(-2).reverse().map(c=>'<span class="pkc" style="color:'+suitColor(c.s)+'">'+rankStr(c.r)+SUITS[c.s]+'</span>').join('');
+  if(PRZ.hint>=0) return '💡 Try the glowing square';
+  if(PRZ.frozen) return '❄️ Clock frozen for this card';
+  return null; }
+/* ---- pick-a-prize: three face-down cards, pick one ---- */
+let PICK=null;
+function openPick(){ const P=loadPrizes(); if(!(P.pick>0)){ openPrizes(); return; }
+  PICK={deck:shuffle(PICK_POOL.map(x=>x.slice())), done:false};
+  openPanel('<h2>🎁 Pick a prize</h2><p class="muted" style="margin-top:0">Three first-time three-star clears in a row. One card hides a Swap, one a Wild, one three Freezes. Tap one.</p>'
+    +'<div class="pkrow">'+PICK.deck.map(function(c,i){ const d=PRIZE_DEF[c[0]]; return '<button class="pkcard" id="pk'+i+'" onclick="pickCard('+i+')" aria-label="Face-down card '+(i+1)+'"><div class="in"><div class="b"></div><div class="f"><span class="i">'+d.i+'</span><span class="n">'+d.n+'</span><span class="x">×'+c[1]+'</span></div></div></button>'; }).join('')+'</div>'
+    +'<div class="lvprz" id="pkMsg" style="min-height:22px"></div><div class="res-btns" id="pkBtns" style="visibility:hidden"><button class="btn" onclick="pickDone()">Done</button></div>',"pick");
+  NG.snd("riser",0); }
+function pickCard(i){ if(!PICK||PICK.done) return; const P=loadPrizes(); if(!(P.pick>0)) return; PICK.done=true;
+  const c=PICK.deck[i], d=PRIZE_DEF[c[0]]; P.pick--; P.stash[c[0]]=(P.stash[c[0]]||0)+c[1]; savePrizes(P);
+  const el=document.getElementById("pk"+i); if(el) el.classList.add("up","chosen"); NG.snd("whoosh",0); NG.hap(2,80,"heavy");
+  setTimeout(function(){ PICK.deck.forEach(function(x,j){ if(j!==i){ const e=document.getElementById("pk"+j); if(e) e.classList.add("up","dim"); } });
+    if(NG.confetti) NG.confetti(90,true); NG.snd("ping");
+    const m=document.getElementById("pkMsg"); if(m) m.innerHTML='You won <b>'+d.i+' '+d.n+(c[1]>1?' ×'+c[1]:'')+'</b>';
+    const b=document.getElementById("pkBtns"); if(b){ b.style.visibility=""; if(P.pick>0) b.querySelector("button").textContent="Pick again ("+P.pick+")"; } },700); }
+function pickDone(){ if(loadPrizes().pick>0){ openPick(); return; }
+  if(over && isLevels() && LV && LV.result) openResults(computeLines(grid).total, true); else closeOverlay(); }
 
 /* ---- state ---- */
 let grid=new Array(25).fill(null);
@@ -868,7 +1111,7 @@ function scoreHand(cards){
   let key;
   if(straight&&flush&&rs[0]===10&&rs[4]===14) key="royal";
   else if(straight&&flush) key="sflush";
-  else if(counts[0]===4) key="four";
+  else if(counts[0]>=4) key="four";   // >=: five of a kind (only a Wild can make one) scores as quads
   else if(counts[0]===3&&counts[1]===2) key="full";
   else if(flush) key="flush";
   else if(straight) key="straight";
@@ -968,7 +1211,8 @@ function levelHUD(){
   if(!el) return;
   el.innerHTML='Target <b>'+(LV.target==null?'…':LV.target)+'</b>'; if(!scoreHold) tgBarDraw(shownTotal);
   el.className='best goal'+(LV.target!=null && total>=LV.target?' ahead':'');
-  if(!over && !(viewGrid()!==grid)) document.getElementById("psPlace").textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz "+levelSecs(LV.n)+"s":"")));
+  if(!over && !(viewGrid()!==grid)){ const pe=document.getElementById("psPlace"), pm=przTrayMsg();
+    if(pm) pe.innerHTML=pm; else pe.textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz "+levelSecs(LV.n)+"s":""))); }
 }
 // stars: 1 at the target, 2 at +5 points of percentage, 3 at +10
 function levelJudge(total){
@@ -976,15 +1220,19 @@ function levelJudge(total){
   const raw=botTouched?0:(pct>=L.pct+.10?3:pct>=L.pct+.05?2:total>=L.target?1:0);
   const stars=boostUsed?Math.min(2,raw):raw;
   const P=lvProg(), R=P[settings.scoring]; let unlocked=false;
-  const prevStars=R.stars[L.n]||0;
+  const prevStars=R.stars[L.n]||0; let won=[];
   if(stars>0 && levelClock(L.n)!=="off") NG._earn("clock");
   if(stars>0){ R.stars[L.n]=Math.max(prevStars,stars); if(R.level===L.n){ R.level=L.n+1; unlocked=true; } lvSave(P);
     if(stars===3) NG._earn("stars3"); if(L.n>=5) NG._earn("lv5"); if(L.n>=10) NG._earn("lv10");
-    if(!boostUsed && prevStars===0){ grantPrize("undo",1); prizeToast("↩","Undo earned — use it on a no-undo board"); } }
-  L.result={total, max, pct, stars, cleared:stars>0, unlocked, boosted:boostUsed};
+    // prizes: a clean first clear pays one of each kind the board earned (a boosted board pays nothing)
+    if(!boostUsed && prevStars===0){ won=prizeEarns(computeLines(grid), levelClock(L.n)!=="off"); won.forEach(k=>grantPrize(k,1)); } }
+  const st=przStreak(stars===3 && !boostUsed && !botTouched && prevStars<3);
+  L.result={total, max, pct, stars, cleared:stars>0, unlocked, boosted:boostUsed, used:PRZ.used.slice(), won, streak:st.streak, pick:st.pick};
   gcSubmit();
-  // the best board these cards make (respecting the locks) is the end-of-game "Best board" too
-  if(L.solve) SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:L.solve.score, grid:alignToMine(L.solve.raw)};
+  // the best board these cards make (respecting the locks) is the end-of-game "Best board" too;
+  // after a Burn or a Wild the cards aren't the deal any more, so search the ones actually on the board
+  if(PRZ.altered){ SOLVE=null; startSolve(); }
+  else if(L.solve) SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:L.solve.score, grid:alignToMine(L.solve.raw)};
   refreshSolveUI();
 }
 function canReplaySame(){ return !(LV && LV.bestSeen && (LV.postBest||0) >= 1); }
@@ -1085,7 +1333,7 @@ function clockReset(){ cancelAnimationFrame(CLOCK.raf);
   CLOCK={kind:k, left:ms, total:ms, shotMs:ms, last:0, grace:performance.now()+GRACE_MS+300, raf:0, dumping:false, lastSec:-1};
   if(k!=="off") CLOCK.raf=requestAnimationFrame(clockTick); }
 function clockStop(){ cancelAnimationFrame(CLOCK.raf); CLOCK.raf=0; }
-function clockPaused(now){ return GATE || over || !current || BOT.on || ANIMATING || CLOCK.dumping || !!curOverlay.kind || document.hidden || now<CLOCK.grace || VIEW!=="mine"; }
+function clockPaused(now){ return GATE || over || !current || BOT.on || ANIMATING || CLOCK.dumping || !!curOverlay.kind || document.hidden || now<CLOCK.grace || VIEW!=="mine" || PRZ.frozen || !!PRZ.mode || PRZ.hintBusy; }
 function clockTick(now){
   if(CLOCK.kind==="off") return;
   const dt=CLOCK.last?Math.min(100,now-CLOCK.last):0; CLOCK.last=now;
@@ -1098,14 +1346,14 @@ function clockTick(now){
   clockDraw(); CLOCK.raf=requestAnimationFrame(clockTick); }
 function clockDraw(){
   const r=document.querySelector("#psCurrent .ngclock rect"); const warn=CLOCK.kind==="shot"?Math.min(3000,CLOCK.total*.5):10000;
-  if(r){ r.style.strokeDashoffset=(100*(1-CLOCK.left/CLOCK.total)).toFixed(2); r.parentNode.classList.toggle("warn",CLOCK.left<=warn); }
+  if(r){ r.style.strokeDashoffset=(100*(1-CLOCK.left/CLOCK.total)).toFixed(2); r.parentNode.classList.toggle("warn",!PRZ.frozen && CLOCK.left<=warn); r.parentNode.classList.toggle("frozen",!!PRZ.frozen); }
   if(CLOCK.kind==="board"){ const pr=document.getElementById("psProg"); if(pr && !over){ const t=Math.ceil(CLOCK.left/1000);
     pr.innerHTML='<span class="ngtime'+(CLOCK.left<=warn?' warn':'')+'">'+Math.floor(t/60)+':'+String(t%60).padStart(2,"0")+'</span> · Card '+(placed()-((isLevels()&&LV)?LV.k:0)+1)+' of '+(25-((isLevels()&&LV)?LV.k:0)); } } }
 function clockRingHTML(){ if(CLOCK.kind==="off"||!current) return "";
   return '<svg class="ngclock" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true"><rect x="3" y="3" width="94" height="134" rx="14" pathLength="100"/></svg>'; }
 function randomEmpty(){ const e=[]; grid.forEach((c,i)=>{ if(!c) e.push(i); }); return e[(Math.random()*e.length)|0]; }
 function clockOut(){
-  NG.cancelDrag(); NG.timeUp(CLOCK.kind==="shot"?"Time!":"Time's up");
+  NG.cancelDrag(); PRZ.mode=null; PRZ.sel=-1; NG.timeUp(CLOCK.kind==="shot"?"Time!":"Time's up");
   if(CLOCK.kind==="shot"){ place(randomEmpty()); return; }   // place() resets the shot clock for the next card
   CLOCK.dumping=true; render();
   (function next(){ if(over||!current){ CLOCK.dumping=false; return; } place(randomEmpty()); setTimeout(next,190); })();
@@ -1117,6 +1365,8 @@ function clockBests(){ try{ return JSON.parse(localStorage.getItem("pokersquares
 // Sound is best-effort: no sfx.js, no noise, no error.
 function sfx(n){ if(window.SFX) SFX.play(n); }
 function newGame(opts){
+  if(isLevels() && LV && !over && !LV.result && placed()>LV.k) przStreakBreak();   // quitting a level mid-board breaks the 3-star streak
+  przHintClear(); PRZ=przFresh(); WILD=null;
   sfx('shuffle');
   lastMove=null; over=false; quadDone=new Set();
   VIEW="mine"; bestRevealed=false; stopSolve(); SOLVE=null;
@@ -1131,10 +1381,11 @@ function undoFree(){ return clockKind()==="off" && (!isLevels() || !LV || LV.n<=
 function undoAllowed(){ return undoFree() || (clockKind()==="off" && prizeCount("undo")>0); }
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
-  if(over||!current||grid[i]) return;
+  if(over||!current||grid[i]||PRZ.mode) return;
   const from=document.querySelector('#psCurrent .card'), fromR=ngFromRect||(from?from.getBoundingClientRect():null); ngFromRect=null;
   grid[i]=current;
   sfx('place');
+  PRZ.peek=false; PRZ.frozen=false; przHintClear();   // Peek, Hint and Freeze last for one card
   lastMove={i, card:current, was:i};
   current = (placed()<25 && queue.length) ? queue.pop() : null;   // a full board leaves the tray empty
   { const r0=Math.floor(i/5), c0=i%5; let fl=0;
@@ -1217,10 +1468,11 @@ function quadCelebrate(type, idx, rank){
     document.body.appendChild(call); setTimeout(function(){ try{ call.remove(); }catch(e){} }, 1400); }
 }
 function undo(){
-  if(!lastMove || ANIMATING || !undoAllowed()) return;
+  if(!lastMove || ANIMATING || PRZ.mode || !undoAllowed()) return;
   if(!undoFree() && !spendPrize("undo")) return;   // prize undo (level 4+): consume one, sets boostUsed
   VIEW="mine";
   sfx('select');
+  przHintClear();
   if(current) queue.push(current);   // send the un-placed next card back
   current=lastMove.card;
   grid[lastMove.i]=null;
@@ -1259,7 +1511,7 @@ function finish(fromPlace){
 /* ---- render ---- */
 function bigCardHTML(c){
   if(!c) return '<div class="card back"></div>';
-  return '<div class="card" style="color:'+suitColor(c.s)+'"><span class="rank">'+rankStr(c.r)+'</span><span class="pip">'+SUITS[c.s]+'</span><span class="rankb">'+rankStr(c.r)+'</span></div>';
+  return '<div class="card" style="color:'+suitColor(c.s)+'"><span class="rank">'+rankStr(c.r)+'</span><span class="pip">'+SUITS[c.s]+'</span><span class="rankb">'+rankStr(c.r)+'</span>'+(c.wild?'<span class="wildmk">★</span>':'')+'</div>';
 }
 // how loud a hand is, for the chip's glow and the callout (v201)
 const TIER={high:0,pair:1,twopair:1,three:2,straight:2,flush:2,full:3,four:3,sflush:4,royal:4};
@@ -1268,7 +1520,7 @@ function chipHTML(h){
   return '<div class="psscore t'+TIER[h.key]+(h.pts>0?' has':'')+'" title="'+h.name+' · '+h.pts+'"><span class="ab">'+ABBR[h.key]+'</span><span class="pts">'+h.pts+'</span></div>';
 }
 function miniHTML(card){
-  return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>';
+  return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>'+(card.wild?'<span class="wildmk">★</span>':'');
 }
 /* Render ANY 25-card grid read-only (for viewing a leaderboard entry's board). Reuses the
    live board's cells and chips but touches no game state - computeLines takes the grid. */
@@ -1430,15 +1682,21 @@ function render(justIdx){
   else { bestEl.textContent="Best "+best; bestEl.className='best'; tgBarDraw(0); }
   // board (6x6: 25 cells + 5 row chips + 5 col chips + total corner)
   let html="";
+  const sw=PRZ.mode==="swap" && !showBest && !over;   // Swap prize: placed cards become tappable, placing waits
   for(let r=0;r<5;r++){
     for(let c=0;c<5;c++){
       const idx=r*5+c, card=g[idx];
       if(card){
         const lk=(!showBest && isLevels() && LV && LV.locks[idx])?' locked':'';
-        html+='<div class="pscell filled'+lk+(justIdx===idx?' just':'')+'" data-i="'+idx+'">'+miniHTML(card)+'</div>';
+        const sc=(sw&&!lk)?(PRZ.sel===idx?' swpsel':' swpok'):'';
+        html+='<div class="pscell filled'+lk+sc+(justIdx===idx?' just':'')+'" data-i="'+idx+'"'+(sc?' onclick="przCell('+idx+')"':'')+'>'+miniHTML(card)+'</div>';
+      }else if(sw){
+        const to=PRZ.sel>=0;
+        html+='<div class="pscell empty'+(to?' swpto':'')+'" data-i="'+idx+'"'+(to?' onclick="przCell('+idx+')"':'')+'></div>';
       }else{
         const live=(!over&&current&&!BOT.on&&!CLOCK.dumping)?' live':'';
-        html+='<div class="pscell empty'+live+'" data-i="'+idx+'"'+(live?(' onclick="place('+idx+')"'):'')+'></div>';
+        const hc=(live && !showBest && PRZ.hint===idx)?' hintc':'';   // Hint prize: the best board's square for this card
+        html+='<div class="pscell empty'+live+hc+'" data-i="'+idx+'"'+(live?(' onclick="place('+idx+')"'):'')+'>'+(hc?'<span class="hintb">💡</span>':'')+'</div>';
       }
     }
     html+=chipHTML(rows[r]);
@@ -1450,12 +1708,13 @@ function render(justIdx){
   renderBestBar();
   // undo availability
   const undoBtn=document.getElementById("psUndo");
-  undoBtn.disabled = !lastMove || showBest;
+  undoBtn.disabled = !lastMove || showBest || !!PRZ.mode;
   undoBtn.style.display = undoAllowed() ? "" : "none";
   undoBtn.textContent = (!undoFree() && prizeCount("undo")>0) ? ("Undo ×"+prizeCount("undo")) : "Undo";
   document.getElementById("psNew").textContent = isLevels() ? "New board" : "New game";
   document.documentElement.classList.toggle("mode-levels", isLevels());
   renderBotBar();
+  renderStrip();
   if(CLOCK.kind!=="off") clockDraw();
   NG.after(justIdx);
   fitPS();
@@ -1466,7 +1725,7 @@ function isTablet(){ return innerWidth>=600 && innerHeight>=600; }
 function fitPS(force){
   const root=document.documentElement, cell=document.querySelector('#psboard .pscell'); if(!cell) return;
   if(over || (curOverlay&&curOverlay.kind)) return;   // v225: don't re-fit at completion / while a panel is open — keeps the cards full-size during play; the best-board bar's small overflow at completion sits behind the results overlay, and overscroll-behavior:none on the body blocks the rubber-band drag that otherwise let the board shift under a finger.
-  var _k=innerWidth+'x'+innerHeight+'x'+(isTablet()?1:0)+'x'+(window.CARDSIZE?CARDSIZE.value():1);
+  var _k=innerWidth+'x'+innerHeight+'x'+(isTablet()?1:0)+'x'+(window.CARDSIZE?CARDSIZE.value():1)+'x'+(isLevels()?1:0);   // v263: the prize strip is a row on Levels only
   if(!force && _k===fitPS._k) return;   // v237: re-fit only on viewport/card-size change
   fitPS._k=_k;
   const board=document.getElementById('psboard');
@@ -1514,6 +1773,8 @@ function openRules(){
     +'<p>In <b>Levels</b> (the Menu switches to Free play) each board has a target: a share of the best board its 25 cards can make. It shows under your score a few seconds into the deal, turning green when you pass it. Clear it to open the next level; score 5% or 10% over for two or three stars. Levels 1 to 3 come part-built (the gold-dotted squares are locked in from the best board), and Undo works only there. Miss, and you can replay the same board or take a new one.</p>'
     +'<h3>The clock</h3>'
     +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (12 at level 5, one less every ten levels, down to 5), and 10, 20… give you <b>one clock for the whole board</b> (120 seconds at level 10, five less every ten levels, down to 90). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
+    +'<h3>Prizes</h3>'
+    +'<p>Levels win you power-ups: <b>Undo</b>, <b>Peek</b> at the next two cards, <b>Burn</b> the card in the tray for a fresh one, a <b>Hint</b> for the best square, <b>Freeze</b> the Blitz clock, and the rare <b>Swap</b> and <b>Wild</b>. Use them from the strip under the board. A board you use one on still clears, but tops out at two stars and wins no prizes. Menu → Prizes lists what you have and how each is won.</p>'
     +'<h3>What the lights mean</h3>'
     +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
     +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
@@ -1536,11 +1797,11 @@ function openMenu(){ gcSubmit();
     +tog(NG.haptics,'NG.toggleHaptics();openMenu();','Haptics');
   openPanel(html,"menu");
 }
-function openResults(total){
+function openResults(total, quiet){
   // One screen, no scrolling: the score line, the top five, the best-board line, two buttons.
   // (The hand each row and column made is on the board's chips; the full ten are under Scores.)
   const sysName=settings.scoring==="american"?"American":"English";
-  if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); resAnimate(); NG.starFx(LV.result.stars); return; }
+  if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); if(quiet) resFinal(); else { resAnimate(); NG.starFx(LV.result.stars); } return; }
   if(CLOCK.kind!=="off"){ openPanel(clockResultsHTML(total),"results"); resAnimate(); return; }
   const beat = !botTouched && total>=best && total>0;
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
@@ -1557,6 +1818,9 @@ function openResults(total){
 function resHero(badgeTop,badgeNum,title,sub,win){
   return '<div class="rhero'+(win?' win':'')+'"><div class="rmed"><span>'+badgeTop+'</span><b>'+badgeNum+'</b></div><div class="rtitle"><h2>'+title+'</h2>'+(sub?'<div class="rch">'+sub+'</div>':'')+'</div></div>'; }
 function resPts(total,sub){ return '<div class="rpts"><b class="cnt" data-to="'+total+'">'+(reduceMotion()?total:0)+'</b><span>pts</span></div>'+(sub?'<div class="rsub">'+sub+'</div>':''); }
+// back from the pick-a-prize: the results as they ended, no second count-up or fanfare
+function resFinal(){ const el=document.querySelector("#panel .cnt"), bar=document.querySelector("#panel .lvbar i"); if(el){ el.textContent=el.dataset.to; el.classList.add("done"); }
+  if(bar){ bar.style.width=bar.dataset.w+"%"; document.querySelectorAll("#panel .lvbar u").forEach(m=>{ if(parseFloat(m.style.left)<=parseFloat(bar.dataset.w)) m.classList.add("lit"); }); } }
 function resAnimate(){
   const el=document.querySelector("#panel .cnt"); if(!el) return; const to=+el.dataset.to;
   const bar=document.querySelector("#panel .lvbar i"), marks=[...document.querySelectorAll("#panel .lvbar u")];
@@ -1584,7 +1848,10 @@ function levelResultsHTML(){
   return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
     +resHero('Level',L.n,title,chapterOf(L.n).name,r.cleared)
     +'<div class="lvstars">'+[0,1,2].map(i=>'<span class="lst'+(i<r.stars?' on':'')+'" style="animation-delay:'+(250+i*260)+'ms">★</span>').join('')+'</div>'
-    +(r.boosted?'<div class="lvboost">↩ Undo used · max ★★</div>':'')
+    +(r.boosted?'<div class="lvboost">'+((r.used&&r.used.length)?r.used.map(k=>PRIZE_DEF[k].i).join(' '):'↩')+' Prize'+((r.used&&r.used.length>1)?'s':'')+' used · max ★★ · no prizes won</div>':'')
+    +(loadPrizes().pick>0?'<button class="btn lvpick" onclick="openPick()">🎁 '+(r.pick?'Three in a row! Pick a prize':'Pick a prize')+'</button>':'')
+    +((r.won&&r.won.length)?'<div class="lvprz">Prizes won: '+r.won.map(k=>PRIZE_DEF[k].i+' <b>+1</b>').join(' · ')+'</div>':'')
+    +(r.streak>0?'<div class="lvprz">⭐ Three-star streak <b>'+r.streak+' of 3</b> · '+(3-r.streak)+' more for a pick-a-prize</div>':'')
     +(r.unlocked?'<div class="lvunlock">Level '+(L.n+1)+' unlocked'+(chapterOf(L.n+1).from===L.n+1?' · '+chapterOf(L.n+1).name:'')+'</div>':'')
     +resPts(r.total,pctTxt+' of the best board ('+r.max+')')
     +'<div class="lvbar"><i data-w="'+Math.min(100,r.pct*100).toFixed(1)+'" style="width:'+(reduceMotion()?Math.min(100,r.pct*100).toFixed(1):0)+'%"></i>'+mark(L.pct,'')+mark(L.pct+.05,'s')+mark(L.pct+.10,'s')+'</div>'
@@ -1649,7 +1916,7 @@ function makeSolver(cards, PTS, fixed){
     if(u===5) st = rs[4]-rs[0]===4 || (rs[0]===2&&rs[3]===5&&rs[4]===14);
     const cnt={}; rs.forEach(r=>cnt[r]=(cnt[r]||0)+1); const cs=Object.values(cnt).sort((a,b)=>b-a);
     let k;
-    if(st&&fl&&rs[0]===10) k="royal"; else if(st&&fl) k="sflush"; else if(cs[0]===4) k="four";
+    if(st&&fl&&rs[0]===10) k="royal"; else if(st&&fl) k="sflush"; else if(cs[0]>=4) k="four";
     else if(cs[0]===3&&cs[1]===2) k="full"; else if(fl) k="flush"; else if(st) k="straight";
     else if(cs[0]===3) k="three"; else if(cs[0]===2&&cs[1]===2) k="twopair"; else if(cs[0]===2) k="pair"; else k="high";
     return PTS[k];
@@ -1705,7 +1972,7 @@ function solveRun(msg, post, isStopped){
   const T0=2*Math.max(msg.pts.flush, msg.pts.straight), T1=T0/100;
   const t0=Date.now();
   let best=S.polish(msg.seed), cnt=0, runs=0;
-  const MAX=10, NEED=2, MIN=3, ITERS=1500000, BUDGET=12000;
+  const MAX=msg.maxRuns||10, NEED=2, MIN=msg.minRuns||3, ITERS=msg.iters||1500000, BUDGET=msg.budget||12000;   // the Hint prize asks for a shorter search
   function one(){
     const a=S.anneal(ITERS,T0,T1), p=S.polish(a.grid); runs++;
     if(p.score>best.score){ best=p; cnt=1; } else if(p.score===best.score) cnt++;
@@ -1736,7 +2003,8 @@ function startSolve(){
   stopSolve();
   const cards=grid.slice();                 // the search works on indices into this list
   SOLVE={key, done:false, runs:0, max:10, agree:0, score:computeLines(grid).total, grid:null};
-  const msg={cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:cards.map((c,i)=>i)};
+  const msg={cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:cards.map((c,i)=>i),
+    fixed:(isLevels()&&LV&&LV.k)?cards.map((c,i)=>!!LV.locks[i]):undefined};
   const onMsg=function(m){
     if(!SOLVE || SOLVE.key!==key) return;
     SOLVE.runs=m.runs; SOLVE.max=m.max; SOLVE.agree=m.agree; SOLVE.score=m.score;
@@ -2324,7 +2592,7 @@ var NG=(function(){
   function onCancel(){ const d=DR; if(!d) return; clearTarget(); end(); DR=null; untilt(false); d.f.remove(); d.c.style.visibility=""; }
   const cur=document.getElementById("psCurrent");
   if(cur) cur.addEventListener("pointerdown",function(e){
-    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR||CLOCK.dumping||GATE) return;
+    const c=cur.querySelector(".card"); if(!c||e.button>0||over||!current||BOT.on||ANIMATING||curOverlay.kind||DR||CLOCK.dumping||GATE||PRZ.mode||PRZ.hintBusy) return;
     e.preventDefault(); const r=c.getBoundingClientRect(), f=c.cloneNode(true); f.classList.remove("dealin"); f.classList.add("ngdrag");
     Object.assign(f.style,{left:r.left+"px",top:r.top+"px",width:r.width+"px",height:r.height+"px"}); document.body.appendChild(f); c.style.visibility="hidden";
     DR={f:f,c:c,r:r,br:document.getElementById("psboard").getBoundingClientRect(),ox:e.clientX-(r.left+r.width/2),oy:e.clientY-(r.top+r.height/2),
@@ -2387,7 +2655,7 @@ var NG=(function(){
     if(total>=(am?150:75)) earn("big");
     if(CLOCK.kind!=="off" && total>=(am?100:50)) earn("icecold");
   }
-  function perfect(){ if(!over||botTouched||!SOLVE||!SOLVE.done||(isLevels()&&LV&&LV.k>0)) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
+  function perfect(){ if(!over||botTouched||boostUsed||!SOLVE||!SOLVE.done||(isLevels()&&LV&&LV.k>0)) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
   function trophiesHTML(){ const T=got(), n=TRO.filter(t=>T[t.id]).length;
     return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Trophies</h2><p class="muted" style="margin-top:0;">'+n+' of '+TRO.length+' on this device. Bot boards don\'t count.</p><ul class="trolist">'
       +TRO.map(t=>'<li class="'+(T[t.id]?'':'lock')+'">'+cup(t.g)+'<div><div class="tn">'+t.n+'</div><div class="td">'+t.d+'</div></div><span class="tw">'+(T[t.id]?new Date(T[t.id]).toLocaleDateString([],{month:"short",day:"numeric"}):GN[t.g])+'</span></li>').join("")+'</ul>'; }
@@ -2399,7 +2667,7 @@ var NG=(function(){
     el.textContent=text; document.body.appendChild(el); setTimeout(function(){ el.remove(); },1500); snd("fizzle",0); hap(2,80,"heavy"); }
   function starFx(n){ if(RM()) return; for(let i=0;i<n;i++) setTimeout(function(){ snd("tick",0,4+i*5); hap(1,0,i===2?"heavy":"medium"); }, 250+i*260);
     if(n===3) setTimeout(function(){ snd("ping"); confetti(90,true); }, 250+3*260); }
-  return {cup:cup, starFx:starFx, scoreCall:scoreCall, cancelDrag:function(){ if(DR) onCancel(); }, timeUp:timeUp, hap:hap, after:after, reset:reset, quiet:function(){ quiet=true; }, land:land, lineBurst:lineBurst, tally:tally, trophies:trophies, perfect:perfect,
+  return {cup:cup, starFx:starFx, confetti:confetti, scoreCall:scoreCall, cancelDrag:function(){ if(DR) onCancel(); }, timeUp:timeUp, hap:hap, after:after, reset:reset, quiet:function(){ quiet=true; }, land:land, lineBurst:lineBurst, tally:tally, trophies:trophies, perfect:perfect,
     openTrophies:openTrophies, clearCalls:clearCalls, toggleHaptics:toggleHaptics, get haptics(){ return ngs.haptics; }, snd:snd, heat:heat, panOfCol:panOfCol, _earn:earn, _P:function(){ return P.length; }};
 })();
 
@@ -2413,6 +2681,7 @@ document.getElementById("psNew").onclick=function(){ newGame(); };
 document.getElementById("overlay").addEventListener("click",function(e){ if(e.target===this) closeOverlay(); });
 
 applyTheme();
+if(starterKit()) openStarter();
 newGame();
 
 /* service worker (shared shell) */
@@ -2435,7 +2704,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v262", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v263", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
