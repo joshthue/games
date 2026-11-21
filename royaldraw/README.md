@@ -786,3 +786,28 @@ chosen card, Freeze holds the shot clock to the millisecond and lets go on place
 first clears in a row (levels 4, 5 Blitz, 6) pay Undo/Peek/Burn/Hint (+ Freeze on 5), count the
 streak 1-2-3 and raise a pick; a replay pays nothing and resets the streak; quitting mid-board resets
 it; Free play hides the strip; no page errors.
+
+## Undo reads as empty, clears always pay it, a lucky rare (v264)
+Josh's wife thought the Undo prize had vanished, and saw it flash for a split second as a board
+loaded. Nothing was lost; her stash was empty, and the button hid itself:
+- **The flash** was the page's default: `#psUndo` was visible in the HTML until the first `render()`
+  hid it. It now starts `display:none` and `render()` decides.
+- **"Undo ×0", greyed**: on a no-undo level (4+, no clock) with an empty stash the button stays,
+  dimmed (`#psUndo.empty`), instead of disappearing. A tap toasts "Out of undos · clear a new level to
+  win one". Blitz levels still have no Undo at all (no undo with a clock on).
+- **A first clear always pays its undo**, even on a boosted board (any prize spent). Before, a boosted
+  board paid nothing, so playing with Burn/Hint quietly stopped the undo income. Everything else
+  (Peek, Burn, Hint, Freeze, the streak) still comes only from a clean board, and the 2★ cap stands.
+  The results say "Prize used · max ★★" and list the undo under "Prizes won"; one shared sentence,
+  `BOOST_NOTE`, carries the rule into the Prizes panel, starter panel, confirm sheet, Wild picker and Rules.
+- **Rare prizes a little more often**: a clean first clear has a `RARE_DROP` (10%) chance of a bonus
+  Swap or Wild (half each), shown as "🔀 +1 lucky!". The three-star streak pick-a-prize is unchanged.
+  Still earned only; never sold.
+
+Ways an undo is spent, for the record: each Undo tap on level 4+, and revealing the best board after
+a game (v237). The only way one is won: the first clear of a level.
+
+Tested headless at 390×844: the raw page ships the button hidden; level 12 with 0 undos shows a
+dimmed "Undo ×0" that toasts on tap; a Peek-boosted first clear caps at 2★ and pays exactly ↩ +1; a
+clean first clear with the roll forced pays the usual set plus "🔀 +1 lucky!"; Blitz hides Undo;
+free play shows plain "Undo"; no page errors.

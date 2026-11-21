@@ -747,6 +747,7 @@
   /* results */
   .lvprz{font-size:14px; text-align:center; margin:6px 0 0; color:var(--cream);} .lvprz b{color:var(--gold);}
   .btn.lvpick{display:block; width:100%; margin:10px 0 2px; font-size:16px;}
+  #psUndo.empty{opacity:.4;}   /* v264: out of undos; still tappable, to say how to win one */
   .stickbtns{position:sticky; bottom:-18px; margin:0 -18px -18px; padding:12px 18px 18px; background:linear-gradient(180deg,rgba(12,61,44,0),#0c3d2c 35%);}
   html[data-theme="night"] .stickbtns{background:linear-gradient(180deg,rgba(26,22,18,0),#1a1612 35%);}
   /* pick-a-prize: three face-down cards */
@@ -823,7 +824,7 @@
   <div class="przstrip off" id="przStrip"></div>
 
   <div class="controls" id="psControls">
-    <button class="btn sec sm" id="psUndo">Undo</button>
+    <button class="btn sec sm" id="psUndo" style="display:none">Undo</button>
     <button class="btn sm" id="psNew">New game</button>
   </div>
 </div>
@@ -864,7 +865,8 @@ function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({settings,b
 /* ---- prizes (campaign power-ups), Nov 2026 — all seven live since v263. The stash, the 3-star
    streak and any waiting pick-a-prize live in pokersquares.prizes, beside the other keys so the
    planned iCloud sync carries it. Spending any prize sets boostUsed: the board still clears and
-   advances, but caps at two stars, sets no personal best / stats / trophies and wins no prizes.
+   advances, but caps at two stars, sets no personal best / stats / trophies, and a first clear of it
+   wins only its undo (v264; it used to win nothing).
    Levels only: Free play and the shared high scores never see one. Design: the Games project doc
    royal-draw-prizes-sketch.md. ---- */
 let boostUsed=false;       // a power-up was spent on this board
@@ -875,11 +877,13 @@ const PRIZE_DEF={
   burn:  {i:"🔥", n:"Burn",   d:"Throw away the card in the tray and draw a fresh one from outside the deal.", e:"Make a full house, four of a kind or a straight flush"},
   hint:  {i:"💡", n:"Hint",   d:"Light up the square the best board puts this card in.", e:"Make a straight"},
   freeze:{i:"❄️", n:"Freeze", d:"Blitz only: the clock stops until you place this card.", e:"Clear a Blitz level"},
-  swap:  {i:"🔀", n:"Swap",   d:"Move a card you already placed, or trade two of them.", e:"Pick-a-prize", prem:true},
-  wild:  {i:"🃏", n:"Wild",   d:"Turn the card in the tray into any card you like.", e:"Pick-a-prize", prem:true}};
+  swap:  {i:"🔀", n:"Swap",   d:"Move a card you already placed, or trade two of them.", e:"Pick-a-prize, or a lucky bonus on a clean first clear", prem:true},
+  wild:  {i:"🃏", n:"Wild",   d:"Turn the card in the tray into any card you like.", e:"Pick-a-prize, or a lucky bonus on a clean first clear", prem:true}};
 const PRIZE_KINDS=Object.keys(PRIZE_DEF);
 const STARTER_KIT={undo:3, peek:3, burn:3, hint:3, freeze:3, swap:1, wild:1};   // one time, for everyone, when prizes shipped
 const PICK_POOL=[["swap",1],["wild",1],["freeze",3]];                          // the three face-down cards
+const RARE_DROP=0.10;   // v264: a clean first clear's chance of a bonus Swap or Wild (half each), on top of the streak
+const BOOST_NOTE="it tops out at two stars, and clearing it for the first time wins its undo but no other prizes";   // the one wording every screen uses
 function loadPrizes(){ try{ const o=JSON.parse(localStorage.getItem("pokersquares.prizes"))||{}; o.stash=o.stash||{}; PRIZE_KINDS.forEach(k=>{ if(typeof o.stash[k]!=="number") o.stash[k]=0; }); if(typeof o.streak!=="number") o.streak=0; if(typeof o.pick!=="number") o.pick=0; return o; }catch(e){ const s={}; PRIZE_KINDS.forEach(k=>s[k]=0); return {stash:s, streak:0, pick:0}; } }
 function savePrizes(P){ try{ localStorage.setItem("pokersquares.prizes",JSON.stringify(P)); }catch(e){} }
 function prizeCount(kind){ return loadPrizes().stash[kind]||0; }
@@ -901,10 +905,10 @@ function prizeRowsHTML(counts, brief){ return '<ul class="trolist">'+PRIZE_KINDS
   return '<li class="'+(n>0?'':'lock')+'"><span style="font-size:24px;width:30px;text-align:center;flex:0 0 auto">'+d.i+'</span><div><div class="tn">'+d.n+(d.prem?' <span class="muted" style="font-weight:400">· rare</span>':'')+'</div><div class="td">'+d.d+'</div>'+(brief?'':'<div class="td" style="opacity:.7">Win it: '+d.e+'</div>')+'</div><span class="tw">×'+n+'</span></li>'; }).join('')+'</ul>'; }
 function prizesHTML(){ const P=loadPrizes();
   return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Prizes</h2>'
-    +'<p class="muted" style="margin-top:0;">Power-ups for Levels. Tap one in the strip under the board to use it. A board you use one on still clears and moves you on, but it tops out at two stars and wins no prizes. Free play and the shared high scores never see them.</p>'
+    +'<p class="muted" style="margin-top:0;">Power-ups for Levels. Tap one in the strip under the board to use it. A board you use one on still clears and moves you on, but '+BOOST_NOTE+'. Free play and the shared high scores never see them.</p>'
     +(P.pick>0?'<button class="btn lvpick" onclick="openPick()">🎁 Pick a prize'+(P.pick>1?' (×'+P.pick+')':'')+'</button>':'')
     +prizeRowsHTML(P.stash)
-    +'<p class="muted">The common ones are won the first time you clear a level without using a prize, one of each for what your board made. Three first-time three-star clears in a row win a pick-a-prize: three face-down cards hiding a Swap, a Wild and three Freezes. Your streak: <b>'+P.streak+' of 3</b>.</p>';
+    +'<p class="muted">The common ones are won the first time you clear a level without using a prize, one of each for what your board made. A clean first clear also has a 1-in-'+Math.round(1/RARE_DROP)+' chance of a bonus Swap or Wild. Three first-time three-star clears in a row win a pick-a-prize: three face-down cards hiding a Swap, a Wild and three Freezes. Your streak: <b>'+P.streak+' of 3</b>.</p>';
 }
 function openPrizes(){ openPanel(prizesHTML(),"prizes"); }
 // one time, for everyone (a new player and everyone who played before prizes worked)
@@ -912,7 +916,7 @@ function starterKit(){ const P=loadPrizes(); if(P.starter) return false; PRIZE_K
 function openStarter(){ openPanel('<h2>🎁 New: Prizes</h2>'
   +'<p style="margin-top:0">Power-ups for Levels. They sit in a strip under the board; tap one to use it. Here\'s a starter kit to try them:</p>'
   +prizeRowsHTML(STARTER_KIT,true)
-  +'<p class="muted">A board you use a prize on still clears and moves you on, but it tops out at two stars and wins no prizes. Win more by clearing new levels without them. Menu → Prizes shows what you have.</p>'
+  +'<p class="muted">A board you use a prize on still clears and moves you on, but '+BOOST_NOTE+'. Win more by clearing new levels without them. Menu → Prizes shows what you have.</p>'
   +'<div class="res-btns stickbtns"><button class="btn" onclick="closeOverlay()">Let\'s play</button></div>',"starter"); }
 // what a clean first clear pays: one of each kind the board earned
 function prizeEarns(L, blitz){ const keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), has=k=>keys.indexOf(k)>=0, out=["undo"];
@@ -963,7 +967,7 @@ function usePrize(k){
 }
 function przConfirm(k){ const d=PRIZE_DEF[k];
   openPanel('<h2>'+d.i+' Use '+d.n+'?</h2><p style="margin-top:0">'+d.d+'</p>'
-    +'<p class="muted">Using a prize caps this board at two stars, and it won\'t win any prizes. More prizes on this board after that cost nothing extra.</p>'
+    +'<p class="muted">If you use a prize on this board, '+BOOST_NOTE+'. More prizes on this board after that cost nothing extra.</p>'
     +'<div class="res-btns"><button class="btn" onclick="closeOverlay();przDo(\''+k+'\')">Use '+d.n+'</button><button class="btn sec" onclick="closeOverlay()">Not now</button></div>',"przconfirm"); }
 function przDo(k){
   if(!prizeApplies(k)){ render(); return; }
@@ -1041,7 +1045,7 @@ function wildSet(k,v){ if(!WILD) return; WILD[k]=v; NG.snd("hover",0); wildPaint
 function wildPaint(){
   const c={r:WILD.r, s:WILD.s, wild:true}, same=c.r===current.r && c.s===current.s;
   openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🃏 Wild card</h2>'
-    +'<p class="muted" style="margin-top:0">Turn the '+rankStr(current.r)+SUITS[current.s]+' into any card.'+(boostUsed?'':' Using a prize caps this board at two stars, and it won\'t win prizes.')+'</p>'
+    +'<p class="muted" style="margin-top:0">Turn the '+rankStr(current.r)+SUITS[current.s]+' into any card.'+(boostUsed?'':' If you use a prize on this board, '+BOOST_NOTE+'.')+'</p>'
     +'<div class="wdprev">'+bigCardHTML(c)+'</div>'
     +'<div class="wdgrid">'+[2,3,4,5,6,7,8,9,10,11,12,13,14].map(r=>'<button class="'+(r===WILD.r?'on':'')+'" onclick="wildSet(\'r\','+r+')">'+rankStr(r)+'</button>').join('')+'</div>'
     +'<div class="wdsuits">'+[0,1,2,3].map(s=>'<button class="'+(s===WILD.s?'on':'')+'" style="color:'+suitColor(s)+'" onclick="wildSet(\'s\','+s+')">'+SUITS[s]+'</button>').join('')+'</div>'
@@ -1224,8 +1228,11 @@ function levelJudge(total){
   if(stars>0 && levelClock(L.n)!=="off") NG._earn("clock");
   if(stars>0){ R.stars[L.n]=Math.max(prevStars,stars); if(R.level===L.n){ R.level=L.n+1; unlocked=true; } lvSave(P);
     if(stars===3) NG._earn("stars3"); if(L.n>=5) NG._earn("lv5"); if(L.n>=10) NG._earn("lv10");
-    // prizes: a clean first clear pays one of each kind the board earned (a boosted board pays nothing)
-    if(!boostUsed && prevStars===0){ won=prizeEarns(computeLines(grid), levelClock(L.n)!=="off"); won.forEach(k=>grantPrize(k,1)); } }
+    // prizes, first clear only: the undo always (v264, boosted or not); a clean board also pays one of each
+    // kind it earned, and now and then a lucky Swap or Wild
+    if(prevStars===0){ won=boostUsed?["undo"]:prizeEarns(computeLines(grid), levelClock(L.n)!=="off");
+      if(!boostUsed && Math.random()<RARE_DROP) won.push(Math.random()<.5?"swap":"wild");
+      won.forEach(k=>grantPrize(k,1)); } }
   const st=przStreak(stars===3 && !boostUsed && !botTouched && prevStars<3);
   L.result={total, max, pct, stars, cleared:stars>0, unlocked, boosted:boostUsed, used:PRZ.used.slice(), won, streak:st.streak, pick:st.pick};
   gcSubmit();
@@ -1468,7 +1475,8 @@ function quadCelebrate(type, idx, rank){
     document.body.appendChild(call); setTimeout(function(){ try{ call.remove(); }catch(e){} }, 1400); }
 }
 function undo(){
-  if(!lastMove || ANIMATING || PRZ.mode || !undoAllowed()) return;
+  if(!undoAllowed()){ if(isLevels() && clockKind()==="off") prizeToast("↩","Out of undos · clear a new level to win one"); return; }
+  if(!lastMove || ANIMATING || PRZ.mode) return;
   if(!undoFree() && !spendPrize("undo")) return;   // prize undo (level 4+): consume one, sets boostUsed
   VIEW="mine";
   sfx('select');
@@ -1708,9 +1716,11 @@ function render(justIdx){
   renderBestBar();
   // undo availability
   const undoBtn=document.getElementById("psUndo");
-  undoBtn.disabled = !lastMove || showBest || !!PRZ.mode;
-  undoBtn.style.display = undoAllowed() ? "" : "none";
-  undoBtn.textContent = (!undoFree() && prizeCount("undo")>0) ? ("Undo ×"+prizeCount("undo")) : "Undo";
+  const ua=undoAllowed(), uEmpty=!ua && isLevels() && clockKind()==="off";   // v264: out of undos on a no-undo level → a greyed "Undo ×0", not gone
+  undoBtn.style.display = (ua||uEmpty) ? "" : "none";
+  undoBtn.disabled = !uEmpty && (!lastMove || showBest || !!PRZ.mode);
+  undoBtn.classList.toggle("empty", uEmpty);
+  undoBtn.textContent = undoFree() ? "Undo" : ("Undo ×"+prizeCount("undo"));
   document.getElementById("psNew").textContent = isLevels() ? "New board" : "New game";
   document.documentElement.classList.toggle("mode-levels", isLevels());
   renderBotBar();
@@ -1774,7 +1784,7 @@ function openRules(){
     +'<h3>The clock</h3>'
     +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (12 at level 5, one less every ten levels, down to 5), and 10, 20… give you <b>one clock for the whole board</b> (120 seconds at level 10, five less every ten levels, down to 90). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
     +'<h3>Prizes</h3>'
-    +'<p>Levels win you power-ups: <b>Undo</b>, <b>Peek</b> at the next two cards, <b>Burn</b> the card in the tray for a fresh one, a <b>Hint</b> for the best square, <b>Freeze</b> the Blitz clock, and the rare <b>Swap</b> and <b>Wild</b>. Use them from the strip under the board. A board you use one on still clears, but tops out at two stars and wins no prizes. Menu → Prizes lists what you have and how each is won.</p>'
+    +'<p>Levels win you power-ups: <b>Undo</b>, <b>Peek</b> at the next two cards, <b>Burn</b> the card in the tray for a fresh one, a <b>Hint</b> for the best square, <b>Freeze</b> the Blitz clock, and the rare <b>Swap</b> and <b>Wild</b>. Use them from the strip under the board. A board you use one on still clears, but '+BOOST_NOTE+'. Menu → Prizes lists what you have and how each is won.</p>'
     +'<h3>What the lights mean</h3>'
     +'<p>A row or column that can still become a <b>straight flush</b> glows blue; one that can still become a <b>royal flush</b> glows gold. With four of the five down, the open square shows the card it needs and the chance it comes in time. When that card is the one in the tray, the square lights up: put it there.</p>'
     +'<p>Drag the card from the tray to see what a square would make before you let go. Tapping a square still works.</p>'
@@ -1848,9 +1858,9 @@ function levelResultsHTML(){
   return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
     +resHero('Level',L.n,title,chapterOf(L.n).name,r.cleared)
     +'<div class="lvstars">'+[0,1,2].map(i=>'<span class="lst'+(i<r.stars?' on':'')+'" style="animation-delay:'+(250+i*260)+'ms">★</span>').join('')+'</div>'
-    +(r.boosted?'<div class="lvboost">'+((r.used&&r.used.length)?r.used.map(k=>PRIZE_DEF[k].i).join(' '):'↩')+' Prize'+((r.used&&r.used.length>1)?'s':'')+' used · max ★★ · no prizes won</div>':'')
+    +(r.boosted?'<div class="lvboost">'+((r.used&&r.used.length)?r.used.map(k=>PRIZE_DEF[k].i).join(' '):'↩')+' Prize'+((r.used&&r.used.length>1)?'s':'')+' used · max ★★'+((r.won&&r.won.length)?'':' · no prizes won')+'</div>':'')
     +(loadPrizes().pick>0?'<button class="btn lvpick" onclick="openPick()">🎁 '+(r.pick?'Three in a row! Pick a prize':'Pick a prize')+'</button>':'')
-    +((r.won&&r.won.length)?'<div class="lvprz">Prizes won: '+r.won.map(k=>PRIZE_DEF[k].i+' <b>+1</b>').join(' · ')+'</div>':'')
+    +((r.won&&r.won.length)?'<div class="lvprz">Prizes won: '+r.won.map(k=>PRIZE_DEF[k].i+' <b>+1'+(PRIZE_DEF[k].prem?' lucky!':'')+'</b>').join(' · ')+'</div>':'')
     +(r.streak>0?'<div class="lvprz">⭐ Three-star streak <b>'+r.streak+' of 3</b> · '+(3-r.streak)+' more for a pick-a-prize</div>':'')
     +(r.unlocked?'<div class="lvunlock">Level '+(L.n+1)+' unlocked'+(chapterOf(L.n+1).from===L.n+1?' · '+chapterOf(L.n+1).name:'')+'</div>':'')
     +resPts(r.total,pctTxt+' of the best board ('+r.max+')')
@@ -2704,7 +2714,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v263", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v264", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
