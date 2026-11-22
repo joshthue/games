@@ -859,3 +859,55 @@ Josh: "it looks so sad" (flat grey dots on empty felt). The map is now a run of 
 - a few faint suit glyphs for texture; Blitz badges are orange "⚡12s"; Learn badges green.
 The map now runs to 8 levels past yours (was 4). Night theme has muted versions of all of it.
 Positions, the level card, selection and scrolling to your level are unchanged.
+
+## Twists and tricky deals (v268)
+Josh asked how to make the game harder as you climb without just shortening the clock, and picked two
+of the options: **harder deals at higher levels** and **a table twist per chapter**.
+
+**Tricky deals** (`dealShuffles`, `gradeOne`, `GRADE`). From level 16 the dealer shuffles more than one
+board and you get the trickiest: 2 shuffles from level 16, 3 from 50, 4 from 100. Blitz and part-built
+boards are dealt as before. "Trickiest" means the lowest **bot ratio**: the bot (`makeBot`, which
+never looks at the deck order) plays each shuffle in the order you'll get it, and a short search
+(`makeSolver`, one 120k-step anneal plus the polish) finds that shuffle's best board; ratio = bot ÷ best.
+Over 400 random deals the ratio runs from about 18% to 57% (median 37%), so the deal itself is a real
+lever. A shuffle under `DEAL_FLOOR` (22%) is passed over unless they all are, because its best board
+leans on a long shot. With the floor, the bot's average share drops from 40% to 37% / 33% / 31%
+for 2 / 3 / 4 shuffles (the target stays a share of the best board, so that's the difficulty).
+- The grading runs in a **Web Worker** built from `makeSolver` + `makeBot` + `gradeOne` (main-thread
+  fallback, one shuffle per timeslice). `levelStart` grades **the next level and a fresh board of this
+  one** in the background, so a tap usually finds a deal waiting (`GRADE.ready`, keyed `system:level`).
+  On a miss (first board of a session, a jump from the map) the tray shows a shuffling card back and
+  "Shuffling…" for about half a second on a desktop, a second or two on a phone, under the level intro.
+- `LV.graded` = `{of, ratios}` for the deal you got. The map card says "the trickiest of N shuffles".
+
+**Twists** (`levelTwist`, `TWISTS`). From level 12, the 2nd and 4th board of every five (12, 14, 17,
+19, 22…) has one. Blitz and part-built boards never do.
+- **Gold square** (High Stakes, 12-14): one square is gold and its row and column score double
+  (`LV.gold`; `lineMult` / `lineHand` in `computeLines`; the solver and the bot take per-line
+  multipliers, `mult`, rows 0-4 then columns). The square shows "×2", the two chips carry a ×2 tag, and
+  call-outs say "Flush ×2". `alignToMine` keeps the gold row and column where they are.
+- **Blind cards** (Master's Table, 15-24): three cards (never the first) come face down (`LV.blindK`).
+  The tray shows a blue back with "?", the line under it says "Face down · pick its square", and the card
+  turns over where it lands (`.reveal`). Peek shows them as "?"; Hint doesn't work on one; Wild works and
+  doesn't give it away; Undo brings it back face up (`LV.seenK`). Target 4 points lower.
+- **Short deck** (The Gauntlet, 25-39): no 2s to 5s, a 36-card deck (`levelDeck`). Burn draws from the
+  same short deck.
+- **Stones** (Iron Table, 40-54): two of the deal's cards start in random squares, never sharing a row or
+  column, and can't move. They ride the part-built locks (`LV.locks`, `LV.k`=2), so the solver, Swap and
+  Hint already respect them; they're drawn grey with a grey diamond.
+- **Other table** (The Summit only): the board is scored on the other system (`LV.sys`, `playSys()`
+  everywhere a board is scored, solved or hinted; progress, stats and best still use yours). Target 3
+  points lower. Rules shows the table in play, marked "(this board)".
+- **The Summit** (55+) deals them in turn: other, gold, blind, short, stones, every twist board.
+- The target is a share of the best board for that board as dealt, twist included, so each one is fair.
+- **First meeting:** a twist's first board opens an explainer card (a little picture, what it does,
+  Got it), once per twist per device (`pokersquares.twists`). It shows even with reduced motion.
+- The HUD reads "Level 17 · Blind cards", the level intro and map card name the twist, map nodes get a
+  coloured badge (Gold, Blind, Short, Stones, English/American), and chapter subtitles name their twist.
+- Twist boards don't earn trophies (same rule as part-built boards). Prizes work as usual.
+- `TW_OFF` switches twists off while scoring a board that isn't this level's (the high-score viewer).
+
+Checked headless at 402×874, American and English, day and night, with and without Workers: on every
+twist the solver's best board scores the same under `computeLines` as the solver says (gold, blind,
+short, stones, other), stones never move in it, blind cards hide in the tray and Peek and turn over on
+landing, and Free play is unchanged (no multipliers, its own scoring).

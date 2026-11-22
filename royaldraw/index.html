@@ -822,6 +822,45 @@
   html[data-theme="night"] .lvpath .done{stroke:#9c804b;} html[data-theme="night"] .lvpath .glow{stroke:rgba(201,162,94,.15);} html[data-theme="night"] .lvpath .shine{stroke:#cdb37c;}
   html[data-theme="night"] .lvchap b{background:#9c804b; color:#1a1612;} html[data-theme="night"] .lvchap b::before,html[data-theme="night"] .lvchap b::after{background:#6e5a36;}
 </style>
+<style id="twists-v268">
+  /* v268: table twists — the gold square, blind cards, stones, the shuffling tray, the explainer */
+  .pscell.gold{box-shadow:inset 0 0 0 2px #f1c95a,0 0 12px rgba(241,201,90,.55) !important;}
+  .pscell.empty.gold{background:radial-gradient(circle at 50% 45%,rgba(241,201,90,.30),rgba(241,201,90,.08) 70%); border-color:rgba(241,201,90,.7);}
+  .goldx{font:900 15px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#f6d77e; opacity:.85; letter-spacing:.5px; pointer-events:none;}
+  .psscore.x2{position:relative; border-color:rgba(241,201,90,.75) !important;}
+  .psscore.x2::after{content:"×2"; position:absolute; top:-5px; right:-4px; font:900 9px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; padding:2px 3px; border-radius:6px; background:#f1c95a; color:#2a1c05; box-shadow:0 1px 2px rgba(0,0,0,.4);}
+  .pscell.stone{filter:saturate(.35) brightness(.9); box-shadow:inset 0 0 0 2px rgba(150,156,166,.9),0 2px 5px rgba(0,0,0,.45) !important;}
+  .pscell.locked.stone::after{background:#9aa1ab; width:8px; height:8px; border-radius:2px; transform:rotate(45deg);}
+  #psCurrent .card.back.blind,#psCurrent .card.back.shuffling,.flycard.blindfly{background:repeating-linear-gradient(45deg,#1b6fb3 0 7px,#155a94 7px 14px) !important; border:2px solid #0e3f6b !important;}
+  #psCurrent .card.back{display:flex; align-items:center; justify-content:center;}
+  .bq{font:900 34px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#eaf3ff; text-shadow:0 2px 4px rgba(0,0,0,.45);}
+  .flycard.blindfly{display:flex; align-items:center; justify-content:center;} .flycard.blindfly .bq{font-size:24px;}
+  #psCurrent .card.back.shuffling{animation:twShuf .9s ease-in-out infinite alternate;}
+  @keyframes twShuf{from{transform:rotate(-4deg) translateX(-3px)} to{transform:rotate(4deg) translateX(3px)}}
+  .pscell.reveal{animation:twFlip .42s cubic-bezier(.3,.7,.3,1);}
+  @keyframes twFlip{0%{transform:rotateY(90deg); filter:brightness(1.4)} 100%{transform:none; filter:none}}
+  .pkc.bl{background:repeating-linear-gradient(45deg,#1b6fb3 0 4px,#155a94 4px 8px); color:#eaf3ff;}
+  .lvnode .bz.tw{background:#8a6a1c;} .lvnode .bz.tw-gold{background:#b8902e; color:#2a1c05;} .lvnode .bz.tw-blind{background:#1b5f9a;}
+  .lvnode .bz.tw-short{background:#2f7a64;} .lvnode .bz.tw-stone{background:#6b717a;} .lvnode .bz.tw-other{background:#7a3f9a;}
+  .twgate .bg-card{border-color:#f1c95a; box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 1px rgba(241,201,90,.25);}
+  .twgate .bg-k{color:#f6d77e;}
+  .twvis{display:flex; justify-content:center; margin:14px 0 8px;}
+  .twn{font:900 22px/1.15 Georgia,"Times New Roman",serif; color:#f6d77e; margin-top:4px;}
+  .twd{font-size:15px; line-height:1.45; color:#dfe6ff; margin:8px 0 6px;} .twd.sm{font-size:12.5px; opacity:.7; margin-bottom:14px;}
+  .twg{display:grid; grid-template-columns:repeat(5,18px); gap:4px;}
+  .twg i{width:18px; height:24px; border-radius:4px; background:rgba(255,255,255,.12); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
+  .twg i.gl{background:rgba(241,201,90,.28);} .twg i.g{background:#f1c95a; box-shadow:0 0 10px rgba(241,201,90,.7);} .twg i.s{background:#9aa1ab;}
+  .twcards{display:flex; gap:8px;} .twcards .tc{width:42px; height:58px; border-radius:7px; background:var(--cream,#f7f3e8); color:#1c2a24; font:900 17px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 2px 5px rgba(0,0,0,.45);}
+  .twcards .tc.bk{background:repeating-linear-gradient(45deg,#1b6fb3 0 6px,#155a94 6px 12px); color:#eaf3ff; font-size:24px; transform:translateY(-6px) rotate(3deg);}
+  .twranks{display:flex; flex-wrap:wrap; justify-content:center; gap:4px; max-width:290px;} .twranks b,.twranks s{min-width:26px; padding:5px 4px; border-radius:6px; font:900 14px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;}
+  .twranks b{background:var(--cream,#f7f3e8); color:#1c2a24;} .twranks s{background:rgba(255,255,255,.08); color:rgba(255,255,255,.35);}
+  .twtab{border-collapse:collapse; font-size:14px; color:#dfe6ff; margin:0 auto;} .twtab td,.twtab th{padding:3px 10px; text-align:right;} .twtab td:first-child{text-align:left;} .twtab th{font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65;} .twtab b{color:#f6d77e;}
+  html[data-theme="night"] .pscell.gold{box-shadow:inset 0 0 0 2px #b8954a !important;} html[data-theme="night"] .goldx,html[data-theme="night"] .twn,html[data-theme="night"] .twgate .bg-k{color:#d9b874;}
+  html[data-theme="night"] .psscore.x2::after{background:#b8954a;} html[data-theme="night"] .twd,html[data-theme="night"] .twtab{color:#cdbf9f;}
+  html[data-theme="night"] #psCurrent .card.back.blind,html[data-theme="night"] #psCurrent .card.back.shuffling,html[data-theme="night"] .flycard.blindfly{background:repeating-linear-gradient(45deg,#2c3a52 0 7px,#232f43 7px 14px) !important; border-color:#3d4d68 !important;}
+  html[data-theme="night"] .bq{color:#b9c6dc;}
+  @media (prefers-reduced-motion:reduce){ #psCurrent .card.back.shuffling,.pscell.reveal{animation:none} }
+</style>
 <style id="orient-lock-v228">
   /* Phone-only portrait lock. Tablets (html.tablet, height > 500) keep their landscape layout. */
   #rotateLock{display:none; position:fixed; inset:0; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:#0d5c3f; color:#f4efe2; gap:16px;}
@@ -985,7 +1024,7 @@ function przStreakBreak(){ const P=loadPrizes(); if(P.streak){ P.streak=0; saveP
 /* ---- spending them: the strip under the board ---- */
 function movableIdx(){ const a=[]; grid.forEach((c,i)=>{ if(c && !(LV&&LV.locks[i])) a.push(i); }); return a; }
 // the 27 cards the level didn't deal (minus any already drawn by a Burn)
-function spareCards(){ if(!LV) return []; const used=new Set(LV.deal.map(cardKey).concat(PRZ.fresh)); return makeDeck().filter(c=>!used.has(cardKey(c))); }
+function spareCards(){ if(!LV||LV.pending) return []; const used=new Set(LV.deal.map(cardKey).concat(PRZ.fresh)); return levelDeck(LV.tw).filter(c=>!used.has(cardKey(c))); }   // a short-deck board draws from the short deck
 function prizeApplies(k){
   if(!isLevels()||!LV||over||!current||BOT.on||VIEW!=="mine") return false;
   if(k==="undo") return false;                         // the Undo button spends these
@@ -993,6 +1032,7 @@ function prizeApplies(k){
   if(k==="peek") return queue.length>0;
   if(k==="burn") return spareCards().length>0;
   if(k==="swap") return movableIdx().length>0;
+  if(k==="hint") return !isBlind(current);             // v268: no hints for a face-down card
   return true; }                                       // hint, wild
 function przActive(k){ return k==="peek"?PRZ.peek:k==="hint"?(PRZ.hint>=0||PRZ.hintBusy):k==="freeze"?PRZ.frozen:k==="swap"?PRZ.mode==="swap":false; }
 function renderStrip(){
@@ -1056,7 +1096,7 @@ function hintMsg(){
   for(let i=0;i<25;i++){ if(grid[i]){ cards.push(grid[i]); fixed.push(true); }
     else { if(ri>=rest.length) return null; if(at<0) at=i; cards.push(rest[ri++]); fixed.push(false); } }
   if(at<0) return null;
-  return {at, cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:cards.map((c,i)=>i), fixed, iters:600000, maxRuns:4, minRuns:2, budget:3000};
+  return {at, cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[playSys()], seed:cards.map((c,i)=>i), fixed, mult:levelMult(), iters:600000, maxRuns:4, minRuns:2, budget:3000};
 }
 function hintStart(msg){
   przHintClear(); const tok=hintTok, t0=performance.now(); PRZ.hintBusy=true;
@@ -1097,18 +1137,18 @@ function flyCell(to, fromR){
     .onfinish=function(){ f.remove(); const now=document.querySelector('#psboard .pscell[data-i="'+to+'"]'); if(now) now.classList.remove("ghost"); }; }
 // Wild: pick any rank and suit for the tray card (a new card object, so a replay of the same board is untouched)
 let WILD=null;
-function openWild(){ if(!current) return; WILD={r:current.r, s:current.s}; wildPaint(); }
+function openWild(){ if(!current) return; WILD=isBlind(current)?{r:14, s:0}:{r:current.r, s:current.s}; wildPaint(); }   // a face-down card stays secret
 function wildSet(k,v){ if(!WILD) return; WILD[k]=v; NG.snd("hover",0); wildPaint(); }
 function wildPaint(){
-  const c={r:WILD.r, s:WILD.s, wild:true}, same=c.r===current.r && c.s===current.s;
+  const bl=isBlind(current), c={r:WILD.r, s:WILD.s, wild:true}, same=!bl && c.r===current.r && c.s===current.s;
   openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🃏 Wild card</h2>'
-    +'<p class="muted" style="margin-top:0">Turn the '+rankStr(current.r)+SUITS[current.s]+' into any card.'+(boostUsed?'':' If you use a prize on this board, '+BOOST_NOTE+'.')+'</p>'
+    +'<p class="muted" style="margin-top:0">Turn '+(bl?'the face-down card':'the '+rankStr(current.r)+SUITS[current.s])+' into any card.'+(boostUsed?'':' If you use a prize on this board, '+BOOST_NOTE+'.')+'</p>'
     +'<div class="wdprev">'+bigCardHTML(c)+'</div>'
     +'<div class="wdgrid">'+[2,3,4,5,6,7,8,9,10,11,12,13,14].map(r=>'<button class="'+(r===WILD.r?'on':'')+'" onclick="wildSet(\'r\','+r+')">'+rankStr(r)+'</button>').join('')+'</div>'
     +'<div class="wdsuits">'+[0,1,2,3].map(s=>'<button class="'+(s===WILD.s?'on':'')+'" style="color:'+suitColor(s)+'" onclick="wildSet(\'s\','+s+')">'+SUITS[s]+'</button>').join('')+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="wildPlay()"'+(same?' disabled':'')+'>'+(same?'Pick a different card':'Use Wild · '+rankStr(c.r)+SUITS[c.s])+'</button></div>',"wild");
 }
-function wildPlay(){ if(!WILD||!current||over) return; if(WILD.r===current.r && WILD.s===current.s) return;
+function wildPlay(){ if(!WILD||!current||over) return; if(!isBlind(current) && WILD.r===current.r && WILD.s===current.s) return;
   if(!spendPrize("wild")){ closeOverlay(); return; }
   current={r:WILD.r, s:WILD.s, wild:true}; WILD=null; PRZ.altered=true; przHintClear();
   closeOverlay(); sfx('select'); NG.snd("glint",0); NG.hap(2,60,"medium"); render(); }
@@ -1117,7 +1157,7 @@ function przTrayMsg(){
   if(!isLevels()||over||!current) return null;
   if(PRZ.mode==="swap") return PRZ.sel<0?'🔀 Tap a card to move':'🔀 Now tap where it goes';
   if(PRZ.hintBusy) return '💡 Thinking…';
-  if(PRZ.peek && queue.length) return 'Next '+queue.slice(-2).reverse().map(c=>'<span class="pkc" style="color:'+suitColor(c.s)+'">'+rankStr(c.r)+SUITS[c.s]+'</span>').join('');
+  if(PRZ.peek && queue.length) return 'Next '+queue.slice(-2).reverse().map(c=>isBlind(c)?'<span class="pkc bl">?</span>':'<span class="pkc" style="color:'+suitColor(c.s)+'">'+rankStr(c.r)+SUITS[c.s]+'</span>').join('');
   if(PRZ.hint>=0) return '💡 Try the glowing square';
   if(PRZ.frozen) return '❄️ Clock frozen for this card';
   return null; }
@@ -1180,14 +1220,17 @@ function scoreHand(cards){
   else if(counts[0]===2&&counts[1]===2) key="twopair";
   else if(counts[0]===2) key="pair";
   else key="high";
-  return {key, name:NAMEOF[key], pts:SCORING[settings.scoring][key]};
+  return {key, name:NAMEOF[key], pts:SCORING[playSys()][key]};
 }
 function lineIdx(type,idx){ const a=[]; for(let k=0;k<5;k++) a.push(type==="row"? idx*5+k : k*5+idx); return a; }
+// one line's hand; on a gold-square board (v268) the gold row and column score double (x2 marks it)
+function lineHand(type,idx,g){ const h=scoreHand(lineIdx(type,idx).map(x=>g[x])), m=lineMult(type,idx);
+  return (h && m>1) ? Object.assign({},h,{pts:h.pts*m, x2:true}) : h; }
 function computeLines(g){
   g = g || viewGrid();
   const rows=[],cols=[]; let total=0;
-  for(let i=0;i<5;i++){ const h=scoreHand(lineIdx("row",i).map(x=>g[x])); rows.push(h); if(h) total+=h.pts; }
-  for(let j=0;j<5;j++){ const h=scoreHand(lineIdx("col",j).map(x=>g[x])); cols.push(h); if(h) total+=h.pts; }
+  for(let i=0;i<5;i++){ const h=lineHand("row",i,g); rows.push(h); if(h) total+=h.pts; }
+  for(let j=0;j<5;j++){ const h=lineHand("col",j,g); cols.push(h); if(h) total+=h.pts; }
   return {rows,cols,total};
 }
 
@@ -1202,7 +1245,44 @@ const LV_LOCKS=[15,10,5];                                   // pre-filled square
 // Calibrated with the bot's brain (Oct 31): pre-filled squares help a lot (its median on level 1
 // is 86% of the best board), and a bare board is hard (37%). So 1-3 ask 40/40/38%, then the bare
 // boards start at 34% and climb 2 points a level to 55% at level 15.
-function levelPct(n){ return (n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4))) - (levelClock(n)!=="off"?.04:0); }
+function levelPct(n){ return (n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4))) - (levelClock(n)!=="off"?.04:0) + (TW_PCT[levelTwist(n)]||0); }
+/* v268: table twists. From level 12 the 2nd and 4th board of every five (12, 14, 17, 19, 22…) carries a
+   twist; Blitz boards and part-built boards never do. Each chapter brings in its own: High Stakes the gold
+   square, Master's Table blind cards, The Gauntlet the short deck, Iron Table stones, and The Summit deals
+   them all in turn, plus boards scored on the other table. The target is still a share of the best board
+   for the board as dealt (twist included), so each one is fair; blind cards and the other table ask a few
+   points less. A twist's first appearance stops for a short explainer (pokersquares.twists). */
+const TWISTS={
+  gold: {n:"Gold square", tag:"Gold",   d:"One square is gold. Its row and its column score double."},
+  blind:{n:"Blind cards", tag:"Blind",  d:"Three cards come face down. You choose their square before you see them."},
+  short:{n:"Short deck",  tag:"Short",  d:"No 2s, 3s, 4s or 5s: every card is a 6 or higher. More pairs, more straights, and a bigger best board to aim at."},
+  stone:{n:"Stones",      tag:"Stones", d:"Two cards start on the board in random squares. They can't move, so build around them."},
+  other:{n:"Other table", tag:"Other",  d:""}
+};
+const TW_PCT={blind:-.04, other:-.03}, TW_SUMMIT=["other","gold","blind","short","stone"];
+function levelTwist(n){ if(n<12 || LV_LOCKS[n-1] || levelClock(n)!=="off") return null; const m=n%5; if(m!==2 && m!==4) return null;
+  if(n<15) return "gold"; if(n<25) return "blind"; if(n<40) return "short"; if(n<55) return "stone";
+  return TW_SUMMIT[((((n-57)/5)|0)*2+(m===4?1:0))%TW_SUMMIT.length]; }
+function otherSys(){ return settings.scoring==="american"?"english":"american"; }
+function twistName(k){ return k==="other"?(otherSys()==="english"?"English scoring":"American scoring"):TWISTS[k].n; }
+function twistTag(k){ return k==="other"?(otherSys()==="english"?"English":"American"):TWISTS[k].tag; }
+function twistDesc(k){ if(k!=="other") return TWISTS[k].d;
+  return otherSys()==="english"?"This board is scored the English way: straights 12, four of a kind 16, full houses 10, flushes only 5.":"This board is scored the American way: flushes 20, straights 15, full houses 25, four of a kind 50, a royal flush 100."; }
+function twistSeen(k){ try{ return !!(JSON.parse(localStorage.getItem("pokersquares.twists"))||{})[k]; }catch(e){ return true; } }
+function twistMark(k){ try{ const T=JSON.parse(localStorage.getItem("pokersquares.twists"))||{}; T[k]=Date.now(); localStorage.setItem("pokersquares.twists",JSON.stringify(T)); }catch(e){} }
+let TW_OFF=0;   // >0 while scoring a board that isn't this level's (a high-score entry): no twist applies
+function playSys(){ return (!TW_OFF && isLevels() && LV && LV.sys) || settings.scoring; }
+function goldMult(g){ if(g==null) return null; const m=new Array(10).fill(1); m[(g/5)|0]=2; m[5+g%5]=2; return m; }   // lines: rows 0-4, then columns
+function levelMult(){ return (!TW_OFF && isLevels() && LV) ? goldMult(LV.gold) : null; }
+function lineMult(type,idx){ const m=levelMult(); return m ? m[(type==="row"?0:5)+idx] : 1; }
+function isBlind(c){ return !!(c && !c.wild && isLevels() && LV && LV.blindK && LV.blindK.has(cardKey(c)) && !LV.seenK.has(cardKey(c))); }
+/* v268: harder deals at higher levels. From level 16 the dealer shuffles a few boards and you get the one
+   the bot does worst on, measured as its share of the best board when it plays the cards in your order:
+   2 shuffles from level 16, 3 from 50, 4 from 100 (Blitz and part-built boards are dealt as before). A
+   shuffle the bot scores under 22% of the best on is passed over unless they all are: its best board leans
+   on a long shot. The grading runs in a worker, one level ahead, so the deal is usually ready on tap. */
+function dealShuffles(n){ return (n<16 || levelClock(n)!=="off" || LV_LOCKS[n-1]) ? 1 : (n<50?2:(n<100?3:4)); }
+const DEAL_FLOOR=.22;
 // Blitz: every 5th level is timed, 4 points easier. 5, 15, 25… the shot clock; 10, 20… the board clock.
 function levelClock(n){ return n%5!==0?"off":(n%10===0?"board":"shot"); }
 // v215: the clock tightens as you climb. Shot clock (5, 15, 25…): 8 s, one second less every 10 levels,
@@ -1231,9 +1311,14 @@ function askReview(){ try{ if(!window.GN_REVIEW) return; const K="pokersquares.r
 function lvUnlocked(){ return lvProg()[settings.scoring].level; }
 // A fresh deal for level n: 25 cards, the locked squares (from the best board for them), the order
 // the rest come to you, and the full layout the solver starts from.
+function levelDeck(tw){ return tw==="short" ? makeDeck().filter(c=>c.r>=6) : makeDeck(); }
 function levelDeal(n){
-  const deal=shuffle(makeDeck()).slice(0,25), k=LV_LOCKS[n-1]||0, locks=new Array(25).fill(null);
-  let layout=deal.slice();
+  const tw=levelTwist(n), deal=shuffle(levelDeck(tw)).slice(0,25), k=LV_LOCKS[n-1]||0, locks=new Array(25).fill(null);
+  let layout=deal.slice(), gold=null, blindK=null;
+  if(tw==="stone"){   // two random squares, never in the same row or column, hold the deal's first two cards
+    const a=(Math.random()*25)|0; let b; do{ b=(Math.random()*25)|0; }while(((b/5)|0)===((a/5)|0) || b%5===a%5);
+    locks[a]=deal[0]; locks[b]=deal[1]; const rest=deal.slice(2); layout=locks.map(c=>c||rest.pop()); }
+  if(tw==="gold") gold=(Math.random()*25)|0;
   if(k>0){
     const B=bestBoardFor(deal, settings.scoring).grid, L=computeLines(B);
     // lock the squares that matter most on that board (their row + column points, with a little
@@ -1246,15 +1331,66 @@ function levelDeal(n){
         if(locks[o.i] || rc[r]>=cap || cc[c]>=cap) continue; locks[o.i]=B[o.i]; rc[r]++; cc[c]++; got++; } }
     layout=B;
   }
-  const lockedK=new Set(locks.filter(Boolean).map(cardKey));
-  return {n, k, pct:levelPct(n), deal, locks, layout, order:shuffle(deal.filter(c=>!lockedK.has(cardKey(c)))),
+  const lockedK=new Set(locks.filter(Boolean).map(cardKey)), order=shuffle(deal.filter(c=>!lockedK.has(cardKey(c))));
+  if(tw==="blind"){ blindK=new Set(); shuffle(order.map((c,i)=>i).slice(1)).slice(0,3).forEach(i=>blindK.add(cardKey(order[i]))); }   // never the first card
+  return {n, k:lockedK.size, pct:levelPct(n), tw, gold, sys:tw==="other"?otherSys():null, blindK, seenK:new Set(), deal, locks, layout, order,
     solved:false, max:null, target:null, solve:null, onSolved:null, result:null};
+}
+/* ---- v268: the graded deal. Each shuffle is played by the bot in its real order (no peeking at what
+   comes next), then a short search finds that shuffle's best board; the lowest ratio wins (see DEAL_FLOOR).
+   Built from the same source as the solver worker, so it runs off the main thread and offline. ---- */
+function gradeOne(c, W){
+  const bot=makeBot(c.pts, W), key=x=>x.r*4+x.s, grid=c.grid0.slice(), on=new Set(grid.filter(Boolean).map(key));
+  let unseen=c.deck.filter(x=>!on.has(key(x)));
+  c.order.forEach(function(card){ const kk=key(card); unseen=unseen.filter(x=>key(x)!==kk); grid[bot(grid,card,unseen,c.mult)]=card; });
+  const S=makeSolver(c.cards, c.pts, c.fixed, c.mult), at={}; c.cards.forEach((x,i)=>{ at[key(x)]=i; });
+  const mine=S.total(grid.map(x=>at[key(x)])), T0=2*Math.max(c.pts.flush,c.pts.straight);
+  const best=Math.max(mine, S.polish([...Array(25).keys()]).score, S.polish(S.anneal(c.iters||120000,T0,T0/100).grid).score);
+  return best ? mine/best : 1; }
+function gradeWorkerMain(){ self.onmessage=function(e){ self.postMessage(e.data.cands.map(c=>gradeOne(c,e.data.w))); }; }
+function runGrader(msg, done){
+  let stop=null;
+  try{ const src=makeSolver.toString()+"\n"+makeBot.toString()+"\n"+gradeOne.toString()+"\n("+gradeWorkerMain.toString()+")();";
+    const url=URL.createObjectURL(new Blob([src],{type:"text/javascript"})), w=new Worker(url);
+    w.onmessage=function(e){ w.terminate(); URL.revokeObjectURL(url); done(e.data); };
+    w.onerror=function(ev){ ev.preventDefault(); w.terminate(); fallback(); };
+    w.postMessage(msg); stop=function(){ w.terminate(); URL.revokeObjectURL(url); };
+  }catch(e){ fallback(); }
+  function fallback(){ let dead=false, i=0; const out=[];   // one shuffle per timeslice, so the page stays tappable
+    setTimeout(function step(){ if(dead) return; out.push(gradeOne(msg.cands[i++],msg.w)); if(i<msg.cands.length) setTimeout(step,30); else done(out); },0);
+    stop=function(){ dead=true; }; }
+  return {stop:function(){ if(stop) stop(); }};
+}
+function gradeCand(d){ const cc=c=>({r:c.r,s:c.s});
+  return {pts:SCORING[d.sys||settings.scoring], deck:levelDeck(d.tw).map(cc), order:d.order.map(cc), grid0:d.locks.map(c=>c?cc(c):null),
+    cards:d.layout.map(cc), fixed:d.locks.map(Boolean), mult:goldMult(d.gold)}; }
+function gradePick(r){ const ix=r.map((v,i)=>i).sort((a,b)=>r[a]-r[b]), ok=ix.filter(i=>r[i]>=DEAL_FLOOR); return ok.length?ok[0]:ix[ix.length-1]; }
+const GRADE={ready:{}, wait:{}, queue:[], job:null};
+function gradeKey(n){ return settings.scoring+":"+n; }
+function gradeAhead(n){ const k=gradeKey(n); if(dealShuffles(n)<2 || GRADE.ready[k] || GRADE.queue.indexOf(k)>=0 || (GRADE.job&&GRADE.job.key===k)) return;
+  GRADE.queue.push(k); gradeNext(); }
+// cb(deal): straight away if one is ready, otherwise when its grading finishes (this level jumps the queue)
+function gradeTake(n, cb){ const k=gradeKey(n), d=GRADE.ready[k];
+  if(d){ delete GRADE.ready[k]; cb(d); return; }
+  GRADE.wait[k]=cb; if(GRADE.job&&GRADE.job.key===k) return;
+  GRADE.queue=GRADE.queue.filter(x=>x!==k); GRADE.queue.unshift(k); gradeNext(); }
+function gradeNext(){
+  if(GRADE.job || !GRADE.queue.length) return;
+  const key=GRADE.queue.shift(), n=+key.split(":")[1];
+  if(key.split(":")[0]!==settings.scoring){ gradeNext(); return; }   // queued before a change of scoring
+  const cands=[]; for(let i=0;i<dealShuffles(n);i++) cands.push(levelDeal(n));
+  const job={key}; GRADE.job=job;
+  job.run=runGrader({w:BOT_W, cands:cands.map(gradeCand)}, function(r){
+    if(GRADE.job!==job) return; GRADE.job=null;
+    const d=cands[gradePick(r)]; d.graded={of:cands.length, ratios:r.map(x=>Math.round(x*1000)/1000)};
+    const cb=GRADE.wait[key]; if(cb){ delete GRADE.wait[key]; cb(d); } else GRADE.ready[key]=d;
+    gradeNext(); });
 }
 function levelSolve(){
   const L=LV; if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; }
   if(L.solve){ L.solved=true; levelHUD(); return; }          // replaying the same board: already known
   const layout=L.layout;
-  const msg={cards:layout.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:layout.map((c,i)=>i), fixed:layout.map((c,i)=>!!L.locks[i])};
+  const msg={cards:layout.map(c=>({r:c.r,s:c.s})), pts:SCORING[L.sys||settings.scoring], seed:layout.map((c,i)=>i), fixed:layout.map((c,i)=>!!L.locks[i]), mult:goldMult(L.gold)};
   LVSOLVER=runSolver(msg,function(m){
     if(LV!==L || !m.done) return;
     LVSOLVER=null; L.solve={score:m.score, raw:m.grid.map(i=>layout[i])};
@@ -1265,13 +1401,28 @@ function levelSolve(){
 function levelSetup(opts){
   if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; }
   const n=opts.n || (opts.same&&LV?LV.n:(LV&&!opts.top?LV.n:lvUnlocked()));
-  const _reuse = opts.same && LV && LV.n===n;
+  const _reuse = opts.same && LV && LV.n===n && !LV.pending;
   if(_reuse && LV.bestSeen) LV.postBest=(LV.postBest||0)+1;   // one replay allowed once the best board has been viewed
-  if(!_reuse) LV=levelDeal(n);
-  LV.result=null; LV.onSolved=null;
+  if(!_reuse){
+    if(dealShuffles(n)>1){   // v268: a graded deal; if it isn't ready yet the tray shuffles until it is
+      const stub={n, pending:true, k:0, pct:levelPct(n), tw:levelTwist(n), gold:null, sys:null, locks:new Array(25).fill(null), order:[], result:null};
+      let sync=true, got=null; const key0=gradeKey(n);
+      gradeTake(n, function(d){ if(sync){ got=d; return; }
+        if(LV!==stub){ if(gradeKey(n)===key0 && !GRADE.ready[key0]) GRADE.ready[key0]=d; return; }   // another board was asked for meanwhile: keep this one for next time
+        LV=d; levelStart(); render(); });
+      sync=false;
+      if(!got){ LV=stub; grid=new Array(25).fill(null); queue=[]; current=null; return; }
+      LV=got;
+    } else LV=levelDeal(n);
+  }
+  levelStart();
+}
+function levelStart(){
+  LV.result=null; LV.onSolved=null; if(LV.seenK) LV.seenK=new Set();
   if(LV.solve){ LV.max=LV.solve.score; LV.target=Math.ceil(LV.pct*LV.max); }
   grid=LV.locks.slice(); queue=LV.order.slice().reverse(); current=queue.pop();
   levelSolve();
+  gradeAhead(LV.n+1); gradeAhead(LV.n);   // the next level and a fresh board of this one, graded in the background
 }
 function levelHUD(){
   if(!isLevels()||!LV) return;
@@ -1280,7 +1431,9 @@ function levelHUD(){
   el.innerHTML='Target <b>'+(LV.target==null?'…':LV.target)+'</b>'; if(!scoreHold) tgBarDraw(shownTotal);
   el.className='best goal'+(LV.target!=null && total>=LV.target?' ahead':'');
   if(!over && !(viewGrid()!==grid)){ const pe=document.getElementById("psPlace"), pm=przTrayMsg();
-    if(pm) pe.innerHTML=pm; else pe.textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz "+levelSecs(LV.n)+"s":""))); }
+    if(pm) pe.innerHTML=pm; else if(LV.pending) pe.textContent="Shuffling…";
+    else if(isBlind(current)) pe.textContent="Face down · pick its square";
+    else pe.textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.tw?" · "+twistName(LV.tw):(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz "+levelSecs(LV.n)+"s":"")))); }
 }
 // stars: 1 at the target, 2 at +5 points of percentage, 3 at +10
 function levelJudge(total){
@@ -1314,13 +1467,14 @@ function setMode(m){ if(settings.mode===m) return; settings.mode=m; persist(); n
 function stars(n){ let h=''; for(let i=0;i<3;i++) h+=i<n?'<b>★</b>':'★'; return h; }
 /* ---- the level map (v213): a winding path, chapters, a card for the level you tap ---- */
 const LV_CHAPTERS=[{from:1,name:"Training Table",sub:"Part-built boards: learn what a good one looks like",felt:"#35a86c"},
-  {from:25,name:"The Gauntlet",sub:"The Blitz clocks start to shrink",felt:"#b07a2e"},{from:40,name:"Iron Table",sub:"8 seconds a card and falling",felt:"#4f7ba6"},{from:55,name:"The Summit",sub:"7 seconds a card, 5 from level 75",felt:"#c9a432"},
-  {from:4,name:"The Climb",sub:"Bare boards, no undo",felt:"#2b9a9e"},{from:10,name:"High Stakes",sub:"The targets bite",felt:"#b8423f"},{from:15,name:"Master's Table",sub:"55% of the best board, every time",felt:"#6a55b8"}];   // felt: the map's colour for that stretch (v267)
+  {from:25,name:"The Gauntlet",sub:"Blitz clocks shrink · new twist: the short deck",felt:"#b07a2e"},{from:40,name:"Iron Table",sub:"8 seconds a card and falling · new twist: stones",felt:"#4f7ba6"},{from:55,name:"The Summit",sub:"Every twist in turn, and the other scoring table",felt:"#c9a432"},
+  {from:4,name:"The Climb",sub:"Bare boards, no undo",felt:"#2b9a9e"},{from:10,name:"High Stakes",sub:"The targets bite · new twist: the gold square",felt:"#b8423f"},{from:15,name:"Master's Table",sub:"55% of the best board · new twist: blind cards",felt:"#6a55b8"}];   // felt: the map's colour for that stretch (v267); subs name each chapter's twist (v268)
 LV_CHAPTERS.sort((a,b)=>a.from-b.from);
 function chapterOf(n){ let c=LV_CHAPTERS[0]; LV_CHAPTERS.forEach(x=>{ if(n>=x.from) c=x; }); return c; }
 let LVSEL=null;
-function lvInfo(n){ const k=LV_LOCKS[n-1]||0, ck=levelClock(n);
-  return [Math.round(levelPct(n)*100)+'% of the best board', k?k+' pre-filled':null, ck!=="off"?'Blitz · '+clockLabel(ck,levelSecs(n)):null, n>=4?'no undo':'undo allowed'].filter(Boolean); }
+function lvInfo(n){ const k=LV_LOCKS[n-1]||0, ck=levelClock(n), tw=levelTwist(n), sh=dealShuffles(n);
+  return [Math.round(levelPct(n)*100)+'% of the best board', k?k+' pre-filled':null, tw?'Twist · '+twistName(tw):null, ck!=="off"?'Blitz · '+clockLabel(ck,levelSecs(n)):null,
+    sh>1?'the trickiest of '+sh+' shuffles':null, n>=4?'no undo':'undo allowed'].filter(Boolean); }
 function lvCardHTML(n){
   const R=lvProg()[settings.scoring], top=R.level, st=R.stars[n]||0, lock=n>top, ch=chapterOf(n);
   return '<div class="lvcard'+(lock?' lock':'')+'"><div class="lvc-top"><span class="lvc-n">Level '+n+'</span><span class="lvc-ch">'+ch.name+'</span></div>'
@@ -1347,6 +1501,7 @@ function openLevels(){
       +'<span class="face"><b>'+n+'</b>'+(state==='lock'?'':'<i style="color:'+suitColor(su)+'">'+SU[su]+'</i>')+'</span>'
       +(ck!=="off"?'<span class="bz">⚡'+levelSecs(n)+'s</span>':'')
       +(LV_LOCKS[n-1]?'<span class="bz learn">Learn</span>':'')
+      +(levelTwist(n)?'<span class="bz tw tw-'+levelTwist(n)+'">'+twistTag(levelTwist(n))+'</span>':'')
       +(state!=='lock'||st?'<span class="st">'+stars(st)+'</span>':'')
       +((n===5||n===10)?'<span class="ms">'+NG.cup(n===5?'s':'g')+'</span>':'')
       +'</button>';
@@ -1366,7 +1521,28 @@ function openLevels(){
   const pn=document.getElementById("panel"), cur=document.querySelector('.lvnode[data-n="'+top+'"]');
   if(pn&&cur) pn.scrollTop=Math.max(0,cur.offsetTop+cur.parentNode.offsetTop-pn.clientHeight*.55);
 }
-function boardIntro(){ if(CLOCK.kind!=="off") blitzGate(); else levelIntro(); }
+function boardIntro(){ if(twistNew()) twistGate(); else if(CLOCK.kind!=="off") blitzGate(); else levelIntro(); }
+// v268: the first board with a twist stops to explain it (once per twist, per device)
+function twistNew(){ return !!(isLevels() && LV && LV.tw && !twistSeen(LV.tw)); }
+function twistVisual(k){
+  const grid=f=>'<div class="twg">'+Array.from({length:25},(_,i)=>'<i class="'+f(i)+'"></i>').join('')+'</div>';
+  if(k==="gold") return grid(i=>i===12?'g':((i/5|0)===2||i%5===2?'gl':''));
+  if(k==="stone") return grid(i=>(i===6||i===18)?'s':'');
+  if(k==="blind") return '<div class="twcards"><span class="tc">7<b style="color:'+suitColor(1)+'">'+SUITS[1]+'</b></span><span class="tc bk">?</span><span class="tc">Q<b style="color:'+suitColor(0)+'">'+SUITS[0]+'</b></span></div>';
+  if(k==="short") return '<div class="twranks">'+[2,3,4,5].map(r=>'<s>'+r+'</s>').join('')+[6,7,8,9,10,11,12,13,14].map(r=>'<b>'+rankStr(r)+'</b>').join('')+'</div>';
+  const A=SCORING.american, E=SCORING.english, to=otherSys(), from=settings.scoring;
+  return '<table class="twtab"><tr><th></th><th>'+(from==="american"?"American":"English")+'</th><th>'+(to==="american"?"American":"English")+'</th></tr>'
+    +["straight","flush","full","four"].map(h=>'<tr><td>'+NAMEOF[h]+'</td><td>'+SCORING[from][h]+'</td><td><b>'+SCORING[to][h]+'</b></td></tr>').join('')+'</table>'; }
+function twistGate(){
+  document.querySelectorAll(".bgate,.lvintro").forEach(e=>e.remove()); GATE=true;
+  const k=LV.tw, el=document.createElement("div"); el.className="bgate twgate";
+  el.innerHTML='<div class="bg-card"><div class="bg-k">New twist · Level '+LV.n+'</div><div class="bg-ch">'+chapterOf(LV.n).name+'</div>'
+    +'<div class="twvis">'+twistVisual(k)+'</div><div class="twn">'+twistName(k)+'</div><p class="twd">'+twistDesc(k)+'</p>'
+    +'<p class="twd sm">The target is a share of the best board for these cards, with the twist.'+(TW_PCT[k]?' This one asks '+Math.round(-TW_PCT[k]*100)+' points less.':'')+'</p>'
+    +'<button class="btn bg-go">Got it</button></div>';
+  document.body.appendChild(el); NG.snd("riser",0);
+  el.querySelector(".bg-go").onclick=function(){ twistMark(k); el.remove(); GATE=false; if(!reduceMotion()) levelIntro(); };
+}
 // The Blitz briefing: what the clock is, what happens when it runs out, a Ready button, then 3-2-1-Go.
 function blitzGate(){
   document.querySelectorAll(".bgate,.lvintro").forEach(e=>e.remove()); GATE=true;
@@ -1390,7 +1566,7 @@ function countdown(){
 function levelIntro(){
   if(!isLevels()||!LV) return; document.querySelectorAll(".lvintro").forEach(e=>e.remove());
   const ck=levelClock(LV.n), bits=[chapterOf(LV.n).name];
-  if(LV.k) bits.push(LV.k+' pre-filled'); if(ck!=="off") bits.push('Blitz · '+clockLabel(ck,levelSecs(LV.n)));
+  if(LV.tw) bits.push(twistName(LV.tw)); else if(LV.k) bits.push(LV.k+' pre-filled'); if(ck!=="off") bits.push('Blitz · '+clockLabel(ck,levelSecs(LV.n)));
   const el=document.createElement("div"); el.className="lvintro"+(ck!=="off"?" blitz":"");
   el.innerHTML='<div class="k">Level</div><div class="n">'+LV.n+'</div><div class="d">'+bits.join(' · ')+'</div><div class="t">Target '+Math.round(LV.pct*100)+'% of the best board</div>';
   document.body.appendChild(el); setTimeout(()=>el.remove(),1900);
@@ -1456,7 +1632,7 @@ function newGame(opts){
   else { if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
   NG.reset(); clockReset(); render();
   const timed=CLOCK.kind!=="off"; GATE=timed;
-  if(timed || (isLevels() && !(opts&&opts.same) && !reduceMotion())){ if(curOverlay.kind) introPending=true; else boardIntro(); }
+  if(timed || (isLevels() && !(opts&&opts.same) && !reduceMotion()) || twistNew()){ if(curOverlay.kind) introPending=true; else boardIntro(); }
 }
 function undoFree(){ return clockKind()==="off" && (!isLevels() || !LV || LV.n<=3); }
 function undoAllowed(){ return undoFree() || (clockKind()==="off" && prizeCount("undo")>0); }
@@ -1464,6 +1640,7 @@ function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
   if(over||!current||grid[i]||PRZ.mode) return;
   const from=document.querySelector('#psCurrent .card'), fromR=ngFromRect||(from?from.getBoundingClientRect():null); ngFromRect=null;
+  const blind=isBlind(current); if(blind) LV.seenK.add(cardKey(current));   // v268: a face-down card turns over where it lands
   grid[i]=current;
   sfx('place');
   PRZ.peek=false; PRZ.frozen=false; przHintClear();   // Peek, Hint and Freeze last for one card
@@ -1474,26 +1651,27 @@ function place(i){
     if(fl && !reduceMotion()) holdScore(fl); }
   if(CLOCK.kind==="shot"){ CLOCK.left=CLOCK.shotMs; CLOCK.lastSec=-1; CLOCK.grace=performance.now()+GRACE_MS; }   // a fresh 8 s for the next card
   if(placed()===25){ finish(true); } else { render(i); }
-  dealFx(i, fromR);
+  dealFx(i, fromR, blind);
 }
 /* ---- v201: the card flies from the tray to its square; a line it finishes sweeps and calls out ---- */
 function reduceMotion(){ return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
-function dealFx(i, fromR){
+function dealFx(i, fromR, blind){
   const cell=document.querySelector('#psboard .pscell[data-i="'+i+'"]');
   const done=[], quads=[]; const r=Math.floor(i/5), c=i%5;
   [["row",r],["col",c]].forEach(function(l){
     const idxs=lineIdx(l[0],l[1]), cards=idxs.map(x=>grid[x]), full=cards.every(Boolean);
-    if(full) done.push({type:l[0], idx:l[1], h:scoreHand(cards)});
+    if(full) done.push({type:l[0], idx:l[1], h:lineHand(l[0],l[1],grid)});
     // v226: a four-of-a-kind locks the moment the 4th matching card lands — celebrate then, not when the line fills
     const key=l[0]+l[1];
     if(!quadDone.has(key) && grid[i] && !full){ let n=0; for(var qi=0;qi<idxs.length;qi++){ const cd=grid[idxs[qi]]; if(cd&&cd.r===grid[i].r) n++; } if(n>=4){ quadDone.add(key); quads.push({type:l[0], idx:l[1], rank:grid[i].r}); } }
   });
   const user=!ngByBot;
-  function landed(){ NG.land(i,user); quads.forEach(function(q){ quadCelebrate(q.type,q.idx,q.rank); }); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
+  function landed(){ if(blind){ const el=document.querySelector('#psboard .pscell[data-i="'+i+'"]'); if(el){ el.classList.remove("reveal"); void el.offsetWidth; el.classList.add("reveal"); } NG.snd("glint",NG.panOfCol(i%5)); }
+    NG.land(i,user); quads.forEach(function(q){ quadCelebrate(q.type,q.idx,q.rank); }); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
   if(!cell || !fromR || reduceMotion() || !document.body.animate){ landed(); return; }
   NG.snd('whoosh', NG.panOfCol(i%5));
   const to=cell.getBoundingClientRect();
-  const f=document.createElement("div"); f.className="flycard deal"; f.innerHTML=cell.innerHTML;
+  const f=document.createElement("div"); f.className="flycard deal"+(blind?" blindfly":""); f.innerHTML=blind?'<span class="bq">?</span>':cell.innerHTML;
   Object.assign(f.style,{left:to.left+"px", top:to.top+"px", width:to.width+"px", height:to.height+"px"});
   document.body.appendChild(f); cell.style.visibility="hidden";
   const sx=fromR.width/to.width, sy=fromR.height/to.height;
@@ -1523,7 +1701,7 @@ function lineFx(d){
   const a=els[0].getBoundingClientRect(), b=els[4].getBoundingClientRect();
   NG.clearCalls();   // a made hand replaces any draw callout still up
   const call=document.createElement("div"); call.className="pscall t"+t;
-  call.innerHTML = h.pts>0 ? h.name+'<b>+'+h.pts+'</b>' : 'No hand';
+  call.innerHTML = h.pts>0 ? h.name+(h.x2?' ×2':'')+'<b>+'+h.pts+'</b>' : 'No hand';
   psPlaceCall(call);
   document.body.appendChild(call); setTimeout(function(){ call.remove(); }, 1300);
   if(t>=4) sfx('win'); else if(t===3) { sfx('good'); setTimeout(function(){ sfx('chip'); }, 180); }
@@ -1597,18 +1775,19 @@ function bigCardHTML(c){
 }
 // how loud a hand is, for the chip's glow and the callout (v201)
 const TIER={high:0,pair:1,twopair:1,three:2,straight:2,flush:2,full:3,four:3,sflush:4,royal:4};
-function chipHTML(h){
-  if(!h) return '<div class="psscore"><span class="dot">·</span></div>';
-  return '<div class="psscore t'+TIER[h.key]+(h.pts>0?' has':'')+'" title="'+h.name+' · '+h.pts+'"><span class="ab">'+ABBR[h.key]+'</span><span class="pts">'+h.pts+'</span></div>';
+function chipHTML(h, x2){   // x2: a gold-square line (v268), marked even before it's finished
+  if(!h) return '<div class="psscore'+(x2?' x2':'')+'"><span class="dot">·</span></div>';
+  return '<div class="psscore t'+TIER[h.key]+(h.pts>0?' has':'')+(x2||h.x2?' x2':'')+'" title="'+h.name+' · '+h.pts+'"><span class="ab">'+ABBR[h.key]+'</span><span class="pts">'+h.pts+'</span></div>';
 }
+function blindCardHTML(){ return '<div class="card back blind"><span class="bq">?</span></div>'; }
 function miniHTML(card){
   return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>'+(card.wild?'<span class="wildmk">★</span>':'');
 }
 /* Render ANY 25-card grid read-only (for viewing a leaderboard entry's board). Reuses the
    live board's cells and chips but touches no game state - computeLines takes the grid. */
 function viewBoardHTML(cards, sys){
-  const keep=settings.scoring; settings.scoring=sys;
-  let lines; try{ lines=computeLines(cards); } finally{ settings.scoring=keep; }
+  const keep=settings.scoring; settings.scoring=sys; TW_OFF++;
+  let lines; try{ lines=computeLines(cards); } finally{ settings.scoring=keep; TW_OFF--; }
   const {rows,cols,total}=lines;
   let html="";
   for(let r=0;r<5;r++){
@@ -1683,7 +1862,7 @@ function makeBot(PTS, W){
     return Math.max(fv,sv,rv)+0.15*Math.min(fv,rv);
   }
   const L=[]; for(let i=0;i<5;i++){ L.push([0,1,2,3,4].map(c=>i*5+c)); } for(let j=0;j<5;j++){ L.push([0,1,2,3,4].map(r=>r*5+j)); }
-  return function pick(grid, card, unseen){ // unseen: cards not on the board and not `card`
+  return function pick(grid, card, unseen, M){ // unseen: cards not on the board and not `card`; M: line multipliers (v268 gold square)
     const suit=[0,0,0,0], rank=new Array(15).fill(0); unseen.forEach(c=>{ suit[c.s]++; rank[c.r]++; });
     const empties=[]; grid.forEach((c,i)=>{ if(!c) empties.push(i); });
     const chase=[0,0,0,0];
@@ -1691,11 +1870,11 @@ function makeBot(PTS, W){
     const ctx={D:unseen.length, R:empties.length-1, suit, rank, chase, self:-1};
     let best=-1e9, bi=empties[0];
     for(const i of empties){ let d=0;
-      for(const l of L){ if(!l.includes(i)) continue;
+      for(let li=0;li<10;li++){ const l=L[li]; if(!l.includes(i)) continue;
         const before=l.map(x=>grid[x]).filter(Boolean), after=before.concat([card]);
         const sf=cs=>(cs.length&&cs.every(c=>c.s===cs[0].s))?cs[0].s:-1;
         ctx.self=sf(before); const vb=lineVal(before,ctx); ctx.self=sf(after); const va=lineVal(after,ctx); ctx.self=-1;
-        d+=va-vb; }
+        d+=(va-vb)*(M?M[li]:1); }
       if(d>best+1e-9){ best=d; bi=i; } }
     return bi; };
 }
@@ -1703,10 +1882,10 @@ const BOT_W={flushW:1, rankW:2.2, share:0.5, second:0.7};
 
 const BOT_MS=1500;
 let BOT={on:false, t:null, fns:{}}, botTouched=false;
-function botPickFn(){ const k=settings.scoring; return BOT.fns[k]||(BOT.fns[k]=makeBot(SCORING[k], BOT_W)); }
+function botPickFn(){ const k=playSys(); return BOT.fns[k]||(BOT.fns[k]=makeBot(SCORING[k], BOT_W)); }
 function unseenCards(){ const seen=new Set(grid.filter(Boolean).map(cardKey)); if(current) seen.add(cardKey(current));
-  return makeDeck().filter(c=>!seen.has(cardKey(c))); }
-function botMove(){ if(!BOT.on||over||!current||ANIMATING) return; botTouched=true; ngByBot=true; try{ place(botPickFn()(grid, current, unseenCards())); } finally{ ngByBot=false; } }
+  return (isLevels()&&LV?levelDeck(LV.tw):makeDeck()).filter(c=>!seen.has(cardKey(c))); }
+function botMove(){ if(!BOT.on||over||!current||ANIMATING) return; botTouched=true; ngByBot=true; try{ place(botPickFn()(grid, current, unseenCards(), levelMult())); } finally{ ngByBot=false; } }
 function botSchedule(){ clearTimeout(BOT.t); BOT.t=null;
   if(!BOT.on||over||!settings.botAuto) return;
   BOT.t=setTimeout(function(){ if(curOverlay.kind){ botSchedule(); return; }   // waits while a panel is open
@@ -1749,8 +1928,9 @@ function render(justIdx){
   const g=viewGrid(), showBest=g!==grid;
   const {rows,cols,total}=computeLines(g);
   // tray
-  document.getElementById("psCurrent").innerHTML=bigCardHTML(current)+clockRingHTML();
-  document.getElementById("psCurrent").style.display=current?"":"none";   // board full: no next card, give the room back
+  const pend=isLevels()&&LV&&LV.pending;   // v268: a graded deal still being chosen: the tray shuffles a card back
+  document.getElementById("psCurrent").innerHTML=(pend?'<div class="card back shuffling"></div>':(isBlind(current)?blindCardHTML():bigCardHTML(current)))+clockRingHTML();
+  document.getElementById("psCurrent").style.display=(current||pend)?"":"none";   // board full: no next card, give the room back
   const n=placed();
   document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? (botTouched?"The bot's board":"Board complete") : (BOT.on ? (settings.botAuto?"The bot is playing":"Tap Next card") : "Tap an empty square"));
   const k0=(isLevels()&&LV)?LV.k:0;
@@ -1768,22 +1948,23 @@ function render(justIdx){
   for(let r=0;r<5;r++){
     for(let c=0;c<5;c++){
       const idx=r*5+c, card=g[idx];
+      const gd=(isLevels() && LV && LV.gold===idx)?' gold':'';   // v268: the gold square
       if(card){
-        const lk=(!showBest && isLevels() && LV && LV.locks[idx])?' locked':'';
+        const lk=(!showBest && isLevels() && LV && LV.locks[idx])?(' locked'+(LV.tw==="stone"?' stone':'')):'';
         const sc=(sw&&!lk)?(PRZ.sel===idx?' swpsel':' swpok'):'';
-        html+='<div class="pscell filled'+lk+sc+(justIdx===idx?' just':'')+'" data-i="'+idx+'"'+(sc?' onclick="przCell('+idx+')"':'')+'>'+miniHTML(card)+'</div>';
+        html+='<div class="pscell filled'+lk+gd+sc+(justIdx===idx?' just':'')+'" data-i="'+idx+'"'+(sc?' onclick="przCell('+idx+')"':'')+'>'+miniHTML(card)+'</div>';
       }else if(sw){
         const to=PRZ.sel>=0;
-        html+='<div class="pscell empty'+(to?' swpto':'')+'" data-i="'+idx+'"'+(to?' onclick="przCell('+idx+')"':'')+'></div>';
+        html+='<div class="pscell empty'+gd+(to?' swpto':'')+'" data-i="'+idx+'"'+(to?' onclick="przCell('+idx+')"':'')+'>'+(gd?'<span class="goldx">×2</span>':'')+'</div>';
       }else{
         const live=(!over&&current&&!BOT.on&&!CLOCK.dumping)?' live':'';
         const hc=(live && !showBest && PRZ.hint===idx)?' hintc':'';   // Hint prize: the best board's square for this card
-        html+='<div class="pscell empty'+live+hc+'" data-i="'+idx+'"'+(live?(' onclick="place('+idx+')"'):'')+'>'+(hc?'<span class="hintb">💡</span>':'')+'</div>';
+        html+='<div class="pscell empty'+live+hc+gd+'" data-i="'+idx+'"'+(live?(' onclick="place('+idx+')"'):'')+'>'+(hc?'<span class="hintb">💡</span>':(gd?'<span class="goldx">×2</span>':''))+'</div>';
       }
     }
-    html+=chipHTML(rows[r]);
+    html+=chipHTML(rows[r], lineMult("row",r)>1);
   }
-  for(let c=0;c<5;c++) html+=chipHTML(cols[c]);
+  for(let c=0;c<5;c++) html+=chipHTML(cols[c], lineMult("col",c)>1);
   html+='<div class="psscore corner"><span class="ab">TOT</span><span class="pts">'+total+'</span></div>';
   const board=document.getElementById("psboard");
   board.innerHTML=html; board.classList.toggle("isbest",showBest);
@@ -1845,23 +2026,26 @@ let introPending=false;   // a level dealt behind the Menu shows its intro when 
 function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; try{ fitPS(); }catch(e){} if(introPending){ introPending=false; boardIntro(); } }   // v265: a fit skipped while a panel was up happens now, not on the first card
 
 function scoreTableHTML(){
-  const S=SCORING[settings.scoring];
+  const S=SCORING[playSys()];   // v268: on an other-table board, the table in play
   let rows="";
   ORDER.forEach(k=>{ if(k==="high") return;
     rows+='<tr><td>'+NAMEOF[k]+'</td><td>'+S[k]+'</td></tr>'; });
   return '<table>'+rows+'</table>';
 }
 function openRules(){
-  const sysName = settings.scoring==="american" ? "American" : "English";
+  const sysName = playSys()==="american" ? "American" : "English", sysThis = playSys()!==settings.scoring ? ' (this board)' : '';
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>How to play</h2>'
     +'<p>Cards are dealt <b>one at a time</b> into a 5×5 grid. Tap any empty square to drop the card shown in the tray. Once it is down it stays put — <b>Undo</b> only reverses your most recent placement.</p>'
     +'<p>When all 25 squares are full, each of the <b>5 rows</b> and <b>5 columns</b> is scored as a poker hand. Your total is the sum of all ten. Aces play high or low, <b>A-2-3-4-5</b> counts as a straight, and <b>10-J-Q-K-A</b> of one suit is a royal flush.</p>'
-    +'<h3>Scoring — '+sysName+' system</h3>'
+    +'<h3>Scoring — '+sysName+' system'+sysThis+'</h3>'
     +scoreTableHTML()
     +'<h3>Levels</h3>'
     +'<p>In <b>Levels</b> (the Menu switches to Free play) each board has a target: a share of the best board its 25 cards can make. It shows under your score a few seconds into the deal, turning green when you pass it. Clear it to open the next level; score 5% or 10% over for two or three stars. Levels 1 to 3 come part-built (the gold-dotted squares are locked in from the best board), and Undo works only there. Miss, and you can replay the same board or take a new one.</p>'
     +'<h3>The clock</h3>'
     +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (12 at level 5, one less every ten levels, down to 5), and 10, 20… give you <b>one clock for the whole board</b> (120 seconds at level 10, five less every ten levels, down to 90). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
+    +'<h3>Twists and tricky deals</h3>'
+    +'<p>From level 12, two boards in every five carry a <b>twist</b>, the one each chapter brings in: a <b>gold square</b> whose row and column score double (High Stakes), three <b>blind cards</b> you place face down (Master\'s Table), a <b>short deck</b> with no 2s to 5s (The Gauntlet), and two <b>stones</b>, cards already down that can\'t move (Iron Table). The Summit deals them all in turn, plus boards scored on the <b>other table</b>. The target is always a share of the best board for that board, twist included; blind cards and the other table ask a few points less. Each twist explains itself the first time you meet it.</p>'
+    +'<p>From level 16 the dealer shuffles more than once and gives you the trickiest: the board the bot does worst on, playing your cards in your order. Two shuffles from 16, three from 50, four from 100. Blitz boards are dealt as before.</p>'
     +'<h3>Prizes</h3>'
     +'<p>Levels win you power-ups: <b>Undo</b>, <b>Peek</b> at the next two cards, <b>Burn</b> the card in the tray for a fresh one, a <b>Hint</b> for the best square, <b>Freeze</b> the Blitz clock, and the rare <b>Swap</b> and <b>Wild</b>. Use them from the strip under the board. A board you use one on still clears, but '+BOOST_NOTE+'. Menu → Prizes lists what you have and how each is won.</p>'
     +'<h3>What the lights mean</h3>'
@@ -1985,7 +2169,7 @@ function setScoring(s){ settings.scoring=s; persist(); if(isLevels()){ newGame({
    "best" can never come out below what the player actually scored.
    ============================================================ */
 // pure solver: cards [{r,s}] x25, pts table {key:pts} -> {grid:[25 idx into cards], score, runs, agree}
-function makeSolver(cards, PTS, fixed){
+function makeSolver(cards, PTS, fixed, mult){
   // fixed[i] true = the card at i stays put (a level's pre-filled squares); only the rest move
   const FREE=[]; for(let i=0;i<25;i++) if(!(fixed&&fixed[i])) FREE.push(i); const NF=FREE.length;
   // score every 5-subset of the 25 once; line score = lookup
@@ -2013,7 +2197,8 @@ function makeSolver(cards, PTS, fixed){
   for(let a=0;a<N;a++)for(let b=a+1;b<N;b++)for(let c=b+1;c<N;c++)for(let d=c+1;d<N;d++)for(let e=d+1;e<N;e++)
     T[C[a][1]+C[b][2]+C[c][3]+C[d][4]+C[e][5]]=ev([cards[a],cards[b],cards[c],cards[d],cards[e]]);
   const L=[]; for(let i=0;i<5;i++){L.push([0,1,2,3,4].map(k=>i*5+k));} for(let j=0;j<5;j++){L.push([0,1,2,3,4].map(k=>k*5+j));}
-  function line(g,l){ const x=L[l]; return T[key5(g[x[0]],g[x[1]],g[x[2]],g[x[3]],g[x[4]])]; }
+  const M=mult||null;   // v268: per-line multipliers (a gold square's row and column x2), rows 0-4 then columns
+  function line(g,l){ const x=L[l], v=T[key5(g[x[0]],g[x[1]],g[x[2]],g[x[3]],g[x[4]])]; return M?v*M[l]:v; }
   function total(g){ let t=0; for(let l=0;l<10;l++) t+=line(g,l); return t; }
   // xorshift32 - faster than Math.random and seedable for tests
   let seed=(Math.random()*4294967295)>>>0||1;
@@ -2057,7 +2242,7 @@ function makeSolver(cards, PTS, fixed){
 
 function solveRun(msg, post, isStopped){
   // shared by the worker and the main-thread fallback
-  const S=makeSolver(msg.cards, msg.pts, msg.fixed);
+  const S=makeSolver(msg.cards, msg.pts, msg.fixed, msg.mult);
   const T0=2*Math.max(msg.pts.flush, msg.pts.straight), T1=T0/100;
   const t0=Date.now();
   let best=S.polish(msg.seed), cnt=0, runs=0;
@@ -2083,7 +2268,7 @@ let ANIMATING=false;
 
 function viewGrid(){ return (over && VIEW==="best" && SOLVE && SOLVE.done && SOLVE.grid) ? SOLVE.grid : grid; }
 function cardKey(c){ return c.r*4+c.s; }
-function solveKey(){ return settings.scoring+":"+grid.map(cardKey).slice().sort((a,b)=>a-b).join(","); }
+function solveKey(){ return playSys()+":"+(isLevels()&&LV&&LV.gold!=null?"g"+LV.gold+":":"")+grid.map(cardKey).slice().sort((a,b)=>a-b).join(","); }
 function stopSolve(){ if(!SOLVER) return; try{ SOLVER.stop(); }catch(e){} SOLVER=null; }
 
 function startSolve(){
@@ -2092,8 +2277,8 @@ function startSolve(){
   stopSolve();
   const cards=grid.slice();                 // the search works on indices into this list
   SOLVE={key, done:false, runs:0, max:10, agree:0, score:computeLines(grid).total, grid:null};
-  const msg={cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[settings.scoring], seed:cards.map((c,i)=>i),
-    fixed:(isLevels()&&LV&&LV.k)?cards.map((c,i)=>!!LV.locks[i]):undefined};
+  const msg={cards:cards.map(c=>({r:c.r,s:c.s})), pts:SCORING[playSys()], seed:cards.map((c,i)=>i),
+    fixed:(isLevels()&&LV&&LV.k)?cards.map((c,i)=>!!LV.locks[i]):undefined, mult:levelMult()};
   const onMsg=function(m){
     if(!SOLVE || SOLVE.key!==key) return;
     SOLVE.runs=m.runs; SOLVE.max=m.max; SOLVE.agree=m.agree; SOLVE.score=m.score;
@@ -2132,12 +2317,15 @@ function permsOf5(){ const out=[]; (function go(p,rest){ if(!rest.length){out.pu
 const PERMS5=permsOf5();
 function alignToMine(B){
   const mine=grid.map(cardKey); let bestG=B, bestN=-1;
+  const gold=(isLevels()&&LV&&LV.gold!=null)?LV.gold:-1, gr=(gold/5)|0, gc=gold%5;   // v268: the gold row and column stay put
   for(let t=0;t<2;t++){
+    if(gold>=0 && t && gr!==gc) continue;
     const G=t? B.map((_,i)=>B[(i%5)*5+((i/5)|0)]) : B;
     const k=G.map(cardKey);
     // M[r*5+c][R*5+C]: would putting G's (R,C) at (r,c) keep the player's card there?
     const M=[]; for(let i=0;i<25;i++){ M.push([]); for(let j=0;j<25;j++) M[i].push(k[j]===mine[i]?1:0); }
     for(const p of PERMS5) for(const q of PERMS5){
+      if(gold>=0 && (p[gr]!==gr || q[gc]!==gc)) continue;
       let n=0; for(let r=0;r<5;r++){ const Mr=r*5, pr=p[r]*5; for(let c=0;c<5;c++) n+=M[Mr+c][pr+q[c]]; }
       if(n>bestN){ bestN=n; const o=[]; for(let r=0;r<5;r++)for(let c=0;c<5;c++) o.push(G[p[r]*5+q[c]]); bestG=o; }
     }
@@ -2266,7 +2454,7 @@ const HS=(function(){
   function decCards(s){ if(typeof s!=="string"||s.length!==50) return null; const g=[];
     for(let i=0;i<50;i+=2){ const k=B36.indexOf(s[i])*36+B36.indexOf(s[i+1]); if(k<0||k>51) return null; g.push({r:2+(k>>2), s:k&3}); }
     return new Set(g.map(c=>c.r*4+c.s)).size===25 ? g : null; }
-  function scoreOf(g, sys){ const keep=settings.scoring; settings.scoring=sys; try{ return computeLines(g).total; } finally{ settings.scoring=keep; } }
+  function scoreOf(g, sys){ const keep=settings.scoring; settings.scoring=sys; TW_OFF++; try{ return computeLines(g).total; } finally{ settings.scoring=keep; TW_OFF--; } }
   // anything off the wire is untrusted: shape-check it and re-score the cards
   function clean(e){
     if(!e||typeof e!=="object") return null;
@@ -2732,7 +2920,7 @@ var NG=(function(){
     const el=document.createElement("div"); el.className="ngtro"; el.innerHTML=cup(t.g)+'<div><div class="l1">'+GN[t.g]+' trophy</div><div class="l2">'+t.n+'</div></div>';
     document.body.appendChild(el); requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.classList.add("on"); }); }); snd("ping");
     setTimeout(function(){ el.classList.remove("on"); setTimeout(function(){ el.remove(); tbusy=false; toastNext(); },500); },2800); }
-  function trophies(total){ if(botTouched || boostUsed || (isLevels() && LV && LV.k>0)) return; const L=computeLines(grid), keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), am=settings.scoring==="american";
+  function trophies(total){ if(botTouched || boostUsed || (isLevels() && LV && (LV.k>0 || LV.tw))) return; const L=computeLines(grid), keys=L.rows.concat(L.cols).filter(Boolean).map(h=>h.key), am=settings.scoring==="american";   // v268: twist boards don't count either
     earn("first");
     if(keys.indexOf("flush")>=0) earn("flush");
     if(keys.indexOf("full")>=0) earn("full");
@@ -2744,7 +2932,7 @@ var NG=(function(){
     if(total>=(am?150:75)) earn("big");
     if(CLOCK.kind!=="off" && total>=(am?100:50)) earn("icecold");
   }
-  function perfect(){ if(!over||botTouched||boostUsed||!SOLVE||!SOLVE.done||(isLevels()&&LV&&LV.k>0)) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
+  function perfect(){ if(!over||botTouched||boostUsed||!SOLVE||!SOLVE.done||(isLevels()&&LV&&(LV.k>0||LV.tw))) return; const t=computeLines(grid).total; if(t>0 && t>=SOLVE.score) earn("perfect"); }
   function trophiesHTML(){ const T=got(), n=TRO.filter(t=>T[t.id]).length;
     return '<button class="btn sec sm close" onclick="openMenu()">‹ Back</button><h2>Trophies</h2><p class="muted" style="margin-top:0;">'+n+' of '+TRO.length+' on this device. Bot boards don\'t count.</p><ul class="trolist">'
       +TRO.map(t=>'<li class="'+(T[t.id]?'':'lock')+'">'+cup(t.g)+'<div><div class="tn">'+t.n+'</div><div class="td">'+t.d+'</div></div><span class="tw">'+(T[t.id]?new Date(T[t.id]).toLocaleDateString([],{month:"short",day:"numeric"}):GN[t.g])+'</span></li>').join("")+'</ul>'; }
@@ -2793,7 +2981,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v267", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v268", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
