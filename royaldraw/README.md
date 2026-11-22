@@ -811,3 +811,24 @@ Tested headless at 390×844: the raw page ships the button hidden; level 12 with
 dimmed "Undo ×0" that toasts on tap; a Peek-boosted first clear caps at 2★ and pays exactly ↩ +1; a
 clean first clear with the roll forced pays the usual set plus "🔀 +1 lucky!"; Blitz hides Undo;
 free play shows plain "Undo"; no page errors.
+
+## Undo moves into the strip; no button row on Levels; a fit that waits for the safe area (v265)
+On Josh's iPhone (the App Store build) the Undo / New board row sat mostly below the bottom edge.
+- **Cause:** `fitPS` measured once and cached its key (viewport size, card size, mode). iOS can apply
+  the body's `env(safe-area-inset-*)` padding *after* the first layout, with no resize event, so the fit
+  ran on a page ~78 px shorter than the real one and never re-ran. Reproduced headless by adding the
+  padding 120 ms after `DOMContentLoaded` at 375×812: v264 overflowed by 42 px with the row cut off,
+  exactly like the screenshot; v265 overflows by 0.
+- **Fit fixes:** the body's top/bottom padding is now part of the key; settle checks run 250 ms,
+  1.2 s and 3 s after `load` and when fonts are ready; `closeOverlay()` runs the fit a panel deferred.
+  Each is a no-op unless the key changed, so play never jitters.
+- **No button row on Levels** (Josh: "get rid of the buttons"). `#psControls` is hidden in Levels mode.
+  **Undo** is now the first chip in the prize strip: on levels 1-3 a plain "Undo" (free, no count);
+  on 4+ "Undo" with the stash count (dimmed before the first card; a dimmed 0 that toasts how to win
+  one when empty); none on Blitz boards. **New board** is in Menu ("New board, same level"), and the
+  results offer Next level / Replay. Free play keeps its Undo / New game row (it has no strip).
+  Without the row, phones get their card height back (375×667: 53 → 62 px cells).
+
+Tested headless: 375×812 with late insets, 320×568, 375×667, 390×844, 430×932 all overflow 0; the Undo
+chip is off before a card, live after, spends one and greys out again; 0 undos toasts; level 2 shows a
+free Undo; Blitz shows Freeze and no Undo; free play still has its buttons; no page errors.

@@ -722,6 +722,7 @@
   .przc .pi{font-size:19px; line-height:1;} .przc .pl{font-size:11px; font-weight:700; letter-spacing:.2px; opacity:.85; line-height:1.1; white-space:nowrap;}
   .przc .pn{position:absolute; top:-7px; right:-5px; min-width:19px; height:19px; padding:0 5px; border-radius:10px; background:var(--gold); color:var(--ink); font-size:12px; font-weight:900; line-height:19px; text-align:center;}
   .przc.on{background:rgba(240,198,116,.28); border-color:var(--gold); box-shadow:0 0 12px rgba(240,198,116,.55);}
+  .przc:disabled,.przc.empty{opacity:.42;}   /* v265: the Undo chip before a card is placed, or with an empty stash */
   .przc.busy .pi{animation:przSpin 1s linear infinite;}
   @keyframes przSpin{to{transform:rotate(360deg)}}
   @media (max-width:360px){ .przstrip{gap:5px;} .przc .pl{font-size:10px;} }
@@ -872,7 +873,7 @@ function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({settings,b
 let boostUsed=false;       // a power-up was spent on this board
 // the one table every prize screen reads: icon, name, what it does, how you win it
 const PRIZE_DEF={
-  undo:  {i:"↩",  n:"Undo",   d:"Take back your last card on a no-undo board. Spend it with the Undo button.", e:"Clear a new level"},
+  undo:  {i:"↩",  n:"Undo",   d:"Take back your last card on a no-undo board.", e:"Clear a new level"},
   peek:  {i:"👁️", n:"Peek",   d:"See the next two cards before you place this one.", e:"Make a flush"},
   burn:  {i:"🔥", n:"Burn",   d:"Throw away the card in the tray and draw a fresh one from outside the deal.", e:"Make a full house, four of a kind or a straight flush"},
   hint:  {i:"💡", n:"Hint",   d:"Light up the square the best board puts this card in.", e:"Make a straight"},
@@ -949,9 +950,15 @@ function renderStrip(){
   if(!isLevels()||over){ el.className="przstrip off"; el.innerHTML=""; return; }
   el.className="przstrip";
   const S=loadPrizes().stash, list=PRIZE_KINDS.filter(k=>(S[k]||0)>0 && prizeApplies(k));
-  if(!list.length){ const any=PRIZE_KINDS.some(k=>k!=="undo"&&(S[k]||0)>0);
+  // v265: Undo leads the strip (the Undo / New board row under it is gone on Levels). Free on levels 1-3
+  // (no count); from the stash on 4+, where an empty stash shows a dimmed 0 that says how to win one.
+  // Blitz boards have no undo at all.
+  let undoChip='';
+  if(clockKind()==="off"){ const free=undoFree(), n=S.undo||0, dead=!lastMove || !!PRZ.mode;
+    undoChip='<button class="przc'+((!free&&n<=0)?' empty':'')+'" onclick="undo()"'+((free||n>0)&&dead?' disabled':'')+' aria-label="Undo'+(free?'':', '+n+' left')+'"><span class="pi">↩</span><span class="pl">Undo</span>'+(free?'':'<span class="pn">'+n+'</span>')+'</button>'; }
+  if(!list.length && !undoChip){ const any=PRIZE_KINDS.some(k=>k!=="undo"&&(S[k]||0)>0);
     el.innerHTML='<div class="przempty">'+(any?'None of your prizes work on this board':'No prizes yet · clear a new level to win some')+'</div>'; return; }
-  el.innerHTML=list.map(function(k){ const d=PRIZE_DEF[k], on=przActive(k), busy=k==="hint"&&PRZ.hintBusy;
+  el.innerHTML=undoChip+list.map(function(k){ const d=PRIZE_DEF[k], on=przActive(k), busy=k==="hint"&&PRZ.hintBusy;
     return '<button class="przc'+(on?' on':'')+(busy?' busy':'')+'" onclick="usePrize(\''+k+'\')" aria-label="'+d.n+', '+S[k]+' left"><span class="pi">'+d.i+'</span><span class="pl">'+d.n+'</span><span class="pn">'+S[k]+'</span></button>'; }).join('');
 }
 function usePrize(k){
@@ -1721,6 +1728,7 @@ function render(justIdx){
   undoBtn.disabled = !uEmpty && (!lastMove || showBest || !!PRZ.mode);
   undoBtn.classList.toggle("empty", uEmpty);
   undoBtn.textContent = undoFree() ? "Undo" : ("Undo ×"+prizeCount("undo"));
+  document.getElementById("psControls").classList.toggle("hidden", isLevels());   // v265: on Levels, Undo is in the strip and New board is in Menu
   document.getElementById("psNew").textContent = isLevels() ? "New board" : "New game";
   document.documentElement.classList.toggle("mode-levels", isLevels());
   renderBotBar();
@@ -1735,7 +1743,8 @@ function isTablet(){ return innerWidth>=600 && innerHeight>=600; }
 function fitPS(force){
   const root=document.documentElement, cell=document.querySelector('#psboard .pscell'); if(!cell) return;
   if(over || (curOverlay&&curOverlay.kind)) return;   // v225: don't re-fit at completion / while a panel is open — keeps the cards full-size during play; the best-board bar's small overflow at completion sits behind the results overlay, and overscroll-behavior:none on the body blocks the rubber-band drag that otherwise let the board shift under a finger.
-  var _k=innerWidth+'x'+innerHeight+'x'+(isTablet()?1:0)+'x'+(window.CARDSIZE?CARDSIZE.value():1)+'x'+(isLevels()?1:0);   // v263: the prize strip is a row on Levels only
+  const bs=getComputedStyle(document.body);   // v265: the body's safe-area padding is in the key — iOS can apply it after the first fit
+  var _k=innerWidth+'x'+innerHeight+'x'+(isTablet()?1:0)+'x'+(window.CARDSIZE?CARDSIZE.value():1)+'x'+(isLevels()?1:0)+'x'+bs.paddingTop+'x'+bs.paddingBottom;   // v263: the prize strip is a row on Levels only
   if(!force && _k===fitPS._k) return;   // v237: re-fit only on viewport/card-size change
   fitPS._k=_k;
   const board=document.getElementById('psboard');
@@ -1759,11 +1768,14 @@ function fitPS(force){
     h=Math.max(38, Math.floor(h-Math.ceil(over/5)-1)); root.style.setProperty('--cellh', h+'px'); root.style.setProperty('--cellar','auto'); }   // an explicit height: keep the full column width
 }
 addEventListener('resize', function(){ try{ fitPS(); }catch(e){} });
+// v265: a few settle checks after load (fonts, late safe-area insets); the key makes each a no-op unless something moved
+addEventListener('load', function(){ [250,1200,3000].forEach(function(t){ setTimeout(function(){ try{ fitPS(); }catch(e){} }, t); }); });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ try{ fitPS(); }catch(e){} });
 
 /* ---- overlays ---- */
 function openPanel(html,kind){ const pn=document.getElementById("panel"); pn.classList.toggle("res",kind==="results"); pn.innerHTML=html; document.getElementById("overlay").classList.add("show"); curOverlay={kind}; }
 let introPending=false;   // a level dealt behind the Menu shows its intro when the Menu closes
-function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; if(introPending){ introPending=false; boardIntro(); } }
+function closeOverlay(){ document.getElementById("overlay").classList.remove("show"); curOverlay={kind:null}; try{ fitPS(); }catch(e){} if(introPending){ introPending=false; boardIntro(); } }   // v265: a fit skipped while a panel was up happens now, not on the first card
 
 function scoreTableHTML(){
   const S=SCORING[settings.scoring];
@@ -2714,7 +2726,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v264", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v265", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
