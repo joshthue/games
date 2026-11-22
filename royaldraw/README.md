@@ -832,3 +832,15 @@ On Josh's iPhone (the App Store build) the Undo / New board row sat mostly below
 Tested headless: 375×812 with late insets, 320×568, 375×667, 390×844, 430×932 all overflow 0; the Undo
 chip is off before a card, live after, spends one and greys out again; 0 undos toasts; level 2 shows a
 free Undo; Blitz shows Freeze and no Undo; free play still has its buttons; no page errors.
+
+## The App Store rating prompt (v266)
+Search ranking leans on ratings, so the app asks happy players at a happy moment. `askReview()`
+runs from `levelJudge` after a **clean three-star clear** (no prize spent) at level `REVIEW_MIN_LEVEL`
+(8) or later, at most once every `REVIEW_GAP_DAYS` (60; last ask in `pokersquares.reviewAsked`),
+2.6 s after the results open so the stars land first. It calls `window.GN_REVIEW()`, which only the
+App Store build defines (app shim → the GameCenter plugin's `requestReview`, i.e. StoreKit's
+`AppStore.requestReview(in:)`). On the website it is undefined and nothing happens. Apple decides
+whether the sheet appears (three times a year at most, never in TestFlight).
+
+Tested headless: on the website a three-star clear asks nothing; with a stand-in `GN_REVIEW` it asks
+once and stamps the date, and a second three-star clear the same day doesn't ask again.

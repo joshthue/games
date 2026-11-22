@@ -1171,6 +1171,13 @@ function lvSave(P){ try{ localStorage.setItem("pokersquares.levels",JSON.stringi
 // is defined by the app shim; on the website it is undefined, so all of this is inert.
 function gcHighestLevel(){ let P; try{ P=JSON.parse(localStorage.getItem("pokersquares.levels"))||{}; }catch(e){ P={}; } let m=1; ["american","english"].forEach(k=>{ if(P[k]&&P[k].level>m) m=P[k].level; }); return m; }
 function gcSubmit(){ try{ if(window.GN_GC && GN_GC.authenticated && GN_GC.submitLevel) GN_GC.submitLevel(gcHighestLevel()); }catch(e){} }
+// v266: the App Store rating prompt (app only: window.GN_REVIEW comes from the app shim; on the website it
+// is undefined and this does nothing). After a clean three-star clear from level 8 up, at most once every
+// REVIEW_GAP_DAYS; Apple also caps the prompt at three a year and may show nothing at all.
+const REVIEW_MIN_LEVEL=8, REVIEW_GAP_DAYS=60;
+function askReview(){ try{ if(!window.GN_REVIEW) return; const K="pokersquares.reviewAsked", last=+(localStorage.getItem(K)||0);
+  if(Date.now()-last<REVIEW_GAP_DAYS*864e5) return; localStorage.setItem(K,String(Date.now()));
+  setTimeout(function(){ try{ GN_REVIEW(); }catch(e){} }, 2600); }catch(e){} }   // after the stars have landed
 function lvUnlocked(){ return lvProg()[settings.scoring].level; }
 // A fresh deal for level n: 25 cards, the locked squares (from the best board for them), the order
 // the rest come to you, and the full layout the solver starts from.
@@ -1241,6 +1248,7 @@ function levelJudge(total){
       if(!boostUsed && Math.random()<RARE_DROP) won.push(Math.random()<.5?"swap":"wild");
       won.forEach(k=>grantPrize(k,1)); } }
   const st=przStreak(stars===3 && !boostUsed && !botTouched && prevStars<3);
+  if(stars===3 && !boostUsed && !botTouched && L.n>=REVIEW_MIN_LEVEL) askReview();
   L.result={total, max, pct, stars, cleared:stars>0, unlocked, boosted:boostUsed, used:PRZ.used.slice(), won, streak:st.streak, pick:st.pick};
   gcSubmit();
   // the best board these cards make (respecting the locks) is the end-of-game "Best board" too;
@@ -2726,7 +2734,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v265", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v266", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
