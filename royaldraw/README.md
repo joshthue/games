@@ -844,3 +844,18 @@ whether the sheet appears (three times a year at most, never in TestFlight).
 
 Tested headless: on the website a three-star clear asks nothing; with a stand-in `GN_REVIEW` it asks
 once and stamps the date, and a second three-star clear the same day doesn't ask again.
+
+## The level map, redone (v267)
+Josh: "it looks so sad" (flat grey dots on empty felt). The map is now a run of **dealt cards**:
+- **cleared** levels are face-up cards (number + a suit pip, cycling ♠♥♦♣, each tilted a few degrees
+  like a dealt hand) with their stars underneath;
+- **the level you're on** is a bigger glowing gold card that bobs, with a **PLAY** marker above it;
+- **locked** levels are blue card backs with the number in a dark pill;
+- a smooth gold **path** (cubic curves through the card centres; a soft glow, a gold stroke and a pale
+  shine) joins the cleared ones, and a dotted path leads on;
+- every **chapter** has a gold **ribbon** banner and its own **felt colour** (`felt` on each
+  `LV_CHAPTERS` entry: Training Table green, The Climb teal, High Stakes red, Master's Table purple,
+  The Gauntlet bronze, Iron Table steel, The Summit gold), drawn as soft bands behind the path;
+- a few faint suit glyphs for texture; Blitz badges are orange "⚡12s"; Learn badges green.
+The map now runs to 8 levels past yours (was 4). Night theme has muted versions of all of it.
+Positions, the level card, selection and scrolling to your level are unchanged.

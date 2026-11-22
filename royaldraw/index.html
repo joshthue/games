@@ -772,6 +772,56 @@
   html.tablet-land #przStrip{grid-area:prz;}
   html.tablet-land .wrap{grid-template-areas:"hdr hdr" "tray board" "bar board" "prz board" "ctrl board" "rest board"; grid-template-rows:auto auto auto auto auto 1fr;}
 </style>
+<style id="levelmap-v267">
+  /* v267: the level map — dealt cards on chapter-coloured felt (overrides the v213 map rules above) */
+  .lvmap{position:relative; margin:0 0 6px; overflow:hidden; border-radius:14px; background:radial-gradient(120% 50% at 50% 0%,rgba(0,0,0,.05),rgba(0,0,0,.28)); box-shadow:inset 0 0 0 1px rgba(240,198,116,.18),inset 0 10px 30px rgba(0,0,0,.25);}
+  .lvband{position:absolute; left:0; right:0; pointer-events:none; background:radial-gradient(85% 55% at 50% 45%,var(--felt),transparent 78%); opacity:.42;}
+  .lvdeco{position:absolute; font-size:46px; line-height:1; opacity:.09; pointer-events:none; transform:translateX(-50%) rotate(var(--rot));}
+  .lvpath path{fill:none; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round;}
+  .lvpath .todo{stroke:rgba(247,243,232,.34); stroke-width:3.5; stroke-dasharray:1 11;}
+  .lvpath .glow{stroke:rgba(255,211,107,.28); stroke-width:16;}
+  .lvpath .done{stroke:#d6a345; stroke-width:7;}
+  .lvpath .shine{stroke:#fff0c2; stroke-width:2;}
+  .lvchap{left:50%; right:auto; transform:translateX(-50%); width:max-content; max-width:94%; z-index:2;}
+  .lvchap::before,.lvchap::after{display:none;}
+  .lvchap b{display:inline-block; position:relative; padding:6px 20px 7px; font:700 15px/1.1 Georgia,serif; color:#2a1c05; letter-spacing:.4px;
+    background:linear-gradient(180deg,#ffe6a8,#e2ad50); border-radius:3px; box-shadow:0 4px 12px rgba(0,0,0,.45);}
+  .lvchap b::before,.lvchap b::after{content:""; position:absolute; top:7px; width:16px; height:100%; background:#a8742f; z-index:-1;}
+  .lvchap b::before{left:-11px; clip-path:polygon(0 0,100% 0,100% 100%,0 100%,45% 50%);}
+  .lvchap b::after{right:-11px; clip-path:polygon(0 0,100% 0,55% 50%,100% 100%,0 100%);}
+  .lvchap span{display:block; margin-top:9px; font-size:11px; color:var(--cream); opacity:.8; text-shadow:0 1px 3px rgba(0,0,0,.6);}
+  .lvnode{width:46px; height:64px; margin-left:-23px; border-radius:8px; background:none !important; border:0 !important; box-shadow:none !important; display:block; z-index:1; animation:none;}
+  .lvnode .face{position:absolute; inset:0; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; transform:rotate(var(--tilt,0deg));}
+  .lvnode .face b{font:900 20px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;} .lvnode .face i{font-style:normal; font-size:17px; line-height:1;}
+  .lvnode.s-done .face{background:linear-gradient(160deg,#fffaf0,#efe3c6); color:#1c2a24; box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 5px 12px rgba(0,0,0,.5);}
+  .lvnode.s-cur{width:56px; height:78px; margin-left:-28px; margin-top:-7px; z-index:3; animation:lvBob 2.4s ease-in-out infinite;}
+  .lvnode.s-cur .face{background:linear-gradient(160deg,#fff7da,#ffd571); color:#2a1503; border:2px solid #fff3c4;
+    box-shadow:0 0 0 4px rgba(255,211,107,.32),0 0 30px rgba(255,211,107,.75),0 8px 18px rgba(0,0,0,.5);}
+  .lvnode.s-cur .face b{font-size:24px;}
+  .lvnode.s-cur::before{content:"PLAY"; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:9px; z-index:2;
+    font:900 11px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; letter-spacing:1.6px; color:#2a1503; background:#ffd36b; padding:5px 9px; border-radius:999px; box-shadow:0 3px 8px rgba(0,0,0,.45);}
+  .lvnode.s-cur::after{content:""; position:absolute; bottom:100%; left:50%; margin-left:-5px; margin-bottom:4px; border:5px solid transparent; border-top-color:#ffd36b; border-bottom:0;}
+  @keyframes lvBob{50%{transform:translateY(-6px)}}
+  .lvnode.s-lock .face{background:repeating-linear-gradient(45deg,#1d73b8 0 6px,#155a94 6px 12px); border:2px solid rgba(232,196,106,.8); box-shadow:0 5px 12px rgba(0,0,0,.5); color:#fff;}
+  .lvnode.s-lock .face b{font-size:14px; min-width:26px; padding:5px 4px; border-radius:999px; background:rgba(10,36,64,.88); text-align:center;}
+  .lvnode.sel:not(.s-cur){transform:scale(1.08);} .lvnode.sel .face{outline:2px solid #fff; outline-offset:3px;}
+  .lvnode .st{margin-top:6px; font-size:12px; color:rgba(255,255,255,.25); text-shadow:0 1px 3px rgba(0,0,0,.7);} .lvnode .st b{color:#ffd36b;}
+  .lvnode .bz{top:-9px; right:-16px; z-index:2; background:linear-gradient(180deg,#ff9a4a,#e0452b); color:#fff;}
+  .lvnode .bz.learn{left:-16px; right:auto; background:linear-gradient(180deg,#2fb35c,#178a3a);}
+  .lvnode .ms{margin-left:12px;}
+  .lvnode.s-cur .bz.learn{top:50%; left:auto; right:100%; margin-right:6px; transform:translateY(-50%);}   /* clear of the PLAY marker */
+  .lvnode.s-lock .bz,.lvnode.s-lock .ms{opacity:.85;}
+  .lvhead div{background:linear-gradient(180deg,rgba(240,198,116,.14),rgba(0,0,0,.22)); border:1px solid rgba(240,198,116,.22);}
+  html.tablet .lvnode{width:56px; height:78px; margin-left:-28px;} html.tablet .lvnode .face b{font-size:24px;} html.tablet .lvnode.s-cur{width:66px; height:92px; margin-left:-33px;}
+  @media (prefers-reduced-motion:reduce){ .lvnode.s-cur{animation:none} }
+  html[data-theme="night"] .lvband{opacity:.22;}
+  html[data-theme="night"] .lvnode.s-done .face{background:#2b2620; color:#e6dcc4; box-shadow:0 0 0 1px rgba(201,162,94,.35),0 5px 12px rgba(0,0,0,.6);}
+  html[data-theme="night"] .lvnode.s-cur .face{background:#6e5a36; color:#f3e3bd; border-color:#9c804b; box-shadow:0 0 0 3px rgba(201,162,94,.3),0 0 18px rgba(201,162,94,.35);}
+  html[data-theme="night"] .lvnode.s-cur::before{background:#9c804b; color:#1a1612;} html[data-theme="night"] .lvnode.s-cur::after{border-top-color:#9c804b;}
+  html[data-theme="night"] .lvnode.s-lock .face{background:repeating-linear-gradient(45deg,#26354d 0 6px,#1d2a3f 6px 12px); border-color:rgba(201,162,94,.5);}
+  html[data-theme="night"] .lvpath .done{stroke:#9c804b;} html[data-theme="night"] .lvpath .glow{stroke:rgba(201,162,94,.15);} html[data-theme="night"] .lvpath .shine{stroke:#cdb37c;}
+  html[data-theme="night"] .lvchap b{background:#9c804b; color:#1a1612;} html[data-theme="night"] .lvchap b::before,html[data-theme="night"] .lvchap b::after{background:#6e5a36;}
+</style>
 <style id="orient-lock-v228">
   /* Phone-only portrait lock. Tablets (html.tablet, height > 500) keep their landscape layout. */
   #rotateLock{display:none; position:fixed; inset:0; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:#0d5c3f; color:#f4efe2; gap:16px;}
@@ -1263,9 +1313,9 @@ function levelPlay(n, same){ closeOverlay(); if(!isLevels()){ settings.mode="lev
 function setMode(m){ if(settings.mode===m) return; settings.mode=m; persist(); newGame({top:true}); openMenu(); }
 function stars(n){ let h=''; for(let i=0;i<3;i++) h+=i<n?'<b>★</b>':'★'; return h; }
 /* ---- the level map (v213): a winding path, chapters, a card for the level you tap ---- */
-const LV_CHAPTERS=[{from:1,name:"Training Table",sub:"Part-built boards: learn what a good one looks like"},
-  {from:25,name:"The Gauntlet",sub:"The Blitz clocks start to shrink"},{from:40,name:"Iron Table",sub:"8 seconds a card and falling"},{from:55,name:"The Summit",sub:"7 seconds a card, 5 from level 75"},
-  {from:4,name:"The Climb",sub:"Bare boards, no undo"},{from:10,name:"High Stakes",sub:"The targets bite"},{from:15,name:"Master's Table",sub:"55% of the best board, every time"}];
+const LV_CHAPTERS=[{from:1,name:"Training Table",sub:"Part-built boards: learn what a good one looks like",felt:"#35a86c"},
+  {from:25,name:"The Gauntlet",sub:"The Blitz clocks start to shrink",felt:"#b07a2e"},{from:40,name:"Iron Table",sub:"8 seconds a card and falling",felt:"#4f7ba6"},{from:55,name:"The Summit",sub:"7 seconds a card, 5 from level 75",felt:"#c9a432"},
+  {from:4,name:"The Climb",sub:"Bare boards, no undo",felt:"#2b9a9e"},{from:10,name:"High Stakes",sub:"The targets bite",felt:"#b8423f"},{from:15,name:"Master's Table",sub:"55% of the best board, every time",felt:"#6a55b8"}];   // felt: the map's colour for that stretch (v267)
 LV_CHAPTERS.sort((a,b)=>a.from-b.from);
 function chapterOf(n){ let c=LV_CHAPTERS[0]; LV_CHAPTERS.forEach(x=>{ if(n>=x.from) c=x; }); return c; }
 let LVSEL=null;
@@ -1279,30 +1329,39 @@ function lvCardHTML(n){
     +(lock?'<span class="lvc-lock">Clear level '+(n-1)+' to open</span>':'<button class="btn" onclick="levelPlay('+n+')">'+(n===top?'Play':(st?'Replay':'Play'))+'</button>')+'</div></div>'; }
 function lvSelect(n){ LVSEL=n; const c=document.getElementById("lvSheet"); if(c) c.innerHTML=lvCardHTML(n);
   document.querySelectorAll(".lvnode").forEach(el=>el.classList.toggle("sel",+el.dataset.n===n)); NG.snd("hover",0); }
+// v267: the map is a run of dealt cards on chapter-coloured felt. Cleared levels are face-up cards
+// with their stars, the level you're on glows with a PLAY marker, locked ones are card backs. A smooth
+// gold path joins them; each chapter gets a ribbon and its own felt; a few faint suits for texture.
 function openLevels(){
   const P=lvProg()[settings.scoring], top=P.level, sys=settings.scoring==="american"?"American":"English";
-  const last=Math.max(top+4,10), totStars=Object.values(P.stars).reduce((a,b)=>a+b,0);
-  const XS=[50,76,50,24], ROW=86, CH=46; let y=26, nodes='', pts=[], banners='';
+  const last=Math.max(top+8,12), totStars=Object.values(P.stars).reduce((a,b)=>a+b,0), SU=["♠","♥","♦","♣"];
+  const XS=[50,76,50,24], ROW=98, CH=66; let y=30, nodes='', pts=[], banners='', bands='', deco='', bandTop=0, felt=null;
+  const band=to=>{ if(felt) bands+='<div class="lvband" style="top:'+bandTop+'px;height:'+(to-bandTop)+'px;--felt:'+felt+'"></div>'; };
   for(let n=1;n<=last;n++){
-    const ch=LV_CHAPTERS.find(c=>c.from===n); if(ch){ banners+='<div class="lvchap" style="top:'+y+'px"><b>'+ch.name+'</b><span>'+ch.sub+'</span></div>'; y+=CH+10; }
-    const x=XS[(n-1)%4], st=P.stars[n]||0, state=n<top?'done':(n===top?'cur':'lock'), ck=levelClock(n);
-    pts.push([x,y+28]);
-    nodes+='<button class="lvnode s-'+state+'" data-n="'+n+'" style="left:'+x+'%;top:'+y+'px" onclick="lvSelect('+n+')" aria-label="Level '+n+'">'
-      +'<span class="num">'+n+'</span>'
-      +(ck!=="off"?'<span class="bz">'+(levelSecs(n)+'s')+'</span>':'')
+    const ch=LV_CHAPTERS.find(c=>c.from===n);
+    if(ch){ band(y-16); bandTop=y-16; felt=ch.felt; banners+='<div class="lvchap" style="top:'+y+'px"><b>'+ch.name+'</b><span>'+ch.sub+'</span></div>'; y+=CH+12; }
+    const x=XS[(n-1)%4], st=P.stars[n]||0, state=n<top?'done':(n===top?'cur':'lock'), ck=levelClock(n), su=(n-1)%4, tilt=state==='cur'?0:((n*37)%11-5);
+    pts.push([x,y+32]);
+    if(n%3===0) deco+='<span class="lvdeco" style="left:'+(x>50?13:87)+'%;top:'+(y+6)+'px;--rot:'+((n*53)%40-20)+'deg;color:'+(su%3?'#ffb3b3':'#fff')+'">'+SU[(n+1)%4]+'</span>';
+    nodes+='<button class="lvnode s-'+state+'" data-n="'+n+'" style="left:'+x+'%;top:'+y+'px;--tilt:'+tilt+'deg" onclick="lvSelect('+n+')" aria-label="Level '+n+'">'
+      +'<span class="face"><b>'+n+'</b>'+(state==='lock'?'':'<i style="color:'+suitColor(su)+'">'+SU[su]+'</i>')+'</span>'
+      +(ck!=="off"?'<span class="bz">⚡'+levelSecs(n)+'s</span>':'')
       +(LV_LOCKS[n-1]?'<span class="bz learn">Learn</span>':'')
-      +(state==='done'||st?'<span class="st">'+stars(st)+'</span>':'')
+      +(state!=='lock'||st?'<span class="st">'+stars(st)+'</span>':'')
       +((n===5||n===10)?'<span class="ms">'+NG.cup(n===5?'s':'g')+'</span>':'')
       +'</button>';
     y+=ROW; }
-  const H=y+10, poly=a=>a.map(p=>p[0]+','+p[1]).join(' '), split=Math.min(pts.length,top);
+  band(y+24);
+  const H=y+24, split=Math.min(pts.length,top), done=pts.slice(0,split), todo=pts.slice(Math.max(0,split-1));
+  const curve=a=>a.map((p,i)=>{ if(!i) return 'M'+p[0]+','+p[1]; const q=a[i-1], dy=(p[1]-q[1])*.5; return 'C'+q[0]+','+(q[1]+dy)+' '+p[0]+','+(p[1]-dy)+' '+p[0]+','+p[1]; }).join(' ');
   const svg='<svg class="lvpath" viewBox="0 0 100 '+H+'" preserveAspectRatio="none" aria-hidden="true">'
-    +'<polyline class="todo" points="'+poly(pts.slice(Math.max(0,split-1)))+'"/><polyline class="done" points="'+poly(pts.slice(0,split))+'"/></svg>';
+    +(todo.length>1?'<path class="todo" d="'+curve(todo)+'"/>':'')
+    +(done.length>1?'<path class="glow" d="'+curve(done)+'"/><path class="done" d="'+curve(done)+'"/><path class="shine" d="'+curve(done)+'"/>':'')+'</svg>';
   const next=Math.round(levelPct(top)*100);
   openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Levels</h2>'
-    +'<div class="lvhead"><div><b>'+totStars+'</b><span>stars</span></div><div><b>'+(top-1)+'</b><span>cleared</span></div><div><b>'+next+'%</b><span>next target</span></div><div><b>'+sys.slice(0,2)+'</b><span>'+sys+'</span></div></div>'
+    +'<div class="lvhead"><div><b>★ '+totStars+'</b><span>stars</span></div><div><b>'+(top-1)+'</b><span>cleared</span></div><div><b>'+next+'%</b><span>next target</span></div><div><b>'+sys.slice(0,2)+'</b><span>'+sys+'</span></div></div>'
     +'<div id="lvSheet" class="lvsheet"></div>'
-    +'<div class="lvmap" style="height:'+H+'px">'+svg+banners+nodes+'</div>',"levels");
+    +'<div class="lvmap" style="height:'+H+'px">'+bands+deco+svg+banners+nodes+'</div>',"levels");
   lvSelect(LVSEL&&LVSEL<=last?LVSEL:top);
   const pn=document.getElementById("panel"), cur=document.querySelector('.lvnode[data-n="'+top+'"]');
   if(pn&&cur) pn.scrollTop=Math.max(0,cur.offsetTop+cur.parentNode.offsetTop-pn.clientHeight*.55);
@@ -2734,7 +2793,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v266", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v267", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();
