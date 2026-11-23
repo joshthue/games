@@ -546,7 +546,7 @@
   .ngtime{font-variant-numeric:tabular-nums; color:#ffe2a0;} .ngtime.warn{color:#ff7a6a;}
   @media (prefers-reduced-motion:reduce){ .ngclock.warn rect{animation:none} }
   /* header: the extra pill follows the mode (v211) */
-  html.mode-levels #hsBtn{display:none;} html:not(.mode-levels) #lvBtn{display:none;}
+  html.mode-levels #hsBtn{display:none;} html:not(.mode-levels) #lvBtn{display:none;} html:not(.mode-daily) #dyBtn{display:none;} html.mode-daily #hsBtn{display:none;}
   .mlabel{margin:14px 0 5px; font-size:13px; opacity:.85;}
   /* ================= v212: the biggest cards that fit, always =================
      No Card size / Card text controls here. The shared cardsize.js still loads (other games use it),
@@ -861,6 +861,21 @@
   html[data-theme="night"] .bq{color:#b9c6dc;}
   @media (prefers-reduced-motion:reduce){ #psCurrent .card.back.shuffling,.pscell.reveal{animation:none} }
 </style>
+<style id="daily-v269">
+  /* v269: the Daily Deal — the map banner, the panel, yesterday */
+  .dybn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; margin:8px 0 0; padding:7px 8px 7px 12px; border-radius:12px; border:1px solid rgba(241,201,90,.55);
+    background:linear-gradient(135deg,rgba(241,201,90,.22),rgba(241,201,90,.06)); color:#fff; font:inherit; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.25);}
+  .dybn .dyk{flex:none; font:900 16px/1.15 Georgia,"Times New Roman",serif; color:#f6d77e;} .dybn .dyt{flex:1; min-width:0; font-size:12px; opacity:.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dybn b{flex:none; font:800 14px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; background:#f1c95a; color:#2a1c05; padding:7px 11px; border-radius:999px;}
+  .dyrules{margin-top:0; font-size:13px; line-height:1.4;}
+  .dyme{display:flex; align-items:center; gap:14px; margin:6px 0 4px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.07);}
+  .dypct{font:900 34px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#f6d77e;} .dysub{font-size:13px; line-height:1.4; opacity:.9;}
+  .dyempty{text-align:center; padding:6px 0;}
+  .dyy{margin-top:14px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.06);} .dyyh{font-size:11px; letter-spacing:1.2px; text-transform:uppercase; opacity:.7; margin-bottom:4px;}
+  .dyyw{font-size:15px;} .dyym{font-size:13px; opacity:.8; margin:2px 0 8px;} .dyy .btn{margin-top:6px; width:100%;}
+  html[data-theme="night"] .dybn{border-color:rgba(184,149,74,.5); background:linear-gradient(135deg,rgba(184,149,74,.18),rgba(184,149,74,.05));}
+  html[data-theme="night"] .dybn .dyk,html[data-theme="night"] .dypct{color:#d9b874;} html[data-theme="night"] .dybn b{background:#b8954a; color:#1d160b;}
+</style>
 <style id="orient-lock-v228">
   /* Phone-only portrait lock. Tablets (html.tablet, height > 500) keep their landscape layout. */
   #rotateLock{display:none; position:fixed; inset:0; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px; background:#0d5c3f; color:#f4efe2; gap:16px;}
@@ -888,7 +903,7 @@
   <div class="gn-hdr">
     <div class="gn-top">
       <a class="gn-pill" href="../">‹ Games</a><span class="sp"></span>
-      <button class="gn-pill" id="hsBtn">Scores</button><button class="gn-pill" id="lvBtn">Levels</button>
+      <button class="gn-pill" id="hsBtn">Scores</button><button class="gn-pill" id="lvBtn">Levels</button><button class="gn-pill" id="dyBtn">Daily</button>
       <button class="gn-pill" id="rulesBtn">Rules</button>
       <button class="gn-pill" id="menuBtn">Menu</button>
     </div>
@@ -1271,7 +1286,7 @@ function twistDesc(k){ if(k!=="other") return TWISTS[k].d;
 function twistSeen(k){ try{ return !!(JSON.parse(localStorage.getItem("pokersquares.twists"))||{})[k]; }catch(e){ return true; } }
 function twistMark(k){ try{ const T=JSON.parse(localStorage.getItem("pokersquares.twists"))||{}; T[k]=Date.now(); localStorage.setItem("pokersquares.twists",JSON.stringify(T)); }catch(e){} }
 let TW_OFF=0;   // >0 while scoring a board that isn't this level's (a high-score entry): no twist applies
-function playSys(){ return (!TW_OFF && isLevels() && LV && LV.sys) || settings.scoring; }
+function playSys(){ if(!TW_OFF && settings.mode==="daily") return "american"; return (!TW_OFF && isLevels() && LV && LV.sys) || settings.scoring; }   // the Daily Deal (v269) is American for everybody
 function goldMult(g){ if(g==null) return null; const m=new Array(10).fill(1); m[(g/5)|0]=2; m[5+g%5]=2; return m; }   // lines: rows 0-4, then columns
 function levelMult(){ return (!TW_OFF && isLevels() && LV) ? goldMult(LV.gold) : null; }
 function lineMult(type,idx){ const m=levelMult(); return m ? m[(type==="row"?0:5)+idx] : 1; }
@@ -1481,7 +1496,7 @@ function lvCardHTML(n){
     +'<div class="lvc-info">'+lvInfo(n).map(t=>'<span>'+t+'</span>').join('')+'</div>'
     +'<div class="lvc-bot"><span class="lvc-st">'+stars(st)+'</span>'
     +(lock?'<span class="lvc-lock">Clear level '+(n-1)+' to open</span>':'<button class="btn" onclick="levelPlay('+n+')">'+(n===top?'Play':(st?'Replay':'Play'))+'</button>')+'</div></div>'; }
-function lvSelect(n){ LVSEL=n; const c=document.getElementById("lvSheet"); if(c) c.innerHTML=lvCardHTML(n);
+function lvSelect(n){ LVSEL=n; const c=document.getElementById("lvSheet"); if(c) c.innerHTML=lvCardHTML(n)+dailyBannerHTML();   // v269: the Daily Deal rides in the pinned card, always in view
   document.querySelectorAll(".lvnode").forEach(el=>el.classList.toggle("sel",+el.dataset.n===n)); NG.snd("hover",0); }
 // v267: the map is a run of dealt cards on chapter-coloured felt. Cleared levels are face-up cards
 // with their stars, the level you're on glows with a PLAY marker, locked ones are card backs. A smooth
@@ -1521,6 +1536,10 @@ function openLevels(){
   const pn=document.getElementById("panel"), cur=document.querySelector('.lvnode[data-n="'+top+'"]');
   if(pn&&cur) pn.scrollTop=Math.max(0,cur.offsetTop+cur.parentNode.offsetTop-pn.clientHeight*.55);
 }
+// v269: the Daily Deal's way in, at the top of the level map
+function dailyBannerHTML(){ const st=dailyStatus(), n=dailyNum(dailyDay());
+  const right=st.state==="done"?dailyPct(st.S.bp)+' ✓':(st.state==="going"?'Resume ›':'Play ›');
+  return '<button class="dybn" onclick="openDaily()"><span class="dyk">Daily Deal #'+n+'</span><span class="dyt">'+(st.state==="done"?'See how you rank':'Same cards for everyone')+'</span><b>'+right+'</b></button>'; }
 function boardIntro(){ if(twistNew()) twistGate(); else if(CLOCK.kind!=="off") blitzGate(); else levelIntro(); }
 // v268: the first board with a twist stops to explain it (once per twist, per device)
 function twistNew(){ return !!(isLevels() && LV && LV.tw && !twistSeen(LV.tw)); }
@@ -1584,7 +1603,7 @@ function levelIntro(){
 const SHOT_MS=12000, BOARD_MS=120000, GRACE_MS=550;   // free play's clocks; levels use levelSecs()
 let GATE=false;   // the Blitz briefing / countdown is up: the clock waits and the board can't be touched
 let CLOCK={kind:"off", left:0, total:0, last:0, grace:0, raf:0, dumping:false, lastSec:-1};
-function clockKind(){ return isLevels() ? (LV?levelClock(LV.n):"off") : (settings.clock||"off"); }
+function clockKind(){ return isLevels() ? (LV?levelClock(LV.n):"off") : (isDaily() ? "off" : (settings.clock||"off")); }
 function clockReset(){ cancelAnimationFrame(CLOCK.raf);
   const k=clockKind(), ms=(isLevels()&&LV&&k!=="off")?levelSecs(LV.n)*1000:(k==="shot"?SHOT_MS:BOARD_MS);
   CLOCK={kind:k, left:ms, total:ms, shotMs:ms, last:0, grace:performance.now()+GRACE_MS+300, raf:0, dumping:false, lastSec:-1};
@@ -1628,14 +1647,15 @@ function newGame(opts){
   lastMove=null; over=false; quadDone=new Set();
   VIEW="mine"; bestRevealed=false; stopSolve(); SOLVE=null;
   botStop(); botTouched=false; boostUsed=false;
-  if(isLevels()) levelSetup(opts||{});
-  else { if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
+  if(isLevels()){ DAILY=null; levelSetup(opts||{}); }
+  else if(isDaily()) dailySetup(opts||{});
+  else { DAILY=null; if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null; grid=new Array(25).fill(null); queue=shuffle(makeDeck()); current=queue.pop(); }
   NG.reset(); clockReset(); render();
   const timed=CLOCK.kind!=="off"; GATE=timed;
   if(timed || (isLevels() && !(opts&&opts.same) && !reduceMotion()) || twistNew()){ if(curOverlay.kind) introPending=true; else boardIntro(); }
 }
-function undoFree(){ return clockKind()==="off" && (!isLevels() || !LV || LV.n<=3); }
-function undoAllowed(){ return undoFree() || (clockKind()==="off" && prizeCount("undo")>0); }
+function undoFree(){ return clockKind()==="off" && !isDaily() && (!isLevels() || !LV || LV.n<=3); }
+function undoAllowed(){ return !isDaily() && (undoFree() || (clockKind()==="off" && prizeCount("undo")>0)); }   // no undo on the Daily Deal
 function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
   if(over||!current||grid[i]||PRZ.mode) return;
@@ -1646,6 +1666,7 @@ function place(i){
   PRZ.peek=false; PRZ.frozen=false; przHintClear();   // Peek, Hint and Freeze last for one card
   lastMove={i, card:current, was:i};
   current = (placed()<25 && queue.length) ? queue.pop() : null;   // a full board leaves the tray empty
+  if(isDaily()) dailySave();   // the first try is saved card by card, so leaving resumes it
   { const r0=Math.floor(i/5), c0=i%5; let fl=0;
     [["row",r0],["col",c0]].forEach(function(l){ const cs=lineIdx(l[0],l[1]).map(x=>grid[x]); if(cs.every(Boolean)){ const h=scoreHand(cs); if(h&&h.pts>0) fl++; } });
     if(fl && !reduceMotion()) holdScore(fl); }
@@ -1743,6 +1764,7 @@ function undo(){
 function finish(fromPlace){
   over=true; VIEW="mine"; clockStop(); CLOCK.dumping=false;
   const {total}=computeLines(grid);
+  if(isDaily() && DAILY){ dailyFinish(fromPlace); return; }
   if(isLevels() && LV){   // a level: judge it against the target (waiting for the search if it's still running)
     botStop(); sfx('good'); render(); NG.trophies(total);
     const L=LV, go=function(){ if(LV!==L||!over) return; levelJudge(total); if(L.result.cleared) sfx('win'); openResults(total); };
@@ -1941,6 +1963,7 @@ function render(justIdx){
   lastShownCard=ck;
   const bestEl=document.getElementById("psBest");
   if(isLevels()&&LV) levelHUD();
+  else if(isDaily()&&DAILY){ dailyHUD(); tgBarDraw(0); if(!over&&!showBest) document.getElementById("psPlace").textContent="Daily Deal #"+dailyNum(DAILY.day)+(DAILY.practice?" · practice":""); }
   else { bestEl.textContent="Best "+best; bestEl.className='best'; tgBarDraw(0); }
   // board (6x6: 25 cells + 5 row chips + 5 col chips + total corner)
   let html="";
@@ -1976,9 +1999,9 @@ function render(justIdx){
   undoBtn.disabled = !uEmpty && (!lastMove || showBest || !!PRZ.mode);
   undoBtn.classList.toggle("empty", uEmpty);
   undoBtn.textContent = undoFree() ? "Undo" : ("Undo ×"+prizeCount("undo"));
-  document.getElementById("psControls").classList.toggle("hidden", isLevels());   // v265: on Levels, Undo is in the strip and New board is in Menu
+  document.getElementById("psControls").classList.toggle("hidden", isLevels()||isDaily());   // v269: no Undo / New game on the Daily Deal   // v265: on Levels, Undo is in the strip and New board is in Menu
   document.getElementById("psNew").textContent = isLevels() ? "New board" : "New game";
-  document.documentElement.classList.toggle("mode-levels", isLevels());
+  document.documentElement.classList.toggle("mode-levels", isLevels()); document.documentElement.classList.toggle("mode-daily", isDaily());
   renderBotBar();
   renderStrip();
   if(CLOCK.kind!=="off") clockDraw();
@@ -2058,9 +2081,10 @@ function openMenu(){ gcSubmit();
   const seg=(label,opts,cur,fn)=>'<div class="mlabel">'+label+'</div><div class="seg">'+opts.map(o=>'<button class="'+(cur===o[0]?'on':'')+'" onclick="'+fn+'(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div>';
   const tog=(on,fn,label)=>'<div class="switch" style="display:flex;margin:12px 0 2px;"><button class="toggle '+(on?'on':'')+'" onclick="'+fn+'"></button><span>'+label+'</span></div>';
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Menu</h2>'
-    +seg('Play',[['levels','Levels'],['free','Free play']],isLevels()?'levels':'free','setMode')
-    +(isLevels()?'':seg('Clock',[['off','Off'],['shot','12 s a card'],['board','120 s board']],settings.clock||'off','setClock'))
-    +'<button class="setup-opt" style="margin-top:12px" onclick="closeOverlay();newGame();">'+(isLevels()?'New board, same level':'New game')+'</button>'
+    +seg('Play',[['levels','Levels'],['daily','Daily'],['free','Free play']],settings.mode,'setMode')
+    +((isLevels()||isDaily())?'':seg('Clock',[['off','Off'],['shot','12 s a card'],['board','120 s board']],settings.clock||'off','setClock'))
+    +(isDaily()?'<button class="setup-opt" style="margin-top:12px" onclick="openDaily()">Daily Deal board</button>'
+      :'<button class="setup-opt" style="margin-top:12px" onclick="closeOverlay();newGame();">'+(isLevels()?'New board, same level':'New game')+'</button>')
     +'<button class="setup-opt" onclick="NG.openTrophies()">Trophies</button>'
     +'<button class="setup-opt" onclick="openPrizes()">Prizes</button>'
     +((window.GN_GC && window.GN_GC.showLeaderboard)?'<button class="setup-opt" onclick="if(window.GN_GC&&GN_GC.showLeaderboard)GN_GC.showLeaderboard()">Level leaderboard ›</button>':'')
@@ -2075,6 +2099,7 @@ function openResults(total, quiet){
   // (The hand each row and column made is on the board's chips; the full ten are under Scores.)
   const sysName=settings.scoring==="american"?"American":"English";
   if(isLevels() && LV && LV.result){ openPanel(levelResultsHTML(),"results"); if(quiet) resFinal(); else { resAnimate(); NG.starFx(LV.result.stars); } return; }
+  if(isDaily() && DAILY){ openPanel(dailyResultsHTML(total),"results"); if(quiet) resFinal(); else resAnimate(); DB.sync(); return; }
   if(CLOCK.kind!=="off"){ openPanel(clockResultsHTML(total),"results"); resAnimate(); return; }
   const beat = !botTouched && total>=best && total>0;
   const html='<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
@@ -2150,7 +2175,8 @@ function applyTheme(){ const n=isNight(); document.documentElement.toggleAttribu
   if(typeof grid!=="undefined" && document.getElementById("psboard").children.length) render(); }   // suit colors are inline, so repaint
 function setTheme(t){ settings.theme=t; persist(); applyTheme(); openMenu(); }
 if(DARKQ){ try{ DARKQ.addEventListener("change",applyTheme); }catch(e){ try{ DARKQ.addListener(applyTheme); }catch(_){} } }
-function setScoring(s){ settings.scoring=s; persist(); if(isLevels()){ newGame({top:true}); openMenu(); return; } if(over){ VIEW="mine"; startSolve(); } render(); openMenu(); }
+function setScoring(s){ settings.scoring=s; persist(); if(isLevels()){ newGame({top:true}); openMenu(); return; } if(isDaily()){ render(); openMenu(); return; }   // the Daily Deal stays American
+  if(over){ VIEW="mine"; startSolve(); } render(); openMenu(); }
 
 /* ============================================================
    BEST BOARD — "could these 25 cards have scored more?"
@@ -2602,8 +2628,236 @@ const HS=(function(){
   function refresh(){ sync(); }
   // learn the board as soon as the page opens, so a finished game knows whether it qualifies
   setTimeout(sync, 400);
-  return {open, submit, setTab, refresh, resultsHTML, sync, openBoard, boardMode, backFromBoard, get board(){ return board; }, _clean:clean, _enc:encCards, _dec:decCards};
+  return {open, submit, setTab, refresh, resultsHTML, sync, openBoard, boardMode, backFromBoard, get board(){ return board; }, _clean:clean, _enc:encCards, _dec:decCards, relay:RELAY, esc, when};
 })();
+
+/* ============================================================
+   DAILY DEAL (v269) — one board for everybody, every day
+   Everyone gets the same 25 cards, in the same order, seeded from the date. The score is the share
+   of the best board those cards can make, so it means the same thing on every phone. The best board
+   for each day is worked out ahead of time by a long search (daily-best.js) and shipped in
+   DAILY_BEST, because two phones' searches can land a point or two apart and the % has to be fair.
+   American scoring, no clock, no undo, no prizes. Only your first try counts: once a card is down
+   the board is saved as you go, and leaving and coming back resumes it. After that it's practice.
+   Ties go to the faster finish (time counts only while the board is on screen).
+   The board: Game Center in the app (a daily recurring leaderboard, score = basis points, context =
+   milliseconds); the same ntfy relay as High scores on the web, re-scored on the way in.
+   The day turns at midnight US Central standard time (UTC-6) all year, so 1 AM in summer.
+   ============================================================ */
+const DAILY_EPOCH="2026-11-23", DAILY_SYS="american", DAILY_LB="rd_daily";
+const DAILY_BEST="cd8jobna19if7463ekhlg205m06h8nfe75oikjamcb14ld23g9782m6kajbi05gh4clod93f1necbj7lfingoea9064125hd8mk3i0j24mng1fbed8oc3k5679lah04kc3215hnel9fd786ijaogmbo7g81i293h6fadkcej5l0bnm4d490ghoki63ba18jmlec75f2na8ldm4jk3o2hf6bie7n950cg15f4l130hdgimbe26jak8oc7n9mdej34251f7i68ol9bkc0ghnae102j4cbnmh397ik8fo6gla5dkj5hin2g8foc7e046bd3l9am1ikdo5h24bj986afe370lgcm1n24a53fi18c07b6nlhd9mjeokg0b97fmga1i4co2hk83djl5e6n204dmoi3618h579cfkeljnbag9e2o18b0mj6k3gl4fdh7cna5inl7b3d9c8mo4fah2gk6e1j50i1m9a06hnkj5b73igoe42fd8lc6o83hi1lkcebjdgm205fna9741fi8gehklab49cd5j2n370o6m561gn79843fo0bclem2hajdik180iegm5nk7h3j9o2db6f4alckg04c26lndij15hfbm39ea8o7069cinmel4o7kdj81f5ha23bg965cdk18nl7mg4fjo30hi2beacilk3698g5n1ba0jmoed4hf7205ndibh4g2m8of3c1el7ajk69f85ingkc6bhd2elj90am1o374gjai517h8dm92cnk0e46l3boffi3ejo285167c09dbkhan4lmgli0nm8g59foebdk2ahj367c41e8k41lgfa6c7h23dbnimo9j50hi18mg4eja5c2lfkbd967on03a5g3dmh17knfl0bio26cje489il9jmbdhag08nc234e75f16ok8ngij7ocmf06531ldba9eh42kj9i1gdkh08n43ob25l6e7camfadj7kbhc0g6e582o1m49fin3lag5hj94m1okc2f8linbe076d3ieh543lagn97fdjb1cmo26k800bl2f3cma986jied4ogn715hkhf8b132cdo9nliak657me0g4jf2eok3gndiha8c9jb14576l0mm9ngoaj6e8hilbd4137c5fk024ohde85kgmainj36l0fc917b2bdnfjh715maoe943ig20lkc86n3819kig7hejf056moal42bcd8lh21aic0ne47bjo3k5fmd69gg73l2fnk58jid14em6oahc9b0jg6ednkc5i81l7a9mb3h4of02ca4h93meb7l2dk06jnf1gi85oi2b4801cde6gh9lfk3amn7oj51lk5bcej3gmf6n72di80o49haa8jn12ci6fh05b3k947geomld37ie02bkag6f84cmdj91n5hlok0ne17jcfbid65hoa9lg24m83jadmb83l25f9on7ik640eh1gc3bdh512k4f7mn0ajoi6cgl98eabc4o6k9i78gn251dejl03mfh5albi8dk6fco2937jngem401hj62730am48gfkdo1leb9hn5icm0e5io7chlj4b68a91dk3f2ng4o5c3k8j6gl190fmaedinhb27oihmc397dfljgb8k5a0e412n6konjmd9c1fhbg240586i37ela0g84jl9enm1bdo3576ahk2fic2kn8410glj69ociafe3hmd75bibgan51j76klom0cdhf429e83o36jda95bfkl2nh74i1mec80g5o9nd7e08f2ag63hkc1j4bmil84lo5k1hf7306dncegm9i2ajbl2nj9dcg85i3am0146bkef7holm4og7ibjk0n1f985h2ec63da3af7ldmc42kbo0ie15hjg9n8660kl145hbnd97gijco2m3af8e0h6c5l1e3da29oimj7kngfb846km2gdlia49e1b8o3n5jf7ch0nca916f4bmi8eh2735go0jldkkh7lfjc3dn6e180i5m2boa49gaj37gd0klbc18h56ofe2nm4i91fkol5n80bem76hgjd43ci9a24m2i1gl8akd9n0h7b3oej6cf5b4ke56oh98lj7m0fi2ncda31gm30f85ojh4agl29eb1cdik7n69nagk53lbcf2ho48mi61je07da76140j29ghdnoic5m8eklb3filn3feb1476o8mah0cj95g2dk247h0c5lnob1fi8jg3d9mk6aeb5ek7a0f24i96jlnc3mohg18d6mh81fg5nj97c20oe34ikbdlagc90k7fd8ej4mh12nlib635oa3c91jb2oagfl7n8m50eh6kid4onhk9dibl1f3ga0mj827c546e6fio1hmkgd54b3cn7e289jl0agd0jbo4inl5caf6em1h2397k89dmo108ki36glea7b45njc2hfd9jhkng36libecofam7052481846579km32i1efdoch0jbngla76b2imj34ld0hnage1fk895ocbhjo0971k4aflcnd2ime8563gon2i16d7mc9bk8fh5lje3a4g062c97085ja1em4onbgh3kdlfi1kmif46n2bdal5ogehc9783j0ghnai24dfle0b9k53m1j67oc86fed09n14bg2icmhkja5378ol5eoh107mj2bcg4anid3klf96806e3koj148dfml9hni7c2gab571adehgk8bimlnf4jco956302o6fbe325knhc0gida8j179m4l3naejf487dg0lhi156bm92okcanfih61ld537j28g0c4m9bokeco85h37ngeim26kal1jdfb049o3dken1algfb87042ch5i6j9mf31n04d26l7bkimcgjh9a8oe5gklf0icmj57dnho3a18b2e946hgfm352n01dlcjiek47b96a8o46jloam2bdcg1h83k079en5ifa68bjecng57m30fil4129hkod1hej4a2i8dcnkgb9ol70m536f6d5cj80ki4behn39m2lgfa17o6m8nceo4aj230fgd9bkh71l5ioik4j970dge5bmh36lfn1a28cfe01cmi8g9dlhj7n6a4k235bo7ac0f6lm9bg5218oj43dkienhn3ia24hb79omfd05g1lkcej68f91kim3b52jgohlcn0a7486ednfj73edbk08hgmc41ola5269ifec9hn18oib0l6m5d7gkja342g6jhn4delf89mk20baco5173ik1cdj28mae39hfgnio4b60l572n15hbj438ca9efio0dlgm76kgih45f79leco6j1n3m2b80daknmoi09h2jfakdc8637bg1e45lcha5o917ne36fgid8jm4bk0l238bgem4dina9hk0l2f6jo5c713cghmkji5a91l2bd4fe867o0n2g8hemd9oc17f3lj6kba50n4ie0m8lk17jh5ndiagf32b4o6c9c0gkm93o8d562h4ibnj1afle7a3o0d196nfl2imbhe7gc5jk488i0cg94anbj75fhm1d6k2oel3a78eik5612lnm3bh0df9jg4ociga927c4f15nlhok0ejdb386md9a6bnmc17o5hf0j3l28ki4eg56di7b340klfom98he12ajngcecd72jblf4km85o6g1nai30h9jnbk14alh79ogc65d32mi0fe8i2l7fo5dmnha9ebcj6k308g415e189olajhd4fk2cgn36m7i0b2409c1g53dnojbml68ifaeh7kf23bk04h81lengjocmia5679d9fh8d3274necjao0gi5l6mk1benc53l02b8d1g947k6hfimjoa1oanlc8ehd324jf09b6kg75migoej6ml52a74d0b81ikf93cnhbal9510nkd8e34gc2m6jhfo7ib7h61ck38o29ja4fie5nmgld01aoiceb0nghjk6d78l439f25m04el1m6ghb7fcjin825k9d3oa9mkfaj72h6lg054oni8e3cd1b857leb4amjc3nkdh2igof16908eca4d0527igmkb3j61fo9nlhbgka1cji637o54n0h9medl8f2g16jfnmib02l3ohka4de7c85914oag9m3n5ejkdf0hc8li2b768bec20ahl519i6dj4ng7omk3fmd81h5f7j9ec23g60kl4ainbodi19kbf5gja8mn2clo7603e4hbnoa68g4e9j35i0lmdh27c1kf9emoba57dn14i0kflc62jgh3872obkfi13ed58nch60lm9gj4ai05lokebda13h6g27j4fn8mc9bf6n57ld4mga01eik3928jcoh18kmh40ie9alg27jdfbn56oc3nlk4o5ibg1792ej0chaf3dm865ihl3a9fen86mg4k0d1j7ob2c2j1dgkba8cm73l5h9io60fn4egi1flb5oc0n4m7a38dj6ehk92745jm3oilhd9gf6eb8c10kna23h4dic97e605jmbkonlfag28180l92i3kn4jd57g6acbohmf1e68cmjfo4gn3l71bhie05kd29ai9o4k3a26gbmh1ef7n80cjl5dl4dh6281a9f5c0ge3nibk7mjomieohn67a8ljcdf45102b9k3gnea2d5i6b01m4gf9kljoh83c7ogifcm27el654hk1j9an38bd0fia4nj018bl7dek635cog29mh29h07agklf81i4nc3o5bjmde6cekmf42i5b93n8ha17ld6g0joo0a7icke5hdjn9b1426lf8g3m7b8gfc4lj2ok6i593dn01haemn7e46h0cd8jl2a315ig9bomkffg24b567il9ejck3aon0mhd18m85oi31hackbndf0jgl74692e629f8c70lkndhb45me3g1ajiol78bdi14no6fcagkem9025hj31k8mh6j3b5490a7eigco2dflnfo03m9h6ja5bleicg721kn4d86k3f2ngm70adlc4ojbh1i95e8j5mldib37n40f9koca8egh126gj7l3e1fkab8mioc0926d45nhgiame30b41l2o57j96fkch8ndo190e73c4idmj6kbagfnlh5829062ncl4ad15m7bjfk8iohe3gmh47b2cgda618fo93nki5e0jl821d5ajlime94bf7c6o0hkgn3bm495dc2i0n3fhj1keg8o7a6l159ekncf03bgdmah8jl6i72o4jmdla81k67n53ebc4g209ohfim9focje8laid3bk6n07gh5421kia06bdnm84l1o27heg3f5cj95oegj4ca6fi9b730ldm81kh2n1nk9a54bc32f7e0mi8gl6hjodk73lfho5814mdni62aec9g0jb3cilj1o4mb5khag07n9f6de28g95i8hoel36dacmf20b4j17knjocgb2aem7fdln465hik83190l6d52918jg3nco4ibm7hf0eka179k5ifomch3j4dne260lbg8a8a2c3him4dfn1k9je6b5lgo7017oj3l9f6d5kmibn4c0a2h8eg6gnhkf32a7e98cd0olb154jim0h2bflknom1g5ia843je9c6d7bha7njmicl45981go306f2dekmkaefc630bo27j49ln5i8hg1dc4be6ij7gl53289h0d1mnfokafc4n37i9oa1e2glbdhmj86k057agm8nejo6c21dhf9i5l03k4bfe94c25h03aol1bi6gdj78kmno194fedmal5gbj80c6kni32h7nli3f1a58c2jhebo7mk9g46d0o7m5ahk84f1gel9b03dcnij26jgef5k7mnhiba263l41o0d8c9hl0o6178macfnd249eb3jig5kho917ag30ji2nm6bc5fe4lkd89e3lfmkg741nioch2b8aj0d567kna64e3db02oligcmhf8159j7a3c8inho9lj5m1e0b6gfdk24b8eialcjo7n5m430dg6hf12k965e7dmf02j4aci1b3no8lhg9k9nde5h3m70ag2l14j6fkic8ob2gjb0cnl5936f1mdik8a47ehoo1d2c8jeflgh094n5a6i7km3b0hibl3cgdf1ak45jn6e9o7m82n9ho6ik7e502ajlcbf18m34gd9m8h54a073elji1gb6cfkdn2of4ka65ljecb37i0m8hdo9gn1282jeknm34io16bch70a9lg5df9mlhd25of1cka84egn7i3jb6067l5ko3m24cie19bgj8nf0dah50kag8fo13d67lcj4mebnih29m96o7d3cnfljk82h05a1bg4ie3m5li8bcjgekdf260a7hn19o4cmi76d3ba1l0g5f4eoj98nhk2n0gb3284o7m5ai6hjc9ke1fldl0homa2614d9nebg37ji8f5ck8mahgd36cjibfe74no9k02l1564b80c3ea52gdlfio9k7hn1jm72lm8dfo4bnji9k5e3hc0a6g14a71903doi25efk6bhmgjncl8al7mbgjn61ci5o0df34kh982edmbl91k83h0ig6jc7a42nfoe54ic6nao5f3jgdk9e1bh70m2l8ig1b5mhdlo843769j0faenc2k5hb6f8jmcod1in7klag34902e906ldb853ig4ej1okh2na7mcfb768ha03icl94n5mojk1efgd2358dghnfj61l9beiok472ma0caeihdc3k8g025mjn7b19fl64o84nj7b192ch06al3odg5mfeikkbi2fj30lo7a6948m1c5nhegdne5a0148mgofk2cil3jd96b7ha043loe2b65g7hmf9c18jdinkljd381b4ho2kme6f9a7i5g0cnhoa4bnfj93kd67521c8miel0g98le2khib6fd07ngj345camo14onm1ic6j0358lg7a29kbefdhjm1dhe37ibo4f0ag26n95lkc8agmfihdlok1n74e9263jbc085k4i9cfe3ob0627mj5anhd1lg88k5o7h3ga0jb9mi2cd6efn1l41jo67ekh0nd2gl9ab4i3m8f5cjedlb0i892h1gc6n5om743fak65m9e4o13jnla7gfdi0hbk2c8ah2le7690o1f5gi8c3mn4dkjbnc536hb9d128g4i0lakmf7eoj95oc4g7j68i2km1dbfneha3l019ho7k3ia842f6legcnj0m5db62mhef4ka580olnci3971bjgd8f709l3hkoaegcid4nb5mj1629i0md64ljhcbae2k8gn3o715fl0ao5ejc7hi2k9f3dm6n81bg4g63ln97d85kfa4ohicjb210emeanigk12h460l957mbcf3o8djfiec806lam529o1d4kj7hg3bn6072l1gi5fnkco8ab3e49jmhd72hcg0536mj1kida9blne8of41j7idmh69bcf4nok0ga538l2ed0in9mo2k64laeghf31j5cb87nib25ja4lcd0e789kghmo61f353oc8j6hgib4m7dl0af21k9ne25fg6e87lci4do1a03mj9hbnki96neh0384odf2lgmbca17j5kf0agej4m815nkho937cdlib26nm87ebfl3h69cd40og51iakj283mjchgn52da64flbe091ki7o1jg8247iko9ln0abhmfe536dcdio9j5k34h01aec6m8blf7g2njf85l7gh149bacdk63o2ni0emmdhf7o234lngjbci68a0k51e9o379denm50a21i8ljbfg6k4hcm01h8ncg2bok7354id9ljfae6l7ng2ko4b5afcm0i61hj389ed0fm7ad4icjnh6bg59e3lo12k8825jcfeo3hng6am9l7ibkd04194j0amfhkb82n371eldiog65c15cjfh84i7eg3lmb9kn6a0o2d2lbh5a8c1o94m3e6kgjfi0dn78o03ajfbk7iem4l2c1d9n56ghk68mnoa1jle7fgb4d05ic92h34e1m9ci0gdnj7fbkahl865o23o43bgk9i1j6dme2f08n5h7cla341k07cj9fagmoi85ebnhl62dklh74oj1gea2mnb9c0df85i36i8joh1kmb0d92c4n6laef753go526n78gk4a9e1hblmc0i3fdjjkb10f539an42oihme6dclg87m28394eg16o0dn5akihjlfb7cdk7boni3g5hf6291c4mae8l0j51eamgol7d8n3fkh62b9c40ji302li7mha1o6gdkjc9f54b8ne6a37mgfn5d4hlc0e189jiko2b6nodhcl1em2a749g3k8b05jif1k0da7le923oh4jfingm8bc568jcf62lno5kdahbm17g3ie940l4aeh958g730dok2ni1f6cjbmdbh9c81724k3iln5gjoam06efm0edkj4oi163ab7nf259h8gcloe708mnc5d1bihk2g3la4jf96fbeijm09glc826kha3475dno1i8he3104oga6kcl27nbmd95jf65ceb7l83mjdk9gfhia1n4o20l5kd2aj0fobc4hn1imge637897bhnei9l81a4c0o3jmg6k2f5d94mboe73k6ldanjfh0i852c1g5f61o3je0gdb928a7nhi4mclkfklg9n1h752mo36dc8jae0b4iea25cm8lfdgbnio3h90jk4167m4g8be2a5olckh67i1fd3j9n0kchb8g60o2ifj7l45e1dmn9a37ogh1bif9n0a8de6k4l2m35jcmih29ceab83ofj0g61n4ld75ko2d8bm4ieljh1a6n0k7gc39f5i7alnf0d54hc2om8ej1b36kg91inh8jgkf4mad097el5c623ob19dl0on867g534km2cafhjbiemch87n5fej43l1db90gia6o2kmd697bf2480h13genk5acjoil5dg4f83embh6ajnkl17o02i9ck2a4d758c1hbg93fm0io6ljne76blo59g2ihkemn10cd4f8a3jg4379i5b1am8oclj2ehnkfd0654mjndif61e783b9k2hg0caolo59ecg8nhkb2id170m6f4ja3lnha5mko109b6digef38j24l7c3f4jbc81i02khlao65med7n9g3kemcig94ja0d5fo8l6h2n7b1no9c0dh14i7eb2mafk5l8g63jjm9ok58l3b0af46eh2cgn7d1ig4bj6d8fe07k39lchmao125ini37bkn4fjdhea289m1gol60c5jnblke9a0d67ig5f3m48ch21og2k159bfoah43d08i6jcel7mn5kma3i68j9hf2dbl1ncog0e47gfa25l6kib0he81cm49dn37oj8able9id04c1m2jh5g3k7of6nde4b502ja6cg1hmno9lf38ik7f4a5i06hb9n3j1cldg827omeklmfkji8e93bhda546g072cno1ec2dkbj84alg39mfion16507hncdh8b16l2em4ikf3o075j9gal52f43m1ihe0oa6g9c8kdbjn7kb9ce8ljan25mig06d143o7fh8h3l7kmgcjn65oa49ifbe10d2b3j4k796a810omgdfelhc5ni2296hdlmcefg0ao4n3j7kib851nf3610im4k2gej9758hcalodbdg2jho3b10f8i64c75nakle9m0gamf7l5icej6on392h41bk8dof9l460ed8niaj2hmk71b3c5gfdo970bc41jg5ah3l6i2ne8mkl2aokbg47n9fjc8h6d1ei5m30c0e1o5jm6f92kdh7nbgi38a4l4i9567elc3bfn1ao08jdmgk2h1g7o9cliej35fhk02a84nbm6da1jikn8cm20ol4h39df6be75g6o7df9ie14b50aclhk3jng2m8";   // generated by daily-best.js: 25 base-36 chars a day from DAILY_EPOCH, the square-by-square index into that day's deal
+function isDaily(){ return settings.mode==="daily"; }
+function dailyDay(t){ return new Date((t==null?Date.now():t)-6*3600e3).toISOString().slice(0,10); }
+function dailyNum(day){ return Math.round((Date.parse(day)-Date.parse(DAILY_EPOCH))/864e5)+1; }
+function dailyShift(day,d){ return new Date(Date.parse(day)+d*864e5).toISOString().slice(0,10); }
+function dailyLabel(day){ return new Date(Date.parse(day)+12*3600e3).toLocaleDateString([],{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"}); }
+// a small seeded generator (cyrb-style hash + mulberry32): integer maths only, so every browser deals the same cards
+function dailyRng(seed){ let h=1779033703^seed.length;
+  for(let i=0;i<seed.length;i++){ h=Math.imul(h^seed.charCodeAt(i),3432918353); h=h<<13|h>>>19; }
+  let a=h>>>0; return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function dailyDeal(day){ const rnd=dailyRng("royaldraw-daily:"+day), d=makeDeck();
+  for(let i=d.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=d[i]; d[i]=d[j]; d[j]=t; }
+  return d.slice(0,25); }   // [0] comes first
+function dailyScore(g){ const keep=settings.scoring; settings.scoring=DAILY_SYS; TW_OFF++; try{ return computeLines(g).total; } finally{ settings.scoring=keep; TW_OFF--; } }
+// the shipped best board for a day, or null past the end of the table
+function dailyBest(day){ const k=dailyNum(day)-1; if(k<0) return null; const s=DAILY_BEST.substr(k*25,25); if(s.length<25) return null;
+  const d=dailyDeal(day), g=[...s].map(ch=>d[parseInt(ch,36)]); return (g.every(Boolean) && new Set(g.map(cardKey)).size===25) ? g : null; }
+function dailyBp(total,max){ return max>0 ? Math.min(10000,Math.round(total/max*10000)) : 0; }
+function dailyPct(bp){ return (bp/100).toFixed(bp%100?1:0).replace(/\.0$/,"")+"%"; }
+function dailyTime(ms){ const s=Math.max(0,Math.round(ms/1000)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+const DKEY="pokersquares.daily";
+// {day, g (50 chars, "--" for an empty square), ms, done, total, max, bp, at, posted, hist:{day:{g,total,max,bp,ms}}}
+function dailyLoad(){ try{ return JSON.parse(localStorage.getItem(DKEY))||{}; }catch(e){ return {}; } }
+function dailySaveState(S){ try{ localStorage.setItem(DKEY,JSON.stringify(S)); }catch(e){} }
+const D36="0123456789abcdefghijklmnopqrstuvwxyz";
+function dailyEnc(g){ return g.map(c=>c?HS._enc([c]):"--").join(""); }   // a part-played board: "--" for an empty square
+function dailyDec(s){ if(typeof s!=="string"||s.length!==50) return null; const g=[];
+  for(let i=0;i<50;i+=2){ if(s[i]==="-"){ g.push(null); continue; } const k=D36.indexOf(s[i])*36+D36.indexOf(s[i+1]); if(k<0||k>51) return null; g.push({r:2+(k>>2), s:k&3}); }
+  return new Set(g.filter(Boolean).map(cardKey)).size===g.filter(Boolean).length ? g : null; }
+let DAILY=null;   // the board in play: {day, deal, practice, ms, t0}
+function dailyTick(){ if(!DAILY||DAILY.t0==null) return; const now=performance.now(); DAILY.ms+=now-DAILY.t0; DAILY.t0=(over||document.hidden)?null:now; }
+document.addEventListener("visibilitychange",function(){ if(!DAILY) return; if(document.hidden) dailyTick(); else if(isDaily()&&!over&&DAILY.t0==null) DAILY.t0=performance.now(); });
+function dailySetup(opts){
+  if(LVSOLVER){ LVSOLVER.stop(); LVSOLVER=null; } LV=null;
+  const day=dailyDay(), deal=dailyDeal(day), S=dailyLoad(), mine=S.day===day;
+  DAILY={day, deal, practice:!!(mine&&S.done&&opts.practice), ms:0, t0:performance.now()};
+  grid=new Array(25).fill(null);
+  if(mine && S.done && !opts.practice){ const g=dailyDec(S.g);   // today's first try is in: show it, finished (Practice deals a fresh copy)
+    if(g && g.every(Boolean)){ grid=g; queue=[]; current=null; over=true; DAILY.t0=null; DAILY.ms=+S.ms||0; DAILY.practice=false; DAILY.res={total:S.total, max:S.max, bp:S.bp, ms:S.ms};
+      const B=dailyBest(day); SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:B?dailyScore(B):S.max, grid:alignToMine(B||grid.slice())}; return; } }
+  if(mine && !S.done && S.g){ const g=dailyDec(S.g); if(g){ grid=g; DAILY.ms=+S.ms||0; } }   // resume the first try
+  const on=new Set(grid.filter(Boolean).map(cardKey));
+  queue=deal.filter(c=>!on.has(cardKey(c))).reverse(); current=queue.pop();
+}
+function dailySave(){ if(!DAILY||DAILY.practice) return; dailyTick();
+  const S=dailyLoad(); if(S.day!==DAILY.day){ const h=S.hist||{}; if(S.day&&S.done) h[S.day]={g:S.g,total:S.total,max:S.max,bp:S.bp,ms:S.ms}; for(const k in h) if(k<dailyShift(DAILY.day,-7)) delete h[k];
+    Object.keys(S).forEach(k=>{ if(k!=="hist") delete S[k]; }); S.hist=h; S.day=DAILY.day; }
+  S.g=dailyEnc(grid); S.ms=Math.round(DAILY.ms); dailySaveState(S); }
+function dailyFinish(fromPlace){
+  dailyTick(); DAILY.t0=null;
+  const total=computeLines(grid).total, B=dailyBest(DAILY.day);
+  botStop(); render(); NG.trophies(total);
+  const done=function(max, bestGrid){
+    if(total>max){ max=total; bestGrid=grid.slice(); }   // can't happen with a shipped best board; keeps the % honest if it ever does
+    SOLVE={key:solveKey(), done:true, runs:1, max:1, agree:1, score:max, grid:alignToMine(bestGrid)};
+    const bp=dailyBp(total,max);
+    DAILY.res={total, max, bp, ms:Math.round(DAILY.ms)};
+    if(!DAILY.practice){ dailySave(); const T=dailyLoad();
+      Object.assign(T,{done:true, total, max, bp, ms:Math.round(DAILY.ms), at:Date.now(), g:dailyEnc(grid), posted:false}); T.hist=T.hist||{}; T.hist[DAILY.day]={g:T.g,total,max,bp,ms:T.ms}; dailySaveState(T);
+      DB.post(); }
+    sfx(bp>=10000?'win':'good');
+    const go=function(){ openResults(total); };
+    if(fromPlace) NG.tally(grid, go); else go(); };
+  if(B) done(dailyScore(B), B);
+  else { startSolve(); (function wait(){ if(SOLVE&&SOLVE.done) done(SOLVE.score, SOLVE.grid); else setTimeout(wait,200); })(); }   // past the shipped table: this phone's own search
+}
+function dailyHUD(){ const be=document.getElementById("psBest"); if(!be||!DAILY) return; const live=DAILY.ms+(DAILY.t0!=null?performance.now()-DAILY.t0:0);
+  be.className='best'; be.textContent=(DAILY.practice?'Practice · ':'')+dailyTime(live); }
+setInterval(function(){ if(isDaily()&&!over&&DAILY&&curOverlay&&!curOverlay.kind) dailyHUD(); },1000);
+
+/* ---- the board: Game Center in the app, the ntfy relay on the web ---- */
+const DB=(function(){
+  const APP=document.documentElement.classList.contains("gn-app"), TOPIC=(function(){ try{ return new URLSearchParams(location.search).get("daily")||"rd-daily-v1"; }catch(e){ return "rd-daily-v1"; } })();
+  const KB="pokersquares.dailyboard", TOP=50, CARRY_MS=6*3600e3;
+  let board=(function(){ try{ return JSON.parse(localStorage.getItem(KB))||{}; }catch(e){ return {}; } })(), status="", syncing=null, gc={};
+  function saveB(){ try{ localStorage.setItem(KB,JSON.stringify(board)); }catch(e){} }
+  function name(){ try{ return JSON.parse(localStorage.getItem("pokersquares.name"))||""; }catch(e){ return ""; } }
+  // off the wire: shape-check, and re-score the cards against that day's deal and best board
+  function clean(e){
+    if(!e||typeof e!=="object") return null;
+    const day=String(e.day||""); if(!/^\d{4}-\d{2}-\d{2}$/.test(day) || day<dailyShift(dailyDay(),-2) || day>dailyDay()) return null;
+    const g=HS._dec(e.cards); if(!g) return null;
+    const want=new Set(dailyDeal(day).map(cardKey)); if(!g.every(c=>want.has(cardKey(c)))) return null;
+    const nm=String(e.name||"").replace(/[\u0000-\u001f]/g,"").trim().slice(0,16); if(!nm) return null;
+    const at=+e.at, id=String(e.id||"").slice(0,24), ms=Math.round(+e.ms); if(!at||!id||!(ms>0)) return null;
+    const B=dailyBest(day), total=dailyScore(g), max=Math.max(total, B?dailyScore(B):total);
+    return {id, name:nm, day, cards:e.cards, ms, at, total, bp:dailyBp(total,max)};
+  }
+  function merge(list){ let ch=false;
+    list.forEach(raw=>{ const e=clean(raw); if(!e) return; const L=board[e.day]||(board[e.day]=[]); if(L.some(x=>x.id===e.id)) return; L.push(e); ch=true; });
+    Object.keys(board).forEach(d=>{ if(d<dailyShift(dailyDay(),-2)){ delete board[d]; return; } board[d].sort((x,y)=>y.bp-x.bp||x.ms-y.ms||x.at-y.at); board[d]=board[d].slice(0,TOP); });
+    if(ch) saveB(); return ch; }
+  function post(obj){ return fetch(HS.relay+TOPIC,{method:"POST", body:JSON.stringify(obj)}).then(r=>{ if(!r.ok) throw new Error(r.status); }); }
+  function sync(){
+    if(APP) return gcSync();
+    if(syncing) return syncing; status="Checking today's board…"; paint();
+    const ctrl=window.AbortController?new AbortController():null, to=setTimeout(()=>ctrl&&ctrl.abort(),12000);
+    syncing=fetch(HS.relay+TOPIC+"/json?poll=1&since=all", ctrl?{signal:ctrl.signal,cache:"no-store"}:{cache:"no-store"}).finally(()=>clearTimeout(to))
+      .then(r=>{ if(!r.ok) throw new Error(r.status); return r.text(); }).then(txt=>{
+        let last=0; const got=[];
+        txt.split("\n").forEach(line=>{ if(!line) return; let m,o; try{ m=JSON.parse(line); o=JSON.parse(m.message); }catch(e){ return; }
+          if(o.t==="daily") got.push(o.e); else if(o.t==="dboard" && o.b){ Object.values(o.b).forEach(L=>(L||[]).forEach(x=>got.push(x))); last=Math.max(last,m.time*1000); } });
+        merge(got); postMine();
+        if(Date.now()-last>CARRY_MS && Object.keys(board).length) post({t:"dboard",b:board}).catch(()=>{});   // carry the boards past ntfy's 12-hour memory
+        status=""; })
+      .catch(()=>{ status="Offline — showing what this phone has seen."; })
+      .finally(()=>{ syncing=null; paint(); });
+    return syncing; }
+  // post this phone's first try, once (and again later if it couldn't go)
+  function postMine(){
+    const S=dailyLoad(); if(!S.done||S.posted||!S.day||S.day<dailyShift(dailyDay(),APP?0:-1)) return;   // Game Center's board for a day closes at midnight
+    if(APP){ if(window.GN_GC && GN_GC.submitDaily) GN_GC.submitDaily(S.bp, S.ms).then(()=>{ const T=dailyLoad(); T.posted=true; dailySaveState(T); setTimeout(gcSync,800); }).catch(()=>{}); return; }
+    const nm=name(); if(!nm) return;   // the results screen asks for a name first
+    const e={id:S.at.toString(36)+Math.random().toString(36).slice(2,6), name:nm, day:S.day, cards:HS._enc(dailyDec(S.g)), ms:S.ms, at:S.at};
+    if(!clean(e)) return;
+    merge([e]); const T=dailyLoad(); T.posted=true; T.id=e.id; dailySaveState(T); paint();
+    post({t:"daily",e}).catch(()=>{ const U=dailyLoad(); U.posted=false; dailySaveState(U); }); }
+  function setName(){ const inp=document.getElementById("dyName"); if(!inp) return; const nm=inp.value.replace(/[\u0000-\u001f]/g,"").trim().slice(0,16);
+    if(!nm){ inp.focus(); inp.style.borderColor="var(--red)"; return; } try{ localStorage.setItem("pokersquares.name",JSON.stringify(nm)); }catch(e){} postMine(); sfx('win'); paint(); }
+  // Game Center: today's and yesterday's occurrence of the recurring board
+  function gcSync(){
+    const G=window.GN_GC; if(!G || !G.authenticated || !G.dailyEntries){ status=G&&G.error?"Sign in to Game Center (Settings › Game Center) to see who else played.":"Game Center isn't signed in, so the board can't load."; paint(); return Promise.resolve(); }
+    postMine(); status=gc.today?"":"Loading today's board…"; paint();
+    const one=prev=>G.dailyEntries(prev).then(r=>{ const day=prev?dailyShift(dailyDay(),-1):dailyDay();
+      gc[prev?"yday":"today"]=(r.entries||[]).map(x=>({name:x.alias||"Player", bp:+x.score||0, ms:+x.context||0, at:+x.date||0, me:!!x.me, day}))
+        .sort((x,y)=>y.bp-x.bp||(x.ms||9e9)-(y.ms||9e9)||x.at-y.at); }).catch(()=>{});
+    return Promise.all([one(false),one(true)]).then(()=>{ status=""; paint(); }); }
+  function list(day){ if(APP) return day===dailyDay()?(gc.today||[]):(day===dailyShift(dailyDay(),-1)?(gc.yday||[]):[]);
+    const S=dailyLoad(); return (board[day]||[]).map(e=>Object.assign({},e,{me:!!(S.id&&e.id===S.id)})); }
+  function listHTML(day,max){
+    const L=list(day); if(!L.length) return '<div class="muted dyempty">'+(day===dailyDay()?'Nobody on the board yet today.':'No scores from that day.')+'</div>';
+    const row=(e,i)=>'<li class="'+(e.me?'me':'')+(e.cards?' tap':'')+'"'+(e.cards?' onclick="DB.view(\''+e.day+'\',\''+e.id+'\')"':'')+'><span class="rk">'+(i+1)+'</span><span class="nm">'+HS.esc(e.name)+(e.cards?' <span class="vb">view ›</span>':'')+'</span><span class="sc">'+dailyPct(e.bp)+'</span><span class="dt">'+(e.ms?dailyTime(e.ms):'')+'</span></li>';
+    let rows=L.map(row); if(max && L.length>max){ const mi=L.findIndex(e=>e.me); rows=rows.slice(0,max); if(mi>=max) rows.push(row(L[mi],mi)); }
+    return '<ol>'+rows.join("")+'</ol>'; }
+  function rankOf(day){ const L=list(day), i=L.findIndex(e=>e.me); return i<0?null:{rank:i+1, of:L.length}; }
+  function statusHTML(){ return status?'<div class="st">'+HS.esc(status)+'</div>':''; }
+  function needsName(){ const S=dailyLoad(); return !APP && S.done && !S.posted && S.day===dailyDay() && !name(); }
+  function nameHTML(){ return needsName() ? '<div style="font-size:14px;margin-top:4px;">Put your name on today\'s board:</div><div class="hs-enter"><input id="dyName" maxlength="16" placeholder="Your name" autocomplete="off" enterkeyhint="send" onkeydown="if(event.key===\'Enter\')DB.setName()"><button class="btn" onclick="DB.setName()">Post it</button></div>' : ''; }
+  function boardHTML(max){ return nameHTML()+'<div class="hs">'+listHTML(dailyDay(),max)+statusHTML()+'</div>'; }
+  function paint(){ const a=document.getElementById("dyBoard"); if(a){ const inp=document.getElementById("dyName"), typed=inp?inp.value:null; a.innerHTML=boardHTML(+a.dataset.max||0); const ni=document.getElementById("dyName"); if(ni&&typed!==null) ni.value=typed; }
+    const y=document.getElementById("dyYday"); if(y) y.innerHTML=ydayHTML(); const r=document.getElementById("dyRank"); if(r) r.innerHTML=rankLine(); }
+  function rankLine(){ const R=rankOf(dailyDay()); return R?'<b>#'+R.rank+'</b> of '+R.of+' today':''; }
+  function ydayHTML(){ const y=dailyShift(dailyDay(),-1), L=list(y), S=dailyLoad(), mine=(S.hist||{})[y];
+    if(dailyNum(y)<1) return '';
+    const top=L[0];
+    return '<div class="dyy"><div class="dyyh">Yesterday · Daily #'+dailyNum(y)+'</div>'
+      +(top?'<div class="dyyw">🏆 <b>'+HS.esc(top.name)+'</b> '+dailyPct(top.bp)+(top.ms?' in '+dailyTime(top.ms):'')+'</div>':'<div class="muted">'+(APP&&!gc.yday?'':'Nobody posted a score.')+'</div>')
+      +(mine?'<div class="dyym">You: '+dailyPct(mine.bp)+' in '+dailyTime(mine.ms)+'</div>':'')
+      +'<button class="btn sec" onclick="DB.yesterday()">See yesterday\'s boards ›</button></div>'; }
+  // yesterday's deal: the best possible board, yours, and (web) the winner's
+  let yv=null;
+  function yesterday(mode){
+    const y=dailyShift(dailyDay(),-1), B=dailyBest(y), S=dailyLoad(), mine=(S.hist||{})[y], L=list(y), top=(L[0]&&L[0].cards&&!L[0].me)?L[0]:null;   // the winner's board, when it isn't yours
+    const opts=[]; if(B) opts.push(['best','Best possible']); if(mine&&mine.g) opts.push(['mine','Yours']); if(top) opts.push(['top',HS.esc(top.name)]);
+    if(!opts.length){ return; } yv=mode&&opts.some(o=>o[0]===mode)?mode:opts[0][0];
+    let cards, note;
+    if(yv==="best"){ cards=B; note="The best board yesterday's 25 cards could make."; }
+    else if(yv==="mine"){ cards=dailyDec(mine.g); note="Your board: "+dailyPct(mine.bp)+" of the best, in "+dailyTime(mine.ms)+"."; }
+    else { cards=HS._dec(top.cards); note=HS.esc(top.name)+"'s board: "+dailyPct(top.bp)+(top.ms?" in "+dailyTime(top.ms):"")+"."; }
+    const b=viewBoardHTML(cards, DAILY_SYS);
+    openPanel('<button class="btn sec sm close" onclick="openDaily()">‹ Back</button><h2>Daily #'+dailyNum(y)+'</h2><p class="muted" style="margin-top:0;">'+dailyLabel(y)+' · American scoring</p>'
+      +'<div style="text-align:center;margin:8px 0 10px;"><div class="seg">'+opts.map(o=>'<button class="'+(yv===o[0]?'on':'')+'" onclick="DB.yesterday(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'
+      +'<div class="boardwrap">'+b.html+'<div class="bnote">'+note+'</div></div>',"board");
+  }
+  function view(day,id){ const e=(board[day]||[]).find(x=>x.id===id); if(!e) return; const b=viewBoardHTML(HS._dec(e.cards), DAILY_SYS);
+    openPanel('<button class="btn sec sm close" onclick="openDaily()">‹ Back</button><h2>'+HS.esc(e.name)+'</h2><p class="muted" style="margin-top:0;">Daily #'+dailyNum(day)+' · '+dailyPct(e.bp)+' in '+dailyTime(e.ms)+'</p>'
+      +'<div class="boardwrap">'+b.html+'</div>',"board"); }
+  if(!APP) setTimeout(sync, 900);
+  return {sync, post:postMine, setName, boardHTML, listHTML, rankLine, ydayHTML, yesterday, view, paint, get app(){ return APP; }, _clean:clean, _board:()=>board};
+})();
+
+/* ---- the Daily Deal panel: today's status, today's board, yesterday ---- */
+function dailyStatus(){ const day=dailyDay(), S=dailyLoad();
+  if(S.day===day && S.done) return {state:"done", S};
+  if(S.day===day && S.g){ const g=dailyDec(S.g); return {state:"going", n:g?g.filter(Boolean).length:0, S}; }
+  return {state:"new", S}; }
+function openDaily(){
+  const day=dailyDay(), st=dailyStatus(), n=dailyNum(day);
+  let head;
+  if(st.state==="done") head='<div class="dyme"><div class="dypct">'+dailyPct(st.S.bp)+'</div><div class="dysub">'+st.S.total+' of the best '+st.S.max+' · '+dailyTime(st.S.ms)+'<br><span id="dyRank">'+DB.rankLine()+'</span></div></div>'
+    +'<div class="res-btns"><button class="btn sec" onclick="dailyPlay(true)">Practice this board</button><button class="btn sec" onclick="levelPlay(lvUnlocked())">Back to Levels</button></div>';
+  else head='<div class="res-btns"><button class="btn" onclick="dailyPlay()">'+(st.state==="going"?'Resume · card '+(st.n+1)+' of 25':'Play today\'s board')+'</button>'
+    +(isDaily()?'<button class="btn sec" onclick="levelPlay(lvUnlocked())">Back to Levels</button>':'')+'</div>';
+  openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>Daily Deal #'+n+'</h2>'
+    +'<p class="muted dyrules">'+dailyLabel(day)+' · the same 25 cards for everyone, in the same order. American scoring, no clock, no undo, no prizes. Your <b>first try</b> counts; ties go to the faster finish.</p>'
+    +head
+    +'<div class="hs-h"><h3>Today\'s board</h3></div><div id="dyBoard" data-max="10">'+DB.boardHTML(10)+'</div>'
+    +'<div id="dyYday">'+DB.ydayHTML()+'</div>',"daily");
+  DB.sync();
+}
+// v269: say hello once, the first time the game opens with the Daily Deal in it
+function dailyAnnounce(tries){ try{ if(localStorage.getItem("pokersquares.dailyNew")) return; }catch(e){ return; }
+  if(isDaily()) { try{ localStorage.setItem("pokersquares.dailyNew","1"); }catch(e){} return; }
+  if(curOverlay.kind || GATE || document.querySelector(".bgate,.lvintro")){ if((tries||0)<20) setTimeout(()=>dailyAnnounce((tries||0)+1),1500); return; }
+  try{ localStorage.setItem("pokersquares.dailyNew","1"); }catch(e){}
+  openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>New: the Daily Deal</h2>'
+    +'<p>Every day, everybody gets the <b>same 25 cards</b>, in the same order. Your score is how close you get to the best board those cards can make, so it\'s a fair race. Only your first try counts, and ties go to whoever finishes faster.</p>'
+    +'<p class="muted">Tomorrow you can see yesterday\'s winner and the best board that was hiding in the cards. Find it any time at the top of the Levels map, or in Menu.</p>'
+    +'<div class="res-btns"><button class="btn" onclick="dailyPlay()">Play today\'s board</button><button class="btn sec" onclick="closeOverlay()">Later</button></div>',"daily"); }
+setTimeout(()=>dailyAnnounce(0),2500);
+function dailyPlay(practice){ closeOverlay(); if(!isDaily()){ settings.mode="daily"; persist(); } newGame({practice:!!practice}); }
+function dailyResultsHTML(total){
+  const R=DAILY.res||{total, max:total, bp:10000, ms:0}, pr=DAILY.practice, S=dailyLoad(), perfect=R.bp>=10000;
+  return '<button class="btn sec sm close" onclick="closeOverlay()">✕</button>'
+    +resHero('Daily','#'+dailyNum(DAILY.day),pr?'Practice board':(perfect?'The best board!':'Board complete'),dailyLabel(DAILY.day)+' · American',perfect&&!pr)
+    +resPts(R.total, dailyPct(R.bp)+' of the best board ('+R.max+') · '+dailyTime(R.ms))
+    +'<div class="lvbar"><i data-w="'+(R.bp/100).toFixed(1)+'" style="width:'+(reduceMotion()?(R.bp/100).toFixed(1):0)+'%"></i></div>'
+    +(pr?'<div class="lvline">Practice doesn\'t post. Your first try: <b>'+dailyPct(S.bp)+'</b> in '+dailyTime(S.ms)+'.</div>':'<div class="lvline" id="dyRank">'+DB.rankLine()+'</div>')
+    +'<div class="hs-h"><h3>Today\'s board</h3><button class="hs-all" onclick="openDaily()">All ›</button></div><div id="dyBoard" data-max="'+(innerHeight<640?3:5)+'">'+DB.boardHTML(innerHeight<640?3:5)+'</div>'
+    +'<div class="res-btns"><button class="btn" onclick="levelPlay(lvUnlocked())">Back to Levels</button>'
+    +'<button class="btn sec" id="psBestBtn" onclick="closeOverlay();showView(\'best\')"'+(SOLVE&&SOLVE.done&&SOLVE.score>R.total?'':' disabled')+'>'+(SOLVE&&SOLVE.done&&SOLVE.score<=R.total?'Yours is best':'Best board')+'</button></div>';
+}
+
 
 /* ============================================================
    v204 NEXT-GEN LAYER — presentation only. It reads grid / current / over and the engine's
@@ -2953,6 +3207,7 @@ document.getElementById("rulesBtn").onclick=()=>openRules();   // never hand ope
 document.getElementById("menuBtn").onclick=openMenu;
 document.getElementById("hsBtn").onclick=function(){ HS.open(); };
 document.getElementById("lvBtn").onclick=function(){ openLevels(); };
+document.getElementById("dyBtn").onclick=function(){ openDaily(); };
 document.getElementById("psUndo").onclick=undo;
 document.getElementById("psNew").onclick=function(){ newGame(); };
 document.getElementById("overlay").addEventListener("click",function(e){ if(e.target===this) closeOverlay(); });
@@ -2981,7 +3236,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v268", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v269", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

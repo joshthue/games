@@ -911,3 +911,57 @@ Checked headless at 402×874, American and English, day and night, with and with
 twist the solver's best board scores the same under `computeLines` as the solver says (gold, blind,
 short, stones, other), stones never move in it, blind cards hide in the tray and Peek and turn over on
 landing, and Free play is unchanged (no multipliers, its own scoring).
+
+## Daily Deal (v269)
+Josh's idea: everyone plays the same board each day, ranked by % of the best possible board on their
+first attempt, plus a look at yesterday's best board. Decided Nov 23: daily only (no challenge links
+yet), no clock, ties go to whoever finished faster.
+
+**The deal.** `dailyDeal(day)` shuffles a fresh deck with a seeded generator (`dailyRng`: a string
+hash into mulberry32, integer maths only, so every browser and the app deal identical cards), seeded
+from `"royaldraw-daily:" + day`. The first 25 cards are the board, in the order they come. The day is
+`dailyDay()`: the date in UTC-6 all year, so it turns at midnight Central standard time (1 AM in
+summer). Daily #1 is `DAILY_EPOCH` = 2026-11-23. Always **American** scoring (`playSys()` returns it in
+daily mode), no clock, no undo, no prizes, no bot.
+
+**The best board is shipped, not searched.** The % has to mean the same on every phone, and two
+phones' searches can land a point or two apart (the search is randomised and stops on a time budget).
+So `daily-best.js` (node, in this folder) finds each day's best board ahead of time with a far longer
+search than a phone runs (16 anneals of 1.5M steps plus the polish, keeping the top), and writes it
+into `DAILY_BEST`: 25 base-36 characters a day, square by square, each the index of that card in the
+day's deal (~10 KB for 400 days). It reads the engine out of `index.html`, so the table always
+matches the game. **Run it again before the table runs out** (it covers 400 days from the epoch,
+through 2027-12-27; it only computes the missing days):
+```
+node royaldraw/daily-best.js 800
+```
+Past the end of the table the game falls back to the phone's own search (still fair to yourself,
+less so between phones).
+
+**First try only.** `pokersquares.daily` = `{day, g, ms, done, total, max, bp, at, posted, id, hist}`.
+The board saves card by card from the first placement (`g`: 50 chars, `--` for an empty square), so
+leaving and coming back resumes it. Once done, opening Daily shows your finished board; **Practice**
+deals the same cards again and never posts. `hist` keeps the last week of finished boards for
+"yesterday". The time (`ms`) only runs while the board is on screen (`visibilitychange`).
+
+**Score.** `bp` = your total ÷ the day's best × 10000 (basis points), shown as a %. Sorted by bp,
+then `ms` (faster first), then finish time.
+
+**The board.**
+- **App:** Game Center leaderboard `rd_daily`, a daily recurring board (score = bp, fixed point, two
+  decimals, "%"; context = ms). The app shim adds `GN_GC.submitDaily(bp, ms)` and
+  `GN_GC.dailyEntries(previous)`; the GameCenter plugin's new `loadEntries` reads the current or
+  previous occurrence so the game draws today's and yesterday's boards itself (ties by context).
+  The app still makes no network connections.
+- **Web:** the same ntfy relay as High scores, topic `rd-daily-v1` (`?daily=<topic>` for tests):
+  `{t:'daily', e:{id, name, day, cards, ms, at}}` posts; every phone re-scores entries against that
+  day's deal and shipped best board (`DB._clean`), keeps the last three days in
+  `pokersquares.dailyboard`, and re-posts them as `{t:'dboard'}` past ntfy's 12-hour memory. Your name
+  is the High scores name; the first finish asks for it if there isn't one.
+
+**Where it shows.** The Levels map's pinned card has a Daily Deal row (Play / Resume / your %), Menu
+› Play has Levels / Daily / Free play, and in daily mode the header's game pill is **Daily**. The
+first launch with v269 shows a one-time "New: the Daily Deal" card (`pokersquares.dailyNew`). The
+Daily panel has today's status, today's board (top 10 plus you), and yesterday: the winner, your
+result, and **See yesterday's boards** with Best possible / Yours / the winner's (web only: Game
+Center keeps scores, not layouts).
