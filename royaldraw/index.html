@@ -823,7 +823,7 @@
   html[data-theme="night"] .lvchap b{background:#9c804b; color:#1a1612;} html[data-theme="night"] .lvchap b::before,html[data-theme="night"] .lvchap b::after{background:#6e5a36;}
 </style>
 <style id="twists-v268">
-  /* v268: table twists — the gold square, blind cards, stones, the shuffling tray, the explainer */
+  /* v268: table twists — the gold square, stones, the shuffling tray, the explainer (blind cards gone in v270) */
   .pscell.gold{box-shadow:inset 0 0 0 2px #f1c95a,0 0 12px rgba(241,201,90,.55) !important;}
   .pscell.empty.gold{background:radial-gradient(circle at 50% 45%,rgba(241,201,90,.30),rgba(241,201,90,.08) 70%); border-color:rgba(241,201,90,.7);}
   .goldx{font:900 15px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#f6d77e; opacity:.85; letter-spacing:.5px; pointer-events:none;}
@@ -831,16 +831,11 @@
   .psscore.x2::after{content:"×2"; position:absolute; top:-5px; right:-4px; font:900 9px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; padding:2px 3px; border-radius:6px; background:#f1c95a; color:#2a1c05; box-shadow:0 1px 2px rgba(0,0,0,.4);}
   .pscell.stone{filter:saturate(.35) brightness(.9); box-shadow:inset 0 0 0 2px rgba(150,156,166,.9),0 2px 5px rgba(0,0,0,.45) !important;}
   .pscell.locked.stone::after{background:#9aa1ab; width:8px; height:8px; border-radius:2px; transform:rotate(45deg);}
-  #psCurrent .card.back.blind,#psCurrent .card.back.shuffling,.flycard.blindfly{background:repeating-linear-gradient(45deg,#1b6fb3 0 7px,#155a94 7px 14px) !important; border:2px solid #0e3f6b !important;}
+  #psCurrent .card.back.shuffling{background:repeating-linear-gradient(45deg,#1b6fb3 0 7px,#155a94 7px 14px) !important; border:2px solid #0e3f6b !important;}
   #psCurrent .card.back{display:flex; align-items:center; justify-content:center;}
-  .bq{font:900 34px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; color:#eaf3ff; text-shadow:0 2px 4px rgba(0,0,0,.45);}
-  .flycard.blindfly{display:flex; align-items:center; justify-content:center;} .flycard.blindfly .bq{font-size:24px;}
   #psCurrent .card.back.shuffling{animation:twShuf .9s ease-in-out infinite alternate;}
   @keyframes twShuf{from{transform:rotate(-4deg) translateX(-3px)} to{transform:rotate(4deg) translateX(3px)}}
-  .pscell.reveal{animation:twFlip .42s cubic-bezier(.3,.7,.3,1);}
-  @keyframes twFlip{0%{transform:rotateY(90deg); filter:brightness(1.4)} 100%{transform:none; filter:none}}
-  .pkc.bl{background:repeating-linear-gradient(45deg,#1b6fb3 0 4px,#155a94 4px 8px); color:#eaf3ff;}
-  .lvnode .bz.tw{background:#8a6a1c;} .lvnode .bz.tw-gold{background:#b8902e; color:#2a1c05;} .lvnode .bz.tw-blind{background:#1b5f9a;}
+  .lvnode .bz.tw{background:#8a6a1c;} .lvnode .bz.tw-gold{background:#b8902e; color:#2a1c05;}
   .lvnode .bz.tw-short{background:#2f7a64;} .lvnode .bz.tw-stone{background:#6b717a;} .lvnode .bz.tw-other{background:#7a3f9a;}
   .twgate .bg-card{border-color:#f1c95a; box-shadow:0 18px 40px rgba(0,0,0,.55),0 0 0 1px rgba(241,201,90,.25);}
   .twgate .bg-k{color:#f6d77e;}
@@ -850,16 +845,13 @@
   .twg{display:grid; grid-template-columns:repeat(5,18px); gap:4px;}
   .twg i{width:18px; height:24px; border-radius:4px; background:rgba(255,255,255,.12); box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);}
   .twg i.gl{background:rgba(241,201,90,.28);} .twg i.g{background:#f1c95a; box-shadow:0 0 10px rgba(241,201,90,.7);} .twg i.s{background:#9aa1ab;}
-  .twcards{display:flex; gap:8px;} .twcards .tc{width:42px; height:58px; border-radius:7px; background:var(--cream,#f7f3e8); color:#1c2a24; font:900 17px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 2px 5px rgba(0,0,0,.45);}
-  .twcards .tc.bk{background:repeating-linear-gradient(45deg,#1b6fb3 0 6px,#155a94 6px 12px); color:#eaf3ff; font-size:24px; transform:translateY(-6px) rotate(3deg);}
   .twranks{display:flex; flex-wrap:wrap; justify-content:center; gap:4px; max-width:290px;} .twranks b,.twranks s{min-width:26px; padding:5px 4px; border-radius:6px; font:900 14px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;}
   .twranks b{background:var(--cream,#f7f3e8); color:#1c2a24;} .twranks s{background:rgba(255,255,255,.08); color:rgba(255,255,255,.35);}
   .twtab{border-collapse:collapse; font-size:14px; color:#dfe6ff; margin:0 auto;} .twtab td,.twtab th{padding:3px 10px; text-align:right;} .twtab td:first-child{text-align:left;} .twtab th{font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.65;} .twtab b{color:#f6d77e;}
   html[data-theme="night"] .pscell.gold{box-shadow:inset 0 0 0 2px #b8954a !important;} html[data-theme="night"] .goldx,html[data-theme="night"] .twn,html[data-theme="night"] .twgate .bg-k{color:#d9b874;}
   html[data-theme="night"] .psscore.x2::after{background:#b8954a;} html[data-theme="night"] .twd,html[data-theme="night"] .twtab{color:#cdbf9f;}
-  html[data-theme="night"] #psCurrent .card.back.blind,html[data-theme="night"] #psCurrent .card.back.shuffling,html[data-theme="night"] .flycard.blindfly{background:repeating-linear-gradient(45deg,#2c3a52 0 7px,#232f43 7px 14px) !important; border-color:#3d4d68 !important;}
-  html[data-theme="night"] .bq{color:#b9c6dc;}
-  @media (prefers-reduced-motion:reduce){ #psCurrent .card.back.shuffling,.pscell.reveal{animation:none} }
+  html[data-theme="night"] #psCurrent .card.back.shuffling{background:repeating-linear-gradient(45deg,#2c3a52 0 7px,#232f43 7px 14px) !important; border-color:#3d4d68 !important;}
+  @media (prefers-reduced-motion:reduce){ #psCurrent .card.back.shuffling{animation:none} }
 </style>
 <style id="daily-v269">
   /* v269: the Daily Deal — the map banner, the panel, yesterday */
@@ -1047,7 +1039,6 @@ function prizeApplies(k){
   if(k==="peek") return queue.length>0;
   if(k==="burn") return spareCards().length>0;
   if(k==="swap") return movableIdx().length>0;
-  if(k==="hint") return !isBlind(current);             // v268: no hints for a face-down card
   return true; }                                       // hint, wild
 function przActive(k){ return k==="peek"?PRZ.peek:k==="hint"?(PRZ.hint>=0||PRZ.hintBusy):k==="freeze"?PRZ.frozen:k==="swap"?PRZ.mode==="swap":false; }
 function renderStrip(){
@@ -1152,18 +1143,18 @@ function flyCell(to, fromR){
     .onfinish=function(){ f.remove(); const now=document.querySelector('#psboard .pscell[data-i="'+to+'"]'); if(now) now.classList.remove("ghost"); }; }
 // Wild: pick any rank and suit for the tray card (a new card object, so a replay of the same board is untouched)
 let WILD=null;
-function openWild(){ if(!current) return; WILD=isBlind(current)?{r:14, s:0}:{r:current.r, s:current.s}; wildPaint(); }   // a face-down card stays secret
+function openWild(){ if(!current) return; WILD={r:current.r, s:current.s}; wildPaint(); }
 function wildSet(k,v){ if(!WILD) return; WILD[k]=v; NG.snd("hover",0); wildPaint(); }
 function wildPaint(){
-  const bl=isBlind(current), c={r:WILD.r, s:WILD.s, wild:true}, same=!bl && c.r===current.r && c.s===current.s;
+  const c={r:WILD.r, s:WILD.s, wild:true}, same=c.r===current.r && c.s===current.s;
   openPanel('<button class="btn sec sm close" onclick="closeOverlay()">✕</button><h2>🃏 Wild card</h2>'
-    +'<p class="muted" style="margin-top:0">Turn '+(bl?'the face-down card':'the '+rankStr(current.r)+SUITS[current.s])+' into any card.'+(boostUsed?'':' If you use a prize on this board, '+BOOST_NOTE+'.')+'</p>'
+    +'<p class="muted" style="margin-top:0">Turn the '+rankStr(current.r)+SUITS[current.s]+' into any card.'+(boostUsed?'':' If you use a prize on this board, '+BOOST_NOTE+'.')+'</p>'
     +'<div class="wdprev">'+bigCardHTML(c)+'</div>'
     +'<div class="wdgrid">'+[2,3,4,5,6,7,8,9,10,11,12,13,14].map(r=>'<button class="'+(r===WILD.r?'on':'')+'" onclick="wildSet(\'r\','+r+')">'+rankStr(r)+'</button>').join('')+'</div>'
     +'<div class="wdsuits">'+[0,1,2,3].map(s=>'<button class="'+(s===WILD.s?'on':'')+'" style="color:'+suitColor(s)+'" onclick="wildSet(\'s\','+s+')">'+SUITS[s]+'</button>').join('')+'</div>'
     +'<div class="res-btns"><button class="btn" onclick="wildPlay()"'+(same?' disabled':'')+'>'+(same?'Pick a different card':'Use Wild · '+rankStr(c.r)+SUITS[c.s])+'</button></div>',"wild");
 }
-function wildPlay(){ if(!WILD||!current||over) return; if(!isBlind(current) && WILD.r===current.r && WILD.s===current.s) return;
+function wildPlay(){ if(!WILD||!current||over) return; if(WILD.r===current.r && WILD.s===current.s) return;
   if(!spendPrize("wild")){ closeOverlay(); return; }
   current={r:WILD.r, s:WILD.s, wild:true}; WILD=null; PRZ.altered=true; przHintClear();
   closeOverlay(); sfx('select'); NG.snd("glint",0); NG.hap(2,60,"medium"); render(); }
@@ -1172,7 +1163,7 @@ function przTrayMsg(){
   if(!isLevels()||over||!current) return null;
   if(PRZ.mode==="swap") return PRZ.sel<0?'🔀 Tap a card to move':'🔀 Now tap where it goes';
   if(PRZ.hintBusy) return '💡 Thinking…';
-  if(PRZ.peek && queue.length) return 'Next '+queue.slice(-2).reverse().map(c=>isBlind(c)?'<span class="pkc bl">?</span>':'<span class="pkc" style="color:'+suitColor(c.s)+'">'+rankStr(c.r)+SUITS[c.s]+'</span>').join('');
+  if(PRZ.peek && queue.length) return 'Next '+queue.slice(-2).reverse().map(c=>'<span class="pkc" style="color:'+suitColor(c.s)+'">'+rankStr(c.r)+SUITS[c.s]+'</span>').join('');
   if(PRZ.hint>=0) return '💡 Try the glowing square';
   if(PRZ.frozen) return '❄️ Clock frozen for this card';
   return null; }
@@ -1262,21 +1253,21 @@ const LV_LOCKS=[15,10,5];                                   // pre-filled square
 // boards start at 34% and climb 2 points a level to 55% at level 15.
 function levelPct(n){ return (n<=2?.40:n===3?.38:Math.min(.55,.34+.02*(n-4))) - (levelClock(n)!=="off"?.04:0) + (TW_PCT[levelTwist(n)]||0); }
 /* v268: table twists. From level 12 the 2nd and 4th board of every five (12, 14, 17, 19, 22…) carries a
-   twist; Blitz boards and part-built boards never do. Each chapter brings in its own: High Stakes the gold
-   square, Master's Table blind cards, The Gauntlet the short deck, Iron Table stones, and The Summit deals
-   them all in turn, plus boards scored on the other table. The target is still a share of the best board
-   for the board as dealt (twist included), so each one is fair; blind cards and the other table ask a few
-   points less. A twist's first appearance stops for a short explainer (pokersquares.twists). */
+   twist; Blitz boards and part-built boards never do. High Stakes and Master's Table deal the gold square,
+   The Gauntlet the short deck, Iron Table stones, and The Summit deals them all in turn, plus boards scored
+   on the other table. The target is still a share of the best board for the board as dealt (twist
+   included), so each one is fair; the other table asks 3 points less. A twist's first appearance stops
+   for a short explainer (pokersquares.twists). v270: blind cards (three face-down cards, Master's Table)
+   are gone; players didn't like placing cards they couldn't see. */
 const TWISTS={
   gold: {n:"Gold square", tag:"Gold",   d:"One square is gold. Its row and its column score double."},
-  blind:{n:"Blind cards", tag:"Blind",  d:"Three cards come face down. You choose their square before you see them."},
   short:{n:"Short deck",  tag:"Short",  d:"No 2s, 3s, 4s or 5s: every card is a 6 or higher. More pairs, more straights, and a bigger best board to aim at."},
   stone:{n:"Stones",      tag:"Stones", d:"Two cards start on the board in random squares. They can't move, so build around them."},
   other:{n:"Other table", tag:"Other",  d:""}
 };
-const TW_PCT={blind:-.04, other:-.03}, TW_SUMMIT=["other","gold","blind","short","stone"];
+const TW_PCT={other:-.03}, TW_SUMMIT=["other","gold","short","stone"];
 function levelTwist(n){ if(n<12 || LV_LOCKS[n-1] || levelClock(n)!=="off") return null; const m=n%5; if(m!==2 && m!==4) return null;
-  if(n<15) return "gold"; if(n<25) return "blind"; if(n<40) return "short"; if(n<55) return "stone";
+  if(n<25) return "gold"; if(n<40) return "short"; if(n<55) return "stone";
   return TW_SUMMIT[((((n-57)/5)|0)*2+(m===4?1:0))%TW_SUMMIT.length]; }
 function otherSys(){ return settings.scoring==="american"?"english":"american"; }
 function twistName(k){ return k==="other"?(otherSys()==="english"?"English scoring":"American scoring"):TWISTS[k].n; }
@@ -1290,7 +1281,6 @@ function playSys(){ if(!TW_OFF && settings.mode==="daily") return "american"; re
 function goldMult(g){ if(g==null) return null; const m=new Array(10).fill(1); m[(g/5)|0]=2; m[5+g%5]=2; return m; }   // lines: rows 0-4, then columns
 function levelMult(){ return (!TW_OFF && isLevels() && LV) ? goldMult(LV.gold) : null; }
 function lineMult(type,idx){ const m=levelMult(); return m ? m[(type==="row"?0:5)+idx] : 1; }
-function isBlind(c){ return !!(c && !c.wild && isLevels() && LV && LV.blindK && LV.blindK.has(cardKey(c)) && !LV.seenK.has(cardKey(c))); }
 /* v268: harder deals at higher levels. From level 16 the dealer shuffles a few boards and you get the one
    the bot does worst on, measured as its share of the best board when it plays the cards in your order:
    2 shuffles from level 16, 3 from 50, 4 from 100 (Blitz and part-built boards are dealt as before). A
@@ -1329,7 +1319,7 @@ function lvUnlocked(){ return lvProg()[settings.scoring].level; }
 function levelDeck(tw){ return tw==="short" ? makeDeck().filter(c=>c.r>=6) : makeDeck(); }
 function levelDeal(n){
   const tw=levelTwist(n), deal=shuffle(levelDeck(tw)).slice(0,25), k=LV_LOCKS[n-1]||0, locks=new Array(25).fill(null);
-  let layout=deal.slice(), gold=null, blindK=null;
+  let layout=deal.slice(), gold=null;
   if(tw==="stone"){   // two random squares, never in the same row or column, hold the deal's first two cards
     const a=(Math.random()*25)|0; let b; do{ b=(Math.random()*25)|0; }while(((b/5)|0)===((a/5)|0) || b%5===a%5);
     locks[a]=deal[0]; locks[b]=deal[1]; const rest=deal.slice(2); layout=locks.map(c=>c||rest.pop()); }
@@ -1347,8 +1337,7 @@ function levelDeal(n){
     layout=B;
   }
   const lockedK=new Set(locks.filter(Boolean).map(cardKey)), order=shuffle(deal.filter(c=>!lockedK.has(cardKey(c))));
-  if(tw==="blind"){ blindK=new Set(); shuffle(order.map((c,i)=>i).slice(1)).slice(0,3).forEach(i=>blindK.add(cardKey(order[i]))); }   // never the first card
-  return {n, k:lockedK.size, pct:levelPct(n), tw, gold, sys:tw==="other"?otherSys():null, blindK, seenK:new Set(), deal, locks, layout, order,
+  return {n, k:lockedK.size, pct:levelPct(n), tw, gold, sys:tw==="other"?otherSys():null, deal, locks, layout, order,
     solved:false, max:null, target:null, solve:null, onSolved:null, result:null};
 }
 /* ---- v268: the graded deal. Each shuffle is played by the bot in its real order (no peeking at what
@@ -1433,7 +1422,7 @@ function levelSetup(opts){
   levelStart();
 }
 function levelStart(){
-  LV.result=null; LV.onSolved=null; if(LV.seenK) LV.seenK=new Set();
+  LV.result=null; LV.onSolved=null;
   if(LV.solve){ LV.max=LV.solve.score; LV.target=Math.ceil(LV.pct*LV.max); }
   grid=LV.locks.slice(); queue=LV.order.slice().reverse(); current=queue.pop();
   levelSolve();
@@ -1447,7 +1436,6 @@ function levelHUD(){
   el.className='best goal'+(LV.target!=null && total>=LV.target?' ahead':'');
   if(!over && !(viewGrid()!==grid)){ const pe=document.getElementById("psPlace"), pm=przTrayMsg();
     if(pm) pe.innerHTML=pm; else if(LV.pending) pe.textContent="Shuffling…";
-    else if(isBlind(current)) pe.textContent="Face down · pick its square";
     else pe.textContent=BOT.on?(settings.botAuto?"The bot is playing":"Tap Next card"):("Level "+LV.n+(LV.tw?" · "+twistName(LV.tw):(LV.k?" · "+LV.k+" pre-filled":(levelClock(LV.n)!=="off"?" · Blitz "+levelSecs(LV.n)+"s":"")))); }
 }
 // stars: 1 at the target, 2 at +5 points of percentage, 3 at +10
@@ -1483,7 +1471,7 @@ function stars(n){ let h=''; for(let i=0;i<3;i++) h+=i<n?'<b>★</b>':'★'; ret
 /* ---- the level map (v213): a winding path, chapters, a card for the level you tap ---- */
 const LV_CHAPTERS=[{from:1,name:"Training Table",sub:"Part-built boards: learn what a good one looks like",felt:"#35a86c"},
   {from:25,name:"The Gauntlet",sub:"Blitz clocks shrink · new twist: the short deck",felt:"#b07a2e"},{from:40,name:"Iron Table",sub:"8 seconds a card and falling · new twist: stones",felt:"#4f7ba6"},{from:55,name:"The Summit",sub:"Every twist in turn, and the other scoring table",felt:"#c9a432"},
-  {from:4,name:"The Climb",sub:"Bare boards, no undo",felt:"#2b9a9e"},{from:10,name:"High Stakes",sub:"The targets bite · new twist: the gold square",felt:"#b8423f"},{from:15,name:"Master's Table",sub:"55% of the best board · new twist: blind cards",felt:"#6a55b8"}];   // felt: the map's colour for that stretch (v267); subs name each chapter's twist (v268)
+  {from:4,name:"The Climb",sub:"Bare boards, no undo",felt:"#2b9a9e"},{from:10,name:"High Stakes",sub:"The targets bite · new twist: the gold square",felt:"#b8423f"},{from:15,name:"Master's Table",sub:"55% of the best board, more gold squares",felt:"#6a55b8"}];   // felt: the map's colour for that stretch (v267); subs name each chapter's twist (v268)
 LV_CHAPTERS.sort((a,b)=>a.from-b.from);
 function chapterOf(n){ let c=LV_CHAPTERS[0]; LV_CHAPTERS.forEach(x=>{ if(n>=x.from) c=x; }); return c; }
 let LVSEL=null;
@@ -1547,7 +1535,6 @@ function twistVisual(k){
   const grid=f=>'<div class="twg">'+Array.from({length:25},(_,i)=>'<i class="'+f(i)+'"></i>').join('')+'</div>';
   if(k==="gold") return grid(i=>i===12?'g':((i/5|0)===2||i%5===2?'gl':''));
   if(k==="stone") return grid(i=>(i===6||i===18)?'s':'');
-  if(k==="blind") return '<div class="twcards"><span class="tc">7<b style="color:'+suitColor(1)+'">'+SUITS[1]+'</b></span><span class="tc bk">?</span><span class="tc">Q<b style="color:'+suitColor(0)+'">'+SUITS[0]+'</b></span></div>';
   if(k==="short") return '<div class="twranks">'+[2,3,4,5].map(r=>'<s>'+r+'</s>').join('')+[6,7,8,9,10,11,12,13,14].map(r=>'<b>'+rankStr(r)+'</b>').join('')+'</div>';
   const A=SCORING.american, E=SCORING.english, to=otherSys(), from=settings.scoring;
   return '<table class="twtab"><tr><th></th><th>'+(from==="american"?"American":"English")+'</th><th>'+(to==="american"?"American":"English")+'</th></tr>'
@@ -1660,7 +1647,6 @@ function placed(){ return grid.reduce((n,c)=>n+(c?1:0),0); }
 function place(i){
   if(over||!current||grid[i]||PRZ.mode) return;
   const from=document.querySelector('#psCurrent .card'), fromR=ngFromRect||(from?from.getBoundingClientRect():null); ngFromRect=null;
-  const blind=isBlind(current); if(blind) LV.seenK.add(cardKey(current));   // v268: a face-down card turns over where it lands
   grid[i]=current;
   sfx('place');
   PRZ.peek=false; PRZ.frozen=false; przHintClear();   // Peek, Hint and Freeze last for one card
@@ -1672,11 +1658,11 @@ function place(i){
     if(fl && !reduceMotion()) holdScore(fl); }
   if(CLOCK.kind==="shot"){ CLOCK.left=CLOCK.shotMs; CLOCK.lastSec=-1; CLOCK.grace=performance.now()+GRACE_MS; }   // a fresh 8 s for the next card
   if(placed()===25){ finish(true); } else { render(i); }
-  dealFx(i, fromR, blind);
+  dealFx(i, fromR);
 }
 /* ---- v201: the card flies from the tray to its square; a line it finishes sweeps and calls out ---- */
 function reduceMotion(){ return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); }
-function dealFx(i, fromR, blind){
+function dealFx(i, fromR){
   const cell=document.querySelector('#psboard .pscell[data-i="'+i+'"]');
   const done=[], quads=[]; const r=Math.floor(i/5), c=i%5;
   [["row",r],["col",c]].forEach(function(l){
@@ -1687,12 +1673,11 @@ function dealFx(i, fromR, blind){
     if(!quadDone.has(key) && grid[i] && !full){ let n=0; for(var qi=0;qi<idxs.length;qi++){ const cd=grid[idxs[qi]]; if(cd&&cd.r===grid[i].r) n++; } if(n>=4){ quadDone.add(key); quads.push({type:l[0], idx:l[1], rank:grid[i].r}); } }
   });
   const user=!ngByBot;
-  function landed(){ if(blind){ const el=document.querySelector('#psboard .pscell[data-i="'+i+'"]'); if(el){ el.classList.remove("reveal"); void el.offsetWidth; el.classList.add("reveal"); } NG.snd("glint",NG.panOfCol(i%5)); }
-    NG.land(i,user); quads.forEach(function(q){ quadCelebrate(q.type,q.idx,q.rank); }); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
+  function landed(){ NG.land(i,user); quads.forEach(function(q){ quadCelebrate(q.type,q.idx,q.rank); }); done.forEach(function(d,k){ setTimeout(function(){ lineFx(d); }, k*380); }); }
   if(!cell || !fromR || reduceMotion() || !document.body.animate){ landed(); return; }
   NG.snd('whoosh', NG.panOfCol(i%5));
   const to=cell.getBoundingClientRect();
-  const f=document.createElement("div"); f.className="flycard deal"+(blind?" blindfly":""); f.innerHTML=blind?'<span class="bq">?</span>':cell.innerHTML;
+  const f=document.createElement("div"); f.className="flycard deal"; f.innerHTML=cell.innerHTML;
   Object.assign(f.style,{left:to.left+"px", top:to.top+"px", width:to.width+"px", height:to.height+"px"});
   document.body.appendChild(f); cell.style.visibility="hidden";
   const sx=fromR.width/to.width, sy=fromR.height/to.height;
@@ -1801,7 +1786,6 @@ function chipHTML(h, x2){   // x2: a gold-square line (v268), marked even before
   if(!h) return '<div class="psscore'+(x2?' x2':'')+'"><span class="dot">·</span></div>';
   return '<div class="psscore t'+TIER[h.key]+(h.pts>0?' has':'')+(x2||h.x2?' x2':'')+'" title="'+h.name+' · '+h.pts+'"><span class="ab">'+ABBR[h.key]+'</span><span class="pts">'+h.pts+'</span></div>';
 }
-function blindCardHTML(){ return '<div class="card back blind"><span class="bq">?</span></div>'; }
 function miniHTML(card){
   return '<span class="psmini" style="color:'+suitColor(card.s)+'"><span class="r">'+rankStr(card.r)+'</span><span class="s">'+SUITS[card.s]+'</span></span>'+(card.wild?'<span class="wildmk">★</span>':'');
 }
@@ -1951,7 +1935,7 @@ function render(justIdx){
   const {rows,cols,total}=computeLines(g);
   // tray
   const pend=isLevels()&&LV&&LV.pending;   // v268: a graded deal still being chosen: the tray shuffles a card back
-  document.getElementById("psCurrent").innerHTML=(pend?'<div class="card back shuffling"></div>':(isBlind(current)?blindCardHTML():bigCardHTML(current)))+clockRingHTML();
+  document.getElementById("psCurrent").innerHTML=(pend?'<div class="card back shuffling"></div>':bigCardHTML(current))+clockRingHTML();
   document.getElementById("psCurrent").style.display=(current||pend)?"":"none";   // board full: no next card, give the room back
   const n=placed();
   document.getElementById("psPlace").textContent = showBest ? "Best board" : (over ? (botTouched?"The bot's board":"Board complete") : (BOT.on ? (settings.botAuto?"The bot is playing":"Tap Next card") : "Tap an empty square"));
@@ -2067,7 +2051,7 @@ function openRules(){
     +'<h3>The clock</h3>'
     +'<p>Every fifth level is a <b>Blitz</b> board, 4 points easier: levels 5, 15, 25… give you <b>seconds a card</b> (12 at level 5, one less every ten levels, down to 5), and 10, 20… give you <b>one clock for the whole board</b> (120 seconds at level 10, five less every ten levels, down to 90). Every timed board starts with a briefing and a 3-2-1. In Free play, Menu → Clock turns either one on. A ring drains around the card in the tray and turns red near the end. Run out on a card and it lands in a random open square; run out on the board and the rest do. The clock stops while a panel is open or the app is in the background. No undo against the clock.</p>'
     +'<h3>Twists and tricky deals</h3>'
-    +'<p>From level 12, two boards in every five carry a <b>twist</b>, the one each chapter brings in: a <b>gold square</b> whose row and column score double (High Stakes), three <b>blind cards</b> you place face down (Master\'s Table), a <b>short deck</b> with no 2s to 5s (The Gauntlet), and two <b>stones</b>, cards already down that can\'t move (Iron Table). The Summit deals them all in turn, plus boards scored on the <b>other table</b>. The target is always a share of the best board for that board, twist included; blind cards and the other table ask a few points less. Each twist explains itself the first time you meet it.</p>'
+    +'<p>From level 12, two boards in every five carry a <b>twist</b>, the one each chapter brings in: a <b>gold square</b> whose row and column score double (High Stakes and Master\'s Table), a <b>short deck</b> with no 2s to 5s (The Gauntlet), and two <b>stones</b>, cards already down that can\'t move (Iron Table). The Summit deals them all in turn, plus boards scored on the <b>other table</b>. The target is always a share of the best board for that board, twist included; the other table asks 3 points less. Each twist explains itself the first time you meet it.</p>'
     +'<p>From level 16 the dealer shuffles more than once and gives you the trickiest: the board the bot does worst on, playing your cards in your order. Two shuffles from 16, three from 50, four from 100. Blitz boards are dealt as before.</p>'
     +'<h3>Prizes</h3>'
     +'<p>Levels win you power-ups: <b>Undo</b>, <b>Peek</b> at the next two cards, <b>Burn</b> the card in the tray for a fresh one, a <b>Hint</b> for the best square, <b>Freeze</b> the Blitz clock, and the rare <b>Swap</b> and <b>Wild</b>. Use them from the strip under the board. A board you use one on still clears, but '+BOOST_NOTE+'. Menu → Prizes lists what you have and how each is won.</p>'
@@ -3236,7 +3220,7 @@ if('serviceWorker' in navigator){
 <script>
 /* build stamp — bumped with the sw.js cache version */
 (function(){
-  var V="v269", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
+  var V="v270", ISO=document.lastModified;   // GitHub Pages sends Last-Modified = the deploy time, so this tracks the build you're actually running
   var d=new Date(ISO), when=isNaN(d)?"":d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
   var el=document.getElementById("gnBuild"); if(el) el.textContent="build "+V+(when?" \u00b7 "+when:"");
 })();

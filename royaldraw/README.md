@@ -886,7 +886,7 @@ for 2 / 3 / 4 shuffles (the target stays a share of the best board, so that's th
   (`LV.gold`; `lineMult` / `lineHand` in `computeLines`; the solver and the bot take per-line
   multipliers, `mult`, rows 0-4 then columns). The square shows "×2", the two chips carry a ×2 tag, and
   call-outs say "Flush ×2". `alignToMine` keeps the gold row and column where they are.
-- **Blind cards** (Master's Table, 15-24): three cards (never the first) come face down (`LV.blindK`).
+- **Blind cards** (Master's Table, 15-24) — **removed in v270**, see below. Three cards (never the first) came face down (`LV.blindK`).
   The tray shows a blue back with "?", the line under it says "Face down · pick its square", and the card
   turns over where it lands (`.reveal`). Peek shows them as "?"; Hint doesn't work on one; Wild works and
   doesn't give it away; Undo brings it back face up (`LV.seenK`). Target 4 points lower.
@@ -965,3 +965,13 @@ first launch with v269 shows a one-time "New: the Daily Deal" card (`pokersquare
 Daily panel has today's status, today's board (top 10 plus you), and yesterday: the winner, your
 result, and **See yesterday's boards** with Best possible / Yours / the winner's (web only: Game
 Center keeps scores, not layouts).
+
+## Blind cards removed (v270)
+Nov 23: Josh had doubts about the "3 flipped over cards" after playing 1.0.6, and the same evening
+asked to remove them: his wife hates the twist. All of it is gone: `isBlind`, `LV.blindK` / `seenK`,
+the face-down tray card, the flip-on-landing, the "?" in Peek, the Hint and Wild special cases, the
+explainer art and its CSS. **Master's Table now keeps dealing the gold square** (twist boards 12 to
+24 are all gold), and The Summit rotates other table, gold, short deck, stones. The target cut that
+went with blind cards (4 points) went with them; only the other table still asks 3 points less. A
+saved `pokersquares.twists.blind` from earlier play is simply never read. The Daily Deal is untouched
+(its `DAILY_BEST` table is unchanged).
